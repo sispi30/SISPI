@@ -28,6 +28,10 @@ import {
   IMG_PROTECT_AREAS,
 } from '@/lib/menuStore';
 import { FEATURES } from '@/lib/menu';
+import {
+  useTransformMenuSettings, TransformMenuSettings, TfDirection, TfJustify, TfAlign,
+  TfAnchorX, TfAnchorY, TfDivider,
+} from '@/lib/transformMenuStore';
 import { SectionsBlock } from '@/components/settings/SectionList';
 import { useSections, sectionMenuEntries, MAIN_SEC, inSection } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries, toInternalPath } from '@/lib/linkStore';
@@ -60,7 +64,7 @@ import { migrateTo, findOrphanFiles } from '@/lib/transfer';
 import { FIRESTORE_RULES, STORAGE_RULES } from '@/lib/firebaseRules';
 
 const CATEGORIES = [
-  '디자인', '메인 페이지', '위젯', '메뉴 관리', '게시판 관리', '자관 질문', '커미션', 'TRPG', '감상타래', '메모장',
+  '디자인', '메인 페이지', '위젯', '메뉴 관리', '메뉴 위젯', '게시판 관리', '자관 질문', '커미션', 'TRPG', '감상타래', '메모장',
   '폰트', '마우스 커서', 'BGM', '무드 리스트', '회원/보안', '데이터 백업',
 ] as const;
 
@@ -2431,6 +2435,227 @@ function MenuPane() {
   );
 }
 
+/** 색 항목 한 쌍 — 트랜스폼 메뉴 전용 (빈 값 = 테마 기본색을 그대로 따름, 초기화 가능) */
+function TfColor({ label, value, patch, k, fallback }: {
+  label: string; value: string; fallback: string;
+  patch: (p: Partial<TransformMenuSettings>) => void; k: keyof TransformMenuSettings;
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span className="cp-lb">{label}</span>
+      <ColorField value={value || fallback} onChange={hex => patch({ [k]: hex } as Partial<TransformMenuSettings>)} />
+      {value && (
+        <button className="btn btn-ghost" style={{ height: 26, padding: '0 8px', fontSize: 10 }}
+          onClick={() => patch({ [k]: '' } as Partial<TransformMenuSettings>)}>기본값</button>
+      )}
+    </div>
+  );
+}
+
+/** 메뉴 위젯 탭 (커스텀 요청) — 그누보드 「트랜스폼 메뉴 위젯」 이식.
+ *  켜면 상단바의 기본 메뉴 줄 대신 위치·글꼴·배경을 자유롭게 꾸민 메뉴로 대체된다. */
+function MenuDesignPane() {
+  const [cfg, patch, loaded] = useTransformMenuSettings();
+  const toast = useToast();
+  const logoUrl = useBlobUrl(cfg.logoBlobId);
+  if (!loaded) return null;
+
+  const seg = <T extends string>(value: T, options: { v: T; label: string }[], onChange: (v: T) => void) => (
+    <div className="seg in-panel">
+      {options.map(o => (
+        <button key={o.v} className={value === o.v ? 'on' : ''} onClick={() => onChange(o.v)}>{o.label}</button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="set-sec">
+      <h3>메뉴 위젯</h3>
+      <div className="d">
+        그누보드 「트랜스폼 메뉴 위젯」을 이 사이트 구조로 이식 — 켜면 위의 「메뉴 관리」 트리를 그대로 쓰되,
+        위치·글꼴·배경을 자유롭게 꾸민 메뉴로 상단 메뉴 줄을 대체합니다.
+      </div>
+
+      <div className="set-row">
+        <div className="l"><b>사용</b><small>끄면 기존 상단 메뉴로 즉시 되돌아갑니다</small></div>
+        <KToggle checked={cfg.enabled} onChange={v => patch({ enabled: v })} />
+      </div>
+
+      {cfg.enabled && (
+        <>
+          <div className="set-row">
+            <div className="l"><b>배치 방식</b>
+              <small>고정 — 화면 위에 독립된 캡슐로 떠서 드래그로 옮길 수 있음 · 제자리 — 기존 메뉴 줄 자리에 그대로</small>
+            </div>
+            {seg<'fixed' | 'static'>(cfg.positionType, [
+              { v: 'fixed', label: '화면에 고정 (드래그)' }, { v: 'static', label: '제자리(상단바 안)' },
+            ], v => patch({ positionType: v }))}
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>레이아웃</b><small>메뉴 항목을 늘어놓는 방향·정렬·간격</small></div>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {seg<TfDirection>(cfg.direction, [{ v: 'row', label: '가로' }, { v: 'column', label: '세로' }], v => patch({ direction: v }))}
+              <KSelect minWidth={120} value={cfg.justify}
+                onChange={v => patch({ justify: v as TfJustify })}
+                options={[
+                  { value: 'flex-start', label: '앞쪽 정렬' }, { value: 'center', label: '가운데 정렬' },
+                  { value: 'flex-end', label: '뒤쪽 정렬' }, { value: 'space-between', label: '양끝 분산' },
+                  { value: 'space-around', label: '고르게 분산' },
+                ]} />
+              <KSelect minWidth={100} value={cfg.align}
+                onChange={v => patch({ align: v as TfAlign })}
+                options={[
+                  { value: 'flex-start', label: '교차축 앞' }, { value: 'center', label: '교차축 가운데' },
+                  { value: 'flex-end', label: '교차축 뒤' },
+                ]} />
+              <span className="cp-lb">간격</span>
+              <KStep value={cfg.gap} min={0} max={80} step={2} suffix="px" onChange={v => patch({ gap: v })} />
+            </div>
+          </div>
+
+          {cfg.positionType === 'fixed' && (
+            <div className="set-row" style={{ flexWrap: 'wrap' }}>
+              <div className="l"><b>위치</b><small>기준점 + 화면 대비 비율(%) — 한 번 드래그해서 옮기면 그 뒤로는 그 위치가 우선합니다</small></div>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {seg<TfAnchorX>(cfg.anchorX, [{ v: 'left', label: '왼쪽' }, { v: 'center', label: '가운데' }, { v: 'right', label: '오른쪽' }], v => patch({ anchorX: v }))}
+                <KStep value={cfg.posX} min={0} max={100} step={1} suffix="%" onChange={v => patch({ posX: v })} />
+                {seg<TfAnchorY>(cfg.anchorY, [{ v: 'top', label: '위' }, { v: 'center', label: '가운데' }, { v: 'bottom', label: '아래' }], v => patch({ anchorY: v }))}
+                <KStep value={cfg.posY} min={0} max={100} step={1} suffix="%" onChange={v => patch({ posY: v })} />
+              </div>
+            </div>
+          )}
+
+          {cfg.positionType === 'fixed' && (
+            <div className="set-row">
+              <div className="l"><b>드래그</b><small>방문자가 화면에서 위젯을 끌어 옮길 수 있는지</small></div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <KCheck label="드래그 허용" checked={cfg.draggable} onChange={v => patch({ draggable: v })} />
+                <KCheck label="옮긴 위치 이 브라우저에 기억" checked={cfg.savePosition} onChange={v => patch({ savePosition: v })} />
+              </div>
+            </div>
+          )}
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>메뉴 글자</b><small>상위 메뉴 항목의 크기·색·자간</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <span className="cp-lb">크기</span>
+              <KStep value={cfg.menuFontSize} min={9} max={26} step={1} suffix="px" onChange={v => patch({ menuFontSize: v })} />
+              <span className="cp-lb">자간</span>
+              <KStep value={cfg.menuLetterSpacing} min={-2} max={6} step={0.5} suffix="px" onChange={v => patch({ menuLetterSpacing: v })} />
+              <TfColor label="글자색" value={cfg.menuFontColor} fallback="#aab0ba" patch={patch} k="menuFontColor" />
+              <TfColor label="hover색" value={cfg.menuHoverColor} fallback="#ffffff" patch={patch} k="menuHoverColor" />
+            </div>
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>서브메뉴 글자</b><small>하위 메뉴(드롭다운) 항목의 크기·색</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <span className="cp-lb">크기</span>
+              <KStep value={cfg.subFontSize} min={9} max={22} step={1} suffix="px" onChange={v => patch({ subFontSize: v })} />
+              <TfColor label="글자색" value={cfg.subFontColor} fallback="#c6cad1" patch={patch} k="subFontColor" />
+              <TfColor label="hover색" value={cfg.subHoverColor} fallback="#a63a45" patch={patch} k="subHoverColor" />
+            </div>
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>구분선</b><small>상위 메뉴 항목 사이 구분 표시</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {seg<TfDivider>(cfg.dividerStyle, [
+                { v: 'none', label: '없음' }, { v: 'line', label: '세로선' }, { v: 'dot', label: '점' },
+              ], v => patch({ dividerStyle: v }))}
+              {cfg.dividerStyle !== 'none' && (
+                <TfColor label="색" value={cfg.dividerColor} fallback="#e2e4e8" patch={patch} k="dividerColor" />
+              )}
+            </div>
+          </div>
+
+          {cfg.positionType === 'fixed' && (
+            <>
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>배경</b><small>독립 캡슐의 배경·테두리·그림자</small></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <KCheck label="투명" checked={cfg.bgTransparent} onChange={v => patch({ bgTransparent: v })} />
+                  {!cfg.bgTransparent && <TfColor label="배경색" value={cfg.bgColor} fallback="#14161b" patch={patch} k="bgColor" />}
+                  <KCheck label="그림자" checked={cfg.bgShadow} onChange={v => patch({ bgShadow: v })} />
+                </div>
+              </div>
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>테두리 · 안쪽 여백 · 모서리</b></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <span className="cp-lb">두께</span>
+                  <KStep value={cfg.borderWidth} min={0} max={6} step={1} suffix="px" onChange={v => patch({ borderWidth: v })} />
+                  {cfg.borderWidth > 0 && <TfColor label="색" value={cfg.borderColor} fallback="#e2e4e8" patch={patch} k="borderColor" />}
+                  <span className="cp-lb">여백</span>
+                  <KStep value={cfg.padding} min={0} max={40} step={1} suffix="px" onChange={v => patch({ padding: v })} />
+                  <span className="cp-lb">모서리</span>
+                  <KStep value={cfg.borderRadius} min={0} max={999} step={1} suffix="px" onChange={v => patch({ borderRadius: v })} />
+                </div>
+              </div>
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>서브메뉴 배경</b></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <TfColor label="배경색" value={cfg.subBgColor} fallback="#1c1f25" patch={patch} k="subBgColor" />
+                  <span className="cp-lb">모서리</span>
+                  <KStep value={cfg.subBorderRadius} min={0} max={30} step={1} suffix="px" onChange={v => patch({ subBorderRadius: v })} />
+                  <KCheck label="그림자" checked={cfg.subShadow} onChange={v => patch({ subShadow: v })} />
+                </div>
+              </div>
+
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>로고</b><small>독립 캡슐 왼쪽에 이미지 로고 표시</small></div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <KCheck label="표시" checked={cfg.showLogo} onChange={v => patch({ showLogo: v })} />
+                  {cfg.showLogo && (
+                    <>
+                      <span style={{
+                        width: 35, height: 35, borderRadius: 'var(--radius-s)', border: '1px solid var(--line)',
+                        background: 'var(--panel)', display: 'grid', placeItems: 'center', overflow: 'hidden', flexShrink: 0,
+                      }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {logoUrl ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          : <span style={{ fontSize: 9, color: 'var(--faint)' }}>없음</span>}
+                      </span>
+                      <input id="tfLogo" type="file" accept="image/png,image/webp,image/svg+xml,image/jpeg,image/gif"
+                        style={{ display: 'none' }}
+                        onChange={async e => {
+                          const f = e.target.files?.[0];
+                          e.target.value = '';
+                          if (!f) return;
+                          try { patch({ logoBlobId: await putBlob(f) }); } catch (err) {
+                            toast(`로고를 저장소에 올리지 못했습니다 — ${err instanceof Error ? err.message : String(err)}`);
+                          }
+                        }} />
+                      <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                        onClick={() => document.getElementById('tfLogo')?.click()}>
+                        {cfg.logoBlobId ? 'CHANGE' : 'UPLOAD'}
+                      </button>
+                      {cfg.logoBlobId && (
+                        <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                          onClick={() => patch({ logoBlobId: '' })}>REMOVE</button>
+                      )}
+                      <span className="cp-lb">너비</span>
+                      <KStep value={cfg.logoWidth} min={20} max={320} step={4} suffix="px" onChange={v => patch({ logoWidth: v })} />
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="set-row">
+                <div className="l"><b>버튼</b><small>비로그인 방문자에게 로그인 버튼 · 관리자에게 환경설정 바로가기</small></div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <KCheck label="로그인 버튼" checked={cfg.showLoginBtn} onChange={v => patch({ showLoginBtn: v })} />
+                  <KCheck label="관리자 버튼" checked={cfg.showAdminBtn} onChange={v => patch({ showAdminBtn: v })} />
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /** TRPG 탭 (4.15, v1.9) — 도토리 상태 카테고리 라벨 + 뱃지 색 + 플레이기록 표시 열 */
 function TrpgPane() {
   const [settings, patch] = useTrpgSettings();
@@ -3234,6 +3459,8 @@ function SettingsInner() {
             <WidgetsPane />
           ) : tab === '메뉴 관리' ? (
             <MenuPane />
+          ) : tab === '메뉴 위젯' ? (
+            <MenuDesignPane />
           ) : tab === '게시판 관리' ? (
             <BoardPane />
           ) : tab === '자관 질문' ? (

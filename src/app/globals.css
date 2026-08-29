@@ -143,9 +143,6 @@ a{color:inherit;text-decoration:none}
 .notif-menu .nt.rd{opacity:.48}
 .notif-menu .nset{border-top:1px solid rgba(127,127,127,.18);margin-top:6px;padding:8px 12px 4px;display:grid;gap:7px}
 .notif-menu .nset .row{display:flex;justify-content:space-between;align-items:center;font-size:calc(11px*var(--fs,1));color:var(--dd-fg);cursor:default}
-/* 켜짐은 포인트색으로 (v2.0 포크 제보 — 「켜진 건지 꺼진 건지 분간이 안 된다」).
-   기본 켜짐색(--ink 검정 알약)이 어두운 드롭다운 배경에 묻혀 꺼짐(회색)과 구별되지 않았다 */
-.notif-menu .k-toggle input:checked + .tr{background:var(--accent)}
 .badge-dot{position:relative;color:var(--top-fg);display:grid;place-items:center;width:32px;height:32px;border-radius:9px;transition:.15s}
 .badge-dot:hover{color:var(--top-hv,#fff)}
 .badge-dot svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
@@ -178,8 +175,6 @@ a{color:inherit;text-decoration:none}
 .bgm2 .mini-tt{color:var(--bgm-fg);font-size:calc(11.5px*var(--fs,1));font-weight:600}
 .bgm2 .mini-sub{color:var(--bgm-ic);font-size:calc(10px*var(--fs,1));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bgm2 .mini-play{width:30px;height:30px;border-radius:50%;background:var(--bgm-fg);color:var(--bgm-bg);display:grid;place-items:center;flex:0 0 auto}
-.bgm2 .mini-play:hover{color:var(--bgm-bg)}
-.bgm2 .mini .mini-play svg{stroke:none;fill:#fff}
 .bgm2 .mini-play:active{transform:scale(.92)}
 .bgm2 .mini-play svg,.bgm2 .ic-btn svg,.bgm2 .pn-ic svg,.bgm2 .tr-btns svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
 
@@ -265,8 +260,6 @@ a{color:inherit;text-decoration:none}
 .bgm2 .tr-btns button{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--bgm-ic)}
 .bgm2 .tr-btns button:hover{color:var(--bgm-fg)}
 .bgm2 .tr-btns .pp{width:36px;height:36px;background:var(--bgm-fg);color:var(--bgm-bg)}
-.bgm2 .tr-btns .pp:hover{color:var(--bgm-bg)}
-.bgm2 .tr-btns .pp svg{stroke:none;fill:#fff}
 .bgm2 .tr-btns .pp:active{transform:scale(.92)}
 .bgm2 .vol2{position:relative;flex:0 0 auto}
 .bgm2 .vol2-pop{position:absolute;bottom:32px;right:-6px;background:var(--bgm-bg);border:1px solid var(--line-dark);border-radius:10px;padding:5px 6px;box-shadow:var(--sh-dd);height:80px;display:flex;align-items:flex-end}
@@ -1601,16 +1594,6 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .panel.flush{overflow:hidden;padding:4px 0}
 .board-list{padding:6px 0}
 .brow{display:grid;grid-template-columns:70px 1fr 90px 90px;gap:12px;align-items:center;padding:13px 20px;border-bottom:1px solid var(--line);font-size:calc(13px*var(--fs,1));cursor:var(--cur-pointer,pointer);transition:.13s}
-/* 제목 칸 안에서 태그를 오른쪽 끝에 (v2.0 사용자 요청 — 작성자 왼쪽).
-   칸을 따로 만들면 행마다 그리드가 독립이라 작성자 열이 어긋난다 — 제목 칸 안에서 민다 */
-.brow .tcell{min-width:0;display:flex;align-items:center;gap:10px}
-.brow .tcell>b{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.brow .tags{flex-shrink:0;max-width:45%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:calc(10.5px*var(--fs,1))}
-.brow .tags i{font-style:normal;color:color-mix(in srgb,var(--accent) 65%,var(--faint));margin-left:7px}
-.brow .tags i:first-child{margin-left:0}
-@media (max-width:640px){.brow .tags{display:none}} /* 좁은 화면에서는 제목 우선 */
-/* 메타 줄에 섞어 쓰는 태그 표기 (v2.0 — 갤러리 카드·리스트·상세) */
-.tag-in{font-style:normal;color:color-mix(in srgb,var(--accent) 65%,var(--faint));margin-left:7px}
 .brow:last-child{border-bottom:none}
 .brow:hover{background:#f4f5f7}
 .brow .cat{font-size:calc(10px*var(--fs,1));text-align:center}
@@ -1889,3 +1872,54 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .up-busy{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:121;display:flex;align-items:center;gap:9px;padding:10px 18px;border-radius:999px;background:var(--dd-bg);color:var(--dd-fg);font-size:calc(12.5px*var(--fs,1));box-shadow:0 10px 30px rgba(0,0,0,.3);border:1px solid var(--line-dark);backdrop-filter:blur(8px)}
 .up-spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--line-dark);border-top-color:var(--accent);animation:upSpin .7s linear infinite;flex-shrink:0}
 @keyframes upSpin{to{transform:rotate(360deg)}}
+
+/* ---------- 트랜스폼 메뉴 위젯 (커스텀 요청) — 환경설정 > 메뉴 위젯 ---------- */
+/* static: gnb 자리에 그대로 얹혀서 상단바 배경을 그대로 쓰고 글자색만 재정의 */
+.gnb.tf-static > button,.gnb.tf-static .tf-grp > button{
+  padding:7px 13px;border-radius:8px;white-space:nowrap;transition:.18s;
+  color:var(--tf-menu-fg);font-size:var(--tf-menu-fs);letter-spacing:var(--tf-menu-ls);
+}
+.gnb.tf-static > button:hover,.gnb.tf-static .tf-grp > button:hover,.gnb.tf-static > button.on{
+  color:var(--tf-menu-hv);background:rgba(255,255,255,.07);
+}
+.gnb.tf-static .tf-grp{position:relative}
+.gnb.tf-static .tf-grp > button::after{content:" ▾";font-size:8px;color:#7a808a}
+.gnb.tf-static .tf-sub{
+  position:absolute;left:0;top:calc(100% + 4px);min-width:132px;display:none;z-index:75;padding:5px;
+  background:var(--tf-sub-bg);border-radius:var(--tf-sub-radius);box-shadow:var(--tf-sub-shadow);
+}
+.gnb.tf-static .tf-grp:hover .tf-sub{display:block;animation:fade .15s}
+.gnb.tf-static .tf-sub button{display:block;width:100%;text-align:left;padding:8px 12px;border-radius:7px;transition:.13s;color:var(--tf-sub-fg);font-size:var(--tf-sub-fs)}
+.gnb.tf-static .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--dd-hv)}
+
+/* fixed: 화면에 고정된 독립 캡슐 — 드래그로 이동, 자체 배경/로고/버튼 */
+.tf-fixed{display:flex;align-items:center;gap:8px;z-index:65}
+.tf-fixed.is-dragging{opacity:.92}
+.tf-fixed .tf-drag{cursor:grab;color:var(--tf-menu-fg,var(--top-fg));opacity:.5;padding:0 3px;font-size:11px;letter-spacing:-2px;touch-action:none;user-select:none}
+.tf-fixed.is-dragging .tf-drag{cursor:grabbing}
+.tf-fixed .tf-logo{height:24px;width:auto;cursor:var(--cur-pointer,pointer);object-fit:contain}
+.tf-fixed .tf-items{align-items:center}
+.tf-fixed .tf-grp{position:relative}
+.tf-fixed .tf-grp > button,.tf-fixed .tf-items > button{
+  padding:7px 12px;border-radius:8px;white-space:nowrap;transition:.15s;
+  color:var(--tf-menu-fg);font-size:var(--tf-menu-fs);letter-spacing:var(--tf-menu-ls);
+}
+.tf-fixed .tf-grp > button:hover,.tf-fixed .tf-items > button:hover,.tf-fixed .tf-items > button.on{
+  color:var(--tf-menu-hv);background:rgba(127,127,127,.14);
+}
+.tf-fixed .tf-sub{
+  position:absolute;left:0;top:calc(100% + 4px);min-width:120px;display:none;padding:5px;z-index:70;
+  background:var(--tf-sub-bg);border-radius:var(--tf-sub-radius);box-shadow:var(--tf-sub-shadow);
+}
+.tf-fixed .tf-grp:hover .tf-sub{display:block;animation:fade .15s}
+.tf-fixed .tf-sub button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;color:var(--tf-sub-fg);font-size:var(--tf-sub-fs)}
+.tf-fixed .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--dd-hv)}
+.tf-fixed .tf-login{font-size:11.5px;color:var(--tf-menu-fg,var(--top-fg));padding:6px 14px;border:1px solid var(--line-dark);border-radius:999px;white-space:nowrap;flex-shrink:0}
+.tf-fixed .tf-login:hover{color:var(--tf-menu-hv,var(--top-hv))}
+.tf-fixed .tf-admin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--tf-menu-fg,var(--top-fg));flex-shrink:0}
+.tf-fixed .tf-admin:hover{color:var(--tf-menu-hv,var(--top-hv));background:rgba(127,127,127,.14)}
+.tf-divider-line{width:1px;height:15px;background:currentColor;opacity:.5;align-self:center}
+.tf-divider-dot{width:4px;height:4px;border-radius:50%;background:currentColor;align-self:center;opacity:.6}
+@media (max-width:768px){
+  .tf-fixed{max-width:calc(100vw - 20px);overflow-x:auto}
+}
