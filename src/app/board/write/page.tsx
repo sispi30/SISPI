@@ -4,10 +4,11 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { useLocalList, BOARD_SEED, Post, newId, FoldType } from '@/lib/postStore';
-import { useBoards, boardHref, MAIN_BOARD_ID } from '@/lib/boardStore';
+import { useLocalList, BOARD_SEED, Post, newId, FoldType, SessionMeta } from '@/lib/postStore';
+import { useBoards, boardHref, MAIN_BOARD_ID, BoardPerm } from '@/lib/boardStore';
+import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { renderBody } from '@/lib/sanitize';
-import { KInput, KTextarea, KSelect, KCheck } from '@/components/ui/Kit';
+import { KInput, KTextarea, KSelect, KCheck, KDate } from '@/components/ui/Kit';
 import { CropEditor, CropImg, CropValue } from '@/components/ui/CropEditor';
 import { RichEditor } from '@/components/ui/RichEditor';
 import { useToast } from '@/components/ui/Toast';
@@ -43,6 +44,15 @@ function WriteInner() {
   const [thumbSrc, setThumbSrc] = useState<string | undefined>(undefined);
   const [thumbCrop, setThumbCrop] = useState<CropValue | undefined>(undefined);
   const [cropOpen, setCropOpen] = useState(false);
+  // 세션 게시판(타래형) ↔ 플레이 기록 연동 (5.4) — 여기 적은 내용이 플레이 기록 게시판에도 한 줄로 등록된다
+  const [records, setRecords] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
+  const [sDate, setSDate] = useState('');
+  const [sScenarioLink, setSScenarioLink] = useState('');
+  const [sWith, setSWith] = useState('');
+  const [sRole, setSRole] = useState('');
+  const [sPlaytime, setSPlaytime] = useState('');
+  const [sUrl, setSUrl] = useState('');
+  const [sRecordId, setSRecordId] = useState('');
   // 본문 이미지 목록 — HTML <img> + Markdown 이미지
   const bodyImages = useMemo(() => {
     const out: string[] = [];
@@ -71,6 +81,12 @@ function WriteInner() {
     setFoldType(p.fold?.type ?? 'none'); setFoldLabel(p.fold?.label ?? '');
     setTagsText((p.tags ?? []).join(', '));
     setThumbSrc(p.thumbSrc); setThumbCrop(p.thumbCrop);
+    if (p.session) {
+      setSDate(p.session.date ?? ''); setSScenarioLink(p.session.scenarioLink ?? '');
+      setSWith(p.session.withText ?? ''); setSRole(p.session.role ?? '');
+      setSPlaytime(p.session.playtime ?? ''); setSUrl(p.session.url ?? '');
+      setSRecordId(p.session.recordId ?? '');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editPid, postsLoaded, posts]);
 
@@ -83,12 +99,49 @@ function WriteInner() {
       </section>
     );
   }
+  // 게시판별 글쓰기 권한 (5.2) — 지금까지는 목록의 WRITE 버튼 노출로만 막혀 있어 주소를
+  // 직접 입력하면 우회할 수 있었다. 세션 게시판(관리자 전용) 추가를 계기로 여기서도 실제로 막는다
+  const allowWrite = (p: BoardPerm) => (p === 'admin' ? isAdmin : p === 'member' ? !!user : true);
+  if (!editing && !allowWrite(board.permWrite)) {
+    return (
+      <section className="page">
+        <div className="page-head"><PageTitle>WRITE</PageTitle><p>이 게시판은 관리자만 글을 쓸 수 있습니다</p></div>
+      </section>
+    );
+  }
 
   const post = () => {
     if (!title.trim() || !body.trim()) { toast('제목과 내용을 입력해 주세요'); return; }
+    // 세션 게시판(타래형) — 여기 적은 내용을 플레이 기록 게시판(PlayRecord) 한 줄과 동기화 (5.4)
+    // 세션 게시판 자체가 관리자 전용 글쓰기이지만, 연동 동작임을 명확히 하기 위해 isAdmin도 함께 확인한다
+    const isSession = board.skin === 'thread' && isAdmin;
+    const syncRecord = (postId: string): string | undefined => {
+      if (!isSession) return undefined;
+      const rec: PlayRecord = {
+        id: sRecordId || newId(),
+        secId: records.find(r => r.id === sRecordId)?.secId,
+        date: sDate || undefined,
+        scenario: title.trim(),
+        scenarioLink: sScenarioLink.trim() || undefined,
+        writer: user.nickname,
+        withText: sWith.trim(),
+        role: sRole.trim(),
+        playtime: sPlaytime.trim(),
+        url: sUrl.trim() || undefined,
+        postId,
+      };
+      setRecords(sRecordId ? records.map(r => (r.id === sRecordId ? rec : r)) : [...records, rec]);
+      return rec.id;
+    };
+    const session: SessionMeta | undefined = isSession ? {
+      date: sDate || undefined, scenarioLink: sScenarioLink.trim() || undefined,
+      withText: sWith.trim(), role: sRole.trim(), playtime: sPlaytime.trim(), url: sUrl.trim() || undefined,
+      recordId: sRecordId || undefined,
+    } : undefined;
     if (editing) {
       // 수정 — 작성자 본인만 (관리자도 타인 글은 삭제만, v1.9). 작성자/날짜/댓글/소속 게시판은 유지
       if (editing.authorId !== user.id) { toast('수정은 작성자 본인만 할 수 있습니다'); return; }
+      const recordId = syncRecord(editing.id);
       setPosts(posts.map(p => (p.id === editing.id ? {
         ...p,
         title: title.trim(), body,
@@ -99,13 +152,16 @@ function WriteInner() {
         tags: parseTags(tagsText),
         fold: foldType === 'none' ? null : { type: foldType, label: foldType === 'custom' ? foldLabel : undefined },
         thumbSrc, thumbCrop,
+        session: session ? { ...session, recordId } : undefined,
       } : p)));
       toast('수정되었습니다');
       router.push(`/board/${editing.id}`);
       return;
     }
+    const pid = newId();
+    const recordId = syncRecord(pid);
     const p: Post = {
-      id: newId(), title: title.trim(), body,
+      id: pid, title: title.trim(), body,
       mode: writeMode === 'md' ? 'md' : 'html', category,
       author: user.nickname, authorId: user.id, date: new Date().toISOString(),
       secret, notice: isAdmin && notice,
@@ -114,6 +170,7 @@ function WriteInner() {
       comments: [],
       boardId: board.id,   // 소속 게시판 (5.2 다중 게시판)
       thumbSrc, thumbCrop,
+      session: session ? { ...session, recordId } : undefined,
     };
     setPosts([p, ...posts]);
     toast('등록되었습니다');
@@ -155,10 +212,10 @@ function WriteInner() {
               </div>
             </>
           )}
-          {/* 티켓 스킨 대표 이미지 — 본문에 삽입한 이미지 리스트에서 선택, 클릭 시 16:9 썸네일 위치 지정 (v1.9) */}
-          {board.skin === 'ticket' && bodyImages.length > 0 && (
+          {/* 티켓/타래형 스킨 대표 이미지 — 본문에 삽입한 이미지 리스트에서 선택, 클릭 시 16:9 썸네일 위치 지정 (v1.9 / 타래형 게시판) */}
+          {(board.skin === 'ticket' || board.skin === 'thread') && bodyImages.length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <label className="k-label" style={{ marginBottom: 7 }}>대표 이미지 (티켓 썸네일)</label>
+              <label className="k-label" style={{ marginBottom: 7 }}>대표 이미지 (썸네일)</label>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 {bodyImages.map(src => (
                   <div key={src}
@@ -202,6 +259,39 @@ function WriteInner() {
               {isAdmin && <KCheck label="공지로 고정" checked={notice} onChange={setNotice} />}
             </div>
           </div>
+          {/* 세션 게시판(타래형) 전용 — 여기 적은 내용이 플레이 기록 게시판에도 한 줄로 등록·연동된다 (5.4) */}
+          {board.skin === 'thread' && (
+            <div className="panel widget" style={{ marginBottom: 14 }}>
+              <h4>플레이 기록 연동</h4>
+              <p className="hint" style={{ marginTop: -4 }}>제목이 Scenario로, 작성자가 Writer로 그대로 연결됩니다</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label className="k-label" style={{ marginBottom: 5 }}>Date</label>
+                  <KDate value={sDate} onChange={setSDate} placeholder="" style={{ width: '100%' }} />
+                </div>
+                <div>
+                  <label className="k-label" style={{ marginBottom: 5 }}>Playtime</label>
+                  <KInput value={sPlaytime} onChange={e => setSPlaytime(e.target.value)} />
+                </div>
+                <div>
+                  <label className="k-label" style={{ marginBottom: 5 }}>Role</label>
+                  <KInput value={sRole} onChange={e => setSRole(e.target.value)} />
+                </div>
+                <div>
+                  <label className="k-label" style={{ marginBottom: 5 }}>With</label>
+                  <KInput value={sWith} onChange={e => setSWith(e.target.value)} />
+                </div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <label className="k-label" style={{ marginBottom: 5 }}>Scenario Link (optional)</label>
+                <KInput value={sScenarioLink} onChange={e => setSScenarioLink(e.target.value)} />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <label className="k-label" style={{ marginBottom: 5 }}>Url (optional)</label>
+                <KInput value={sUrl} onChange={e => setSUrl(e.target.value)} />
+              </div>
+            </div>
+          )}
           <div className="panel widget" style={{ marginBottom: 14 }}>
             <h4>접기 (6.2)</h4>
             <div style={{ display: 'grid', gap: 9 }}>
