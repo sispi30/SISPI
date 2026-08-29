@@ -62,6 +62,9 @@ export function TransformMenu() {
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); }, []);
 
   useEffect(() => {
     if (cfg.positionType === 'fixed' && cfg.draggable && cfg.savePosition) {
@@ -125,6 +128,17 @@ export function TransformMenu() {
 
   if (!loaded || !cfg.enabled) return null;
 
+  // 하위 메뉴 열림 상태 — 순수 CSS :hover는 버튼→서브메뉴 사이 틈을 지날 때 hover가 끊겨
+  // 깜빡이며 사라지는 문제가 있어, JS로 직접 열고 살짝의 유예 시간을 두고 닫는다.
+  const openSub = (label: string) => {
+    if (closeTimerRef.current) { clearTimeout(closeTimerRef.current); closeTimerRef.current = null; }
+    setOpenGroup(label);
+  };
+  const scheduleCloseSub = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => setOpenGroup(null), 180);
+  };
+
   // 상위 메뉴 사이 구분선 (커스텀 요청 — none/line/dot)
   const withDividers = (nodes: React.ReactNode[]): React.ReactNode[] => {
     if (cfg.dividerStyle === 'none') return nodes;
@@ -143,9 +157,10 @@ export function TransformMenu() {
 
   const menuNodes = menu.map(item => (
     item.children ? (
-      <div className="tf-grp" key={item.label}>
+      <div className={`tf-grp${openGroup === item.label ? ' open' : ''}`} key={item.label}
+        onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
         <button onClick={() => nav(item.children![0].href)}>{item.label}</button>
-        <div className="tf-sub">
+        <div className="tf-sub" onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
           {item.children.map(c => (
             <button key={c.href} onClick={() => nav(c.href)}>{c.label}</button>
           ))}

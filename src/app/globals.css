@@ -1888,7 +1888,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   position:absolute;left:0;top:calc(100% + 4px);min-width:132px;display:none;z-index:75;padding:5px;
   background:var(--tf-sub-bg);border-radius:var(--tf-sub-radius);box-shadow:var(--tf-sub-shadow);
 }
-.gnb.tf-static .tf-grp:hover .tf-sub{display:block;animation:fade .15s}
+.gnb.tf-static .tf-grp.open .tf-sub{display:block;animation:fade .15s}
 .gnb.tf-static .tf-sub button{display:block;width:100%;text-align:left;padding:8px 12px;border-radius:7px;transition:.13s;color:var(--tf-sub-fg);font-size:var(--tf-sub-fs)}
 .gnb.tf-static .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--dd-hv)}
 
@@ -1913,7 +1913,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 }
 /* 위젯이 화면 아래쪽에 있을 때 — 서브메뉴가 화면 밖으로 잘리지 않도록 위로 펼침 (커스텀 요청) */
 .tf-fixed.tf-up .tf-sub{top:auto;bottom:calc(100% + 4px)}
-.tf-fixed .tf-grp:hover .tf-sub{display:block;animation:fade .15s}
+.tf-fixed .tf-grp.open .tf-sub{display:block;animation:fade .15s}
 .tf-fixed .tf-sub button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;color:var(--tf-sub-fg);font-size:var(--tf-sub-fs)}
 .tf-fixed .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--dd-hv)}
 .tf-fixed .tf-login{font-size:11.5px;color:var(--tf-menu-fg,var(--top-fg));padding:6px 14px;border:1px solid var(--line-dark);border-radius:999px;white-space:nowrap;flex-shrink:0}
