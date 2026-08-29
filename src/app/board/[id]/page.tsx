@@ -141,7 +141,7 @@ export default function BoardDetailPage() {
       ? { ...base, target: 'post', targetId: post.id, author: user.nickname, authorId: user.id }
       : { ...base, target: 'post', targetId: post.id, author: gName.trim(), authorId: '' };
     setCmtRows([...cmtRows, c]);
-my-custom
+    
 
     
     /* 알림 (v2.0 포크 제보 — 「댓글을 달아도 알림이 안 와요」): 게시판 댓글은 여태 알림을
@@ -171,7 +171,7 @@ my-custom
       }
     }
     setCmt(''); setReplyTo(null); setCmtFiles([]); setCmtUrls([]); setCmtSpoiler(false);
- main
+
   };
 
   // 댓글 삭제 — 대댓글도 함께. 옛 글 안에 있던 댓글이면 글 쪽에서 지운다 (v2.0)
