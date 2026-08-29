@@ -47,9 +47,18 @@ export function TopBar() {
     ? buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)], { loggedIn: !!user, isAdmin })
     : [];
   const [site, , siteLoaded] = useSiteSettings();    // 로고 텍스트/서브/정렬 (5.2)
-  // 트랜스폼 메뉴 위젯 (커스텀 요청) — 켜져 있으면 아래 기본 gnb 대신 TransformMenu가 그 자리를 대신한다
+  // 트랜스폼 메뉴 위젯 (커스텀 요청) — 켜져 있으면 아래 기본 gnb 대신 TransformMenu가 그 자리를 대신한다.
+  // 단, 모바일에서는 위젯을 띄우지 않고 항상 기본 메뉴로 (v2.0 사용자 요청 — 이 사이트의 모바일 기준 폭과 동일)
   const [tfCfg, , tfLoaded] = useTransformMenuSettings();
-  const tfOn = tfLoaded && tfCfg.enabled;
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width:620px)');
+    const f = () => setIsMobile(mq.matches);
+    f();
+    mq.addEventListener('change', f);
+    return () => mq.removeEventListener('change', f);
+  }, []);
+  const tfOn = tfLoaded && tfCfg.enabled && !isMobile;
   const avatarSrc = useBlobUrl(user?.avatarUrl);     // 프로필 이미지 (마이페이지, v1.9)
   const userRef = useRef<HTMLDivElement>(null);
 
