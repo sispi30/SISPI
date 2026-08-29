@@ -104,6 +104,25 @@ export function TransformMenu() {
     }
   };
 
+  // 위젯이 화면 아래쪽에 있으면 서브메뉴를 위로 펼침 (커스텀 요청) — 실제 렌더된 위치를 재서 판단하므로
+  // 앵커·드래그 어느 쪽으로 옮겨져 있어도, 화면 크기가 바뀌어도 항상 맞게 따라간다.
+  const [openUp, setOpenUp] = useState(false);
+  useEffect(() => {
+    if (cfg.positionType !== 'fixed') return;
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setOpenUp(r.top > window.innerHeight / 2);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg.positionType, cfg.anchorX, cfg.anchorY, cfg.posX, cfg.posY, cfg.direction, cfg.gap, pos, menu.length]);
+
   if (!loaded || !cfg.enabled) return null;
 
   // 상위 메뉴 사이 구분선 (커스텀 요청 — none/line/dot)
@@ -180,7 +199,7 @@ export function TransformMenu() {
   return createPortal(
     <div
       ref={wrapRef}
-      className={`tf-fixed ${isDragging ? 'is-dragging' : ''}`}
+      className={`tf-fixed ${isDragging ? 'is-dragging' : ''} ${openUp ? 'tf-up' : ''}`}
       style={{
         ...positionStyle,
         background: bg,

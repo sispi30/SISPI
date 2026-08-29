@@ -1911,6 +1911,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   position:absolute;left:0;top:calc(100% + 4px);min-width:120px;display:none;padding:5px;z-index:70;
   background:var(--tf-sub-bg);border-radius:var(--tf-sub-radius);box-shadow:var(--tf-sub-shadow);
 }
+/* 위젯이 화면 아래쪽에 있을 때 — 서브메뉴가 화면 밖으로 잘리지 않도록 위로 펼침 (커스텀 요청) */
+.tf-fixed.tf-up .tf-sub{top:auto;bottom:calc(100% + 4px)}
 .tf-fixed .tf-grp:hover .tf-sub{display:block;animation:fade .15s}
 .tf-fixed .tf-sub button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;color:var(--tf-sub-fg);font-size:var(--tf-sub-fs)}
 .tf-fixed .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--dd-hv)}
