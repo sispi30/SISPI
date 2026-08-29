@@ -144,8 +144,11 @@ export function TopBar() {
         {siteLoaded && site.subtitle && <small className={`al-${site.align}`}>{site.subtitle}</small>}
       </div>
 
-      {/* 트랜스폼 메뉴 위젯이 켜져 있으면 기존 gnb 대신 그 자리에 렌더 (static) — fixed는 화면에 별도로 뜬다 */}
+      {/* 트랜스폼 메뉴 위젯이 켜져 있으면 기존 gnb 대신 그 자리에 렌더 (static) — fixed는 화면에 별도로 뜬다.
+          fixed일 때는 이 자리에 아무것도 안 그려지므로, 우측 정렬용 flex:1 자리를 대신 채워준다
+          (없으면 알림·프로필이 로고 옆으로 딸려온다). */}
       {tfOn && <TransformMenu />}
+      {tfOn && tfCfg.positionType === 'fixed' && <div className="gnb" aria-hidden />}
       {!tfOn && (
       <nav className="gnb" ref={gnbRef}>
         {visMenu.map(item =>
