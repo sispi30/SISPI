@@ -1558,6 +1558,34 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   .bticket .bt-thumb{min-height:calc(118px*9/16)}
   .bticket .bt-title{font-size:calc(14.5px*var(--fs,1))}
 }
+
+/* ---------- 게시판 타래형 스킨 (그누보드 타래형/목록형 세션카드 게시판 포팅, 5.3) ---------- */
+/* 목록형(썸네일 그리드) 전용 — 여백 넉넉한 카드 그리드, 이미지 아래 제목만 표시.
+   진행중/완료 상태(말머리를 상태값으로 사용, 도토리 게시판과 같은 형식)는 썸네일 우상단 뱃지로 표시,
+   작성자·관리자가 클릭하면 다음 상태로 전환된다 */
+.bthread-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:20px}
+.bthread-gcard{cursor:var(--cur-pointer,pointer)}
+.bthread-gthumb{position:relative;border-radius:var(--radius-s);overflow:hidden;aspect-ratio:1/1;background:linear-gradient(135deg,#eceef1,#dfe2e7)}
+.bthread-gthumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bthread-gthumb.spoiler img{filter:blur(14px)}
+.bthread-gbadge{position:absolute;top:8px;left:8px;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.62);color:#fff;font-size:calc(10px*var(--fs,1));font-weight:700;letter-spacing:.05em}
+.bthread-gstatus{position:absolute;top:8px;right:8px;padding:3px 10px;border-radius:999px;font-size:calc(10px*var(--fs,1));font-weight:700;letter-spacing:.05em;cursor:var(--cur-pointer,pointer)}
+.bthread-gtitle{margin-top:8px;font-size:calc(12.5px*var(--fs,1));font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bthread-gtitle .cmt{color:var(--accent);font-size:calc(11px*var(--fs,1));margin-left:5px;font-weight:700}
+@media(max-width:620px){
+  .bthread-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px}
+}
+
+/* TOP 버튼 — 타래형 게시판에서 일정 스크롤 이후 노출, 클릭 시 맨 위로 부드럽게 이동 */
+.scroll-top-btn{
+  position:fixed;right:24px;bottom:28px;z-index:40;
+  padding:9px 16px;border-radius:999px;border:none;cursor:var(--cur-pointer,pointer);
+  background:var(--btn-dark,var(--ink));color:var(--btn-dark-fg,#fff);
+  font-size:calc(11.5px*var(--fs,1));font-weight:700;letter-spacing:.04em;
+  box-shadow:var(--sh-md);transition:.15s;
+}
+.scroll-top-btn:hover{transform:translateY(-2px)}
+@media(max-width:620px){.scroll-top-btn{right:14px;bottom:78px;padding:8px 13px;font-size:calc(10.5px*var(--fs,1))}}
 /* 본문 렌더 (MD/HTML 공통) */
 .post-body{font-size:calc(14.5px*var(--fs,1));line-height:1.85;color:#2c3037;word-break:break-word}
 .post-body h1,.post-body h2,.post-body h3{margin:18px 0 8px;line-height:1.4}
