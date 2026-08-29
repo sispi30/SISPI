@@ -286,7 +286,7 @@ function CharDetailInner() {
             </>
           ) : (
             <>
-              <h3>{curTab?.title}</h3>
+              <h3 className="tab-tt">{curTab?.title}</h3>
               {curTab?.subtitle && <div className="sub">{curTab.subtitle}</div>}
               <div className="prose" dangerouslySetInnerHTML={{ __html: tabHtml }} />
             </>

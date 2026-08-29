@@ -8,7 +8,7 @@
 // **행 주인(authorId)을 받는 사람으로** 적으므로 서버 규칙상 받는 사람과 관리자만 읽고 지울 수 있다.
 // 받는 쪽은 접속·벨 열기·실시간 구독으로 받아 가고(TopBar), 기기 목록은 그대로 캐시로 쓴다.
 import { newId } from './postStore';
-import { isServerMode } from './backend';
+import { isServerMode, backend } from './backend';
 import { fetchList, syncList } from './db';
 import { currentUserId } from './currentUser';
 
@@ -105,6 +105,33 @@ export function pushNotif(n: {
   };
   write([row, ...list]);
   sendToServer(row);
+}
+
+/**
+ * 관리자(들)에게 알림 (v2.0 포크 제보 후 정비).
+ *
+ * 예전에는 받는 사람을 문자 그대로 'admin'으로 적었다 — 목업 관리자 id라서 **서버 모드에서는
+ * 실제 관리자 uid와 절대 일치하지 않아** 방명록 알림이 관리자에게 영영 표시되지 않았다.
+ * 회원 목록(공개 읽기)에서 role이 admin인 실제 id를 찾아 그 앞으로 보낸다. 여러 명이면 전원,
+ * 지금 로그인한 사람 본인은 뺀다. 브라우저 저장 모드에서는 지금까지처럼 'admin'(목업 id).
+ */
+let adminIdsCache: string[] | null = null;
+async function adminIds(): Promise<string[]> {
+  if (!isServerMode()) return ['admin'];
+  if (adminIdsCache) return adminIdsCache;
+  try {
+    const ms = await backend()!.listMembers();
+    adminIdsCache = ms.filter(m => m.role === 'admin').map(m => m.id);
+  } catch { return []; }   // 캐시하지 않는다 — 다음 알림 때 다시 시도
+  return adminIdsCache;
+}
+export function notifyAdmins(n: { type: NotifType; title: string; body?: string; href: string; dedupeKey?: string }) {
+  void adminIds().then(ids => {
+    for (const id of ids) {
+      if (id === currentUserId()) continue;   // 본인 행동은 본인에게 알리지 않는다
+      pushNotif({ ...n, toUserId: id });
+    }
+  });
 }
 
 /* ---------- 서버 배달 (v2.0) ---------- */

@@ -1045,7 +1045,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
    하단 여백을 계산값으로 고정 — viewH(100vh-58) - top(10) - artH(100vh-150) = 82px */
 .page-char-detail{padding-bottom:82px}
 .profile-info{padding:24px;overflow:auto}
-.profile-info h3{font-family:var(--serif);font-size:calc(19px*var(--fs,1));letter-spacing:.14em;margin-bottom:4px}
+/* 세리프는 **탭 제목에만** (v2.0 사용자 제보) — 예전 `.profile-info h3`는 본문(.prose)에
+   직접 쓴 h3까지 잡아서, 본문 폰트를 바꿔도 h3만 세리프로 남았다 */
+.profile-info h3.tab-tt{font-family:var(--serif);font-size:calc(19px*var(--fs,1));letter-spacing:.14em;margin-bottom:4px}
 .profile-info .sub{font-size:calc(11px*var(--fs,1));color:var(--faint);letter-spacing:.1em;margin-top:7px;margin-bottom:16px}
 .spec{display:grid;grid-template-columns:76px 1fr;gap:7px 10px;font-size:calc(12.5px*var(--fs,1));margin-bottom:18px}
 .spec dt{color:var(--faint);letter-spacing:.06em}

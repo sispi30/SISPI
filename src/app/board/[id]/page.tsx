@@ -19,6 +19,7 @@ import { GuestIdBar } from '@/components/ui/GuestId';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle } from '@/components/ui/PageText';
 import { Lightbox } from '@/components/ui/Lightbox';
+import { pushNotif } from '@/lib/notifStore';
 
 const FOLD_LABEL = { spoiler: '스포일러 주의', adult: '수위 주의' };
 
@@ -140,7 +141,37 @@ export default function BoardDetailPage() {
       ? { ...base, target: 'post', targetId: post.id, author: user.nickname, authorId: user.id }
       : { ...base, target: 'post', targetId: post.id, author: gName.trim(), authorId: '' };
     setCmtRows([...cmtRows, c]);
+my-custom
+
+    
+    /* 알림 (v2.0 포크 제보 — 「댓글을 달아도 알림이 안 와요」): 게시판 댓글은 여태 알림을
+       **만들지도 않았다** (로드비·방명록·역극만 있었다). 글쓴이에게, 답글이면 그 댓글 주인에게도. */
+    const me = user?.id ?? '';
+    if (post.authorId && post.authorId !== me) {
+      pushNotif({
+        type: 'comment', toUserId: post.authorId, href: `/board/${post.id}`,
+        title: `「${post.title}」에 새 댓글`, body: `${c.author} — ${c.text.slice(0, 50)}`,
+      });
+    }
+    if (replyTo) {
+      /* 뿌리 댓글 주인만이 아니라 **그 대화에 답글을 단 전원**에게 (v2.0 포크 제보 —
+         관리자가 자기 뿌리 댓글에 답하면, 사이에 답글을 단 회원이 아무것도 못 받았다).
+         글쓴이는 위에서 이미 받았으므로 뺀다. */
+      const rootAuthor = comments.find(x => x.id === replyTo)?.authorId;
+      const seen = new Set<string>();
+      for (const t of comments.filter(x => x.id === replyTo || x.parentId === replyTo)) {
+        const to = t.authorId;
+        if (!to || to === me || to === post.authorId || seen.has(to)) continue;
+        seen.add(to);
+        pushNotif({
+          type: 'comment', toUserId: to, href: `/board/${post.id}`,
+          title: to === rootAuthor ? '내 댓글에 답글이 달렸습니다' : '참여한 댓글에 새 답글이 달렸습니다',
+          body: `${c.author} — ${c.text.slice(0, 50)}`,
+        });
+      }
+    }
     setCmt(''); setReplyTo(null); setCmtFiles([]); setCmtUrls([]); setCmtSpoiler(false);
+ main
   };
 
   // 댓글 삭제 — 대댓글도 함께. 옛 글 안에 있던 댓글이면 글 쪽에서 지운다 (v2.0)
@@ -172,7 +203,6 @@ export default function BoardDetailPage() {
     </div>
   );
 
-  // 세션 게시판(타래형) 댓글 — 감상타래 이어쓰기와 같은 카드형, 대댓글 없이 시간순 (5.5)
   // 세션 게시판(타래형) 댓글 — 감상타래 이어쓰기와 같은 카드형, 대댓글 없이 시간순 (5.5)
   // 스포일러 접기 (5.6) — 글 접기(veil)와 동일한 방식, 댓글별로 따로 펼침 상태를 기억한다
   const toggleCmtOpen = (id: string) =>

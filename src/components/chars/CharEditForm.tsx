@@ -265,11 +265,15 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
             setView(id); // 바로 전용 편집 화면으로
           }}>＋ ADD TAB</button>
 
-        {/* 상대 캐릭터 회원 권한 — 역극 플레이 / 편집까지 (3차 회원-캐릭터 연결, v1.9) — AU 편집에선 base 소관.
+        {/* 회원 권한 — 역극 플레이 / 편집까지 (3차 회원-캐릭터 연결, v1.9) — AU 편집에선 base 소관.
             **관리자만** (v2.0 사용자 확정) — 편집 권한을 받은 회원이 이 화면에 들어와도
             권한 관리는 못 한다. 열어 두면 자기가 받은 권한으로 남에게 권한을 나눠 줄 수 있다.
-            저장 시에는 기존 grants가 그대로 보존된다(이 화면에서 건드리지 않으므로). */}
-        {!auMode && initial?.own === false && isAdmin && (
+            저장 시에는 기존 grants가 그대로 보존된다(이 화면에서 건드리지 않으므로).
+            **own 여부와 무관하게** (v2.0 포크 제보) — 예전에는 상대 캐릭터(own=false)에만 떠서,
+            상대방 캐릭터까지 정식 캐릭터로 직접 등록해 쓰는 홈에서는 권한을 줄 방법이 없었다.
+            관리자 전용이 된 지금은 이 제한이 있을 이유가 없다 — 권한 판정(charGrant·역극 참여)은
+            원래부터 own을 보지 않는다. */}
+        {!auMode && isAdmin && (
           <>
             <label className="k-label" style={{ margin: '6px 0 0' }}>회원 권한 — 역극 플레이 · 캐릭터 편집</label>
             <GrantsEditor value={grants} onChange={setGrants} />

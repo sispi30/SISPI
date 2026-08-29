@@ -226,6 +226,25 @@ function RoadviewPageInner() {
       ? { ...base, author: guest.name, authorId: '' }
       : { ...base, author: user!.nickname, authorId: user!.id };
     setCmtRows([...cmtRows, c]);
+    // 답글이면 뿌리 주인만이 아니라 **그 대화에 답글을 단 전원**에게 (v2.0 포크 제보 — 게시판과 동일).
+    // 그림 작성자는 아래에서 이미 받으므로 뺀다
+    if (parentId) {
+      const target0 = items.find(it => it.id === id);
+      const thread = commentsFor(cmtRows, 'road', id, target0?.comments ?? [])
+        .filter(x => x.id === parentId || x.parentId === parentId);
+      const rootAuthor = thread.find(x => x.id === parentId)?.authorId;
+      const seen = new Set<string>();
+      for (const t of thread) {
+        const to = t.authorId;
+        if (!to || to === (user?.id ?? '') || to === target0?.authorId || seen.has(to)) continue;
+        seen.add(to);
+        pushNotif({
+          type: 'comment', toUserId: to, href: '/loadb',
+          title: to === rootAuthor ? '내 댓글에 답글이 달렸습니다' : '참여한 댓글에 새 답글이 달렸습니다',
+          body: c.author + ' — ' + text.slice(0, 50),
+        });
+      }
+    }
     // 알림 (4.13) — 그림 작성자에게 (본인 댓글 제외)
     const target = items.find(it => it.id === id);
     if (target && target.authorId && target.authorId !== (user?.id ?? '')) {
