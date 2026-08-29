@@ -535,9 +535,9 @@ export function BgmPlayer() {
             <button className={`ic-btn ${shuffle ? 'on' : ''}`} onClick={() => setShuffle(v => !v)} data-tip="셔플"><IcShuffle /></button>
             <button className={`ic-btn ${crossPlaylist ? 'on' : ''}`} onClick={() => setCrossPlaylist(v => !v)} data-tip="재생목록 넘나들기"><IcCross /></button>
             <div className="tr-btns">
-              <button onClick={prev} data-tip="이전"><IcPrev /></button>
+              <button onClick={prev} data-tip="이전"><IcNext /></button>
               <button className="pp" onClick={togglePlay} data-tip={playing ? '일시정지' : '재생'}>{playing ? <IcPause /> : <IcPlay />}</button>
-              <button onClick={next} data-tip="다음"><IcNext /></button>
+              <button onClick={next} data-tip="다음"><IcPrev /></button>
             </div>
             <button className={`ic-btn ${repeatMode !== 'off' ? 'on' : ''}`} onClick={cycleRepeat}
               data-tip={repeatMode === 'off' ? '반복 꺼짐' : repeatMode === 'all' ? '전체 반복' : '한 곡 반복'}>

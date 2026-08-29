@@ -263,6 +263,8 @@ a{color:inherit;text-decoration:none}
 .bgm2 .tr-btns button{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--bgm-ic)}
 .bgm2 .tr-btns button:hover{color:var(--bgm-fg)}
 .bgm2 .tr-btns .pp{width:36px;height:36px;background:var(--bgm-fg);color:var(--bgm-bg)}
+.bgm2 .tr-btns .pp:hover{color:var(--bgm-bg)}
+.bgm2 .tr-btns .pp svg{stroke:none;fill:#fff}
 .bgm2 .tr-btns .pp:active{transform:scale(.92)}
 .bgm2 .vol2{position:relative;flex:0 0 auto}
 .bgm2 .vol2-pop{position:absolute;bottom:32px;right:-6px;background:var(--bgm-bg);border:1px solid var(--line-dark);border-radius:10px;padding:5px 6px;box-shadow:var(--sh-dd);height:80px;display:flex;align-items:flex-end}
