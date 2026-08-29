@@ -75,9 +75,11 @@ function PlaylogPageInner() {
   // 편집모드: 저장 순서 전체 표시 (드래그 인덱스와 1:1 매칭)
   const shown = editOn ? records : sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // 모바일 전용 — URL 열이 없으므로 Playtime 밑줄 탭으로 로그 이동 (4.16)
+  // 모바일 전용 — URL 열이 없으므로 Playtime 밑줄 탭으로 로그 이동 (4.16 / 세션 게시판 연동 5.4)
   const openLogMobile = (r: PlayRecord) => {
-    if (r.logId && window.matchMedia('(max-width:620px)').matches) router.push(`/trpg/${r.logId}`);
+    if (!window.matchMedia('(max-width:620px)').matches) return;
+    if (r.postId) router.push(`/board/${r.postId}`);
+    else if (r.logId) router.push(`/trpg/${r.logId}`);
   };
 
   return (
@@ -126,21 +128,24 @@ function PlaylogPageInner() {
                 {show('date') && <td className="td-date">{r.date ? r.date.replace(/-/g, '.') : ''}</td>}
                 {show('scenario') && (
                   <td className="td-sc">
-                    {r.scenarioLink
-                      ? <a href={r.scenarioLink} target="_blank" rel="noreferrer" data-tip="시나리오 링크 (새 탭)">{r.scenario}</a>
-                      : r.scenario}
+                    {r.postId ? (
+                      <a style={{ cursor: 'var(--cur-pointer,pointer)' }} data-tip="세션 게시판 글 보기"
+                        onClick={() => router.push(`/board/${r.postId}`)}>{r.scenario}</a>
+                    ) : r.scenarioLink ? (
+                      <a href={r.scenarioLink} target="_blank" rel="noreferrer" data-tip="시나리오 링크 (새 탭)">{r.scenario}</a>
+                    ) : r.scenario}
                   </td>
                 )}
                 {show('writer') && <td>{r.writer}</td>}
                 {show('with') && <td>{r.withText}</td>}
                 {show('role') && <td className="td-role">{r.role}</td>}
                 {show('playtime') && (
-                  <td className={`td-pt ${r.logId ? 'linked' : ''}`}
+                  <td className={`td-pt ${(r.logId || r.postId) ? 'linked' : ''}`}
                     onClick={() => openLogMobile(r)}>
                     {r.playtime}
                   </td>
                 )}
-                {/* 클립 칸 — 외부 URL 또는 백업 로그 연결 (4.16) */}
+                {/* 클립 칸 — 외부 URL 또는 백업 로그 연결 (4.16). 세션 게시판 글 연결은 Scenario 제목 클릭으로 이동 (5.4) */}
                 {show('url') && (
                   <td className="td-url">
                     {r.url ? (
