@@ -52,6 +52,7 @@ export const DEFAULT_MENU: MenuItem[] = [
     children: [
       { label: '캐릭터', href: '/tchars' },
       { label: '로그 백업', href: '/trpg' },
+      { label: '세션 게시판', href: '/board?b=tsession' },
       { label: '도토리', href: '/dotori' },
       { label: '플레이기록', href: '/playlog' },
     ],
