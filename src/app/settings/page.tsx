@@ -685,7 +685,7 @@ function BoardPane() {
       <div className="d">게시판 생성·삭제와 게시판별 스킨·권한·말머리 — 변경 즉시 메뉴·목록·글쓰기에 반영</div>
 
       <h3 style={{ marginTop: 20 }}>게시판 목록</h3>
-      <div className="d">⠿ 드래그로 메뉴 순서 · 이름은 상단 메뉴와 페이지 타이틀에 그대로 표시 · 리스트 스킨(기본형/티켓형) 게시판마다 지정 — 글쓰기·댓글 권한은 메뉴 관리에서</div>
+      <div className="d">⠿ 드래그로 메뉴 순서 · 이름은 상단 메뉴와 페이지 타이틀에 그대로 표시 · 리스트 스킨(기본형/티켓형/타래형) 게시판마다 지정 — 글쓰기·댓글 권한은 메뉴 관리에서</div>
       <DragList items={boards} keyOf={b => b.id} onReorder={setBoards}
         render={b => (
           <div className="set-row" style={{ width: '100%' }}>
@@ -697,9 +697,11 @@ function BoardPane() {
             </div>
             <div className="cp-group" style={{ justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <div className="mini-seg">
-                {(['list', 'ticket'] as BoardSkin[]).map(s => (
+                {(['list', 'ticket', 'thread'] as BoardSkin[]).map(s => (
                   <button key={s} className={b.skin === s ? 'on' : ''}
-                    onClick={() => patchBoard(b.id, { skin: s })}>{s === 'list' ? '기본형' : '티켓형'}</button>
+                    onClick={() => patchBoard(b.id, { skin: s })}>
+                    {s === 'list' ? '기본형' : s === 'ticket' ? '티켓형' : '타래형'}
+                  </button>
                 ))}
               </div>
               {/* 목록 글씨색 (v1.9) — 미지정이면 테마 기본색 */}
