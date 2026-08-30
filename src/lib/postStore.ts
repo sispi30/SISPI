@@ -89,6 +89,9 @@ export interface Post {
   thumbSrc?: string;     // 티켓 스킨 대표 이미지 — 본문에 삽입한 이미지 중 선택 (v1.9)
   thumbCrop?: { x: number; y: number; scale: number };  // 대표 썸네일 크롭 (16:9)
   session?: SessionMeta; // 세션 게시판(타래형) ↔ 플레이 기록 연동 (5.4)
+  /** 배너 게시판 전용 — 배너 클릭 시 이동할 외부 URL (그누보드 write.skin.php의 wr_link2에 대응, 5.7).
+   *  종류(이웃/공지/동맹/헤더)는 category(말머리)를 그대로 쓰고, 배너 이미지는 thumbSrc를 재사용한다. */
+  bannerLink?: string;
 }
 
 export interface GuestEntry {

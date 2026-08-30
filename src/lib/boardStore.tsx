@@ -123,7 +123,8 @@ export function badgeFor(st: BoardSettings, p: { notice?: boolean; secret?: bool
 // 같은 유형(리스트형) 게시판을 여러 개 — 게시판별 이름·말머리·권한·리스트 스킨(기본형/티켓형/타래형).
 // 글은 ohome.board.v1 한 곳에 boardId로 구분 저장(게시판 삭제 시에도 글 데이터는 보존 — 3장 원칙).
 // 타래형(thread) — 그누보드 타래형/목록형 세션카드 게시판 스킨을 이 저장소 방식으로 옮긴 것 (TRPG 세션 게시판).
-export type BoardSkin = 'list' | 'ticket' | 'thread';
+// 배너형(banner) — 그누보드 배너 게시판(이웃/공지/동맹 배너 · 헤더 이미지) 스킨을 옮긴 것 (5.7).
+export type BoardSkin = 'list' | 'ticket' | 'thread' | 'banner';
 export type BoardPerm = 'guest' | 'member' | 'admin';
 
 export interface Board {
@@ -146,6 +147,14 @@ export const DEFAULT_TSESSION_CATS: BoardBadge[] = [
   { id: 'tsession-cat-완료', label: '완료', bg: '#3c434d', border: '#3c434d', fg: '#ffffff' },
 ];
 
+/** 배너 게시판 — 종류(이웃/공지/동맹 배너 · 헤더 이미지)를 말머리(category)로 사용 (그누보드 write.skin.php 이식, 5.7) */
+export const DEFAULT_BANNER_CATS: BoardBadge[] = [
+  { id: 'banner-cat-이웃', label: '이웃 배너', bg: '#eef0f2', border: '#d7dae0', fg: '#5d636d' },
+  { id: 'banner-cat-공지', label: '공지 배너', bg: '#1d2025', border: '#1d2025', fg: '#ffffff' },
+  { id: 'banner-cat-동맹', label: '동맹 배너', bg: '#eef0f2', border: '#d7dae0', fg: '#5d636d' },
+  { id: 'banner-cat-헤더', label: '헤더 이미지', bg: '#a63a45', border: '#a63a45', fg: '#ffffff' },
+];
+
 export const DEFAULT_BOARDS: Board[] = [{
   id: MAIN_BOARD_ID, name: '리스트',
   desc: 'MD / HTML 작성 지원 · 스크립트 실행 불허 · 말머리 · 비밀글 · 접기',
@@ -154,6 +163,10 @@ export const DEFAULT_BOARDS: Board[] = [{
   id: 'tsession', name: '세션 게시판',
   desc: '목록형(썸네일 그리드) · 이미지 · 스포일러 접기 · 댓글 · 진행중/완료 상태 구분 · 관리자 전용 글쓰기(플레이 기록 연동)',
   skin: 'thread', permWrite: 'admin', permComment: 'member', cats: DEFAULT_TSESSION_CATS,
+}, {
+  id: 'banner', name: '배너',
+  desc: '이웃·공지·동맹 배너와 헤더 이미지를 모아 보는 페이지 · 이웃 배너는 누구나 등록 신청 가능',
+  skin: 'banner', permWrite: 'member', permComment: 'admin', cats: DEFAULT_BANNER_CATS,
 }];
 
 /** 저장된 게시판 목록에 원래 있어야 할 기본 게시판(세션 게시판 등)이 빠져 있으면 뒤에 채워 넣는다.

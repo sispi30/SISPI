@@ -14,6 +14,7 @@ import {
 import { SearchBar, Pager } from '@/components/ui/Kit';
 import { CropImg } from '@/components/ui/CropEditor';
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
+import { BannerBoardView } from '@/components/board/BannerBoard';
 
 const PER_PAGE = 10;
 
@@ -125,22 +126,28 @@ function BoardInner() {
         <EditableDesc k={board.id === MAIN_BOARD_ID ? 'board-desc' : `board-desc-${board.id}`} def={board.desc} />
       </div>
       <div className="toolrow">
-        <div className="seg">
-          {(board.skin === 'thread' ? ['전체', ...board.cats.map(x => x.label)] : ['전체', '공지', ...board.cats.map(x => x.label)]).map(c => (
-            <button key={c} className={cat === c ? 'on' : ''} onClick={() => { setCat(c); setPage(1); }}>
-              {c}{board.skin === 'thread' && <small style={{ marginLeft: 5, opacity: .7 }}>{countFor(c)}</small>}
-            </button>
-          ))}
-        </div>
+        {board.skin === 'banner' ? <div /> : (
+          <div className="seg">
+            {(board.skin === 'thread' ? ['전체', ...board.cats.map(x => x.label)] : ['전체', '공지', ...board.cats.map(x => x.label)]).map(c => (
+              <button key={c} className={cat === c ? 'on' : ''} onClick={() => { setCat(c); setPage(1); }}>
+                {c}{board.skin === 'thread' && <small style={{ marginLeft: 5, opacity: .7 }}>{countFor(c)}</small>}
+              </button>
+            ))}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <SearchBar onSearch={v => { setQ(v); setPage(1); }} />
+          {board.skin !== 'banner' && <SearchBar onSearch={v => { setQ(v); setPage(1); }} />}
           {allow(board.permWrite) && !!user && (
             <button className="btn btn-dark" onClick={() => router.push(`/board/write?b=${board.id}`)}>✎ WRITE</button>
           )}
         </div>
       </div>
 
-      {board.skin === 'thread' ? (
+      {board.skin === 'banner' ? (
+        /* 배너 게시판 (5.7) — 그누보드 배너 게시판 스킨 이식. 헤더/공지/동맹/이웃 배너를 구역별로 표시하는
+           별도 배너 전용 페이지 — 필터·페이지네이션 없이 이 게시판에 속한 배너를 전부 보여준다 */
+        <BannerBoardView board={board} posts={visible} setPosts={setPosts} isAdmin={isAdmin} user={user} />
+      ) : board.skin === 'thread' ? (
         /* 타래형 스킨(목록형 전용) — 썸네일 그리드 + 진행중/완료 상태 배지(작성자·관리자는 클릭해 전환) */
         <div className="bthread-grid">
           {pageList.map(p => {
@@ -237,7 +244,7 @@ function BoardInner() {
           )}
         </div>
       )}
-      <Pager page={page} total={totalPages} onChange={setPage} />
+      {board.skin !== 'banner' && <Pager page={page} total={totalPages} onChange={setPage} />}
       {board.skin === 'thread' && <ScrollTopButton />}
     </section>
   );

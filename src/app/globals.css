@@ -1638,6 +1638,28 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   .bthread-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px}
 }
 
+/* ---------- 게시판 배너형 스킨 (그누보드 배너 게시판 이식, 5.7) ---------- */
+/* 헤더 이미지 — 전체 폭, 아래 헤더 문구(선택) */
+.bbanner-header{position:relative;border-radius:var(--radius);overflow:hidden;margin-bottom:22px;background:var(--panel)}
+.bbanner-header-img{position:relative;width:100%;aspect-ratio:21/6;background:linear-gradient(135deg,#eceef1,#dfe2e7)}
+.bbanner-header-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bbanner-header-text{padding:16px 20px}
+@media(max-width:620px){.bbanner-header-img{aspect-ratio:16/9}}
+/* 종류별 구역(공지/동맹/이웃) */
+.bbanner-sec{margin-bottom:22px}
+.bbanner-sec h4{font-size:calc(12px*var(--fs,1));font-weight:700;letter-spacing:.05em;color:var(--faint);margin:0 0 10px;text-transform:uppercase}
+.bbanner-row{display:flex;flex-wrap:wrap;gap:14px}
+.bbanner-card{position:relative;width:180px;aspect-ratio:3/1;border-radius:var(--radius-s);overflow:hidden;cursor:var(--cur-pointer,pointer);background:linear-gradient(135deg,#eceef1,#dfe2e7);box-shadow:var(--sh-sm);transition:.15s}
+.bbanner-card:hover{transform:translateY(-2px)}
+.bbanner-img{position:absolute;inset:0}
+.bbanner-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* 작성자·관리자 전용 수정/삭제 오버레이 — 평소엔 숨겼다가 카드에 올리면 표시 */
+.bbanner-manage{position:absolute;bottom:0;left:0;right:0;display:flex;gap:6px;padding:5px 7px;background:rgba(0,0,0,.55);opacity:0;transition:.15s}
+.bbanner-card:hover .bbanner-manage{opacity:1}
+.bbanner-manage button{flex:1;border:none;background:rgba(255,255,255,.16);color:#fff;border-radius:5px;padding:4px 0;font-size:10px;font-weight:700;letter-spacing:.04em;cursor:var(--cur-pointer,pointer)}
+.bbanner-manage button:hover{background:rgba(255,255,255,.3)}
+@media(max-width:620px){.bbanner-card{width:140px}}
+
 /* TOP 버튼 — 타래형 게시판에서 일정 스크롤 이후 노출, 클릭 시 맨 위로 부드럽게 이동 */
 .scroll-top-btn{
   position:fixed;right:24px;bottom:28px;z-index:40;

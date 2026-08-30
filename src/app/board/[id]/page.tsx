@@ -1,7 +1,7 @@
 'use client';
 // 게시글 상세 (4.2) — 본문 렌더(격리 새니타이즈) · 접기 · 댓글+대댓글
 // 세션 게시판(타래형)은 댓글도 감상타래와 같은 이어쓰기 방식(사진 최대 4장, 대댓글 없음) — 5.5
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useHrefBlock } from '@/components/shell/MenuGuard';
 import { extraBoardHref } from '@/lib/menuStore';
@@ -77,8 +77,14 @@ export default function BoardDetailPage() {
   const blocked = useHrefBlock(post && (bid === MAIN_BOARD_ID ? '/board' : extraBoardHref(bid)));
   // loaded 이후에만 본문 렌더 (SSR/하이드레이션 불일치 방지)
   const html = useMemo(() => (post && loaded ? renderBody(post.mode, post.body) : ''), [post, loaded]);
+  // 배너 게시판 (5.7) — 개별 보기 페이지가 없다(그누보드 view.skin.php와 동일하게 목록으로 리다이렉트)
+  const bannerBoard = boards.find(b => b.id === bid);
+  useEffect(() => {
+    if (bannerBoard?.skin === 'banner') router.replace(boardHref(bannerBoard.id));
+  }, [bannerBoard, router]);
 
   // 막힌 곳이면 여기서 되돌아간다 — 훅을 모두 부른 뒤여야 렌더마다 개수가 같다
+  if (bannerBoard?.skin === 'banner') return <section className="page" />;
   if (blocked) return blocked;
   if (!loaded) return <section className="page" />;
   if (!post) {
