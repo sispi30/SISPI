@@ -1644,12 +1644,13 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .bbanner-header-img{display:inline-block;max-width:420px;width:100%}
 .bbanner-header-img img{display:block;width:100%;height:auto}
 .bbanner-header-text{padding-top:10px}
-/* 종류별 구역(공지/동맹/이웃) — 배너 이미지는 200×40 고정, 가운데 정렬 (v2.1~2.2 사용자 요청) */
+/* 종류별 구역(공지/동맹/이웃) — 배너 이미지는 200×40 고정, 가운데 정렬, 라벨 텍스트는 표시하지 않는다 (v2.1~2.3 사용자 요청) */
 .bbanner-sec{margin-bottom:22px;text-align:center}
-.bbanner-sec h4{font-size:calc(12px*var(--fs,1));font-weight:700;letter-spacing:.05em;color:var(--faint);margin:0 0 10px;text-transform:uppercase}
 .bbanner-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
 /* overflow:hidden은 이미지 쪽(.bbanner-img)에만 걸어야 한다 — 카드 자체에 걸면 위로 뜨는 툴팁이 함께 잘린다 (v2.2 버그 수정) */
-.bbanner-card{position:relative;width:200px;height:40px;cursor:var(--cur-pointer,pointer);transition:.15s}
+/* <a>/<button> 둘 다로 렌더되므로 기본 테두리·배경·글꼴을 초기화한다 (v2.3) */
+.bbanner-card{display:inline-block;position:relative;width:200px;height:40px;cursor:var(--cur-pointer,pointer);
+  transition:.15s;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-decoration:none}
 .bbanner-card:hover{transform:translateY(-2px)}
 .bbanner-img{position:absolute;inset:0;border-radius:6px;overflow:hidden;background:linear-gradient(135deg,#eceef1,#dfe2e7);box-shadow:var(--sh-sm)}
 .bbanner-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -1660,6 +1661,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .bbanner-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
   border:5px solid transparent;border-top-color:#1d2025}
 .bbanner-card:hover .bbanner-tip{opacity:1;transform:translateX(-50%) translateY(0)}
+/* 공지 배너 클릭 시 — 검은 배경을 씌우고 이미지 주소가 복사되었음을 안내 (v2.3) */
+.bbanner-copied{position:absolute;inset:0;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:0 6px;background:rgba(8,10,16,.74);color:#fff;font-size:10.5px;font-weight:700;
+  line-height:1.3;z-index:6;pointer-events:none}
 @media(max-width:620px){.bbanner-card{width:160px;height:32px}}
 
 /* WRITE 옆 [관리] 토글로 열리는 배너 관리 패널 — 수정/삭제는 여기서만 (v2.1) */

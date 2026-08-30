@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { useLocalList, BOARD_SEED, Post, newId } from '@/lib/postStore';
 import { Board, boardHref } from '@/lib/boardStore';
 import { renderBody } from '@/lib/sanitize';
-import { putBlob, BlobImg } from '@/lib/blobStore';
+import { putBlob, BlobImg, useBlobUrl } from '@/lib/blobStore';
 import { KInput } from '@/components/ui/Kit';
 import { RichEditor } from '@/components/ui/RichEditor';
 import { useToast } from '@/components/ui/Toast';
@@ -212,14 +212,44 @@ export function BannerWriteForm({ board, editPid }: { board: Board; editPid?: st
 /* ================= 목록(전용 페이지) 뷰 ================= */
 
 /** 배너 이미지 카드 — 200×40 고정, 마우스오버 시 수정/삭제 대신 사이트명 툴팁만 표시.
- *  클릭하면 등록된 클릭 URL을 새창으로 연다. 수정/삭제는 여기서 하지 않고 관리 패널에서 한다 */
-function BannerCard({ post, onClick }: { post: Post; onClick?: () => void }) {
+ *  mode='link'(동맹·이웃 배너): 실제 <a target="_blank">로 클릭 URL을 새창에 연다(팝업 차단 이슈 없게).
+ *  mode='copy'(공지 배너): 클릭하면 이미지 주소를 클립보드에 복사하고 잠깐 검은 배경 안내를 덮어 보여준다.
+ *  수정/삭제는 여기서 하지 않고 관리 패널에서 한다 */
+function BannerCard({ post, mode }: { post: Post; mode: 'link' | 'copy' }) {
   const tip = post.title && post.title !== '-' ? post.title : '';
-  return (
-    <div className="bbanner-card" onClick={onClick}>
+  const imgUrl = useBlobUrl(post.thumbSrc);
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+
+  const inner = (
+    <>
       <div className="bbanner-img"><BlobImg fileRef={post.thumbSrc} /></div>
       {tip && <span className="bbanner-tip">{tip}</span>}
-    </div>
+      {mode === 'copy' && copied && <span className="bbanner-copied">배너가 복사되었습니다.</span>}
+    </>
+  );
+
+  if (mode === 'copy') {
+    const doCopy = async () => {
+      if (!imgUrl) return;
+      try { await navigator.clipboard.writeText(imgUrl); } catch { /* 클립보드 권한이 없으면 조용히 무시 */ }
+      setCopied(true);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopied(false), 1600);
+    };
+    return <button type="button" className="bbanner-card" onClick={doCopy}>{inner}</button>;
+  }
+  return (
+    <a
+      className="bbanner-card"
+      href={post.bannerLink || undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => { if (!post.bannerLink) e.preventDefault(); }}
+    >
+      {inner}
+    </a>
   );
 }
 
@@ -258,13 +288,12 @@ export function BannerBoardView({ board, posts, setPosts, isAdmin, user, manageO
   const canManage = (p: Post) => isAdmin || (!!p.authorId && p.authorId === user?.id);
   const goEdit = (p: Post) => router.push(`/board/write?b=${board.id}&edit=${p.id}`);
   const goDelete = (p: Post) => del.ask('배너를 삭제하시겠습니까?', () => setPosts(posts.filter(x => x.id !== p.id)));
-  const openLink = (p: Post) => { if (p.bannerLink) window.open(p.bannerLink, '_blank', 'noopener,noreferrer'); };
 
-  const row = (label: string, list: Post[]) => (list.length === 0 ? null : (
+  // 공지 배너는 클릭 시 이미지 주소 복사, 동맹·이웃 배너는 클릭 URL을 새창으로 (v2.3 사용자 요청)
+  const row = (label: string, list: Post[], mode: 'link' | 'copy') => (list.length === 0 ? null : (
     <div className="bbanner-sec">
-      <h4>{label}</h4>
       <div className="bbanner-row">
-        {list.map(p => <BannerCard key={p.id} post={p} onClick={() => openLink(p)} />)}
+        {list.map(p => <BannerCard key={p.id} post={p} mode={mode} />)}
       </div>
     </div>
   ));
@@ -297,9 +326,9 @@ export function BannerBoardView({ board, posts, setPosts, isAdmin, user, manageO
           )}
         </div>
       )}
-      {row(NOTICE_LABEL, notice)}
-      {row(ALLIANCE_LABEL, alliance)}
-      {row(NEIGHBOR_LABEL, neighbor)}
+      {row(NOTICE_LABEL, notice, 'copy')}
+      {row(ALLIANCE_LABEL, alliance, 'link')}
+      {row(NEIGHBOR_LABEL, neighbor, 'link')}
       {empty && (
         <div className="panel" style={{ padding: 36, textAlign: 'center', fontSize: 12.5, color: 'var(--faint)' }}>등록된 배너가 없습니다</div>
       )}
