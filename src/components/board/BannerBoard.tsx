@@ -277,7 +277,12 @@ export function BannerBoardView({ board, posts, setPosts, isAdmin, user, manageO
 }) {
   const router = useRouter();
   const del = useConfirmDelete();
-  const of = (label: string) => posts.filter(p => p.category === label)
+  // ⚠️ posts는 이 게시판만이 아니라 전체 게시판의 글을 담은 배열이다 — setPosts는 여기서 필터링한
+  // 부분집합이 아니라 반드시 posts 전체를 기준으로 수정한 배열을 넘겨야 한다. 부분집합을 넘기면
+  // syncList가 다른 게시판(세션 게시판 등)의 글을 전부 "삭제됨"으로 오인해 서버에서 지워버린다
+  // (v2.4 사고 — 실제로 세션 게시판 글이 통째로 사라지는 사고가 있었다. 재발 금지)
+  const boardPosts = useMemo(() => posts.filter(p => (p.boardId ?? board.id) === board.id), [posts, board.id]);
+  const of = (label: string) => boardPosts.filter(p => p.category === label)
     .sort((a, b) => b.date.localeCompare(a.date));
   const header = of(HEADER_LABEL)[0];
   const notice = of(NOTICE_LABEL);
@@ -287,6 +292,7 @@ export function BannerBoardView({ board, posts, setPosts, isAdmin, user, manageO
 
   const canManage = (p: Post) => isAdmin || (!!p.authorId && p.authorId === user?.id);
   const goEdit = (p: Post) => router.push(`/board/write?b=${board.id}&edit=${p.id}`);
+  // 반드시 posts(전체) 기준으로 필터링 — boardPosts처럼 이 게시판만 걸러낸 배열을 넘기면 안 된다
   const goDelete = (p: Post) => del.ask('배너를 삭제하시겠습니까?', () => setPosts(posts.filter(x => x.id !== p.id)));
 
   // 공지 배너는 클릭 시 이미지 주소 복사, 동맹·이웃 배너는 클릭 URL을 새창으로 (v2.3 사용자 요청)
@@ -299,7 +305,7 @@ export function BannerBoardView({ board, posts, setPosts, isAdmin, user, manageO
   ));
 
   const empty = !header && notice.length === 0 && alliance.length === 0 && neighbor.length === 0;
-  const mine = posts.filter(canManage).sort((a, b) => b.date.localeCompare(a.date));
+  const mine = boardPosts.filter(canManage).sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <>
