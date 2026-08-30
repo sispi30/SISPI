@@ -289,7 +289,9 @@ export function BannerBoardView({ board, posts, setPosts, isAdmin, user, manageO
       )}
       {header && (
         <div className="bbanner-header">
-          <div className="bbanner-header-img"><BlobImg fileRef={header.thumbSrc} /></div>
+          <div className="bbanner-header-img">
+            <BlobImg fileRef={header.thumbSrc} imgStyle={{ width: '100%', height: 'auto', objectFit: 'contain' }} />
+          </div>
           {headerHtml && headerHtml !== '-' && (
             <div className="bbanner-header-text post-body" dangerouslySetInnerHTML={{ __html: headerHtml }} />
           )}
