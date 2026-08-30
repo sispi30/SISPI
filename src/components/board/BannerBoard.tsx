@@ -211,25 +211,39 @@ export function BannerWriteForm({ board, editPid }: { board: Board; editPid?: st
 
 /* ================= 목록(전용 페이지) 뷰 ================= */
 
-function BannerCard({ post, onClick, canManage, onEdit, onDelete }: {
-  post: Post; onClick?: () => void; canManage: boolean; onEdit: () => void; onDelete: () => void;
-}) {
+/** 배너 이미지 카드 — 200×40 고정, 마우스오버 시 수정/삭제 대신 사이트명 툴팁만 표시.
+ *  클릭하면 등록된 클릭 URL을 새창으로 연다. 수정/삭제는 여기서 하지 않고 관리 패널에서 한다 */
+function BannerCard({ post, onClick }: { post: Post; onClick?: () => void }) {
+  const tip = post.title && post.title !== '-' ? post.title : '';
   return (
-    <div className="bbanner-card" title={post.title !== '-' ? post.title : undefined} onClick={onClick}>
+    <div className="bbanner-card" onClick={onClick}>
       <div className="bbanner-img"><BlobImg fileRef={post.thumbSrc} /></div>
-      {canManage && (
-        <div className="bbanner-manage" onClick={e => e.stopPropagation()}>
-          <button onClick={onEdit}>수정</button>
-          <button onClick={onDelete}>삭제</button>
-        </div>
-      )}
+      {tip && <span className="bbanner-tip">{tip}</span>}
     </div>
   );
 }
 
-export function BannerBoardView({ board, posts, setPosts, isAdmin, user }: {
+/** WRITE 버튼 옆 [관리] 토글로 열리는 패널 — 내가 관리할 수 있는 배너(관리자는 전체)를
+ *  종류 구분 없이 한 줄씩 나열하고 여기서만 수정/삭제한다 (카드 자체에는 더 이상 버튼을 두지 않는다) */
+function BannerManageRow({ post, onEdit, onDelete }: { post: Post; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="bbanner-mrow">
+      <div className="bbanner-mthumb"><BlobImg fileRef={post.thumbSrc} /></div>
+      <span className="bbanner-mcat">{post.category}</span>
+      <span className="bbanner-mtitle">{post.title !== '-' ? post.title : '(헤더 이미지)'}</span>
+      <span className="bbanner-mwho">{post.author}</span>
+      <div className="bbanner-mbtns">
+        <button onClick={onEdit}>수정</button>
+        <button onClick={onDelete}>삭제</button>
+      </div>
+    </div>
+  );
+}
+
+export function BannerBoardView({ board, posts, setPosts, isAdmin, user, manageOpen, onCloseManage }: {
   board: Board; posts: Post[]; setPosts: (next: Post[]) => void;
   isAdmin: boolean; user: { id: string } | null;
+  manageOpen?: boolean; onCloseManage?: () => void;
 }) {
   const router = useRouter();
   const del = useConfirmDelete();
@@ -250,27 +264,32 @@ export function BannerBoardView({ board, posts, setPosts, isAdmin, user }: {
     <div className="bbanner-sec">
       <h4>{label}</h4>
       <div className="bbanner-row">
-        {list.map(p => (
-          <BannerCard key={p.id} post={p} onClick={() => openLink(p)}
-            canManage={canManage(p)} onEdit={() => goEdit(p)} onDelete={() => goDelete(p)} />
-        ))}
+        {list.map(p => <BannerCard key={p.id} post={p} onClick={() => openLink(p)} />)}
       </div>
     </div>
   ));
 
   const empty = !header && notice.length === 0 && alliance.length === 0 && neighbor.length === 0;
+  const mine = posts.filter(canManage).sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <>
+      {manageOpen && (
+        <div className="panel bbanner-mpanel">
+          <div className="bbanner-mhead">
+            <b>배너 관리</b>
+            <button className="btn btn-onbk" style={{ padding: '5px 12px', fontSize: 12 }} onClick={onCloseManage}>닫기</button>
+          </div>
+          {mine.length === 0 ? (
+            <div style={{ padding: '18px 4px', fontSize: 12.5, color: 'var(--faint)' }}>관리할 수 있는 배너가 없습니다</div>
+          ) : mine.map(p => (
+            <BannerManageRow key={p.id} post={p} onEdit={() => goEdit(p)} onDelete={() => goDelete(p)} />
+          ))}
+        </div>
+      )}
       {header && (
         <div className="bbanner-header">
           <div className="bbanner-header-img"><BlobImg fileRef={header.thumbSrc} /></div>
-          {canManage(header) && (
-            <div className="bbanner-manage" style={{ position: 'absolute', top: 10, right: 10 }}>
-              <button onClick={() => goEdit(header)}>수정</button>
-              <button onClick={() => goDelete(header)}>삭제</button>
-            </div>
-          )}
           {headerHtml && headerHtml !== '-' && (
             <div className="bbanner-header-text post-body" dangerouslySetInnerHTML={{ __html: headerHtml }} />
           )}

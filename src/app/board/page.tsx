@@ -62,6 +62,7 @@ function BoardInner() {
   const [cat, setCat] = useState('전체');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
+  const [bannerManageOpen, setBannerManageOpen] = useState(false); // 배너 게시판 전용 — 관리(수정/삭제) 패널 토글
 
   // 게시판 전환 시 필터·페이지 초기화
   const [prevBid, setPrevBid] = useState(bid);
@@ -137,6 +138,11 @@ function BoardInner() {
         )}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {board.skin !== 'banner' && <SearchBar onSearch={v => { setQ(v); setPage(1); }} />}
+          {board.skin === 'banner' && !!user && (isAdmin || visible.some(p => !!p.authorId && p.authorId === user.id)) && (
+            <button className={`btn ${bannerManageOpen ? 'btn-dark' : 'btn-onbk'}`} onClick={() => setBannerManageOpen(v => !v)}>
+              {bannerManageOpen ? '관리 닫기' : '관리'}
+            </button>
+          )}
           {allow(board.permWrite) && !!user && (
             <button className="btn btn-dark" onClick={() => router.push(`/board/write?b=${board.id}`)}>✎ WRITE</button>
           )}
@@ -146,7 +152,8 @@ function BoardInner() {
       {board.skin === 'banner' ? (
         /* 배너 게시판 (5.7) — 그누보드 배너 게시판 스킨 이식. 헤더/공지/동맹/이웃 배너를 구역별로 표시하는
            별도 배너 전용 페이지 — 필터·페이지네이션 없이 이 게시판에 속한 배너를 전부 보여준다 */
-        <BannerBoardView board={board} posts={visible} setPosts={setPosts} isAdmin={isAdmin} user={user} />
+        <BannerBoardView board={board} posts={visible} setPosts={setPosts} isAdmin={isAdmin} user={user}
+          manageOpen={bannerManageOpen} onCloseManage={() => setBannerManageOpen(false)} />
       ) : board.skin === 'thread' ? (
         /* 타래형 스킨(목록형 전용) — 썸네일 그리드 + 진행중/완료 상태 배지(작성자·관리자는 클릭해 전환) */
         <div className="bthread-grid">
