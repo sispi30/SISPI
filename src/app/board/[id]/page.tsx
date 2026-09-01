@@ -1,6 +1,7 @@
 'use client';
 // 게시글 상세 (4.2) — 본문 렌더(격리 새니타이즈) · 접기 · 댓글+대댓글
-import React, { useMemo, useState } from 'react';
+// 세션 게시판(타래형)은 댓글도 감상타래와 같은 이어쓰기 방식(사진 최대 4장, 대댓글 없음) — 5.5
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useHrefBlock } from '@/components/shell/MenuGuard';
 import { extraBoardHref } from '@/lib/menuStore';
@@ -11,14 +12,38 @@ import {
 } from '@/lib/postStore';
 import { useBoards, boardHref, MAIN_BOARD_ID, BoardPerm } from '@/lib/boardStore';
 import { renderBody } from '@/lib/sanitize';
+import { putBlob, BlobImg } from '@/lib/blobStore';
 import { KInput } from '@/components/ui/Kit';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { GuestIdBar } from '@/components/ui/GuestId';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle } from '@/components/ui/PageText';
+import { Lightbox } from '@/components/ui/Lightbox';
 import { pushNotif } from '@/lib/notifStore';
 
 const FOLD_LABEL = { spoiler: '스포일러 주의', adult: '수위 주의' };
+
+// 사진 첨부 픽토그램 (감상타래와 동일 — 이모지 아님)
+const PhotoIcon = () => (
+  <svg viewBox="0 0 24 24">
+    <rect x="3" y="4" width="18" height="16" rx="3" />
+    <circle cx="9" cy="10" r="1.6" />
+    <path d="M3.5 17.5 9 13l4 3.5 3.5-3 4 4" />
+  </svg>
+);
+
+/** 댓글 첨부 이미지 — 1장=와이드, 2~4장=격자 (감상타래 PostImgs와 동일 규칙) */
+function CmtImgs({ images, onOpen }: { images?: string[]; onOpen: (ids: string[], idx: number) => void }) {
+  const ids = images ?? [];
+  if (ids.length === 0) return null;
+  return (
+    <div className={`thr-imgs ${ids.length === 1 ? 'one' : ids.length === 3 ? 'three' : ''}`}>
+      {ids.map((idv, i) => (
+        <div key={idv} className="im" onClick={() => onOpen(ids, i)}><BlobImg fileRef={idv} /></div>
+      ))}
+    </div>
+  );
+}
 
 export default function BoardDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +60,14 @@ export default function BoardDetailPage() {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [delAsk, setDelAsk] = useState(false);
   const [gName, setGName] = useState('');                       // 게스트 닉네임 (방문자 댓글 허용 시)
+  // 세션 게시판(타래형) 댓글 첨부 이미지 — 감상타래와 동일하게 최대 4장 (5.5)
+  const [cmtFiles, setCmtFiles] = useState<File[]>([]);
+  const [cmtUrls, setCmtUrls] = useState<string[]>([]);
+  const cmtImgRef = useRef<HTMLInputElement>(null);
+  const [lb, setLb] = useState<{ srcs: string[]; idx: number } | null>(null);
+  // 세션 게시판(타래형) 댓글 스포일러 접기 (5.6) — 작성 시 체크, 목록에서는 댓글별로 따로 펼침
+  const [cmtSpoiler, setCmtSpoiler] = useState(false);
+  const [openCmts, setOpenCmts] = useState<Set<string>>(new Set());
 
   const post = posts.find(p => p.id === id);
   /* 이 글이 속한 곳이 비공개면 주소로 들어와도 열리지 않게 (v2.0 사용자 요청).
@@ -44,8 +77,14 @@ export default function BoardDetailPage() {
   const blocked = useHrefBlock(post && (bid === MAIN_BOARD_ID ? '/board' : extraBoardHref(bid)));
   // loaded 이후에만 본문 렌더 (SSR/하이드레이션 불일치 방지)
   const html = useMemo(() => (post && loaded ? renderBody(post.mode, post.body) : ''), [post, loaded]);
+  // 배너 게시판 (5.7) — 개별 보기 페이지가 없다(그누보드 view.skin.php와 동일하게 목록으로 리다이렉트)
+  const bannerBoard = boards.find(b => b.id === bid);
+  useEffect(() => {
+    if (bannerBoard?.skin === 'banner') router.replace(boardHref(bannerBoard.id));
+  }, [bannerBoard, router]);
 
   // 막힌 곳이면 여기서 되돌아간다 — 훅을 모두 부른 뒤여야 렌더마다 개수가 같다
+  if (bannerBoard?.skin === 'banner') return <section className="page" />;
   if (blocked) return blocked;
   if (!loaded) return <section className="page" />;
   if (!post) {
@@ -80,15 +119,37 @@ export default function BoardDetailPage() {
   // 이 글의 댓글 — 분리 저장분 + 옛 글 안에 남아 있던 것 (v2.0)
   const comments = commentsFor(cmtRows, 'post', post.id, post.comments);
 
-  const addComment = () => {
+  const addCmtFiles = (list: FileList | null) => {
+    if (!list) return;
+    const next = [...cmtFiles, ...Array.from(list)].slice(0, 4); // 이미지 4장 제한 (감상타래와 동일, 5.5)
+    if (cmtFiles.length + list.length > 4) toast('이미지는 최대 4장까지 첨부할 수 있습니다');
+    setCmtFiles(next);
+    setCmtUrls(next.map(f => URL.createObjectURL(f)));
+  };
+  const removeCmtFile = (i: number) => {
+    const next = cmtFiles.filter((_, x) => x !== i);
+    setCmtFiles(next);
+    setCmtUrls(next.map(f => URL.createObjectURL(f)));
+  };
+
+  const addComment = async () => {
     if (!canComment) { toast('댓글은 로그인 후 작성할 수 있습니다'); return; }
-    if (!cmt.trim()) return;
+    if (!cmt.trim() && cmtFiles.length === 0) return;
     if (guestMode && !gName.trim()) { toast('닉네임을 입력해 주세요'); return; }
-    const base = { id: newId(), text: cmt.trim(), date: new Date().toISOString(), parentId: replyTo ?? undefined };
+    const images: string[] = [];
+    for (const f of cmtFiles) images.push(await putBlob(f));
+    const base = {
+      id: newId(), text: cmt.trim(), date: new Date().toISOString(), parentId: replyTo ?? undefined,
+      images: images.length ? images : undefined,
+      fold: (board.skin === 'thread' && cmtSpoiler) ? { type: 'spoiler' as const } : undefined,
+    };
     const c: CommentRow = user
       ? { ...base, target: 'post', targetId: post.id, author: user.nickname, authorId: user.id }
       : { ...base, target: 'post', targetId: post.id, author: gName.trim(), authorId: '' };
     setCmtRows([...cmtRows, c]);
+    
+
+    
     /* 알림 (v2.0 포크 제보 — 「댓글을 달아도 알림이 안 와요」): 게시판 댓글은 여태 알림을
        **만들지도 않았다** (로드비·방명록·역극만 있었다). 글쓴이에게, 답글이면 그 댓글 주인에게도. */
     const me = user?.id ?? '';
@@ -115,7 +176,8 @@ export default function BoardDetailPage() {
         });
       }
     }
-    setCmt(''); setReplyTo(null);
+    setCmt(''); setReplyTo(null); setCmtFiles([]); setCmtUrls([]); setCmtSpoiler(false);
+
   };
 
   // 댓글 삭제 — 대댓글도 함께. 옛 글 안에 있던 댓글이면 글 쪽에서 지운다 (v2.0)
@@ -147,11 +209,64 @@ export default function BoardDetailPage() {
     </div>
   );
 
+  // 세션 게시판(타래형) 댓글 — 감상타래 이어쓰기와 같은 카드형, 대댓글 없이 시간순 (5.5)
+  // 스포일러 접기 (5.6) — 글 접기(veil)와 동일한 방식, 댓글별로 따로 펼침 상태를 기억한다
+  const toggleCmtOpen = (id: string) =>
+    setOpenCmts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const ThrCmtRow = ({ c }: { c: Comment }) => {
+    const cOpen = openCmts.has(c.id);
+    return (
+      <div className="thr-post">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <b style={{ fontSize: 12.5 }}>{c.author}</b>
+          <span style={{ fontSize: 10, color: 'var(--faint)' }}>{fmtDate(c.date)}</span>
+        </div>
+        <div className={`veil ${!c.fold || cOpen ? 'open' : ''}`}>
+          {c.fold && !cOpen && (
+            <div className="cover" onClick={() => toggleCmtOpen(c.id)} style={{ position: 'absolute' }}>
+              <div>
+                <b>{c.fold.type === 'custom' ? (c.fold.label || '접힌 댓글') : FOLD_LABEL[c.fold.type]}</b>
+                <span style={{ display: 'block' }}>클릭하면 내용이 표시됩니다</span>
+              </div>
+            </div>
+          )}
+          <div style={c.fold && !cOpen ? { minHeight: 60, filter: 'blur(6px)' } : undefined}>
+            {c.text && <p>{c.text}</p>}
+            <CmtImgs images={c.images} onOpen={(ids, idx) => setLb({ srcs: ids, idx })} />
+          </div>
+        </div>
+        {(isAdmin || (user && c.authorId === user.id)) && (
+          <div className="hv-actions">
+            <button className="del" onClick={() => removeComment(c)}>DELETE</button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <section className="page">
       <div className="page-head">
         <PageTitle href={boardHref(board.id)}>{boardTitle}</PageTitle>
         <p>{post.notice ? '공지 · ' : `${post.category} · `}{post.author} · {fmtDate(post.date)}</p>
+        {/* 세션 게시판(타래형) ↔ 플레이 기록 연동 정보 (5.4) */}
+        {post.session && (
+          <p style={{ marginTop: -4, fontSize: 12, color: 'var(--faint)' }}>
+            {[post.session.date?.replace(/-/g, '.'), post.session.playtime, post.session.role, post.session.withText]
+              .filter(Boolean).join(' · ')}
+            {post.session.recordId && (
+              <>
+                {' · '}
+                <a style={{ cursor: 'var(--cur-pointer,pointer)', color: 'var(--accent)' }}
+                  onClick={() => router.push('/playlog')}>플레이 기록에서 보기 →</a>
+              </>
+            )}
+          </p>
+        )}
         <div className="head-actions">
           {/* 수정은 작성자 본인만 — 관리자도 타인 글은 삭제만 (v1.9) */}
           {isAuthor && (
@@ -190,41 +305,83 @@ export default function BoardDetailPage() {
         </div>
       </div>
 
-      {/* 댓글 + 대댓글 */}
+      {/* 댓글 — 세션 게시판(타래형)은 감상타래와 같은 이어쓰기 방식, 그 외는 기존 댓글+대댓글 (5.5) */}
       <div className="panel" style={{ padding: 0, marginTop: 16 }}>
         <div style={{ padding: '16px 18px' }}>
           <h4 style={{ fontSize: 11.5, letterSpacing: '.12em', color: 'var(--faint)', marginBottom: 13 }}>
             COMMENTS {comments.length > 0 && <span style={{ color: 'var(--accent)' }}>{comments.length}</span>}
           </h4>
-          {roots.map(c => (
-            <React.Fragment key={c.id}>
-              <CmtRow c={c} depth={0} />
-              {childrenOf(c.id).map(cc => <CmtRow key={cc.id} c={cc} depth={1} />)}
-            </React.Fragment>
-          ))}
+          {board.skin === 'thread' ? (
+            comments.map(c => <ThrCmtRow key={c.id} c={c} />)
+          ) : (
+            roots.map(c => (
+              <React.Fragment key={c.id}>
+                <CmtRow c={c} depth={0} />
+                {childrenOf(c.id).map(cc => <CmtRow key={cc.id} c={cc} depth={1} />)}
+              </React.Fragment>
+            ))
+          )}
           {comments.length === 0 && (
             <p style={{ fontSize: 12, color: 'var(--faint)' }}>첫 댓글을 남겨보세요</p>
           )}
         </div>
         {canComment ? (
-          /* 게스트 작성(방문자 허용) — 구분선 아래 GUEST 바 + 입력줄 세로 배치 */
-          <div className={`cmt-input ${guestMode ? 'guest' : ''}`}>
-            {guestMode && <GuestIdBar name={gName} onName={setGName} />}
-            <div className="ci-row" style={guestMode ? undefined : { display: 'contents' }}>
-              <KInput
-                placeholder={replyTo ? '답글 작성...' : '댓글 남기기...'}
-                value={cmt} onChange={e => setCmt(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') addComment(); }}
-              />
-              <button className="btn btn-dark" onClick={addComment}>POST</button>
+          board.skin === 'thread' ? (
+            /* 이어쓰기 컴포저 (감상타래와 동일 — 텍스트 + 사진 최대 4장) */
+            <div className="thr-write">
+              {guestMode && <div style={{ padding: '0 18px' }}><GuestIdBar name={gName} onName={setGName} /></div>}
+              <textarea placeholder="댓글 남기기…" value={cmt} onChange={e => setCmt(e.target.value)} />
+              {cmtUrls.length > 0 && (
+                <div className="thr-att">
+                  {cmtUrls.map((u, i) => (
+                    <div key={i} className="at">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={u} alt="" />
+                      <button onClick={() => removeCmtFile(i)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="wfoot">
+                <input ref={cmtImgRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+                  onChange={e => { addCmtFiles(e.target.files); e.target.value = ''; }} />
+                <button className="icobtn" data-tip="사진 추가 (최대 4장)" onClick={() => cmtImgRef.current?.click()}>
+                  <PhotoIcon />
+                </button>
+                {/* 스포일러 접기 (5.6) — 글 접기와 같은 규칙, 체크하면 이 댓글만 흐림 처리되어 올라간다 */}
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--sub)',
+                  cursor: 'var(--cur-pointer,pointer)',
+                }}>
+                  <input type="checkbox" checked={cmtSpoiler} onChange={e => setCmtSpoiler(e.target.checked)} />
+                  스포일러 접기
+                </label>
+                <button className="btn btn-dark" style={{ padding: '8px 20px', fontSize: 12, borderRadius: 20 }}
+                  onClick={addComment}>POST</button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* 게스트 작성(방문자 허용) — 구분선 아래 GUEST 바 + 입력줄 세로 배치 */
+            <div className={`cmt-input ${guestMode ? 'guest' : ''}`}>
+              {guestMode && <GuestIdBar name={gName} onName={setGName} />}
+              <div className="ci-row" style={guestMode ? undefined : { display: 'contents' }}>
+                <KInput
+                  placeholder={replyTo ? '답글 작성...' : '댓글 남기기...'}
+                  value={cmt} onChange={e => setCmt(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') addComment(); }}
+                />
+                <button className="btn btn-dark" onClick={addComment}>POST</button>
+              </div>
+            </div>
+          )
         ) : (
           <div style={{ padding: '12px 18px', borderTop: '1px solid var(--line)', fontSize: 11.5, color: 'var(--faint)' }}>
             {user ? '이 게시판은 관리자만 댓글을 쓸 수 있습니다' : '댓글은 로그인 후 작성할 수 있습니다'}
           </div>
         )}
       </div>
+
+      {lb && <Lightbox srcs={lb.srcs} index={lb.idx} onClose={() => setLb(null)} />}
 
       <ConfirmModal open={delAsk} title="글을 삭제하시겠습니까?" body="삭제한 글은 복구할 수 없습니다."
         onClose={() => setDelAsk(false)}

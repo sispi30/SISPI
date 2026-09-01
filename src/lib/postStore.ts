@@ -19,6 +19,8 @@ export interface Comment {
   date: string;          // ISO
   parentId?: string;     // 대댓글
   guestPw?: string;      // 게스트 본인 수정·삭제용 (mock — 실서비스는 서버 해시)
+  images?: string[];     // 세션 게시판(타래형) 댓글 첨부 이미지 — 최대 4장, blobStore id (5.5)
+  fold?: { type: FoldType; label?: string } | null; // 세션 게시판(타래형) 댓글 스포일러 접기 (5.6 — 글 접기와 동일 방식)
 }
 
 /**
@@ -54,6 +56,17 @@ export function commentsFor(
 
 export type FoldType = 'spoiler' | 'adult' | 'custom';
 
+/** 세션 게시판(타래형) ↔ 플레이 기록 연동 정보 — 글 하나가 플레이 기록(PlayRecord) 한 줄과 짝을 이룬다 */
+export interface SessionMeta {
+  date?: string;          // 세션 진행일 (플레이 기록 Date)
+  scenarioLink?: string;  // 시나리오 링크
+  withText?: string;      // With
+  role?: string;          // Role (PL·GM·HO1 등)
+  playtime?: string;      // Playtime
+  url?: string;           // 외부 Url (선택)
+  recordId?: string;      // 연동된 플레이 기록(ohome.playlog.v1) id — 이 값으로 업데이트 시 새로 만들지 않고 갱신
+}
+
 export interface Post {
   id: string;
   title: string;
@@ -75,6 +88,10 @@ export interface Post {
   tags?: string[];
   thumbSrc?: string;     // 티켓 스킨 대표 이미지 — 본문에 삽입한 이미지 중 선택 (v1.9)
   thumbCrop?: { x: number; y: number; scale: number };  // 대표 썸네일 크롭 (16:9)
+  session?: SessionMeta; // 세션 게시판(타래형) ↔ 플레이 기록 연동 (5.4)
+  /** 배너 게시판 전용 — 배너 클릭 시 이동할 외부 URL (그누보드 write.skin.php의 wr_link2에 대응, 5.7).
+   *  종류(이웃/공지/동맹/헤더)는 category(말머리)를 그대로 쓰고, 배너 이미지는 thumbSrc를 재사용한다. */
+  bannerLink?: string;
 }
 
 export interface GuestEntry {

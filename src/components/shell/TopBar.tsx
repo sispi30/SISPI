@@ -15,11 +15,12 @@ import { useBlobUrl } from '@/lib/blobStore';
 import { refreshPage } from '@/lib/pageRefresh';
 import { useToast } from '@/components/ui/Toast';
 import { KToggle } from '@/components/ui/Kit';
+import { useTransformMenuSettings } from '@/lib/transformMenuStore';
+import { TransformMenu } from '@/components/shell/TransformMenu';
 import {
   Notif, NotifType, NOTIF_EVENT, NOTIF_TYPE_LABEL,
   readNotifs, markRead, markAllRead, clearReadNotifs, notifSettings, setNotifSetting, syncNotifs, selfTestNotif,
 } from '@/lib/notifStore';
-import { subscribeTable } from '@/lib/db';
 
 const BellIcon = () => (
   <svg viewBox="0 0 24 24">
@@ -46,6 +47,18 @@ export function TopBar() {
     ? buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)], { loggedIn: !!user, isAdmin, id: user?.id })
     : [];
   const [site, , siteLoaded] = useSiteSettings();    // 로고 텍스트/서브/정렬 (5.2)
+  // 트랜스폼 메뉴 위젯 (커스텀 요청) — 켜져 있으면 아래 기본 gnb 대신 TransformMenu가 그 자리를 대신한다.
+  // 단, 모바일에서는 위젯을 띄우지 않고 항상 기본 메뉴로 (v2.0 사용자 요청 — 이 사이트의 모바일 기준 폭과 동일)
+  const [tfCfg, , tfLoaded] = useTransformMenuSettings();
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width:620px)');
+    const f = () => setIsMobile(mq.matches);
+    f();
+    mq.addEventListener('change', f);
+    return () => mq.removeEventListener('change', f);
+  }, []);
+  const tfOn = tfLoaded && tfCfg.enabled && !isMobile;
   const avatarSrc = useBlobUrl(user?.avatarUrl);     // 프로필 이미지 (마이페이지, v1.9)
   const userRef = useRef<HTMLDivElement>(null);
 
@@ -68,17 +81,6 @@ export function TopBar() {
     window.addEventListener('storage', load); // 다른 탭
     return () => { window.removeEventListener(NOTIF_EVENT, load); window.removeEventListener('storage', load); };
   }, []);
-  /* 서버에 쌓인 내 알림 받아 오기 (v2.0 포크 제보 — 기기 보관이라 남이 남긴 알림이 안 왔다).
-     접속할 때 한 번 + 실시간 신호(새 행) + 창에 돌아올 때(30초 간격 제한은 syncNotifs가 건다) */
-  useEffect(() => {
-    if (!user) return;
-    void syncNotifs(user.id, true);
-    const off = subscribeTable('notifications', () => void syncNotifs(user.id, true));
-    const onFocus = () => void syncNotifs(user.id);
-    window.addEventListener('focus', onFocus);
-    return () => { off(); window.removeEventListener('focus', onFocus); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
   const myNotifs = user ? notifs.filter(n => n.toUserId === user.id) : [];
   const unread = myNotifs.filter(n => !n.read);
   // 메뉴 점 — 안 읽은 알림이 가리키는 페이지 (해당 메뉴 뱃지, 4.13)
@@ -153,6 +155,12 @@ export function TopBar() {
         {siteLoaded && site.subtitle && <small className={`al-${site.align}`}>{site.subtitle}</small>}
       </div>
 
+      {/* 트랜스폼 메뉴 위젯이 켜져 있으면 기존 gnb 대신 그 자리에 렌더 (static) — fixed는 화면에 별도로 뜬다.
+          fixed일 때는 이 자리에 아무것도 안 그려지므로, 우측 정렬용 flex:1 자리를 대신 채워준다
+          (없으면 알림·프로필이 로고 옆으로 딸려온다). */}
+      {tfOn && <TransformMenu />}
+      {tfOn && tfCfg.positionType === 'fixed' && <div className="gnb" aria-hidden />}
+      {!tfOn && (
       <nav className="gnb" ref={gnbRef}>
         {visMenu.map(item =>
           item.children ? (
@@ -210,6 +218,7 @@ export function TopBar() {
           <button tabIndex={-1}>⋯</button>
         </div>
       </nav>
+      )}
 
       {/* 위젯 추가 — 그리드 토글 왼쪽 (v1.9 사용자 확정: 본문 하단 버튼 대체) */}
       {editOn && pathname === '/' && (

@@ -28,6 +28,10 @@ import {
   IMG_PROTECT_AREAS,
 } from '@/lib/menuStore';
 import { FEATURES } from '@/lib/menu';
+import {
+  useTransformMenuSettings, TransformMenuSettings, TfDirection, TfJustify, TfAlign,
+  TfAnchorX, TfAnchorY, TfDivider,
+} from '@/lib/transformMenuStore';
 import { SectionsBlock } from '@/components/settings/SectionList';
 import { useSections, sectionsOf, sectionMenuEntries, MAIN_SEC, inSection } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries, toInternalPath } from '@/lib/linkStore';
@@ -45,7 +49,7 @@ import { Mood, MOOD_SEED, moodTint } from '@/lib/diaryStore';
 import {
   TextSettingEditor, DdayEditor, TodoEditor, BannerEditor, DecoEditor,
 } from '@/components/main/widgetEditors';
-import { useBgm, BgmTrack, parseVideoId } from '@/lib/bgmStore';
+import { useBgm, BgmTrack, BgmPlaylist, parseVideoId, extractDominantColorFromBlob } from '@/lib/bgmStore';
 import { useFonts, fontCssUrl, FontDef, FontRole, ROLE_LABEL, FOLLOW_MENU, FOLLOW_TITLE } from '@/lib/fontStore';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle, EditableDesc, getPageText, setPageText } from '@/components/ui/PageText';
@@ -60,7 +64,7 @@ import { migrateTo, findOrphanFiles } from '@/lib/transfer';
 import { FIRESTORE_RULES, STORAGE_RULES } from '@/lib/firebaseRules';
 
 const CATEGORIES = [
-  '디자인', '메인 페이지', '위젯', '메뉴 관리', '게시판 관리', '자관 질문', '커미션', 'TRPG', '감상타래', '메모장',
+  '디자인', '메인 페이지', '위젯', '메뉴 관리', '메뉴 위젯', '게시판 관리', '자관 질문', '커미션', 'TRPG', '감상타래', '메모장',
   '폰트', '마우스 커서', 'BGM', '무드 리스트', '회원/보안', '데이터 백업',
 ] as const;
 
@@ -685,7 +689,7 @@ function BoardPane() {
       <div className="d">게시판 생성·삭제와 게시판별 스킨·권한·말머리 — 변경 즉시 메뉴·목록·글쓰기에 반영</div>
 
       <h3 style={{ marginTop: 20 }}>게시판 목록</h3>
-      <div className="d">⠿ 드래그로 메뉴 순서 · 이름은 상단 메뉴와 페이지 타이틀에 그대로 표시 · 리스트 스킨(기본형/티켓형) 게시판마다 지정 — 글쓰기·댓글 권한은 메뉴 관리에서</div>
+      <div className="d">⠿ 드래그로 메뉴 순서 · 이름은 상단 메뉴와 페이지 타이틀에 그대로 표시 · 리스트 스킨(기본형/티켓형/타래형/배너형) 게시판마다 지정 — 글쓰기·댓글 권한은 메뉴 관리에서</div>
       <DragList items={boards} keyOf={b => b.id} onReorder={setBoards}
         render={b => (
           <div className="set-row" style={{ width: '100%' }}>
@@ -697,9 +701,11 @@ function BoardPane() {
             </div>
             <div className="cp-group" style={{ justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <div className="mini-seg">
-                {(['list', 'ticket'] as BoardSkin[]).map(s => (
+                {(['list', 'ticket', 'thread', 'banner'] as BoardSkin[]).map(s => (
                   <button key={s} className={b.skin === s ? 'on' : ''}
-                    onClick={() => patchBoard(b.id, { skin: s })}>{s === 'list' ? '기본형' : '티켓형'}</button>
+                    onClick={() => patchBoard(b.id, { skin: s })}>
+                    {s === 'list' ? '기본형' : s === 'ticket' ? '티켓형' : s === 'thread' ? '타래형' : '배너형'}
+                  </button>
                 ))}
               </div>
               {/* 목록 글씨색 (v1.9) — 미지정이면 테마 기본색 */}
@@ -2577,6 +2583,227 @@ function MenuPane() {
   );
 }
 
+/** 색 항목 한 쌍 — 트랜스폼 메뉴 전용 (빈 값 = 테마 기본색을 그대로 따름, 초기화 가능) */
+function TfColor({ label, value, patch, k, fallback }: {
+  label: string; value: string; fallback: string;
+  patch: (p: Partial<TransformMenuSettings>) => void; k: keyof TransformMenuSettings;
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span className="cp-lb">{label}</span>
+      <ColorField value={value || fallback} onChange={hex => patch({ [k]: hex } as Partial<TransformMenuSettings>)} />
+      {value && (
+        <button className="btn btn-ghost" style={{ height: 26, padding: '0 8px', fontSize: 10 }}
+          onClick={() => patch({ [k]: '' } as Partial<TransformMenuSettings>)}>기본값</button>
+      )}
+    </div>
+  );
+}
+
+/** 메뉴 위젯 탭 (커스텀 요청) — 그누보드 「트랜스폼 메뉴 위젯」 이식.
+ *  켜면 상단바의 기본 메뉴 줄 대신 위치·글꼴·배경을 자유롭게 꾸민 메뉴로 대체된다. */
+function MenuDesignPane() {
+  const [cfg, patch, loaded] = useTransformMenuSettings();
+  const toast = useToast();
+  const logoUrl = useBlobUrl(cfg.logoBlobId);
+  if (!loaded) return null;
+
+  const seg = <T extends string>(value: T, options: { v: T; label: string }[], onChange: (v: T) => void) => (
+    <div className="seg in-panel">
+      {options.map(o => (
+        <button key={o.v} className={value === o.v ? 'on' : ''} onClick={() => onChange(o.v)}>{o.label}</button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="set-sec">
+      <h3>메뉴 위젯</h3>
+      <div className="d">
+        그누보드 「트랜스폼 메뉴 위젯」을 이 사이트 구조로 이식 — 켜면 위의 「메뉴 관리」 트리를 그대로 쓰되,
+        위치·글꼴·배경을 자유롭게 꾸민 메뉴로 상단 메뉴 줄을 대체합니다.
+      </div>
+
+      <div className="set-row">
+        <div className="l"><b>사용</b><small>끄면 기존 상단 메뉴로 즉시 되돌아갑니다</small></div>
+        <KToggle checked={cfg.enabled} onChange={v => patch({ enabled: v })} />
+      </div>
+
+      {cfg.enabled && (
+        <>
+          <div className="set-row">
+            <div className="l"><b>배치 방식</b>
+              <small>고정 — 화면 위에 독립된 캡슐로 떠서 드래그로 옮길 수 있음 · 제자리 — 기존 메뉴 줄 자리에 그대로</small>
+            </div>
+            {seg<'fixed' | 'static'>(cfg.positionType, [
+              { v: 'fixed', label: '화면에 고정 (드래그)' }, { v: 'static', label: '제자리(상단바 안)' },
+            ], v => patch({ positionType: v }))}
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>레이아웃</b><small>메뉴 항목을 늘어놓는 방향·정렬·간격</small></div>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {seg<TfDirection>(cfg.direction, [{ v: 'row', label: '가로' }, { v: 'column', label: '세로' }], v => patch({ direction: v }))}
+              <KSelect minWidth={120} value={cfg.justify}
+                onChange={v => patch({ justify: v as TfJustify })}
+                options={[
+                  { value: 'flex-start', label: '앞쪽 정렬' }, { value: 'center', label: '가운데 정렬' },
+                  { value: 'flex-end', label: '뒤쪽 정렬' }, { value: 'space-between', label: '양끝 분산' },
+                  { value: 'space-around', label: '고르게 분산' },
+                ]} />
+              <KSelect minWidth={100} value={cfg.align}
+                onChange={v => patch({ align: v as TfAlign })}
+                options={[
+                  { value: 'flex-start', label: '교차축 앞' }, { value: 'center', label: '교차축 가운데' },
+                  { value: 'flex-end', label: '교차축 뒤' },
+                ]} />
+              <span className="cp-lb">간격</span>
+              <KStep value={cfg.gap} min={0} max={80} step={2} suffix="px" onChange={v => patch({ gap: v })} />
+            </div>
+          </div>
+
+          {cfg.positionType === 'fixed' && (
+            <div className="set-row" style={{ flexWrap: 'wrap' }}>
+              <div className="l"><b>위치</b><small>기준점 + 화면 대비 비율(%) — 한 번 드래그해서 옮기면 그 뒤로는 그 위치가 우선합니다</small></div>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {seg<TfAnchorX>(cfg.anchorX, [{ v: 'left', label: '왼쪽' }, { v: 'center', label: '가운데' }, { v: 'right', label: '오른쪽' }], v => patch({ anchorX: v }))}
+                <KStep value={cfg.posX} min={0} max={100} step={1} suffix="%" onChange={v => patch({ posX: v })} />
+                {seg<TfAnchorY>(cfg.anchorY, [{ v: 'top', label: '위' }, { v: 'center', label: '가운데' }, { v: 'bottom', label: '아래' }], v => patch({ anchorY: v }))}
+                <KStep value={cfg.posY} min={0} max={100} step={1} suffix="%" onChange={v => patch({ posY: v })} />
+              </div>
+            </div>
+          )}
+
+          {cfg.positionType === 'fixed' && (
+            <div className="set-row">
+              <div className="l"><b>드래그</b><small>방문자가 화면에서 위젯을 끌어 옮길 수 있는지</small></div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <KCheck label="드래그 허용" checked={cfg.draggable} onChange={v => patch({ draggable: v })} />
+                <KCheck label="옮긴 위치 이 브라우저에 기억" checked={cfg.savePosition} onChange={v => patch({ savePosition: v })} />
+              </div>
+            </div>
+          )}
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>메뉴 글자</b><small>상위 메뉴 항목의 크기·색·자간</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <span className="cp-lb">크기</span>
+              <KStep value={cfg.menuFontSize} min={9} max={26} step={1} suffix="px" onChange={v => patch({ menuFontSize: v })} />
+              <span className="cp-lb">자간</span>
+              <KStep value={cfg.menuLetterSpacing} min={-2} max={6} step={0.5} suffix="px" onChange={v => patch({ menuLetterSpacing: v })} />
+              <TfColor label="글자색" value={cfg.menuFontColor} fallback="#aab0ba" patch={patch} k="menuFontColor" />
+              <TfColor label="hover색" value={cfg.menuHoverColor} fallback="#ffffff" patch={patch} k="menuHoverColor" />
+            </div>
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>서브메뉴 글자</b><small>하위 메뉴(드롭다운) 항목의 크기·색</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <span className="cp-lb">크기</span>
+              <KStep value={cfg.subFontSize} min={9} max={22} step={1} suffix="px" onChange={v => patch({ subFontSize: v })} />
+              <TfColor label="글자색" value={cfg.subFontColor} fallback="#c6cad1" patch={patch} k="subFontColor" />
+              <TfColor label="hover색" value={cfg.subHoverColor} fallback="#a63a45" patch={patch} k="subHoverColor" />
+            </div>
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>구분선</b><small>상위 메뉴 항목 사이 구분 표시</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {seg<TfDivider>(cfg.dividerStyle, [
+                { v: 'none', label: '없음' }, { v: 'line', label: '세로선' }, { v: 'dot', label: '점' },
+              ], v => patch({ dividerStyle: v }))}
+              {cfg.dividerStyle !== 'none' && (
+                <TfColor label="색" value={cfg.dividerColor} fallback="#e2e4e8" patch={patch} k="dividerColor" />
+              )}
+            </div>
+          </div>
+
+          {cfg.positionType === 'fixed' && (
+            <>
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>배경</b><small>독립 캡슐의 배경·테두리·그림자</small></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <KCheck label="투명" checked={cfg.bgTransparent} onChange={v => patch({ bgTransparent: v })} />
+                  {!cfg.bgTransparent && <TfColor label="배경색" value={cfg.bgColor} fallback="#14161b" patch={patch} k="bgColor" />}
+                  <KCheck label="그림자" checked={cfg.bgShadow} onChange={v => patch({ bgShadow: v })} />
+                </div>
+              </div>
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>테두리 · 안쪽 여백 · 모서리</b></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <span className="cp-lb">두께</span>
+                  <KStep value={cfg.borderWidth} min={0} max={6} step={1} suffix="px" onChange={v => patch({ borderWidth: v })} />
+                  {cfg.borderWidth > 0 && <TfColor label="색" value={cfg.borderColor} fallback="#e2e4e8" patch={patch} k="borderColor" />}
+                  <span className="cp-lb">여백</span>
+                  <KStep value={cfg.padding} min={0} max={40} step={1} suffix="px" onChange={v => patch({ padding: v })} />
+                  <span className="cp-lb">모서리</span>
+                  <KStep value={cfg.borderRadius} min={0} max={999} step={1} suffix="px" onChange={v => patch({ borderRadius: v })} />
+                </div>
+              </div>
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>서브메뉴 배경</b></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <TfColor label="배경색" value={cfg.subBgColor} fallback="#1c1f25" patch={patch} k="subBgColor" />
+                  <span className="cp-lb">모서리</span>
+                  <KStep value={cfg.subBorderRadius} min={0} max={30} step={1} suffix="px" onChange={v => patch({ subBorderRadius: v })} />
+                  <KCheck label="그림자" checked={cfg.subShadow} onChange={v => patch({ subShadow: v })} />
+                </div>
+              </div>
+
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>로고</b><small>독립 캡슐 왼쪽에 이미지 로고 표시</small></div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <KCheck label="표시" checked={cfg.showLogo} onChange={v => patch({ showLogo: v })} />
+                  {cfg.showLogo && (
+                    <>
+                      <span style={{
+                        width: 35, height: 35, borderRadius: 'var(--radius-s)', border: '1px solid var(--line)',
+                        background: 'var(--panel)', display: 'grid', placeItems: 'center', overflow: 'hidden', flexShrink: 0,
+                      }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {logoUrl ? <img src={logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          : <span style={{ fontSize: 9, color: 'var(--faint)' }}>없음</span>}
+                      </span>
+                      <input id="tfLogo" type="file" accept="image/png,image/webp,image/svg+xml,image/jpeg,image/gif"
+                        style={{ display: 'none' }}
+                        onChange={async e => {
+                          const f = e.target.files?.[0];
+                          e.target.value = '';
+                          if (!f) return;
+                          try { patch({ logoBlobId: await putBlob(f) }); } catch (err) {
+                            toast(`로고를 저장소에 올리지 못했습니다 — ${err instanceof Error ? err.message : String(err)}`);
+                          }
+                        }} />
+                      <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                        onClick={() => document.getElementById('tfLogo')?.click()}>
+                        {cfg.logoBlobId ? 'CHANGE' : 'UPLOAD'}
+                      </button>
+                      {cfg.logoBlobId && (
+                        <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                          onClick={() => patch({ logoBlobId: '' })}>REMOVE</button>
+                      )}
+                      <span className="cp-lb">너비</span>
+                      <KStep value={cfg.logoWidth} min={20} max={320} step={4} suffix="px" onChange={v => patch({ logoWidth: v })} />
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="set-row">
+                <div className="l"><b>버튼</b><small>비로그인 방문자에게 로그인 버튼 · 관리자에게 환경설정 바로가기</small></div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <KCheck label="로그인 버튼" checked={cfg.showLoginBtn} onChange={v => patch({ showLoginBtn: v })} />
+                  <KCheck label="관리자 버튼" checked={cfg.showAdminBtn} onChange={v => patch({ showAdminBtn: v })} />
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /** TRPG 탭 (4.15, v1.9) — 도토리 상태 카테고리 라벨 + 뱃지 색 + 플레이기록 표시 열 */
 function TrpgPane() {
   const [settings, patch] = useTrpgSettings();
@@ -2858,22 +3085,24 @@ function CommPane() {
   );
 }
 
-/** BGM 트랙 한 줄 — 인라인 수정(제목/설명/URL) + 삭제 확인 */
+/** BGM 트랙 한 줄 — 인라인 수정(제목/아티스트/URL/재생시간) + 삭제 확인 */
 function BgmTrackRow({ t, onPatch, onDelete }: {
   t: BgmTrack; onPatch: (p: Partial<BgmTrack>) => void; onDelete: () => void;
 }) {
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(t.title);
-  const [desc, setDesc] = useState(t.desc);
+  const [artist, setArtist] = useState(t.artist);
   const [url, setUrl] = useState(t.videoId);
+  const [duration, setDuration] = useState(t.duration);
 
   if (editing) {
     return (
       <div style={{ display: 'grid', gap: 7, padding: '10px 0', borderBottom: '1px dashed var(--line)', width: '100%' }}>
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           <KInput placeholder="곡 제목" value={title} onChange={e => setTitle(e.target.value)} style={{ maxWidth: 150 }} />
-          <KInput placeholder="설명 (선택)" value={desc} onChange={e => setDesc(e.target.value)} style={{ flex: 1, minWidth: 130 }} />
+          <KInput placeholder="아티스트 (선택)" value={artist} onChange={e => setArtist(e.target.value)} style={{ flex: 1, minWidth: 130 }} />
+          <KInput placeholder="재생시간 (3:45)" value={duration} onChange={e => setDuration(e.target.value)} style={{ maxWidth: 90 }} />
         </div>
         <div style={{ display: 'flex', gap: 7 }}>
           <KInput placeholder="유튜브 URL 또는 영상 ID" value={url} onChange={e => setUrl(e.target.value)} />
@@ -2881,12 +3110,12 @@ function BgmTrackRow({ t, onPatch, onDelete }: {
             onClick={() => {
               const vid = parseVideoId(url);
               if (!title.trim() || !vid) { toast('제목과 올바른 유튜브 URL(또는 영상 ID)을 입력해 주세요'); return; }
-              onPatch({ title: title.trim(), desc: desc.trim(), videoId: vid });
+              onPatch({ title: title.trim(), artist: artist.trim(), videoId: vid, duration: duration.trim() });
               setEditing(false);
               toast('곡이 수정되었습니다');
             }}>SAVE</button>
           <button className="btn btn-ghost" style={{ whiteSpace: 'nowrap' }}
-            onClick={() => { setEditing(false); setTitle(t.title); setDesc(t.desc); setUrl(t.videoId); }}>CANCEL</button>
+            onClick={() => { setEditing(false); setTitle(t.title); setArtist(t.artist); setUrl(t.videoId); setDuration(t.duration); }}>CANCEL</button>
         </div>
       </div>
     );
@@ -2896,7 +3125,7 @@ function BgmTrackRow({ t, onPatch, onDelete }: {
     <div className="set-row" style={{ width: '100%' }}>
       <div className="l" style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
         <span className="drag-h">⠿</span>
-        <div><b>{t.title}</b><small>{t.desc || t.videoId}</small></div>
+        <div><b>{t.title}</b><small>{t.artist || (t.videoId ? t.videoId : '유튜브 링크 없음')}{t.duration ? ` · ${t.duration}` : ''}</small></div>
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
@@ -2908,18 +3137,23 @@ function BgmTrackRow({ t, onPatch, onDelete }: {
   );
 }
 
-/** BGM 탭 (5.2 v1.9) — 곡 목록 등록(미니 플레이어 리스트에 노출) + 재생 설정 */
-function BgmPane() {
-  const { state, setTracks, addTrack, removeTrack, setSettings } = useBgm();
+/** 재생목록(무드 카드) 한 장 — 커버 업로드, 제목 수정, 곡 목록(펼침), 삭제 */
+function BgmPlaylistRow({ pl, open, onToggle }: { pl: BgmPlaylist; open: boolean; onToggle: () => void }) {
+  const { state, setTracks, addTrack, removeTrack, updatePlaylist, removePlaylist } = useBgm();
   const toast = useToast();
   const del = useConfirmDelete();
-  const [title, setTitle] = useState('');
-  const [desc, setDesc] = useState('');
-  const [url, setUrl] = useState('');
+  const coverUrl = useBlobUrl(pl.cover || undefined);
+  const [titleEdit, setTitleEdit] = useState(false);
+  const [title, setTitle] = useState(pl.title);
+  const [tTitle, setTTitle] = useState('');
+  const [tArtist, setTArtist] = useState('');
+  const [tUrl, setTUrl] = useState('');
+  const [tDur, setTDur] = useState('');
+  const fileId = `bgm-cover-${pl.id}`;
 
-  const add = () => {
-    if (addTrack(title, desc, url)) {
-      setTitle(''); setDesc(''); setUrl('');
+  const addT = () => {
+    if (addTrack(pl.id, tTitle, tArtist, tUrl, tDur)) {
+      setTTitle(''); setTArtist(''); setTUrl(''); setTDur('');
       toast('곡이 추가되었습니다');
     } else {
       toast('제목과 올바른 유튜브 URL(또는 영상 ID)을 입력해 주세요');
@@ -2927,27 +3161,116 @@ function BgmPane() {
   };
 
   return (
+    <div className="set-row" style={{ width: '100%', flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%' }}>
+        <span className="drag-h">⠿</span>
+        <div className="bgm-cover" onClick={onToggle}
+          style={{
+            width: 40, height: 40, borderRadius: 10, flex: '0 0 auto', cursor: 'pointer',
+            backgroundImage: coverUrl ? `url(${coverUrl})` : undefined,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            background: coverUrl ? undefined : 'linear-gradient(135deg,#5b6c91,#39456a)',
+          }} />
+        <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={onToggle}>
+          <b>{pl.title}</b><small>{pl.tracks.length}곡</small>
+        </div>
+        <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+          onClick={onToggle}>{open ? '접기' : '펼치기'}</button>
+        <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+          onClick={() => del.ask(`재생목록 「${pl.title}」을 삭제하시겠습니까? 안의 곡도 모두 삭제됩니다.`, () => removePlaylist(pl.id))}>DELETE</button>
+        {del.element}
+      </div>
+
+      {open && (
+        <div style={{ display: 'grid', gap: 14, paddingLeft: 51 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input id={fileId} type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={async e => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  const [ref, color] = await Promise.all([putBlob(f), extractDominantColorFromBlob(f)]);
+                  updatePlaylist(pl.id, { cover: ref, coverColor: color ?? undefined });
+                }
+                e.target.value = '';
+              }} />
+            <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 10.5 }}
+              onClick={() => document.getElementById(fileId)?.click()}>{pl.cover ? '커버 변경' : '커버 업로드'}</button>
+            {pl.cover && (
+              <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 10.5 }}
+                onClick={() => updatePlaylist(pl.id, { cover: '', coverColor: undefined })}>커버 제거</button>
+            )}
+            <span style={{ fontSize: 10.5, color: 'var(--faint)' }}>커버가 없으면 이름을 기준으로 자동 그러데이션이 적용됩니다</span>
+          </div>
+
+          {titleEdit ? (
+            <div style={{ display: 'flex', gap: 7 }}>
+              <KInput value={title} onChange={e => setTitle(e.target.value)} style={{ maxWidth: 220 }} />
+              <button className="btn btn-dark" style={{ padding: '5px 12px', fontSize: 10.5 }}
+                onClick={() => { if (title.trim()) { updatePlaylist(pl.id, { title: title.trim() }); setTitleEdit(false); } }}>SAVE</button>
+              <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 10.5 }}
+                onClick={() => { setTitleEdit(false); setTitle(pl.title); }}>CANCEL</button>
+            </div>
+          ) : (
+            <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 10.5, width: 'fit-content' }}
+              onClick={() => setTitleEdit(true)}>이름 수정 ({pl.title})</button>
+          )}
+
+          <DragList
+            items={pl.tracks}
+            keyOf={t => t.id}
+            onReorder={next => setTracks(pl.id, next)}
+            render={t => (
+              <BgmTrackRow t={t}
+                onPatch={p => setTracks(pl.id, pl.tracks.map(x => (x.id === t.id ? { ...x, ...p } : x)))}
+                onDelete={() => removeTrack(pl.id, t.id)} />
+            )}
+          />
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <KInput placeholder="곡 제목" value={tTitle} onChange={e => setTTitle(e.target.value)} style={{ maxWidth: 150 }} />
+            <KInput placeholder="아티스트 (선택)" value={tArtist} onChange={e => setTArtist(e.target.value)} style={{ maxWidth: 130 }} />
+            <KInput placeholder="유튜브 URL 또는 영상 ID" value={tUrl} onChange={e => setTUrl(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
+            <KInput placeholder="재생시간 (3:45)" value={tDur} onChange={e => setTDur(e.target.value)} style={{ maxWidth: 90 }} />
+            <button className="btn btn-dark" onClick={addT}>＋ ADD</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** BGM 탭 (5.3) — 재생목록(무드 카드) 관리 + 재생 설정 */
+function BgmPane() {
+  const { state, setPlaylists, addPlaylist, setSettings } = useBgm();
+  const toast = useToast();
+  const [newTitle, setNewTitle] = useState('');
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const add = () => {
+    if (!newTitle.trim()) { toast('재생목록 이름을 입력해 주세요'); return; }
+    const id = addPlaylist(newTitle);
+    setNewTitle('');
+    setOpenId(id);
+    toast('재생목록이 추가되었습니다');
+  };
+
+  return (
     <div className="set-sec">
       <h3>BGM</h3>
-      <div className="d">유튜브 곡 목록 관리 — 미니 플레이어 리스트에 노출 · 화면은 숨기고 소리만 재생</div>
+      <div className="d">재생목록(무드 카드) 단위로 곡을 관리합니다 — 방문자는 카드를 골라 재생하고, 레코드판이 표지 색으로 재생 진행률을 보여줍니다</div>
 
       <DragList
-        items={state.tracks}
-        keyOf={t => t.id}
-        onReorder={setTracks}
-        render={t => (
-          <BgmTrackRow t={t}
-            onPatch={p => setTracks(state.tracks.map(x => (x.id === t.id ? { ...x, ...p } : x)))}
-            onDelete={() => del.ask(`곡 「${t.title}」을 삭제하시겠습니까?`, () => removeTrack(t.id))} />
+        items={state.playlists}
+        keyOf={p => p.id}
+        onReorder={setPlaylists}
+        render={pl => (
+          <BgmPlaylistRow pl={pl} open={openId === pl.id} onToggle={() => setOpenId(o => (o === pl.id ? null : pl.id))} />
         )}
       />
-      {del.element}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-        <KInput placeholder="곡 제목" value={title} onChange={e => setTitle(e.target.value)} style={{ maxWidth: 150 }} />
-        <KInput placeholder="설명 (선택)" value={desc} onChange={e => setDesc(e.target.value)} style={{ maxWidth: 130 }} />
-        <KInput placeholder="유튜브 URL 또는 영상 ID" value={url} onChange={e => setUrl(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
-        <button className="btn btn-dark" onClick={add}>＋ ADD</button>
+        <KInput placeholder="새 재생목록 이름 (예: Deep Focus)" value={newTitle} onChange={e => setNewTitle(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
+        <button className="btn btn-dark" onClick={add}>＋ 재생목록 추가</button>
       </div>
 
       <div className="set-row" style={{ marginTop: 16 }}>
@@ -2962,12 +3285,20 @@ function BgmPane() {
         </div>
       </div>
       <div className="set-row">
-        <div className="l"><b>셔플</b></div>
+        <div className="l"><b>셔플 기본값</b><small>방문자가 플레이어에서 직접 켜고 끌 수 있습니다</small></div>
         <KToggle checked={state.settings.shuffle} onChange={v => setSettings({ shuffle: v })} />
       </div>
       <div className="set-row">
-        <div className="l"><b>반복 재생</b><small>목록 끝에서 처음으로</small></div>
-        <KToggle checked={state.settings.repeat} onChange={v => setSettings({ repeat: v })} />
+        <div className="l"><b>재생목록 넘나들기 기본값</b><small>켜면 이전/다음 곡이 재생목록 경계에서 다음 재생목록으로 이어짐(셔플과 함께면 전체를 무작위로)</small></div>
+        <KToggle checked={state.settings.crossPlaylist} onChange={v => setSettings({ crossPlaylist: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>반복 재생 기본값</b></div>
+        <div className="mini-seg">
+          <button className={state.settings.repeat === 'off' ? 'on' : ''} onClick={() => setSettings({ repeat: 'off' })}>끔</button>
+          <button className={state.settings.repeat === 'all' ? 'on' : ''} onClick={() => setSettings({ repeat: 'all' })}>전체 반복</button>
+          <button className={state.settings.repeat === 'one' ? 'on' : ''} onClick={() => setSettings({ repeat: 'one' })}>한 곡 반복</button>
+        </div>
       </div>
       <div className="set-row">
         <div className="l"><b>플레이어 표시</b><small>끄면 사이트에서 BGM 플레이어가 사라짐</small></div>
@@ -3276,6 +3607,8 @@ function SettingsInner() {
             <WidgetsPane />
           ) : tab === '메뉴 관리' ? (
             <MenuPane />
+          ) : tab === '메뉴 위젯' ? (
+            <MenuDesignPane />
           ) : tab === '게시판 관리' ? (
             <BoardPane />
           ) : tab === '자관 질문' ? (

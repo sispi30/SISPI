@@ -45,6 +45,7 @@ export const DEFAULT_MENU: MenuItem[] = [
       { label: '리스트', href: '/board' },
       { label: '갤러리', href: '/gallery' },
       { label: '로드비', href: '/loadb' },
+      { label: '배너', href: '/board?b=banner' },
     ],
   },
   {
@@ -52,6 +53,7 @@ export const DEFAULT_MENU: MenuItem[] = [
     children: [
       { label: '캐릭터', href: '/tchars' },
       { label: '로그 백업', href: '/trpg' },
+      { label: '세션 게시판', href: '/board?b=tsession' },
       { label: '도토리', href: '/dotori' },
       { label: '플레이기록', href: '/playlog' },
     ],

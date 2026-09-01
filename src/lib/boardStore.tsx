@@ -120,16 +120,18 @@ export function badgeFor(st: BoardSettings, p: { notice?: boolean; secret?: bool
 }
 
 /* ---------- 게시판 다중 생성 (5.2 v1.9) ---------- */
-// 같은 유형(리스트형) 게시판을 여러 개 — 게시판별 이름·말머리·권한·리스트 스킨(기본형/티켓형).
+// 같은 유형(리스트형) 게시판을 여러 개 — 게시판별 이름·말머리·권한·리스트 스킨(기본형/티켓형/타래형).
 // 글은 ohome.board.v1 한 곳에 boardId로 구분 저장(게시판 삭제 시에도 글 데이터는 보존 — 3장 원칙).
-export type BoardSkin = 'list' | 'ticket';
+// 타래형(thread) — 그누보드 타래형/목록형 세션카드 게시판 스킨을 이 저장소 방식으로 옮긴 것 (TRPG 세션 게시판).
+// 배너형(banner) — 그누보드 배너 게시판(이웃/공지/동맹 배너 · 헤더 이미지) 스킨을 옮긴 것 (5.7).
+export type BoardSkin = 'list' | 'ticket' | 'thread' | 'banner';
 export type BoardPerm = 'guest' | 'member' | 'admin';
 
 export interface Board {
   id: string;              // 'main' = 기본 게시판 (삭제 불가)
   name: string;            // 메뉴·페이지 타이틀 표시명
   desc: string;            // 페이지 설명 기본 문구
-  skin: BoardSkin;         // 리스트 스킨 — 기본형 / 티켓형
+  skin: BoardSkin;         // 리스트 스킨 — 기본형 / 티켓형 / 타래형(타래·목록 두 보기 + 스포일러 접기)
   permWrite: BoardPerm;    // 글쓰기 권한 (mock 단계에선 로그인 전제 — 로드뷰와 동일)
   permComment: BoardPerm;  // 댓글 권한
   cats: BoardBadge[];      // 게시판별 말머리
@@ -139,11 +141,41 @@ export interface Board {
 const BOARDS_KEY = 'ohome.boards.v1';
 export const MAIN_BOARD_ID = 'main';
 
+/** TRPG 세션 게시판 — 타래형(목록형) 스킨의 말머리를 진행중/완료 「상태」로 사용 (도토리 형식) */
+export const DEFAULT_TSESSION_CATS: BoardBadge[] = [
+  { id: 'tsession-cat-진행중', label: '진행중', bg: '#a63a45', border: '#a63a45', fg: '#ffffff' },
+  { id: 'tsession-cat-완료', label: '완료', bg: '#3c434d', border: '#3c434d', fg: '#ffffff' },
+];
+
+/** 배너 게시판 — 종류(이웃/공지/동맹 배너 · 헤더 이미지)를 말머리(category)로 사용 (그누보드 write.skin.php 이식, 5.7) */
+export const DEFAULT_BANNER_CATS: BoardBadge[] = [
+  { id: 'banner-cat-이웃', label: '이웃 배너', bg: '#eef0f2', border: '#d7dae0', fg: '#5d636d' },
+  { id: 'banner-cat-공지', label: '공지 배너', bg: '#1d2025', border: '#1d2025', fg: '#ffffff' },
+  { id: 'banner-cat-동맹', label: '동맹 배너', bg: '#eef0f2', border: '#d7dae0', fg: '#5d636d' },
+  { id: 'banner-cat-헤더', label: '헤더 이미지', bg: '#a63a45', border: '#a63a45', fg: '#ffffff' },
+];
+
 export const DEFAULT_BOARDS: Board[] = [{
   id: MAIN_BOARD_ID, name: '리스트',
   desc: 'MD / HTML 작성 지원 · 스크립트 실행 불허 · 말머리 · 비밀글 · 접기',
   skin: 'list', permWrite: 'member', permComment: 'member', cats: DEFAULT_BOARD_CATS,
+}, {
+  id: 'tsession', name: '세션 게시판',
+  desc: '목록형(썸네일 그리드) · 이미지 · 스포일러 접기 · 댓글 · 진행중/완료 상태 구분 · 관리자 전용 글쓰기(플레이 기록 연동)',
+  skin: 'thread', permWrite: 'admin', permComment: 'member', cats: DEFAULT_TSESSION_CATS,
+}, {
+  id: 'banner', name: '배너',
+  desc: '이웃·공지·동맹 배너와 헤더 이미지를 모아 보는 페이지 · 이웃 배너는 누구나 등록 신청 가능',
+  skin: 'banner', permWrite: 'member', permComment: 'admin', cats: DEFAULT_BANNER_CATS,
 }];
+
+/** 저장된 게시판 목록에 원래 있어야 할 기본 게시판(세션 게시판 등)이 빠져 있으면 뒤에 채워 넣는다.
+ *  (v2.0 포크 제보 — 예전 백업을 복원하면, 그 시점 이후에 새로 생긴 기본 게시판이 저장된 목록에는
+ *  없어 조용히 사라진다. 게시판을 지워도 글 데이터는 남듯, 되살아나도 안전하다 — 3장 원칙) */
+function healBoards(saved: Board[]): { boards: Board[]; changed: boolean } {
+  const missing = DEFAULT_BOARDS.filter(d => !saved.some(b => b.id === d.id));
+  return missing.length ? { boards: [...saved, ...missing], changed: true } : { boards: saved, changed: false };
+}
 
 export function useBoards(): {
   boards: Board[]; setBoards: (next: Board[]) => void; loaded: boolean;
@@ -154,13 +186,16 @@ export function useBoards(): {
   useEffect(() => {
     try {
       const raw = getRawSetting(BOARDS_KEY);
-      if (raw) setSt(JSON.parse(raw));
-      else {
+      if (raw) {
+        const { boards: healed, changed } = healBoards(JSON.parse(raw));
+        setSt(healed);
+        if (changed) { try { setSetting(BOARDS_KEY, healed); } catch { /* 무시 */ } }
+      } else {
         // 마이그레이션 — 구 전역 말머리(boardset.cats)를 기본 게시판으로 승계
         const old = getRawSetting(KEY);
         if (old) {
           const cats = (JSON.parse(old) as Partial<BoardSettings>).cats;
-          if (cats?.length) setSt([{ ...DEFAULT_BOARDS[0], cats }]);
+          if (cats?.length) setSt([{ ...DEFAULT_BOARDS[0], cats }, ...DEFAULT_BOARDS.slice(1)]);
         }
       }
     } catch { /* 기본값 */ }
@@ -168,7 +203,7 @@ export function useBoards(): {
     const sync = () => {
       try {
         const raw = getRawSetting(BOARDS_KEY);
-        if (raw) setSt(JSON.parse(raw));
+        if (raw) setSt(healBoards(JSON.parse(raw)).boards);
       } catch { /* 무시 */ }
     };
     window.addEventListener('ohome-boards', sync);
