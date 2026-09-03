@@ -24,7 +24,7 @@ import { useTrpgSettings, DOTORI_STATUS_KEYS, DotoriStatus, dotoriBadgeStyle } f
 import { useMemoSettings } from '@/lib/memoStore';
 import {
   useMenuSettings, MenuSettings, MenuPerm, MenuVis, PLAYLOG_COLS,
-  MenuGroupNode, MenuLeaf, defaultTree, newGroupId, menuLabelFor, extraBoardHref, boardEntries,
+  MenuGroupNode, MenuLeaf, defaultTree, newGroupId, menuLabelFor, extraBoardHref, boardEntries, faClass,
   IMG_PROTECT_AREAS,
 } from '@/lib/menuStore';
 import { FEATURES } from '@/lib/menu';
@@ -2458,7 +2458,38 @@ function MenuDesignPane() {
   const [cfg, patch, loaded] = useTransformMenuSettings();
   const toast = useToast();
   const logoUrl = useBlobUrl(cfg.logoBlobId);
-  if (!loaded) return null;
+
+  // 아이콘 (커스텀 요청) — 메뉴 관리(useMenuSettings)의 트리에 항목별 Font Awesome 클래스명을 저장.
+  // 위젯을 켜지 않아도(TopBar 기본 메뉴에도) 지정한 아이콘이 그대로 표시된다.
+  const [ms, patchMenu, msLoaded] = useMenuSettings();
+  const { boards, loaded: bLoaded } = useBoards();
+  const { map: secMap } = useSections();
+  const { links } = useCustomLinks();
+  const extraAll = [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)];
+  const tree = ms.tree ?? defaultTree();
+  const defLabel = (href: string) => menuLabelFor(href, extraAll) ?? href;
+  const setGroupIcon = (gid: string, icon: string) =>
+    patchMenu({ tree: tree.map(g => (g.id === gid ? { ...g, icon: icon || undefined } : g)) });
+  const setItemIcon = (gid: string, href: string, icon: string) =>
+    patchMenu({
+      tree: tree.map(g => (g.id === gid
+        ? { ...g, items: g.items.map(it => (it.href === href ? { ...it, icon: icon || undefined } : it)) }
+        : g)),
+    });
+  const iconInput = (value: string | undefined, onChange: (v: string) => void) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span style={{
+        width: 26, height: 26, borderRadius: 7, border: '1px solid var(--line)', background: 'var(--panel)',
+        display: 'grid', placeItems: 'center', flexShrink: 0, color: 'var(--ink)', fontSize: 13,
+      }}>
+        {faClass(value) ? <i className={faClass(value)!} aria-hidden /> : <span style={{ color: 'var(--faint)', fontSize: 10 }}>—</span>}
+      </span>
+      <KInput value={value ?? ''} placeholder="fa-home" onChange={e => onChange(e.target.value)}
+        style={{ width: 108, fontSize: 12 }} />
+    </div>
+  );
+
+  if (!loaded || !msLoaded || !bLoaded) return null;
 
   const seg = <T extends string>(value: T, options: { v: T; label: string }[], onChange: (v: T) => void) => (
     <div className="seg in-panel">
@@ -2481,9 +2512,57 @@ function MenuDesignPane() {
         <KToggle checked={cfg.enabled} onChange={v => patch({ enabled: v })} />
       </div>
 
+      {/* 아이콘 (커스텀 요청) — Font Awesome 클래스명(예: fa-home)을 입력하면 메뉴에 아이콘이 붙는다.
+          위젯을 켜지 않아도 기존 상단 메뉴(gnb)에 바로 반영되며, 위젯을 켰을 때는 아래 「표시 방식」으로
+          아이콘만 보이게 할 수도 있다 */}
+      <h3 style={{ marginTop: 22 }}>아이콘</h3>
+      <div className="d">
+        Font Awesome 아이콘 클래스명을 입력하면(예: <code>fa-home</code>) 메뉴 항목에 아이콘이 표시됩니다 — 비워두면 아이콘 없이 글자만.
+        <br />
+        <a href="https://fontawesome.com/search?ic=free" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>
+          무료 아이콘 목록 보기 ↗
+        </a>
+      </div>
+      {cfg.enabled && (
+        <div className="set-row">
+          <div className="l"><b>표시 방식</b><small>위젯에서 아이콘을 어떻게 보여줄지 — 「아이콘만」은 화면 2번째 사진처럼 됩니다</small></div>
+          {seg<'text' | 'icon-text' | 'icon'>(cfg.iconMode, [
+            { v: 'text', label: '글자만' }, { v: 'icon-text', label: '아이콘 + 글자' }, { v: 'icon', label: '아이콘만' },
+          ], v => patch({ iconMode: v }))}
+        </div>
+      )}
+      <div style={{ marginTop: 10 }}>
+        {tree.map(g => (
+          <div key={g.id} style={{ borderBottom: '1px dashed var(--line)', padding: '8px 0' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <b style={{ fontSize: 12.5, width: 90, flexShrink: 0 }}>{g.label}</b>
+              {iconInput(g.icon, v => setGroupIcon(g.id, v))}
+              {!g.href && <span className="pill">상위</span>}
+            </div>
+            {!g.href && g.items.length > 0 && (
+              <div style={{ padding: '6px 0 0 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {g.items.map(it => (
+                  <div key={it.href} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12, width: 90, flexShrink: 0, color: 'var(--faint)' }}>
+                      {it.label ?? defLabel(it.href)}
+                    </span>
+                    {iconInput(it.icon, v => setItemIcon(g.id, it.href, v))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {tree.length === 0 && (
+          <div style={{ padding: '10px 0', fontSize: 12, color: 'var(--faint)' }}>
+            먼저 「메뉴 관리」에서 메뉴를 구성해 주세요
+          </div>
+        )}
+      </div>
+
       {cfg.enabled && (
         <>
-          <div className="set-row">
+          <div className="set-row" style={{ marginTop: 22 }}>
             <div className="l"><b>배치 방식</b>
               <small>고정 — 화면 위에 독립된 캡슐로 떠서 드래그로 옮길 수 있음 · 제자리 — 기존 메뉴 줄 자리에 그대로</small>
             </div>

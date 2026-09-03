@@ -6,7 +6,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
-import { boardEntries, useMenuSettings, buildMenu } from '@/lib/menuStore';
+import { boardEntries, useMenuSettings, buildMenu, faClass } from '@/lib/menuStore';
 import { useBoards } from '@/lib/boardStore';
 import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
@@ -155,20 +155,42 @@ export function TransformMenu() {
     return out;
   };
 
+  // 아이콘 (커스텀 요청) — 메뉴 관리에서 항목별로 지정한 Font Awesome 아이콘을 이 위젯에 표시할지.
+  // text: 기존과 동일(글자만) · icon-text: 아이콘+글자 · icon: 아이콘만(아이콘이 없는 항목은 글자로 대체)
+  const showTopIcon = cfg.iconMode !== 'text';
+  const topIconOnly = cfg.iconMode === 'icon';
+  const topLabel = (icon: string | undefined, label: string) => {
+    const c = showTopIcon ? faClass(icon) : null;
+    return (
+      <>
+        {c && <i className={c} aria-hidden style={{ marginRight: topIconOnly ? 0 : 6 }} />}
+        {(!topIconOnly || !c) && <span>{label}</span>}
+      </>
+    );
+  };
+  // 서브메뉴(드롭다운)는 공간이 넉넉하므로 아이콘이 있으면 항상 아이콘+글자로 표시
+  const subLabel = (icon: string | undefined, label: string) => {
+    const c = faClass(icon);
+    return <>{c && <i className={c} aria-hidden style={{ marginRight: 6 }} />}{label}</>;
+  };
+
   const menuNodes = menu.map(item => (
     item.children ? (
       <div className={`tf-grp${openGroup === item.label ? ' open' : ''}`} key={item.label}
         onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
-        <button onClick={() => nav(item.children![0].href)}>{item.label}</button>
+        <button onClick={() => nav(item.children![0].href)} title={topIconOnly ? item.label : undefined}>
+          {topLabel(item.icon, item.label)}
+        </button>
         <div className="tf-sub" onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
           {item.children.map(c => (
-            <button key={c.href} onClick={() => nav(c.href)}>{c.label}</button>
+            <button key={c.href} onClick={() => nav(c.href)}>{subLabel(c.icon, c.label)}</button>
           ))}
         </div>
       </div>
     ) : (
-      <button key={item.label} className={pathname === item.href ? 'on' : ''} onClick={() => nav(item.href!)}>
-        {item.label}
+      <button key={item.label} className={pathname === item.href ? 'on' : ''} onClick={() => nav(item.href!)}
+        title={topIconOnly ? item.label : undefined}>
+        {topLabel(item.icon, item.label)}
       </button>
     )
   ));

@@ -5,7 +5,8 @@
 export interface MenuItem {
   label: string;
   href?: string;             // 하위가 없는 단독 메뉴
-  children?: { label: string; href: string }[];
+  icon?: string;             // Font Awesome 클래스명 (커스텀 요청 — 메뉴 아이콘)
+  children?: { label: string; href: string; icon?: string }[];
 }
 
 /** 배치 가능한 기능(모듈) 전체 — href → 기본 이름. 메뉴 트리에 넣어야 노출됨 (3장 메뉴 선택제) */

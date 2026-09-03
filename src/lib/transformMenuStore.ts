@@ -11,6 +11,7 @@ export type TfAlign = 'flex-start' | 'center' | 'flex-end';
 export type TfAnchorX = 'left' | 'center' | 'right';
 export type TfAnchorY = 'top' | 'center' | 'bottom';
 export type TfDivider = 'none' | 'line' | 'dot';
+export type TfIconMode = 'text' | 'icon-text' | 'icon';
 
 export interface TransformMenuSettings {
   enabled: boolean;              // 켜면 기존 상단 메뉴 대신 이 위젯을 사용
@@ -26,6 +27,9 @@ export interface TransformMenuSettings {
   anchorY: TfAnchorY;
   draggable: boolean;               // 방문자가 끌어 옮길 수 있는지
   savePosition: boolean;            // 옮긴 위치를 이 브라우저에 기억할지
+
+  // 아이콘 (커스텀 요청) — 메뉴 관리에서 항목별로 지정한 Font Awesome 아이콘을 이 위젯에 표시할지
+  iconMode: TfIconMode;   // text: 글자만(기본) · icon-text: 아이콘+글자 · icon: 아이콘만
 
   // 메뉴 글자
   menuFontSize: number;
@@ -78,6 +82,8 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
   anchorX: 'center', anchorY: 'top',
   draggable: true,
   savePosition: true,
+
+  iconMode: 'text',
 
   menuFontSize: 14,
   menuFontColor: '',

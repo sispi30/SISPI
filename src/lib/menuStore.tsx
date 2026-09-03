@@ -12,10 +12,25 @@ export type MenuPerm = 'guest' | 'member' | 'admin';
 /** 메뉴 공개범위 (v1.9) — all: 전부 보임 / member: 비로그인에게 숨김 / admin: 관리자에게만 */
 export type MenuVis = 'all' | 'member' | 'admin';
 
-/** 트리의 하위 메뉴 한 항목 — label 없으면 기본 이름(FEATURES/게시판명) · pageTitle은 페이지 상단 큰 제목 덮어쓰기 */
-export interface MenuLeaf { href: string; label?: string; pageTitle?: string; vis?: MenuVis; open?: boolean }
+/** 트리의 하위 메뉴 한 항목 — label 없으면 기본 이름(FEATURES/게시판명) · pageTitle은 페이지 상단 큰 제목 덮어쓰기
+ *  icon: Font Awesome 클래스명 (커스텀 요청 — 메뉴 아이콘 표시, 환경설정 > 메뉴 위젯에서 지정) */
+export interface MenuLeaf { href: string; label?: string; pageTitle?: string; vis?: MenuVis; open?: boolean; icon?: string }
 /** 트리의 상위 한 항목 — href가 있으면 단독 메뉴(하위 없음) */
-export interface MenuGroupNode { id: string; label: string; href?: string; items: MenuLeaf[]; pageTitle?: string; vis?: MenuVis; open?: boolean }
+export interface MenuGroupNode { id: string; label: string; href?: string; items: MenuLeaf[]; pageTitle?: string; vis?: MenuVis; open?: boolean; icon?: string }
+
+/**
+ * 메뉴 아이콘 입력값 → 실제 Font Awesome class (커스텀 요청).
+ *
+ * 관리자는 "fa-home"처럼 아이콘 이름만 입력한다(환경설정 > 메뉴 위젯 > 아이콘 화면 예시와 동일한 표기).
+ * 스타일 접두사(fa-solid/fa-regular/fa-brands 등)가 이미 포함돼 있으면 그대로 쓰고,
+ * 없으면 무료 아이콘 대부분을 커버하는 fa-solid를 붙여 준다. 빈 값이면 null.
+ */
+export function faClass(icon?: string): string | null {
+  const s = icon?.trim();
+  if (!s) return null;
+  const hasStyle = /(^|\s)(fa-solid|fa-regular|fa-brands|fa-light|fa-thin|fa-duotone|fas|far|fab|fal|fat|fad)(\s|$)/.test(s);
+  return hasStyle ? s : `fa-solid ${s}`;
+}
 
 export interface MenuSettings {
   tree?: MenuGroupNode[];            // 자유 메뉴 트리 (v1.9 — 없으면 v1 설정에서 마이그레이션)
@@ -322,16 +337,16 @@ export function buildMenu(
     .filter(g => canSee(g.vis))
     .map((g): MenuItem | null => {
       if (g.href) {
-        return menuLabelFor(g.href, extra) === null ? null : { label: g.label, href: g.href };
+        return menuLabelFor(g.href, extra) === null ? null : { label: g.label, href: g.href, icon: g.icon };
       }
       const children = g.items
         .filter(it => canSee(it.vis))
         .map(it => {
           const def = menuLabelFor(it.href, extra);
-          return def === null ? null : { href: it.href, label: it.label ?? def };
+          return def === null ? null : { href: it.href, label: it.label ?? def, icon: it.icon };
         })
-        .filter((c): c is { href: string; label: string } => !!c);
-      return { label: g.label, children };
+        .filter((c): c is { href: string; label: string; icon: string | undefined } => !!c);
+      return { label: g.label, children, icon: g.icon };
     })
     .filter((m): m is MenuItem => !!m);
 

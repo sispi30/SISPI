@@ -4,7 +4,7 @@
 // 편집모드 중 페이지 이동 시도 → 종료 확인 모달 (v1.8)
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { boardEntries, useMenuSettings, buildMenu } from '@/lib/menuStore';
+import { boardEntries, useMenuSettings, buildMenu, faClass } from '@/lib/menuStore';
 import { useBoards } from '@/lib/boardStore';
 import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
@@ -28,6 +28,12 @@ const BellIcon = () => (
     <path d="M10 18.8a2.1 2.1 0 0 0 4 0" />
   </svg>
 );
+
+/** 메뉴 아이콘 (커스텀 요청) — 항목에 Font Awesome 클래스명을 지정했을 때만 라벨 앞에 표시 */
+const MIcon = ({ icon }: { icon?: string }) => {
+  const c = faClass(icon);
+  return c ? <i className={c} aria-hidden style={{ marginRight: 6 }} /> : null;
+};
 
 export function TopBar() {
   const { user, isAdmin, logout } = useAuth();
@@ -165,12 +171,12 @@ export function TopBar() {
             <div className="grp" key={item.label}>
               {/* 상위 클릭 → 첫 하위 페이지 (v1.8) · 안 읽은 알림이 있는 메뉴에 점 (4.13) */}
               <button onClick={() => nav(item.children![0].href)}>
-                {item.label}{item.children.some(c => dotHrefs.has(c.href)) && <small className="nd">●</small>}
+                <MIcon icon={item.icon} />{item.label}{item.children.some(c => dotHrefs.has(c.href)) && <small className="nd">●</small>}
               </button>
               <div className="sub">
                 {item.children.map(c => (
                   <button key={c.href} onClick={() => nav(c.href)}>
-                    {c.label}{dotHrefs.has(c.href) && <small className="nd">●</small>}
+                    <MIcon icon={c.icon} />{c.label}{dotHrefs.has(c.href) && <small className="nd">●</small>}
                   </button>
                 ))}
               </div>
@@ -181,7 +187,7 @@ export function TopBar() {
               className={pathname === item.href ? 'on' : ''}
               onClick={() => nav(item.href!)}
             >
-              {item.label}{dotHrefs.has(item.href!) && <small className="nd">●</small>}
+              <MIcon icon={item.icon} />{item.label}{dotHrefs.has(item.href!) && <small className="nd">●</small>}
             </button>
           )
         )}
@@ -198,13 +204,13 @@ export function TopBar() {
                     <div className="sub-cap">{item.label}</div>
                     {item.children.map(c => (
                       <button key={c.href} onClick={() => nav(c.href)}>
-                        {c.label}{dotHrefs.has(c.href) && <small className="nd">●</small>}
+                        <MIcon icon={c.icon} />{c.label}{dotHrefs.has(c.href) && <small className="nd">●</small>}
                       </button>
                     ))}
                   </div>
                 ) : (
                   <button key={item.label} onClick={() => nav(item.href!)}>
-                    {item.label}{dotHrefs.has(item.href!) && <small className="nd">●</small>}
+                    <MIcon icon={item.icon} />{item.label}{dotHrefs.has(item.href!) && <small className="nd">●</small>}
                   </button>
                 ))}
             </div>
@@ -212,7 +218,7 @@ export function TopBar() {
         )}
         {/* 폭 측정용 사본 (보이지 않음) — 마지막 항목은 ⋯ 버튼 폭 */}
         <div className="gnb gnb-measure" ref={measureRef} aria-hidden>
-          {menu.map(item => <button key={item.label} tabIndex={-1}>{item.label}{item.children && <span> ▾</span>}</button>)}
+          {menu.map(item => <button key={item.label} tabIndex={-1}><MIcon icon={item.icon} />{item.label}{item.children && <span> ▾</span>}</button>)}
           <button tabIndex={-1}>⋯</button>
         </div>
       </nav>
