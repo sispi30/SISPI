@@ -129,7 +129,7 @@ function BoardInner() {
         <EditableDesc k={board.id === MAIN_BOARD_ID ? 'board-desc' : `board-desc-${board.id}`} def={board.desc} />
       </div>
       <div className="toolrow">
-        {board.skin === 'banner' || board.skin === 'scrap' ? <div /> : (
+        {board.skin === 'banner' ? <div /> : (
           <div className="seg">
             {(board.skin === 'thread' ? ['전체', ...board.cats.map(x => x.label)] : ['전체', '공지', ...board.cats.map(x => x.label)]).map(c => (
               <button key={c} className={cat === c ? 'on' : ''} onClick={() => { setCat(c); setPage(1); }}>

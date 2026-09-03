@@ -7,9 +7,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList, BOARD_SEED, Post, newId, fmtDate } from '@/lib/postStore';
-import { Board, boardHref } from '@/lib/boardStore';
+import { Board, BoardBadge, boardHref, boardBadgeStyle } from '@/lib/boardStore';
 import { renderScrapContent } from '@/lib/scrapEmbed';
-import { KInput, KTextarea, KCheck } from '@/components/ui/Kit';
+import { KInput, KTextarea, KCheck, KSelect } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirmDelete } from '@/components/ui/Modal';
 import { PageTitle, EditableDesc } from '@/components/ui/PageText';
@@ -59,8 +59,13 @@ export function ScrapWriteForm({ board, editPid }: { board: Board; editPid?: str
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [category, setCategory] = useState('');
   const [secret, setSecret] = useState(false);
   const [notice, setNotice] = useState(false);
+
+  // 말머리 기본값 — 게시판별 말머리(5.2) 로드 후 첫 항목 (일반 글쓰기 폼과 동일 규칙)
+  useEffect(() => { if (!category && board.cats[0]) setCategory(board.cats[0].label); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board.cats.length]);
 
   const hydrated = useRef(false);
   useEffect(() => {
@@ -70,6 +75,7 @@ export function ScrapWriteForm({ board, editPid }: { board: Board; editPid?: str
     hydrated.current = true;
     setTitle(p.title);
     setContent(p.body);
+    setCategory(p.category);
     setSecret(p.secret);
     setNotice(p.notice);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,7 +104,7 @@ export function ScrapWriteForm({ board, editPid }: { board: Board; editPid?: str
     // 제목은 비워 둘 수 있다 (원본 write.skin.php — 제목 없이 링크만 붙여넣는 사용을 전제로 한다)
     if (editing) {
       setPosts(posts.map(p => (p.id === editing.id ? {
-        ...p, title: title.trim(), body: content, mode: 'md', secret, notice: isAdmin ? notice : p.notice,
+        ...p, title: title.trim(), body: content, mode: 'md', category, secret, notice: isAdmin ? notice : p.notice,
       } : p)));
       toast('수정되었습니다');
       router.push(boardHref(board.id));
@@ -107,7 +113,7 @@ export function ScrapWriteForm({ board, editPid }: { board: Board; editPid?: str
     const p: Post = {
       id: newId(),
       title: title.trim(), body: content, mode: 'md',
-      category: '', author: user.nickname, authorId: user.id, date: new Date().toISOString(),
+      category, author: user.nickname, authorId: user.id, date: new Date().toISOString(),
       secret, notice: isAdmin ? notice : false, fold: null, comments: [],
       boardId: board.id,
     };
@@ -123,6 +129,13 @@ export function ScrapWriteForm({ board, editPid }: { board: Board; editPid?: str
         <EditableDesc k="board-write-desc-scrap" def="제목 없이도 등록할 수 있습니다 · URL만 단독 줄로 붙여넣으면 X(트위터)/유튜브/이미지/링크 카드로 자동 임베드됩니다" />
       </div>
       <div className="panel" style={{ padding: 24, maxWidth: 620, margin: '0 auto', display: 'grid', gap: 16 }}>
+        {board.cats.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <label className="k-label" style={{ width: 60 }}>말머리</label>
+            <KSelect minWidth={130} value={category} onChange={setCategory}
+              options={board.cats.map(x => ({ value: x.label, label: x.label }))} placeholder="말머리 선택" />
+          </div>
+        )}
         <div>
           <label className="k-label" style={{ marginBottom: 6 }}>제목 <small style={{ fontWeight: 400 }}>선택 입력</small></label>
           <KInput value={title} onChange={e => setTitle(e.target.value)} placeholder="제목 (비워 두면 아이콘만 표시됩니다)" style={{ width: '100%' }} />
@@ -182,12 +195,13 @@ function CardMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => vo
   );
 }
 
-function ScrapCard({ post, canRead, canManage, onEdit, onDelete }: {
-  post: Post; canRead: boolean; canManage: boolean; onEdit: () => void; onDelete: () => void;
+function ScrapCard({ post, cats, canRead, canManage, onEdit, onDelete }: {
+  post: Post; cats: BoardBadge[]; canRead: boolean; canManage: boolean; onEdit: () => void; onDelete: () => void;
 }) {
   const rendered = useMemo(() => (canRead ? renderScrapContent(post.body) : { bodyHtml: '', needsTwitter: false }), [post.body, canRead]);
   const titleIcon = post.notice ? 'fa-bullhorn' : post.secret ? 'fa-lock' : 'fa-thumbtack';
   const handle = post.authorId ? `@${post.authorId}` : '@anonymous';
+  const catBadge = post.category ? cats.find(c => c.label === post.category) : undefined;
 
   return (
     <article className={`bscrap-card ${post.notice ? 'is-notice' : ''}`}>
@@ -210,6 +224,9 @@ function ScrapCard({ post, canRead, canManage, onEdit, onDelete }: {
             </div>
             <div className="bscrap-author__date">{fmtDate(post.date)}</div>
           </div>
+          {catBadge && (
+            <span style={{ ...boardBadgeStyle(catBadge), marginBottom: 8 }}>{catBadge.label}</span>
+          )}
           {rendered.bodyHtml !== '' && (
             <div className="bscrap-content" dangerouslySetInnerHTML={{ __html: rendered.bodyHtml }} />
           )}
@@ -244,7 +261,7 @@ export function ScrapBoardView({ board, items, posts, setPosts, isAdmin, user }:
       ) : (
         <div className="bscrap-grid">
           {items.map(p => (
-            <ScrapCard key={p.id} post={p} canRead={canRead(p)} canManage={canManage(p)}
+            <ScrapCard key={p.id} post={p} cats={board.cats} canRead={canRead(p)} canManage={canManage(p)}
               onEdit={() => goEdit(p)} onDelete={() => goDelete(p)} />
           ))}
         </div>
