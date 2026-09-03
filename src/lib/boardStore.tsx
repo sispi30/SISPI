@@ -124,7 +124,8 @@ export function badgeFor(st: BoardSettings, p: { notice?: boolean; secret?: bool
 // 글은 ohome.board.v1 한 곳에 boardId로 구분 저장(게시판 삭제 시에도 글 데이터는 보존 — 3장 원칙).
 // 타래형(thread) — 그누보드 타래형/목록형 세션카드 게시판 스킨을 이 저장소 방식으로 옮긴 것 (TRPG 세션 게시판).
 // 배너형(banner) — 그누보드 배너 게시판(이웃/공지/동맹 배너 · 헤더 이미지) 스킨을 옮긴 것 (5.7).
-export type BoardSkin = 'list' | 'ticket' | 'thread' | 'banner';
+// 스크랩형(scrap) — 그누보드 스크랩 게시판(X/유튜브 임베드 · 이미지·링크 카드 · 담벼락형 3열 카드) 스킨을 옮긴 것 (5.8).
+export type BoardSkin = 'list' | 'ticket' | 'thread' | 'banner' | 'scrap';
 export type BoardPerm = 'guest' | 'member' | 'admin';
 
 export interface Board {
@@ -167,6 +168,10 @@ export const DEFAULT_BOARDS: Board[] = [{
   id: 'banner', name: '배너',
   desc: '이웃·공지·동맹 배너와 헤더 이미지를 모아 보는 페이지 · 이웃 배너는 누구나 등록 신청 가능',
   skin: 'banner', permWrite: 'member', permComment: 'admin', cats: DEFAULT_BANNER_CATS,
+}, {
+  id: 'scrap', name: '스크랩',
+  desc: 'X(트위터)·유튜브 임베드 · 이미지·링크 카드 · 담벼락형 3열 카드 게시판 — URL만 단독으로 붙여넣으면 자동 임베드',
+  skin: 'scrap', permWrite: 'member', permComment: 'member', cats: [],
 }];
 
 /** 저장된 게시판 목록에 원래 있어야 할 기본 게시판(세션 게시판 등)이 빠져 있으면 뒤에 채워 넣는다.

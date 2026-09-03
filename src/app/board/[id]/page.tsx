@@ -77,14 +77,15 @@ export default function BoardDetailPage() {
   const blocked = useHrefBlock(post && (bid === MAIN_BOARD_ID ? '/board' : extraBoardHref(bid)));
   // loaded 이후에만 본문 렌더 (SSR/하이드레이션 불일치 방지)
   const html = useMemo(() => (post && loaded ? renderBody(post.mode, post.body) : ''), [post, loaded]);
-  // 배너 게시판 (5.7) — 개별 보기 페이지가 없다(그누보드 view.skin.php와 동일하게 목록으로 리다이렉트)
+  // 배너/스크랩 게시판 (5.7/5.8) — 개별 보기 페이지가 없다(그누보드 view.skin.php와 동일하게 목록으로 리다이렉트)
   const bannerBoard = boards.find(b => b.id === bid);
+  const noDetailPage = bannerBoard?.skin === 'banner' || bannerBoard?.skin === 'scrap';
   useEffect(() => {
-    if (bannerBoard?.skin === 'banner') router.replace(boardHref(bannerBoard.id));
-  }, [bannerBoard, router]);
+    if (noDetailPage && bannerBoard) router.replace(boardHref(bannerBoard.id));
+  }, [noDetailPage, bannerBoard, router]);
 
   // 막힌 곳이면 여기서 되돌아간다 — 훅을 모두 부른 뒤여야 렌더마다 개수가 같다
-  if (bannerBoard?.skin === 'banner') return <section className="page" />;
+  if (noDetailPage) return <section className="page" />;
   if (blocked) return blocked;
   if (!loaded) return <section className="page" />;
   if (!post) {

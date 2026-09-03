@@ -47,6 +47,7 @@ export const DEFAULT_MENU: MenuItem[] = [
       { label: '갤러리', href: '/gallery' },
       { label: '로드비', href: '/loadb' },
       { label: '배너', href: '/board?b=banner' },
+      { label: '스크랩', href: '/board?b=scrap' },
     ],
   },
   {

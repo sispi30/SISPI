@@ -15,6 +15,7 @@ import { RichEditor } from '@/components/ui/RichEditor';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle, EditableDesc } from '@/components/ui/PageText';
 import { BannerWriteForm } from '@/components/board/BannerBoard';
+import { ScrapWriteForm } from '@/components/board/ScrapBoard';
 
 /** 에디터가 다루지 못해 정리될 만한 태그·속성이 있는가 — 전환 경고 판단 (인트로와 같은 기준) */
 const hasRichHtml = (html: string) =>
@@ -123,6 +124,11 @@ function WriteInner() {
   // 구조가 완전히 달라(배너 종류·이미지·클릭 URL) 별도 컴포넌트로 분리해 렌더한다.
   if (board.skin === 'banner') {
     return <BannerWriteForm board={board} editPid={editPid ?? undefined} />;
+  }
+  // 스크랩 게시판 (5.8) — 그누보드 write.skin.php 이식. 제목 없이도 등록 가능하고 말머리·접기·태그가
+  // 없는 대신 URL 자동 임베드 미리보기가 있어 구조가 완전히 달라 별도 컴포넌트로 분리해 렌더한다.
+  if (board.skin === 'scrap') {
+    return <ScrapWriteForm board={board} editPid={editPid ?? undefined} />;
   }
 
   const post = () => {
