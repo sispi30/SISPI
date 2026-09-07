@@ -2127,13 +2127,13 @@ function MenuPane() {
   const moveItem = (fromGid: string, it: MenuLeaf, to: string) => {
     const stripped = tree.map(g => (g.id === fromGid ? { ...g, items: g.items.filter(i => i.href !== it.href) } : g));
     if (to === 'solo') {
-      setTree([...stripped, { id: newGroupId(), label: it.label ?? defLabel(it.href), href: it.href, items: [], pageTitle: it.pageTitle }]);
+setTree([...stripped, { id: newGroupId(), label: it.label ?? defLabel(it.href), href: it.href, open: false, items: [], pageTitle: it.pageTitle }]);
     } else {
       setTree(stripped.map(g => (g.id === to ? { ...g, items: [...g.items, it] } : g)));
     }
   };
   const placeUnplaced = (href: string, to: string) => {
-    if (to === 'solo') setTree([...tree, { id: newGroupId(), label: defLabel(href), href, items: [] }]);
+if (to === 'solo') setTree([...tree, { id: newGroupId(), label: defLabel(href), href, open: false, items: [] }]);
     else setTree(tree.map(g => (g.id === to ? { ...g, items: [...g.items, { href }] } : g)));
     if (href.startsWith('/board?b=')) setDraftRemoved(removed.filter(h => h !== href));
   };
@@ -2485,7 +2485,7 @@ function MenuPane() {
         )} />
       <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
         <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }}
-          onClick={() => setTree([...tree, { id: newGroupId(), label: '새 메뉴', items: [] }])}>＋ ADD MENU</button>
+onClick={() => setTree([...tree, { id: newGroupId(), label: '새 메뉴', open: false, items: [] }])}>+ ADD MENU</button>
       </div>
 
       <h3 style={{ marginTop: 26 }}>미배치 기능</h3>
