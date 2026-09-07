@@ -62,6 +62,7 @@ import { visFloorOf } from '@/lib/visFloor';
 import { validateConfig, configFileText, saveLocalConfig, parseFirebaseSnippet, serverConfig } from '@/lib/serverConfig';
 import { migrateTo, findOrphanFiles } from '@/lib/transfer';
 import { FIRESTORE_RULES, STORAGE_RULES } from '@/lib/firebaseRules';
+import { SCHEMA_SQL } from '@/lib/schemaSql';
 
 const CATEGORIES = [
   '디자인', '메인 페이지', '위젯', '메뉴 관리', '메뉴 위젯', '게시판 관리', '자관 질문', '커미션', 'TRPG', '감상타래', '메모장',
@@ -1233,9 +1234,11 @@ function SecurityRulesRow() {
     <div className="set-sec" style={{ marginTop: 26 }}>
       <h3>보안 규칙</h3>
       <div className="d">
-        앱이 업데이트되며 규칙이 바뀔 때가 있습니다 — 새 기능이 갑자기 안 보이거나 목록이 비어 보이면
-        아래를 다시 붙여넣어 보세요. {cfg?.kind === 'firebase' ? 'Firestore' : 'Supabase'} 콘솔의 규칙 화면에
-        그대로 덮어써도 안전합니다(기존 컬렉션 권한은 그대로 유지).
+        앱이 업데이트되며 규칙이 바뀔 때가 있습니다 — 새 기능이 갑자기 안 보이거나 목록이 비어 보이거나
+        저장이 거부되면 아래를 다시 적용해 보세요.{' '}
+        {cfg?.kind === 'firebase'
+          ? 'Firestore 콘솔의 규칙 화면에 그대로 덮어써도 안전합니다(기존 컬렉션 권한은 그대로 유지).'
+          : 'Supabase 콘솔 → SQL Editor에 통째로 붙여넣고 Run — 여러 번 실행해도 안전합니다(이미 있으면 건너뜀, 쌓아 둔 글·회원은 그대로).'}
       </div>
       {cfg?.kind === 'firebase' ? (
         <div className="setup-row">
@@ -1248,14 +1251,23 @@ function SecurityRulesRow() {
           <button className="btn btn-ghost" onClick={() => setOpen(o => !o)}>{open ? '내용 접기' : '내용 보기'}</button>
         </div>
       ) : (
-        <p className="hint" style={{ margin: 0 }}>Supabase는 schema.sql을 SQL Editor에서 다시 실행해 반영합니다.</p>
+        /* Supabase도 여기서 바로 복사 (v2.0 포크 제보) — 예전에는 「schema.sql을 실행하라」는
+           안내 한 줄뿐이라, 규칙을 다시 적용하러 온 사람이 빈 화면을 만났다 */
+        <div className="setup-row">
+          <button className="btn btn-dark" onClick={() => copy(SCHEMA_SQL, 'sql')}>
+            {copied === 'sql' ? '복사됨 ✓' : '설치 SQL 복사'}
+          </button>
+          <button className="btn btn-ghost" onClick={() => setOpen(o => !o)}>{open ? '내용 접기' : '내용 보기'}</button>
+        </div>
       )}
-      {open && cfg?.kind === 'firebase' && (
+      {open && (cfg?.kind === 'firebase' ? (
         <>
           <pre className="setup-sql">{FIRESTORE_RULES}</pre>
           <pre className="setup-sql">{STORAGE_RULES}</pre>
         </>
-      )}
+      ) : (
+        <pre className="setup-sql">{SCHEMA_SQL}</pre>
+      ))}
     </div>
   );
 }
