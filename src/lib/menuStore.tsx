@@ -95,12 +95,12 @@ function migrateTree(p: Partial<MenuSettings>): MenuGroupNode[] {
     .map(k => DEFAULT_MENU.find(m => m.label === k)!)
     .filter(m => !hidden.includes(m.label))
     .map(m => m.children
-      ? {
-        id: `g-${m.label}`, label: labels[m.label] ?? m.label,
-        items: m.children.filter(c => !hidden.includes(c.href))
-          .map(c => ({ href: c.href, ...(labels[c.href] ? { label: labels[c.href] } : {}) })),
-      }
-      : { id: `g-${m.label}`, label: labels[m.label] ?? m.label, href: m.href, items: [] });
+? {
+    id: `g-${m.label}`, label: labels[m.label] ?? m.label, open: false,
+    items: m.children.filter(c => !hidden.includes(c.href))
+      .map(c => ({ href: c.href, ...(labels[c.href] ? { label: labels[c.href] } : {}) })),
+  }
+: { id: `g-${m.label}`, label: labels[m.label] ?? m.label, href: m.href, open: false, items: [] };
 }
 
 export const newGroupId = () => `g-${newId()}`;
