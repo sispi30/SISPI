@@ -100,7 +100,7 @@ function migrateTree(p: Partial<MenuSettings>): MenuGroupNode[] {
     items: m.children.filter(c => !hidden.includes(c.href))
       .map(c => ({ href: c.href, ...(labels[c.href] ? { label: labels[c.href] } : {}) })),
   }
-: { id: `g-${m.label}`, label: labels[m.label] ?? m.label, href: m.href, open: false ; items: [] });
+: { id: `g-${m.label}`, label: labels[m.label] ?? m.label, href: m.href, open: false, items: [] });
 }
 
 export const newGroupId = () => `g-${newId()}`;
