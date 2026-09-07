@@ -112,17 +112,20 @@ export function MenuListWidget() {
   return (
     <div className="panel menu-list wgt-menu">
       {(menuLoaded && boardsLoaded
-        ? buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(wSecMap), ...linkEntries(wLinks)], { loggedIn: !!wUser, isAdmin: wIsAdmin })
+        ? buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(wSecMap), ...linkEntries(wLinks)], { loggedIn: !!wUser, isAdmin: wIsAdmin, id: wUser?.id })
         : []).map(m =>
         m.children ? (
           <div key={m.label} className={`mgrp ${open === m.label ? 'open' : ''}`}>
             <a onClick={() => setOpen(o => (o === m.label ? null : m.label))}>{m.label}</a>
             <div className="msub">
-              {m.children.map(c => <a key={c.href} onClick={() => router.push(c.href)}>{c.label}</a>)}
+              {/* 커스텀 링크의 외부 주소는 새 창 (v2.0) — 상단 메뉴와 같은 규칙 */}
+              {m.children.map(c => (
+                <a key={c.href} onClick={() => (/^https?:\/\//.test(c.href) ? window.open(c.href, '_blank') : router.push(c.href))}>{c.label}</a>
+              ))}
             </div>
           </div>
         ) : (
-          <a key={m.label} onClick={() => router.push(m.href!)}>{m.label}</a>
+          <a key={m.label} onClick={() => (/^https?:\/\//.test(m.href!) ? window.open(m.href!, '_blank') : router.push(m.href!))}>{m.label}</a>
         )
       )}
     </div>
@@ -164,7 +167,7 @@ export function DiaryWidget() {
   const [moods] = useLocalList<Mood>('ohome.moods.v1', MOOD_SEED);
   // 메뉴에서 비공개로 둔 다이어리는 위젯에도 안 나온다 (v2.0 사용자 발견 — 위젯으로 새던 것)
   const [menuSet] = useMenuSettings();
-  const viewer = { loggedIn: !!user, isAdmin };
+  const viewer = { loggedIn: !!user, isAdmin, id: user?.id };
   const canSee = canViewHref(menuSet, '/diary', viewer);
   // 비공개 일기는 위젯에 절대 노출되지 않음 — 관리자여도 (4.14)
   const latest = posts
@@ -199,7 +202,7 @@ export function LatestWidget() {
   /* 메뉴에서 비공개로 둔 곳은 빼고 모은다 (v2.0 사용자 발견) — 로드비와 갤러리를 함께 보여 주는
      위젯이라 **소스별로** 따진다. 한쪽만 비공개면 나머지는 그대로 나온다. */
   const [menuSet] = useMenuSettings();
-  const viewer = { loggedIn: !!user, isAdmin };
+  const viewer = { loggedIn: !!user, isAdmin, id: user?.id };
   const seeRoad = canViewHref(menuSet, '/loadb', viewer);
   const seeGal = canViewHref(menuSet, '/gallery', viewer);
   const latest = [
@@ -336,7 +339,7 @@ export function UpcomingWidget() {
      볼 수 있는 스케줄러가 하나도 없을 때만 위젯을 통째로 감춘다. */
   const [menuSet] = useMenuSettings();
   const { list } = useSections();
-  const viewer = { loggedIn: !!user, isAdmin };
+  const viewer = { loggedIn: !!user, isAdmin, id: user?.id };
   const seeSec = (secId?: string) => canViewHref(menuSet, sectionHref('sched', secId ?? MAIN_SEC), viewer);
   const canSee = list('sched').some(s => seeSec(s.id));
   const today = new Date();
@@ -559,7 +562,7 @@ export function MemoBoardWidget() {
   const [settings] = useMemoSettings();
   // 메뉴에서 비공개로 둔 메모장은 위젯에도 안 나온다 (v2.0)
   const [menuSet] = useMenuSettings();
-  if (!canViewHref(menuSet, '/memo', { loggedIn: !!user, isAdmin })) return null;
+  if (!canViewHref(menuSet, '/memo', { loggedIn: !!user, isAdmin, id: user?.id })) return null;
   return (
     <div className="panel widget" style={{ display: 'flex', flexDirection: 'column' }}>
       <h4>STICKY</h4>
@@ -611,7 +614,7 @@ export function ApplyWidget({ conf }: { conf: WidgetConf }) {
   };
 
   // 훅을 모두 부른 뒤에 판정한다 — 중간에서 빠지면 렌더마다 훅 수가 달라진다
-  if (!canViewHref(menuSet, '/comm-apply', { loggedIn: !!user, isAdmin })) return null;
+  if (!canViewHref(menuSet, '/comm-apply', { loggedIn: !!user, isAdmin, id: user?.id })) return null;
 
   return (
     /* 누르면 관리자든 아니든 신청자 페이지로 간다 (v2.0 사용자 요청).

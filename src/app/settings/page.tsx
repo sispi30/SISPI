@@ -33,7 +33,7 @@ import {
   TfAnchorX, TfAnchorY, TfDivider,
 } from '@/lib/transformMenuStore';
 import { SectionsBlock } from '@/components/settings/SectionList';
-import { useSections, sectionMenuEntries, MAIN_SEC, inSection } from '@/lib/sectionStore';
+import { useSections, sectionsOf, sectionMenuEntries, MAIN_SEC, inSection } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries, toInternalPath } from '@/lib/linkStore';
 import { useSiteDraft } from '@/lib/siteStore';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -62,6 +62,7 @@ import { visFloorOf } from '@/lib/visFloor';
 import { validateConfig, configFileText, saveLocalConfig, parseFirebaseSnippet, serverConfig } from '@/lib/serverConfig';
 import { migrateTo, findOrphanFiles } from '@/lib/transfer';
 import { FIRESTORE_RULES, STORAGE_RULES } from '@/lib/firebaseRules';
+import { SCHEMA_SQL } from '@/lib/schemaSql';
 
 const CATEGORIES = [
   '디자인', '메인 페이지', '위젯', '메뉴 관리', '메뉴 위젯', '게시판 관리', '자관 질문', '커미션', 'TRPG', '감상타래', '메모장',
@@ -1233,9 +1234,11 @@ function SecurityRulesRow() {
     <div className="set-sec" style={{ marginTop: 26 }}>
       <h3>보안 규칙</h3>
       <div className="d">
-        앱이 업데이트되며 규칙이 바뀔 때가 있습니다 — 새 기능이 갑자기 안 보이거나 목록이 비어 보이면
-        아래를 다시 붙여넣어 보세요. {cfg?.kind === 'firebase' ? 'Firestore' : 'Supabase'} 콘솔의 규칙 화면에
-        그대로 덮어써도 안전합니다(기존 컬렉션 권한은 그대로 유지).
+        앱이 업데이트되며 규칙이 바뀔 때가 있습니다 — 새 기능이 갑자기 안 보이거나 목록이 비어 보이거나
+        저장이 거부되면 아래를 다시 적용해 보세요.{' '}
+        {cfg?.kind === 'firebase'
+          ? 'Firestore 콘솔의 규칙 화면에 그대로 덮어써도 안전합니다(기존 컬렉션 권한은 그대로 유지).'
+          : 'Supabase 콘솔 → SQL Editor에 통째로 붙여넣고 Run — 여러 번 실행해도 안전합니다(이미 있으면 건너뜀, 쌓아 둔 글·회원은 그대로).'}
       </div>
       {cfg?.kind === 'firebase' ? (
         <div className="setup-row">
@@ -1248,14 +1251,23 @@ function SecurityRulesRow() {
           <button className="btn btn-ghost" onClick={() => setOpen(o => !o)}>{open ? '내용 접기' : '내용 보기'}</button>
         </div>
       ) : (
-        <p className="hint" style={{ margin: 0 }}>Supabase는 schema.sql을 SQL Editor에서 다시 실행해 반영합니다.</p>
+        /* Supabase도 여기서 바로 복사 (v2.0 포크 제보) — 예전에는 「schema.sql을 실행하라」는
+           안내 한 줄뿐이라, 규칙을 다시 적용하러 온 사람이 빈 화면을 만났다 */
+        <div className="setup-row">
+          <button className="btn btn-dark" onClick={() => copy(SCHEMA_SQL, 'sql')}>
+            {copied === 'sql' ? '복사됨 ✓' : '설치 SQL 복사'}
+          </button>
+          <button className="btn btn-ghost" onClick={() => setOpen(o => !o)}>{open ? '내용 접기' : '내용 보기'}</button>
+        </div>
       )}
-      {open && cfg?.kind === 'firebase' && (
+      {open && (cfg?.kind === 'firebase' ? (
         <>
           <pre className="setup-sql">{FIRESTORE_RULES}</pre>
           <pre className="setup-sql">{STORAGE_RULES}</pre>
         </>
-      )}
+      ) : (
+        <pre className="setup-sql">{SCHEMA_SQL}</pre>
+      ))}
     </div>
   );
 }
@@ -1923,6 +1935,50 @@ function DataPane() {
   );
 }
 
+/** 멤버 선택 모달 (v2.0 사용자 요청) — 「비로그인 숨김」 메뉴를 특정 회원에게만.
+ *  검색으로 걸러 체크하고, 비우면 지금까지처럼 로그인한 모든 회원. 관리자는 항상 볼 수 있어 목록에 없다 */
+function MemberPickModal({ initial, onApply, onClose, desc }: {
+  initial: string[]; onApply: (ids: string[]) => void; onClose: () => void;
+  desc?: string;   // 무엇에 대한 선택인지 — 노출 제한/글쓰기 권한이 같은 모달을 쓴다 (v2.0)
+}) {
+  const pool = useMembers().filter(p => p.id !== 'admin' && p.role !== 'admin');
+  const [q, setQ] = useState('');
+  const [sel, setSel] = useState<string[]>(initial);
+  const t = q.trim().toLowerCase();
+  const list = pool.filter(p => !t || p.nickname.toLowerCase().includes(t) || p.id.toLowerCase().includes(t));
+  return (
+    <Modal open small title="멤버 선택" onClose={onClose}
+      desc={desc ?? '체크한 회원(그리고 관리자)에게만 이 메뉴가 보이고 열립니다 — 비우면 로그인한 모든 회원'}
+      actions={<>
+        <button className="btn btn-ghost" onClick={onClose}>CANCEL</button>
+        <button className="btn btn-accent" onClick={() => { onApply(sel); onClose(); }}>적용</button>
+      </>}>
+      <div style={{ display: 'grid', gap: 9 }}>
+        <KInput placeholder="닉네임·아이디 검색" value={q} onChange={e => setQ(e.target.value)} />
+        <div style={{ maxHeight: 240, overflow: 'auto', display: 'grid', gap: 4, alignContent: 'start' }}>
+          {list.map(p => (
+            <KCheck key={p.id}
+              label={<span style={{ fontSize: 12.5 }}>{p.nickname} <small style={{ color: 'var(--faint)' }}>{p.id}</small></span>}
+              checked={sel.includes(p.id)}
+              onChange={v => setSel(s => (v ? [...s, p.id] : s.filter(x => x !== p.id)))} />
+          ))}
+          {list.length === 0 && (
+            <p className="hint" style={{ margin: 0 }}>
+              {pool.length === 0 ? '가입한 회원이 없습니다' : '검색과 일치하는 회원이 없습니다'}
+            </p>
+          )}
+        </div>
+        {/* 탈퇴 등으로 목록에 없는 선택이 남아 있으면 알려 준다 — 몰래 남아 계속 잠그는 일이 없게 */}
+        {sel.some(id => !pool.some(p => p.id === id)) && (
+          <p className="hint" style={{ margin: 0 }}>
+            회원 목록에 없는 선택 {sel.filter(id => !pool.some(p => p.id === id)).length}건이 있습니다 — 적용하면 그대로 유지됩니다
+          </p>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 /** 메뉴 관리 탭 (5.2 — 메뉴 선택제) — 노출·순서·이름 + 메뉴별 부속 설정 */
 function MenuPane() {
   const [ms, patch, msLoaded] = useMenuSettings();
@@ -1932,6 +1988,8 @@ function MenuPane() {
   // 「주소로는 열람 허용」을 켤 때 띄우는 확인 (v2.0 사용자 요청)
   const [openAsk, setOpenAsk] = useState<(() => void) | null>(null);
   const [visAsk, setVisAsk] = useState(false);
+  // 멤버 선택 모달 (v2.0 사용자 요청) — 「비로그인 숨김」·갤러리 글쓰기를 특정 회원으로 좁힌다
+  const [memAsk, setMemAsk] = useState<{ ids: string[]; apply: (ids: string[]) => void; desc?: string } | null>(null);
   const [commSet, patchComm] = useCommSettings();
   const { boards, loaded: bLoaded, patchBoard } = useBoards();  // 추가 게시판 이름·자동 편입 동기화 + 권한
   const toast = useToast();
@@ -1939,7 +1997,11 @@ function MenuPane() {
   const saved = ms.tree ?? defaultTree();
   // 게시판 + 여러 개로 만든 섹션 — 메뉴가 아는 「추가 항목」 전체 (v2.0)
   const { map: secMap } = useSections();
-  const { links, setLinks, add: addLink } = useCustomLinks();   // 커스텀 링크 (v2.0 사용자 요청)
+  const { links, setLinks } = useCustomLinks();   // 커스텀 링크 (v2.0 사용자 요청)
+  // 새 커스텀 링크 입력 폼 (v2.0 사용자 제보 — 「주소를 적으면 이름 짓기 전에 올라간다」).
+  // 예전에는 ADD가 빈 행을 즉시 등록해, 주소를 치는 순간 미배치에 미완성 링크가 나타났다
+  const [nlName, setNlName] = useState('');
+  const [nlHref, setNlHref] = useState('');
   const extraAll = [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)];
   const defLabel = (href: string) => menuLabelFor(href, extraAll) ?? href;
 
@@ -2155,6 +2217,44 @@ function MenuPane() {
         </>
       );
     }
+    // 갤러리 글쓰기 권한 (v2.0 사용자 요청) — 갤러리(섹션)마다 · 「글쓰기 멤버」로 특정 회원까지
+    if (href === '/gallery' || href.startsWith('/gallery?s=')) {
+      const key = href === '/gallery' ? MAIN_SEC : href.slice('/gallery?s='.length);
+      // 메뉴 주소에는 별명(slug)이 적혀 있을 수 있다 — id로 통일해 저장
+      const gsec = sectionsOf(secMap, 'gallery').find(s2 => s2.id === key || s2.slug === key);
+      if (!gsec) return null;
+      const gw = ms.galWrite?.[gsec.id] ?? 'member';
+      const gwIds = ms.galWriteMembers?.[gsec.id];
+      return (
+        <>
+          {gw === 'member' && (
+            <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+              onClick={() => setMemAsk({
+                ids: gwIds ?? [],
+                desc: '체크한 회원(그리고 관리자)만 이 갤러리에 글을 쓸 수 있습니다 — 비우면 로그인한 모든 회원',
+                apply: n => {
+                  const next = { ...ms.galWriteMembers };
+                  if (n.length) next[gsec.id] = n; else delete next[gsec.id];
+                  patch({ galWriteMembers: next });
+                },
+              })}>
+              {gwIds?.length ? `글쓰기 멤버 ${gwIds.length}명` : '글쓰기 멤버'}
+            </button>
+          )}
+          <KSelect minWidth={110} value={gw}
+            onChange={v => {
+              // 관리자 전용으로 바꾸면 멤버 선택은 함께 지운다 — 몰래 남아 있지 않게 (노출 제한과 같은 규칙)
+              const next = { ...ms.galWriteMembers };
+              if (v !== 'member') delete next[gsec.id];
+              patch({ galWrite: { ...ms.galWrite, [gsec.id]: v as MenuPerm }, galWriteMembers: next });
+            }}
+            options={[
+              { value: 'member', label: '글쓰기: 가입자' },
+              { value: 'admin', label: '글쓰기: 관리자' },
+            ]} />
+        </>
+      );
+    }
     return null;
   };
 
@@ -2176,6 +2276,17 @@ function MenuPane() {
         { value: 'member', label: '비로그인 숨김' },
         { value: 'admin', label: '관리자만' },
       ]} />
+  );
+
+  /* 멤버 선택 (v2.0 사용자 요청) — 「비로그인 숨김」일 때만 뜨는 버튼.
+     검색 모달에서 고른 회원(+관리자)에게만 보이고 들어갈 수 있다 — 비우면 로그인한 모든 회원 */
+  const memberBtn = (v: MenuVis | undefined, ids: string[] | undefined, apply: (ids: string[] | undefined) => void) => (
+    v !== 'member' ? null : (
+      <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+        onClick={() => setMemAsk({ ids: ids ?? [], apply: n => apply(n.length ? n : undefined) })}>
+        {ids?.length ? `멤버 ${ids.length}명` : '멤버 선택'}
+      </button>
+    )
   );
   return (
     <div className="set-sec">
@@ -2204,6 +2315,8 @@ function MenuPane() {
           <div className="d">
             공개범위는 메뉴 노출을 정합니다(전부 보임 / 비로그인 숨김 / 관리자만) — SAVE를 눌러야 반영 · 글쓰기·댓글 권한은 즉시 반영
             <br />
+            「비로그인 숨김」 옆 <b>멤버 선택</b>으로 특정 회원에게만 보이게 좁힐 수 있습니다 — 비우면 로그인한 모든 회원
+            <br />
             <b>주소로는 열람 허용</b>을 켜면 메뉴에서는 계속 감춰 두고 <b>주소를 아는 사람만 들어올 수 있는</b> 메뉴가 됩니다 — 링크로 돌릴 게시판에 씁니다
           </div>
           {tree.map(g => (
@@ -2214,7 +2327,12 @@ function MenuPane() {
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   {g.href && extraPerm(g.href)}
                   {openChk(g.vis, g.open, nv => patchGroup(g.id, { open: nv || undefined }))}
-                  {visSel(g.vis, nv => patchGroup(g.id, { vis: nv === 'all' ? undefined : nv, ...(nv === 'all' ? { open: undefined } : {}) }))}
+                  {memberBtn(g.vis, g.visMembers, ids => patchGroup(g.id, { visMembers: ids }))}
+                  {visSel(g.vis, nv => patchGroup(g.id, {
+                    vis: nv === 'all' ? undefined : nv,
+                    ...(nv === 'all' ? { open: undefined } : {}),
+                    ...(nv !== 'member' ? { visMembers: undefined } : {}),
+                  }))}
                 </div>
               </div>
               {!g.href && g.items.map(it => (
@@ -2226,9 +2344,16 @@ function MenuPane() {
                     {openChk(it.vis, it.open, nv => patchGroup(g.id, {
                       items: g.items.map(x => (x.href === it.href ? { ...x, open: nv || undefined } : x)),
                     }))}
+                    {memberBtn(it.vis, it.visMembers, ids => patchGroup(g.id, {
+                      items: g.items.map(x => (x.href === it.href ? { ...x, visMembers: ids } : x)),
+                    }))}
                     {visSel(it.vis, nv => patchGroup(g.id, {
                       items: g.items.map(x => (x.href === it.href
-                        ? { ...x, vis: nv === 'all' ? undefined : nv, ...(nv === 'all' ? { open: undefined } : {}) } : x)),
+                        ? {
+                          ...x, vis: nv === 'all' ? undefined : nv,
+                          ...(nv === 'all' ? { open: undefined } : {}),
+                          ...(nv !== 'member' ? { visMembers: undefined } : {}),
+                        } : x)),
                     }))}
                   </div>
                 </div>
@@ -2254,6 +2379,12 @@ function MenuPane() {
               </button>
             </div>
           </div>
+          {/* 멤버 선택 (v2.0 사용자 요청) — 검색으로 골라 그 회원(+관리자)에게만 */}
+          {memAsk && (
+            <MemberPickModal initial={memAsk.ids} onApply={memAsk.apply} desc={memAsk.desc}
+              onClose={() => setMemAsk(null)} />
+          )}
+
           {/* 「주소로는 열람 허용」 확인 (v2.0 사용자 요청) — 켜는 순간 무엇이 열리는지 분명히 */}
           <ConfirmModal open={!!openAsk} title="주소가 있는 모두에게 공개됩니다"
             body={'메뉴에서는 계속 감춰지지만, 이 주소를 아는 사람은 로그인하지 않아도 들어와 볼 수 있습니다. 링크를 받은 사람이 다른 곳에 옮겨 적으면 그 사람들도 볼 수 있습니다. 정말 알려지면 안 되는 내용에는 쓰지 마세요.'}
@@ -2359,16 +2490,29 @@ function MenuPane() {
 
       <h3 style={{ marginTop: 26 }}>미배치 기능</h3>
       <div className="d">트리에 넣지 않은 기능 — 메뉴에 노출되지 않지만 데이터는 보존됩니다. 넣을 위치를 고르면 바로 배치</div>
-      {unplaced.map(f => (
-        <div key={f.href} className="set-row">
-          <div className="l" style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-            <b style={{ fontSize: 12.5 }}>{f.label}</b>
-            <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{f.href}</small>
+      {unplaced.map(f => {
+        // 커스텀 링크는 미배치에서도 지울 수 있다 (v2.0 사용자 요청 — 「목록 자체에서 지우고 싶다」).
+        // 다른 기능(게시판·섹션 등)은 데이터가 있어 여기서 못 지운다 — 각자의 관리 화면에서
+        const link = links.find(l => l.href === f.href);
+        return (
+          <div key={f.href} className="set-row">
+            <div className="l" style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+              <b style={{ fontSize: 12.5 }}>{f.label}</b>
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{f.href}</small>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <KSelect minWidth={130} value="" placeholder="배치할 위치"
+                onChange={v => placeUnplaced(f.href, v)} options={groupOptions()} />
+              {link && (
+                <button className="btn btn-ghost" style={{ padding: '3px 9px', fontSize: 10.5 }}
+                  onClick={() => del.ask(`커스텀 링크 「${link.name}」를 지우시겠습니까?`,
+                    () => setLinks(links.filter(x => x.id !== link.id)),
+                    '링크만 사라집니다 — 가리키던 페이지 자체는 그대로입니다.')}>삭제</button>
+              )}
+            </div>
           </div>
-          <KSelect minWidth={130} value="" placeholder="배치할 위치"
-            onChange={v => placeUnplaced(f.href, v)} options={groupOptions()} />
-        </div>
-      ))}
+        );
+      })}
       {unplaced.length === 0 && (
         <div style={{ padding: '10px 0', fontSize: 12, color: 'var(--faint)' }}>모든 기능이 메뉴에 배치되어 있습니다</div>
       )}
@@ -2377,13 +2521,12 @@ function MenuPane() {
           만들면 위 미배치 목록에 나타나고, 거기서 원하는 상위 메뉴에 넣는다 */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 22 }}>
         <h3 style={{ margin: 0 }}>커스텀 링크</h3>
-        <button className="btn btn-ghost" style={{ padding: '4px 11px', fontSize: 10.5, marginLeft: 'auto' }}
-          onClick={addLink}>＋ ADD CUSTOM</button>
       </div>
       <div className="d">
         자관·캐릭터처럼 목록에서 골라야 갈 수 있던 페이지를 메뉴에서 바로 — 주소를 적어 두면 됩니다.
         <br />
-        풀주소를 붙여 넣어도 <b>사이트 안 이동</b>으로 바뀝니다(예: <code>…/rels/latte</code> → <code>/rels/latte</code>).
+        <b>내 홈 주소</b>는 붙여 넣으면 사이트 안 이동으로 바뀌고(예: <code>…/rels/latte</code> → <code>/rels/latte</code>),
+        <b>다른 사이트 주소</b>는 그대로 남아 새 창으로 열립니다.
         만든 링크는 위 <b>미배치</b>에 나타나며, 거기서 원하는 상위 메뉴에 넣어 주세요.
       </div>
       {links.map(l => (
@@ -2408,8 +2551,25 @@ function MenuPane() {
         </div>
       ))}
       {links.length === 0 && (
-        <div style={{ padding: '10px 0', fontSize: 12, color: 'var(--faint)' }}>아직 없습니다 — ＋ ADD CUSTOM으로 만들어 주세요</div>
+        <div style={{ padding: '10px 0', fontSize: 12, color: 'var(--faint)' }}>아직 없습니다 — 아래에 이름과 주소를 적고 ADD를 눌러 주세요</div>
       )}
+      {/* 새 링크는 폼을 채워 ADD를 눌러야 등록된다 (v2.0 사용자 제보) —
+          예전에는 빈 행이 즉시 등록돼, 주소를 치는 순간 이름도 없는 링크가 미배치에 나타났다 */}
+      <div className="set-row" style={{ borderTop: '1px dashed var(--line)' }}>
+        <div className="l" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <KInput value={nlName} placeholder="메뉴에 보일 이름" onChange={e => setNlName(e.target.value)} style={{ width: 140 }} />
+          <KInput value={nlHref} placeholder="/rels/latte 또는 풀주소" onChange={e => setNlHref(e.target.value)} style={{ width: 260 }} />
+        </div>
+        <button className="btn btn-dark" style={{ padding: '4px 12px', fontSize: 10.5 }}
+          onClick={() => {
+            if (!nlName.trim()) { toast('메뉴에 보일 이름을 입력해 주세요'); return; }
+            const href = toInternalPath(nlHref);
+            if (!href || href === '/') { toast('이동할 주소를 입력해 주세요'); return; }
+            setLinks([...links, { id: newId(), name: nlName.trim(), href }]);
+            setNlName(''); setNlHref('');
+            toast('링크가 만들어졌습니다 — 위 미배치에서 메뉴에 넣어 주세요');
+          }}>＋ ADD</button>
+      </div>
       </>
       )}
 
