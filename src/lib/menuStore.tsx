@@ -79,8 +79,8 @@ export function imgProtectAreaFor(pathname: string): ImgProtectArea | null {
 /** 기본 트리 — DEFAULT_MENU 구조 그대로 */
 export function defaultTree(): MenuGroupNode[] {
   return DEFAULT_MENU.map(m => m.children
-    ? { id: `g-${m.label}`, label: m.label, items: m.children.map(c => ({ href: c.href })) }
-    : { id: `g-${m.label}`, label: m.label, href: m.href, items: [] });
+    ? { id: `g-${m.label}`, label: m.label, open: false, items: m.children.map(c => ({ href: c.href })) }
+    : { id: `g-${m.label}`, label: m.label, href: m.href, open: false, items: [] });
 }
 
 /** v1 설정(groupOrder/hidden/labels) → 트리 마이그레이션 */
