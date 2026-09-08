@@ -12,8 +12,8 @@ import {
 } from '@/lib/postStore';
 import { useBoards, boardHref, MAIN_BOARD_ID, BoardPerm } from '@/lib/boardStore';
 import { renderBody } from '@/lib/sanitize';
-import { putBlob, BlobImg } from '@/lib/blobStore';
-import { KInput, KSelect } from '@/components/ui/Kit';
+import { putBlob, BlobImg, useBlobUrl } from '@/lib/blobStore';
+import { KInput, KSelect, KTextarea } from '@/components/ui/Kit';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { GuestIdBar } from '@/components/ui/GuestId';
 import { useToast } from '@/components/ui/Toast';
@@ -53,6 +53,18 @@ function CmtImgs({ images, onOpen }: { images?: string[]; onOpen: (ids: string[]
   );
 }
 
+/** 수정 모달의 기존 첨부 이미지 썸네일 (감상타래 KeepThumb와 동일 — 5.9) */
+function KeepThumb({ id, onRemove }: { id: string; onRemove: () => void }) {
+  const url = useBlobUrl(id);
+  return (
+    <div className="at">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {url && <img src={url} alt="" />}
+      <button onClick={onRemove}>✕</button>
+    </div>
+  );
+}
+
 export default function BoardDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -77,6 +89,16 @@ export default function BoardDetailPage() {
   const [cmtFoldType, setCmtFoldType] = useState<FoldPick>('none');
   const [cmtFoldLabel, setCmtFoldLabel] = useState('');
   const [openCmts, setOpenCmts] = useState<Set<string>>(new Set());
+  // 댓글 수정 모달 — 텍스트 + 접기 + 첨부 이미지 관리 (감상타래 글 수정 모달과 완전히 동일 — 5.10)
+  const [epId, setEpId] = useState<string | null>(null);
+  const [epText, setEpText] = useState('');
+  const [epFoldType, setEpFoldType] = useState<FoldPick>('none');
+  const [epFoldLabel, setEpFoldLabel] = useState('');
+  const [epKeep, setEpKeep] = useState<string[]>([]);   // 유지할 기존 첨부 이미지 id
+  const [epFiles, setEpFiles] = useState<File[]>([]);
+  const [epUrls, setEpUrls] = useState<string[]>([]);
+  const epImgRef = useRef<HTMLInputElement>(null);
+  const epCount = epKeep.length + epFiles.length;
 
   const post = posts.find(p => p.id === id);
   /* 이 글이 속한 곳이 비공개면 주소로 들어와도 열리지 않게 (v2.0 사용자 요청).
@@ -198,6 +220,35 @@ export default function BoardDetailPage() {
     if (cmtRows.some(gone)) setCmtRows(cmtRows.filter(x => !gone(x)));
     if (post.comments.some(gone)) update({ comments: post.comments.filter(x => !gone(x)) });
   };
+
+  // 세션 게시판(타래형) 댓글 수정 — 감상타래 글 수정 모달과 완전히 동일 (텍스트+접기+이미지 최대 4장, 5.10)
+  const openEdit = (c: Comment) => {
+    setEpId(c.id); setEpText(c.text);
+    setEpFoldType(c.fold?.type ?? 'none'); setEpFoldLabel(c.fold?.label ?? '');
+    setEpKeep(c.images ?? []); setEpFiles([]); setEpUrls([]);
+  };
+  const epAddFiles = (list: FileList | null) => {
+    if (!list) return;
+    const room = 4 - epKeep.length;
+    const next = [...epFiles, ...Array.from(list)].slice(0, Math.max(0, room));
+    if (epFiles.length + list.length > room) toast('이미지는 최대 4장까지 첨부할 수 있습니다');
+    setEpFiles(next);
+    setEpUrls(next.map(f => URL.createObjectURL(f)));
+  };
+  const saveEdit = async () => {
+    if (!epId) return;
+    if (!epText.trim() && epCount === 0) { toast('내용을 입력해 주세요'); return; }
+    const added: string[] = [];
+    for (const f of epFiles) added.push(await putBlob(f));
+    const images = [...epKeep, ...added];
+    const fold = epFoldType === 'none' ? undefined : { type: epFoldType, label: epFoldType === 'custom' ? (epFoldLabel.trim() || undefined) : undefined };
+    const patch = (c: Comment): Comment => c.id === epId ? { ...c, text: epText.trim(), images: images.length ? images : undefined, fold } : c;
+    if (cmtRows.some(c => c.id === epId)) setCmtRows(cmtRows.map(c => patch(c) as CommentRow));
+    if (post.comments.some(c => c.id === epId)) update({ comments: post.comments.map(patch) });
+    setEpId(null);
+    toast('저장되었습니다');
+  };
+
   const roots = comments.filter(c => !c.parentId);
   const childrenOf = (pid: string) => comments.filter(c => c.parentId === pid);
 
@@ -256,6 +307,7 @@ export default function BoardDetailPage() {
         )}
         {(isAdmin || (user && c.authorId === user.id)) && (
           <div className="hv-actions">
+            <button onClick={() => openEdit(c)}>EDIT</button>
             <button className="del" onClick={() => removeComment(c)}>DELETE</button>
           </div>
         )}
@@ -397,6 +449,48 @@ export default function BoardDetailPage() {
       </div>
 
       {lb && <Lightbox srcs={lb.srcs} index={lb.idx} onClose={() => setLb(null)} />}
+
+      {/* 댓글 수정 모달 — 감상타래 글 수정 모달과 완전히 동일 (텍스트+접기+이미지 최대 4장, 5.10) */}
+      <Modal open={epId !== null} onClose={() => setEpId(null)} title="댓글 수정" dirty
+        actions={<>
+          <button className="btn btn-ghost" onClick={() => setEpId(null)}>CANCEL</button>
+          <button className="btn btn-dark" onClick={saveEdit}>SAVE</button>
+        </>}>
+        <div style={{ display: 'grid', gap: 10 }}>
+          <KTextarea style={{ minHeight: 120 }} value={epText} onChange={e => setEpText(e.target.value)} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <KSelect minWidth={140} value={epFoldType} onChange={v => setEpFoldType(v as FoldPick)} options={FOLD_OPTIONS} />
+            {epFoldType === 'custom' && (
+              <KInput placeholder="접기 문구" value={epFoldLabel} onChange={e => setEpFoldLabel(e.target.value)} style={{ flex: 1 }} />
+            )}
+          </div>
+          {(epCount > 0) && (
+            <div className="thr-att" style={{ padding: 0 }}>
+              {epKeep.map(idv => (
+                <KeepThumb key={idv} id={idv} onRemove={() => setEpKeep(epKeep.filter(x => x !== idv))} />
+              ))}
+              {epUrls.map((u, i) => (
+                <div key={u} className="at">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u} alt="" />
+                  <button onClick={() => {
+                    const next = epFiles.filter((_, x) => x !== i);
+                    setEpFiles(next);
+                    setEpUrls(next.map(f => URL.createObjectURL(f)));
+                  }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div>
+            <input ref={epImgRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+              onChange={e => { epAddFiles(e.target.files); e.target.value = ''; }} />
+            <button className="icobtn" data-tip="사진 추가 (최대 4장)" onClick={() => epImgRef.current?.click()}>
+              <PhotoIcon />
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmModal open={delAsk} title="글을 삭제하시겠습니까?" body="삭제한 글은 복구할 수 없습니다."
         onClose={() => setDelAsk(false)}
