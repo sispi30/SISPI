@@ -13,7 +13,7 @@ import {
 import { useBoards, boardHref, MAIN_BOARD_ID, BoardPerm } from '@/lib/boardStore';
 import { renderBody } from '@/lib/sanitize';
 import { putBlob, BlobImg } from '@/lib/blobStore';
-import { KInput } from '@/components/ui/Kit';
+import { KInput, KSelect } from '@/components/ui/Kit';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { GuestIdBar } from '@/components/ui/GuestId';
 import { useToast } from '@/components/ui/Toast';
@@ -22,6 +22,14 @@ import { Lightbox } from '@/components/ui/Lightbox';
 import { pushNotif } from '@/lib/notifStore';
 
 const FOLD_LABEL = { spoiler: '스포일러 주의', adult: '수위 주의' };
+// 댓글 접기 선택지 (감상타래 이어쓰기와 완전히 동일 — 5.9)
+type FoldPick = 'none' | 'spoiler' | 'adult' | 'custom';
+const FOLD_OPTIONS = [
+  { value: 'none', label: '접기 없음' },
+  { value: 'spoiler', label: '스포일러 접기' },
+  { value: 'adult', label: '수위 주의 접기' },
+  { value: 'custom', label: '직접 입력 문구' },
+];
 
 // 사진 첨부 픽토그램 (감상타래와 동일 — 이모지 아님)
 const PhotoIcon = () => (
@@ -65,8 +73,9 @@ export default function BoardDetailPage() {
   const [cmtUrls, setCmtUrls] = useState<string[]>([]);
   const cmtImgRef = useRef<HTMLInputElement>(null);
   const [lb, setLb] = useState<{ srcs: string[]; idx: number } | null>(null);
-  // 세션 게시판(타래형) 댓글 스포일러 접기 (5.6) — 작성 시 체크, 목록에서는 댓글별로 따로 펼침
-  const [cmtSpoiler, setCmtSpoiler] = useState(false);
+  // 세션 게시판(타래형) 댓글 접기 (5.9 — 감상타래 이어쓰기와 동일한 4가지 선택지), 목록에서는 댓글별로 따로 펼침
+  const [cmtFoldType, setCmtFoldType] = useState<FoldPick>('none');
+  const [cmtFoldLabel, setCmtFoldLabel] = useState('');
   const [openCmts, setOpenCmts] = useState<Set<string>>(new Set());
 
   const post = posts.find(p => p.id === id);
@@ -142,7 +151,9 @@ export default function BoardDetailPage() {
     const base = {
       id: newId(), text: cmt.trim(), date: new Date().toISOString(), parentId: replyTo ?? undefined,
       images: images.length ? images : undefined,
-      fold: (board.skin === 'thread' && cmtSpoiler) ? { type: 'spoiler' as const } : undefined,
+      fold: (board.skin === 'thread' && cmtFoldType !== 'none')
+        ? { type: cmtFoldType, label: cmtFoldType === 'custom' ? (cmtFoldLabel.trim() || undefined) : undefined }
+        : undefined,
     };
     const c: CommentRow = user
       ? { ...base, target: 'post', targetId: post.id, author: user.nickname, authorId: user.id }
@@ -177,7 +188,7 @@ export default function BoardDetailPage() {
         });
       }
     }
-    setCmt(''); setReplyTo(null); setCmtFiles([]); setCmtUrls([]); setCmtSpoiler(false);
+    setCmt(''); setReplyTo(null); setCmtFiles([]); setCmtUrls([]); setCmtFoldType('none'); setCmtFoldLabel('');
 
   };
 
@@ -220,26 +231,29 @@ export default function BoardDetailPage() {
     });
   const ThrCmtRow = ({ c }: { c: Comment }) => {
     const cOpen = openCmts.has(c.id);
+    const folded = !!c.fold && !cOpen;
     return (
       <div className="thr-post">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <b style={{ fontSize: 12.5 }}>{c.author}</b>
           <span style={{ fontSize: 10, color: 'var(--faint)' }}>{fmtDate(c.date)}</span>
         </div>
-        <div className={`veil ${!c.fold || cOpen ? 'open' : ''}`}>
-          {c.fold && !cOpen && (
-            <div className="cover" onClick={() => toggleCmtOpen(c.id)} style={{ position: 'absolute' }}>
-              <div>
-                <b>{c.fold.type === 'custom' ? (c.fold.label || '접힌 댓글') : FOLD_LABEL[c.fold.type]}</b>
-                <span style={{ display: 'block' }}>클릭하면 내용이 표시됩니다</span>
-              </div>
-            </div>
-          )}
-          <div style={c.fold && !cOpen ? { minHeight: 60, filter: 'blur(6px)' } : undefined}>
+        {folded ? (
+          /* 접기 쿠션 (감상타래 이어쓰기와 완전히 동일 — 5.9) — 문구만 보이고, 눌러야 내용이 나온다 */
+          <div className="thr-fold" onClick={() => toggleCmtOpen(c.id)}>
+            <b>{c.fold!.type === 'custom' ? (c.fold!.label || '접힌 댓글') : FOLD_LABEL[c.fold!.type]}</b>
+            <span>클릭하면 내용이 표시됩니다</span>
+          </div>
+        ) : (
+          <>
             {c.text && <p>{c.text}</p>}
             <CmtImgs images={c.images} onOpen={(ids, idx) => setLb({ srcs: ids, idx })} />
-          </div>
-        </div>
+            {c.fold && (
+              /* 다시 접기 — 열어 본 뒤에도 쿠션을 되돌릴 수 있게 */
+              <button className="thr-refold" onClick={() => toggleCmtOpen(c.id)}>접기</button>
+            )}
+          </>
+        )}
         {(isAdmin || (user && c.authorId === user.id)) && (
           <div className="hv-actions">
             <button className="del" onClick={() => removeComment(c)}>DELETE</button>
@@ -344,19 +358,19 @@ export default function BoardDetailPage() {
                 </div>
               )}
               <div className="wfoot">
-                <input ref={cmtImgRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
-                  onChange={e => { addCmtFiles(e.target.files); e.target.value = ''; }} />
-                <button className="icobtn" data-tip="사진 추가 (최대 4장)" onClick={() => cmtImgRef.current?.click()}>
-                  <PhotoIcon />
-                </button>
-                {/* 스포일러 접기 (5.6) — 글 접기와 같은 규칙, 체크하면 이 댓글만 흐림 처리되어 올라간다 */}
-                <label style={{
-                  display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--sub)',
-                  cursor: 'var(--cur-pointer,pointer)',
-                }}>
-                  <input type="checkbox" checked={cmtSpoiler} onChange={e => setCmtSpoiler(e.target.checked)} />
-                  스포일러 접기
-                </label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input ref={cmtImgRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+                    onChange={e => { addCmtFiles(e.target.files); e.target.value = ''; }} />
+                  <button className="icobtn" data-tip="사진 추가 (최대 4장)" onClick={() => cmtImgRef.current?.click()}>
+                    <PhotoIcon />
+                  </button>
+                  {/* 접기 (감상타래 이어쓰기와 완전히 동일한 선택지 — 5.9) */}
+                  <KSelect minWidth={122} value={cmtFoldType} onChange={v => setCmtFoldType(v as FoldPick)} options={FOLD_OPTIONS} />
+                  {cmtFoldType === 'custom' && (
+                    <KInput placeholder="접기 문구" value={cmtFoldLabel} onChange={e => setCmtFoldLabel(e.target.value)}
+                      style={{ width: 130 }} />
+                  )}
+                </div>
                 <button className="btn btn-dark" style={{ padding: '8px 20px', fontSize: 12, borderRadius: 20 }}
                   onClick={addComment}>POST</button>
               </div>
