@@ -1385,11 +1385,11 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .pl-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:calc(12.5px*var(--fs,1))}
 .pl-table col.c-date{width:92px}
 .pl-table col.c-wr{width:90px}
-.pl-table col.c-role{width:56px}   /* PL·GM·HO1 짧은 표기 전용 — 가장 좁게 (4.16) */
+.pl-table col.c-role{width:76px}   /* CoC 7th 같은 룰 표기가 들어간다 — 시나리오·With에서 10px씩 가져옴 (v2.0 사용자 요청) */
 .pl-table col.c-pt{width:82px}
 .pl-table col.c-url{width:36px}    /* 맨 끝 클립 칸 */
 .pl-table col.c-mng{width:58px}
-.pl-table col.c-with{width:22%}
+.pl-table col.c-with{width:21%}   /* 22%에서 10px가량 룰 칸으로 — col에는 calc가 안 먹혀 %로 환산 (v2.0) */
 .pl-table th{font-size:calc(10px*var(--fs,1));letter-spacing:.14em;color:var(--faint);font-weight:600;text-align:center;padding:10px 6px;border-bottom:1.5px solid var(--line)}
 .pl-table th.sortable{cursor:var(--cur-pointer,pointer);user-select:none}
 .pl-table th.sortable:hover{color:var(--ink)}
