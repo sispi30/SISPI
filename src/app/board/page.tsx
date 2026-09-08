@@ -11,13 +11,22 @@ import {
 import {
   useBoardSettings, useBoards, badgeFor, boardBadgeStyle, boardHref, MAIN_BOARD_ID, BoardPerm,
 } from '@/lib/boardStore';
-import { SearchBar, Pager } from '@/components/ui/Kit';
+import { SearchBar, Pager, KSelect } from '@/components/ui/Kit';
 import { CropImg } from '@/components/ui/CropEditor';
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { BannerBoardView } from '@/components/board/BannerBoard';
 import { ScrapBoardView } from '@/components/board/ScrapBoard';
+import { useMainStore } from '@/lib/mainStore';
+import { useCardSort, mergeOrder } from '@/lib/cardSort';
 
 const PER_PAGE = 10;
+// 세션 게시판(타래형) 정렬 — 사용자 지정(드래그) / 작성일순 / 이름순 (5.11)
+type ThreadSort = 'custom' | 'date' | 'name';
+const THREAD_SORT_OPTIONS = [
+  { value: 'custom', label: '사용자 지정' },
+  { value: 'date', label: '작성일순' },
+  { value: 'name', label: '이름순' },
+];
 
 /** 본문에서 첫 이미지 추출 — 티켓/타래형 스킨 썸네일용 (HTML img / MD 이미지) */
 function firstImage(body: string): string | null {
@@ -51,6 +60,7 @@ function ScrollTopButton() {
 function BoardInner() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
+  const { editOn } = useMainStore();
   const params = useSearchParams();
   const bid = params.get('b') ?? MAIN_BOARD_ID;
   const { boards, loaded: boardsLoaded } = useBoards();
@@ -64,10 +74,12 @@ function BoardInner() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [bannerManageOpen, setBannerManageOpen] = useState(false); // 배너 게시판 전용 — 관리(수정/삭제) 패널 토글
+  // 세션 게시판(타래형) 정렬 — 사용자 지정(편집모드 드래그)/작성일순/이름순 (5.11)
+  const [threadSortBy, setThreadSortBy] = useState<ThreadSort>('custom');
 
   // 게시판 전환 시 필터·페이지 초기화
   const [prevBid, setPrevBid] = useState(bid);
-  if (prevBid !== bid) { setPrevBid(bid); setCat('전체'); setQ(''); setPage(1); }
+  if (prevBid !== bid) { setPrevBid(bid); setCat('전체'); setQ(''); setPage(1); setThreadSortBy('custom'); }
 
   // 권한 3단계 — mock 단계에선 로그인 전제 (로드뷰 4.10과 동일 규칙)
   const allow = (p: BoardPerm) => (p === 'admin' ? isAdmin : p === 'member' ? !!user : true);
@@ -95,10 +107,24 @@ function BoardInner() {
         (p.tags ?? []).some(t => t.toLowerCase().includes(k)) ||   // 태그 검색 (v2.0 사용자 요청)
         (!p.secret && p.body.toLowerCase().includes(k)));
     }
-    // 공지 상단 고정 + 최신순
+    // 공지 상단 고정 + 최신순 (세션 게시판은 공지 개념이 없고, 대신 정렬 선택을 따른다 — 5.11)
+    if (board.skin === 'thread') {
+      if (threadSortBy === 'date') {
+        // 글쓰기란 '플레이 기록 연동 > Date'에 입력한 날짜 기준 — 입력하지 않은 옛 글은 실제 작성일로 대체
+        return [...list].sort((a, b) => (b.session?.date ?? b.date).localeCompare(a.session?.date ?? a.date));
+      }
+      if (threadSortBy === 'name') return [...list].sort((a, b) => a.title.localeCompare(b.title, 'ko'));
+      return list; // 사용자 지정 — 저장된 순서(편집모드 드래그로 정한 순서) 그대로
+    }
     return list.sort((a, b) =>
       (b.notice ? 1 : 0) - (a.notice ? 1 : 0) || b.date.localeCompare(a.date));
-  }, [posts, board.id, cat, q]);
+  }, [posts, board.id, cat, q, board.skin, threadSortBy]);
+
+  // 세션 게시판(타래형) 편집모드 드래그 정렬 (5.11) — '사용자 지정' 정렬일 때만, 관리자만
+  const threadSort = useCardSort(
+    visible, next => setPosts(mergeOrder(posts, next)),
+    board.skin === 'thread' && editOn && isAdmin && threadSortBy === 'custom',
+  );
 
   // 상태 탭 옆 개수 표시 (도토리 게시판과 같은 형식) — 검색어와 무관하게 이 게시판 전체 기준
   const boardPosts = useMemo(() => posts.filter(p => (p.boardId ?? MAIN_BOARD_ID) === board.id), [posts, board.id]);
@@ -139,6 +165,10 @@ function BoardInner() {
           </div>
         )}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {board.skin === 'thread' && (
+            /* 세션 게시판 정렬 (5.11) — 사용자 지정은 관리자가 편집모드에서 드래그로 순서를 바꿀 수 있다 */
+            <KSelect minWidth={110} value={threadSortBy} onChange={v => setThreadSortBy(v as ThreadSort)} options={THREAD_SORT_OPTIONS} />
+          )}
           {board.skin !== 'banner' && <SearchBar onSearch={v => { setQ(v); setPage(1); }} />}
           {board.skin === 'banner' && !!user && (isAdmin || visible.some(p => !!p.authorId && p.authorId === user.id)) && (
             <button className={`btn ${bannerManageOpen ? 'btn-dark' : 'btn-onbk'}`} onClick={() => setBannerManageOpen(v => !v)}>
@@ -163,12 +193,14 @@ function BoardInner() {
       ) : board.skin === 'thread' ? (
         /* 타래형 스킨(목록형 전용) — 썸네일 그리드 + 진행중/완료 상태 배지(작성자·관리자는 클릭해 전환) */
         <div className="bthread-grid">
-          {pageList.map(p => {
+          {pageList.map((p, si) => {
+            const i = (page - 1) * perPage + si; // 정렬(드래그)은 전체(visible) 기준 위치로 — 갤러리와 동일 규칙
             const thumb = canRead(p) ? (p.thumbSrc ?? firstImage(p.body)) : null;
             const spoiler = !!p.fold && p.fold.type === 'spoiler';
             const statusStyle = boardBadgeStyle(badgeFor(boardSet, { ...p, notice: false, secret: false }, board.cats));
             return (
-              <div className="bthread-gcard" key={p.id} onClick={() => { if (canRead(p)) router.push(`/board/${p.id}`); }}>
+              <div className="bthread-gcard" key={p.id} {...threadSort(i)}
+                onClick={() => { if (editOn) return; if (canRead(p)) router.push(`/board/${p.id}`); }}>
                 <div className={`bthread-gthumb ${spoiler ? 'spoiler' : ''}`}>
                   {thumb
                     ? <CropImg src={thumb} crop={p.thumbSrc ? p.thumbCrop : undefined} />
