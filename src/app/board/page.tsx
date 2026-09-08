@@ -20,12 +20,13 @@ import { useMainStore } from '@/lib/mainStore';
 import { useCardSort, mergeOrder } from '@/lib/cardSort';
 
 const PER_PAGE = 10;
-// 세션 게시판(타래형) 정렬 — 사용자 지정(드래그) / 작성일순 / 이름순 (5.11)
-type ThreadSort = 'custom' | 'date' | 'name';
+// 세션 게시판(타래형) 정렬 — 작성일 순 / Date(플레이 기록 연동 Date) / Name / 사용자 지정(편집모드 드래그, 5.13) (5.11~5.13)
+type ThreadSort = 'postDate' | 'sessionDate' | 'name' | 'custom';
 const THREAD_SORT_OPTIONS = [
+  { value: 'postDate', label: '작성일 순' },
+  { value: 'sessionDate', label: 'Date' },
+  { value: 'name', label: 'Name' },
   { value: 'custom', label: '사용자 지정' },
-  { value: 'date', label: '작성일순' },
-  { value: 'name', label: '이름순' },
 ];
 
 /** 본문에서 첫 이미지 추출 — 티켓/타래형 스킨 썸네일용 (HTML img / MD 이미지) */
@@ -75,11 +76,11 @@ function BoardInner() {
   const [page, setPage] = useState(1);
   const [bannerManageOpen, setBannerManageOpen] = useState(false); // 배너 게시판 전용 — 관리(수정/삭제) 패널 토글
   // 세션 게시판(타래형) 정렬 — 사용자 지정(편집모드 드래그)/작성일순/이름순 (5.11)
-  const [threadSortBy, setThreadSortBy] = useState<ThreadSort>('custom');
+  const [threadSortBy, setThreadSortBy] = useState<ThreadSort>('postDate');
 
   // 게시판 전환 시 필터·페이지 초기화
   const [prevBid, setPrevBid] = useState(bid);
-  if (prevBid !== bid) { setPrevBid(bid); setCat('전체'); setQ(''); setPage(1); setThreadSortBy('custom'); }
+  if (prevBid !== bid) { setPrevBid(bid); setCat('전체'); setQ(''); setPage(1); setThreadSortBy('postDate'); }
 
   // 권한 3단계 — mock 단계에선 로그인 전제 (로드뷰 4.10과 동일 규칙)
   const allow = (p: BoardPerm) => (p === 'admin' ? isAdmin : p === 'member' ? !!user : true);
@@ -107,20 +108,22 @@ function BoardInner() {
         (p.tags ?? []).some(t => t.toLowerCase().includes(k)) ||   // 태그 검색 (v2.0 사용자 요청)
         (!p.secret && p.body.toLowerCase().includes(k)));
     }
-    // 공지 상단 고정 + 최신순 (세션 게시판은 공지 개념이 없고, 대신 정렬 선택을 따른다 — 5.11)
+    // 공지 상단 고정 + 최신순 (세션 게시판은 공지 개념이 없고, 대신 정렬 선택을 따른다 — 5.11~5.13)
     if (board.skin === 'thread') {
-      if (threadSortBy === 'date') {
+      if (threadSortBy === 'sessionDate') {
         // 글쓰기란 '플레이 기록 연동 > Date'에 입력한 날짜 기준 — 입력하지 않은 옛 글은 실제 작성일로 대체
         return [...list].sort((a, b) => (b.session?.date ?? b.date).localeCompare(a.session?.date ?? a.date));
       }
       if (threadSortBy === 'name') return [...list].sort((a, b) => a.title.localeCompare(b.title, 'ko'));
-      return list; // 사용자 지정 — 저장된 순서(편집모드 드래그로 정한 순서) 그대로
+      if (threadSortBy === 'custom') return list; // 사용자 지정 — 저장된 순서(편집모드 드래그로 정한 순서) 그대로
+      // 작성일 순(기본값) — 글을 처음 작성한 날짜 기준 최신순
+      return [...list].sort((a, b) => b.date.localeCompare(a.date));
     }
     return list.sort((a, b) =>
       (b.notice ? 1 : 0) - (a.notice ? 1 : 0) || b.date.localeCompare(a.date));
   }, [posts, board.id, cat, q, board.skin, threadSortBy]);
 
-  // 세션 게시판(타래형) 편집모드 드래그 정렬 (5.11) — '사용자 지정' 정렬일 때만, 관리자만
+  // 세션 게시판(타래형) 편집모드 드래그 정렬 (5.13) — '사용자 지정' 정렬일 때만, 관리자만
   const threadSort = useCardSort(
     visible, next => setPosts(mergeOrder(posts, next)),
     board.skin === 'thread' && editOn && isAdmin && threadSortBy === 'custom',
