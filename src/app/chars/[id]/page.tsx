@@ -261,6 +261,12 @@ function CharDetailInner() {
               {/* 기본 정보 탭은 제목을 두지 않는다 — 처음 보이는 화면이라 안내가 필요 없다
                   (다른 탭은 무엇을 보는 중인지 알아야 하므로 제목을 그대로 둔다) */}
               <SpecsDisplay specs={eff.specs} />
+              {eff.sheetUrl && (
+                <dl className="spec">
+                  <dt>CHARACTER SHEET</dt>
+                  <dd><a href={eff.sheetUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>LINK ↗</a></dd>
+                </dl>
+              )}
               {eff.colors.length > 0 && (
                 <dl className="spec">
                   <dt>테마컬러</dt>

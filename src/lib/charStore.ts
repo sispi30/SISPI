@@ -38,6 +38,8 @@ export interface Character {
   /** 기본 정보 항목에 적용된 TRPG 룰 이름 (v2.1 — 자놀 캐릭터 룰별 정보란).
    *  미지정/빈 문자열이면 지금까지와 같은 자유 항목(specs) 그대로 동작한다. */
   rule?: string;
+  /** CHARACTER SHEET 외부 링크 (v2.1) — 룰 선택 여부와 무관하게 항상 편집 가능한 고정 필드 */
+  sheetUrl?: string;
   tabs: CharTab[];       // 기본 정보 외 추가 탭
   basicHtml: string;     // 기본 정보 탭의 소개 본문 (HTML)
   visibility: Visibility;
@@ -87,6 +89,7 @@ export interface AuCharProfile {
   colorTipMode?: 'hex' | 'both' | 'label';
   specs?: import('./charRuleConfig').Spec[];
   rule?: string;
+  sheetUrl?: string;
   tabs?: CharTab[];
   thumbId?: string;
   thumbCrop?: import("@/components/ui/CropEditor").CropValue;
@@ -111,6 +114,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.colorTipMode !== undefined ? { colorTipMode: p.colorTipMode } : {}),
     ...(p.specs !== undefined ? { specs: p.specs } : {}),
     ...(p.rule !== undefined ? { rule: p.rule } : {}),
+    ...(p.sheetUrl !== undefined ? { sheetUrl: p.sheetUrl } : {}),
     ...(p.tabs !== undefined ? { tabs: p.tabs } : {}),
     ...(p.basicHtml !== undefined ? { basicHtml: p.basicHtml } : {}),
     // 이미지는 **물려받지 않는다** (v2.0 사용자 요청) — AU 프로필에 안 넣었으면 비워 둔다.

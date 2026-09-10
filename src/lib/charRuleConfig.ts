@@ -6,7 +6,7 @@
 // wr_1(캐릭터 이름)·wr_5(원어 이름)는 이미 Character.name/sub가 담당하고 있어 포팅 대상에서 뺐다.
 import { newId } from '@/lib/postStore';
 
-export type SpecFieldType = 'text' | 'select' | 'gauge' | 'relation_table' | 'skill_table' | 'status_block';
+export type SpecFieldType = 'text' | 'select' | 'gauge' | 'relation_table' | 'skill_table' | 'status_block' | 'radar_stats';
 
 export interface GaugeRowValue { key: string; cur: string; max?: string; noMax?: boolean }
 export interface RelationColumnDef { key: string; label: string; type: 'text' | 'checkbox' }
@@ -36,6 +36,10 @@ export interface Spec {
   skillChecked?: Record<string, boolean>;    // type: skill_table — key `${category}::${skill}`
   status?: StatusBlockValue;                 // type: status_block
   subStats?: string[];                       // type: status_block
+  statLabels?: string[];                     // type: radar_stats — 축 이름
+  statMax?: number;                          // type: radar_stats — 축 최대값
+  statValues?: number[];                     // type: radar_stats — statLabels와 같은 순서의 값
+  gradeMap?: Record<string, Record<number, string>>; // type: radar_stats — 특정 축(예: 계제)의 값→등급명 매핑
 }
 
 export interface RuleFieldDef {
@@ -49,6 +53,9 @@ export interface RuleFieldDef {
   columns?: RelationColumnDef[];         // relation_table
   categories?: SkillCategoryDef[];       // skill_table
   subStats?: string[];                   // status_block
+  statLabels?: string[];                 // radar_stats
+  statMax?: number;                      // radar_stats
+  gradeMap?: Record<string, Record<number, string>>; // radar_stats
 }
 
 export const RULE_OPTIONS = [
@@ -72,7 +79,7 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f7', label: '신념', type: 'text' },
     { key: 'f8', label: 'HP | MP | SAN | 행운', type: 'gauge', gaugeKeys: ['HP', 'MP', 'SAN', '행운'] },
     { key: 'f9', label: '캐치프레이즈', type: 'text' },
-    { key: 'f10', label: '특성치 (근력, 건강, 크기, 민첩, 외모, 지능, 정신력, 교육)', type: 'text', placeholder: '50, 50, 50, 50, 50, 50, 50, 50' },
+    { key: 'f10', label: '특성치', type: 'radar_stats', statLabels: ['근력', '건강', '크기', '민첩', '외모', '지능', '정신력', '교육'], statMax: 99 },
   ],
   '더블크로스 3rd': [
     { key: 'f2', label: 'CODENAME', type: 'text' },
@@ -82,7 +89,7 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f7', label: 'AWAKE | IMPULSE(각성 | 충동)', type: 'text' },
     { key: 'f8', label: 'DLOIS(로이스)', type: 'text' },
     { key: 'f9', label: '한 줄 인용구', type: 'text' },
-    { key: 'f10', label: '4대 능력치 (근력, 내구, 감각, 정신)', type: 'text', placeholder: '5, 1, 1, 2' },
+    { key: 'f10', label: '4대 능력치', type: 'radar_stats', statLabels: ['육체', '감각', '정신', '사회'], statMax: 10 },
   ],
   '마기카로기아': [
     { key: 'f2', label: '마법명', type: 'text' },
@@ -92,7 +99,11 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f7', label: '진정한 모습', type: 'text' },
     { key: 'f8', label: '공적점 | 마화', type: 'gauge', gaugeKeys: ['공적점', '마화'], gaugeNoMax: ['공적점', '마화'] },
     { key: 'f9', label: '한마디', type: 'text' },
-    { key: 'f10', label: '특성치 (계제, 공격력, 방어력, 근원력)', type: 'text', placeholder: '1, 1, 1, 1' },
+    {
+      key: 'f10', label: '특성치', type: 'radar_stats',
+      statLabels: ['계제', '공격력', '방어력', '근원력'], statMax: 10,
+      gradeMap: { '계제': { 1: 'Neopyte', 2: 'Theoricus', 3: 'Practocus', 4: 'Philosophus', 5: 'Adeptus', 6: 'Magus', 7: 'Ipssimus' } },
+    },
   ],
   '인세인': [
     { key: 'f2', label: '직업', type: 'text' },
@@ -199,6 +210,11 @@ function emptySpecFromDef(def: RuleFieldDef): Spec {
   } else if (def.type === 'status_block') {
     base.subStats = def.subStats ?? [];
     base.status = { sub: {} };
+  } else if (def.type === 'radar_stats') {
+    base.statLabels = def.statLabels ?? [];
+    base.statMax = def.statMax ?? 10;
+    base.gradeMap = def.gradeMap;
+    base.statValues = (def.statLabels ?? []).map(() => 0);
   } else if (def.placeholder) {
     base.value = '';
   }
@@ -218,7 +234,8 @@ export function buildSpecsFromRule(ruleName: string, prevSpecs?: Spec[]): Spec[]
     const prev = prevSpecs?.find(s => s.key === def.key && s.type === def.type);
     if (prev) {
       return { ...fresh, value: prev.value, gauges: prev.gauges ?? fresh.gauges, relationRows: prev.relationRows ?? fresh.relationRows,
-        skillChecked: prev.skillChecked ?? fresh.skillChecked, status: prev.status ?? fresh.status };
+        skillChecked: prev.skillChecked ?? fresh.skillChecked, status: prev.status ?? fresh.status,
+        statValues: prev.statValues ?? fresh.statValues };
     }
     return fresh;
   });

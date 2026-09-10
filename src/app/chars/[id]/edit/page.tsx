@@ -79,7 +79,7 @@ function CharEditInner() {
                   ...x.auProfiles?.[auKey],
                   name: c.name, sub: c.sub, color: c.color, themeMode: c.themeMode,
                   colors: c.colors, colorTipMode: c.colorTipMode,
-                  specs: c.specs, rule: c.rule, tabs: c.tabs, basicHtml: c.basicHtml,
+                  specs: c.specs, rule: c.rule, sheetUrl: c.sheetUrl, tabs: c.tabs, basicHtml: c.basicHtml,
                   arts: c.arts, thumbId: c.thumbId, thumbCrop: c.thumbCrop,
                   fontId: c.fontId, nameSize: c.nameSize, nameBold: c.nameBold, bodyFontId: c.bodyFontId,
                 },

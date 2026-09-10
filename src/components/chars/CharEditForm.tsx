@@ -62,6 +62,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
     (initial?.specs ?? [{ label: '성별', value: '' }, { label: '키', value: '' }]).map(s => ({ ...s, id: s.key ?? newId() })));
   // TRPG 룰 이름 (v2.1 — 자놀 캐릭터 기본 정보 항목 룰별 정보란). 미선택이면 기존처럼 자유 항목(specs) 그대로.
   const [rule, setRule] = useState(initial?.rule ?? '');
+  const [sheetUrl, setSheetUrl] = useState(initial?.sheetUrl ?? '');
   const handleRuleChange = (newRule: string, ruleSpecs: Spec[]) => {
     setRule(newRule);
     if (!newRule) {
@@ -122,6 +123,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         ? specs.map(({ id, ...rest }) => rest)
         : specs.filter(s => s.label.trim()).map(({ label, value }) => ({ label: label.trim(), value })),
       rule: rule || undefined,
+      sheetUrl: sheetUrl.trim() || undefined,
       tabs,   // 제목이 비어도 유지 — 필터로 사라지던 버그 수정 (v1.9 사용자 지적)
       basicHtml,
       visibility,
@@ -235,6 +237,10 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
               onClick={() => setSpecs(l => [...l, { id: newId(), label: '', value: '' }])}>＋ ADD</button>
           </>
         )}
+
+        {/* CHARACTER SHEET 링크 — 룰 선택 여부와 무관하게 항상 편집 가능한 고정 필드 */}
+        <label className="k-label" style={{ margin: 0 }}>CHARACTER SHEET 링크</label>
+        <KInput placeholder="https://... (외부 캐릭터 시트 주소, 선택)" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} />
 
         {/* 테마 컬러 — 한 줄에 2개 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>

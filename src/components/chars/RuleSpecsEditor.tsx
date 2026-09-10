@@ -202,6 +202,37 @@ function RuleFieldRow({ def, spec, onChange }: {
     );
   }
 
+  if (def.type === 'radar_stats') {
+    const statLabels = spec.statLabels ?? def.statLabels ?? [];
+    const statMax = spec.statMax ?? def.statMax ?? 10;
+    const gradeMap = spec.gradeMap ?? def.gradeMap;
+    const values = spec.statValues ?? statLabels.map(() => 0);
+    const setVal = (i: number, v: number) =>
+      onChange({ statLabels, statMax, gradeMap, statValues: values.map((x, idx) => (idx === i ? v : x)) });
+    return (
+      <div>
+        {rowLabel}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
+          {statLabels.map((lb, i) => {
+            const grades = gradeMap?.[lb];
+            return (
+              <div key={lb} style={{ background: '#fafafa', border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 9px' }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#555', marginBottom: 4 }}>{lb}</label>
+                {grades ? (
+                  <KSelect value={String(values[i] ?? Object.keys(grades)[0] ?? 1)} onChange={v => setVal(i, Number(v))}
+                    options={Object.entries(grades).map(([n, name]) => ({ value: n, label: `${n} · ${name}` }))} />
+                ) : (
+                  <KInput type="number" min={0} max={statMax} value={String(values[i] ?? 0)}
+                    onChange={e => setVal(i, Number(e.target.value))} style={{ fontSize: 12, padding: '5px 8px' }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return null;
 }
 
