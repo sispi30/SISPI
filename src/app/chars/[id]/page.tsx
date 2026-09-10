@@ -206,14 +206,18 @@ function CharDetailInner() {
                 onClick={() => { if (arts.length > 1) setArtIdx(i => (i + 1) % arts.length); }}>
                 <NaturalArt fileRef={arts[cur] ?? eff.artUrl} ph={ch.thumbClass} label="CHARACTER FULL ART" />
               </div>
-              {/* 아트 여러 장 — TRPG 캐릭터 게시판(tc-faces)과 같은 모양의 썸네일 선택줄 (정사각 크롭 그대로 유지) */}
+              {/* 아트 여러 장 — 첫 장(대표·썸네일)은 위에 큰 이미지로 이미 보이므로,
+                  아래 선택줄에는 나머지("추가 아트")만 보여준다 (v2.3 사용자 확정) */}
               {arts.length > 1 && (
                 <div className="tc-faces">
-                  {arts.map((a, i) => (
-                    <div key={i} className={`fc ${i === cur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
-                      <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
-                    </div>
-                  ))}
+                  {arts.slice(1).map((a, i0) => {
+                    const i = i0 + 1;
+                    return (
+                      <div key={i} className={`fc ${i === cur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
+                        <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
