@@ -6,6 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Character, CharTab, ColorChip, Visibility, CharGrant } from '@/lib/charStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
+import { RuleSelect, RuleSpecsEditor } from '@/components/chars/RuleSpecsEditor';
+import { Spec } from '@/lib/charRuleConfig';
 import { newId } from '@/lib/postStore';
 import { putBlob, getBlob, useBlobUrl } from '@/lib/blobStore';
 import { useFonts, deVarFamily } from '@/lib/fontStore';
@@ -21,7 +23,7 @@ import { isValidSlug, slugify } from '@/lib/link';
 import { useToast } from '@/components/ui/Toast';
 import { Lightbox } from '@/components/ui/Lightbox';
 
-interface SpecRow { id: string; label: string; value: string }
+interface SpecRow extends Spec { id: string }
 interface ColorRow extends ColorChip { id: string }
 interface ArtItem { id: string; ref?: string; url?: string; file?: File }
 
@@ -57,7 +59,18 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [nameBold, setNameBold] = useState(initial?.nameBold ?? true); // 상세 이름 볼드 (v2.0 — 기본 켜짐)
   const [bodyFontId, setBodyFontId] = useState(initial?.bodyFontId ?? 'default');
   const [specs, setSpecs] = useState<SpecRow[]>(
-    (initial?.specs ?? [{ label: '성별', value: '' }, { label: '키', value: '' }]).map(s => ({ ...s, id: newId() })));
+    (initial?.specs ?? [{ label: '성별', value: '' }, { label: '키', value: '' }]).map(s => ({ ...s, id: s.key ?? newId() })));
+  // TRPG 룰 이름 (v2.1 — 자놀 캐릭터 기본 정보 항목 룰별 정보란). 미선택이면 기존처럼 자유 항목(specs) 그대로.
+  const [rule, setRule] = useState(initial?.rule ?? '');
+  const handleRuleChange = (newRule: string, ruleSpecs: Spec[]) => {
+    setRule(newRule);
+    if (!newRule) {
+      // 자유 항목으로 되돌아갈 때, 룰 항목만 채워져 있던 상태였다면 기본 항목으로 초기화
+      setSpecs(l => (l.some(s => s.type) ? [{ id: newId(), label: '성별', value: '' }, { id: newId(), label: '키', value: '' }] : l));
+    } else {
+      setSpecs(ruleSpecs.map(s => ({ ...s, id: s.key ?? newId() })));
+    }
+  };
   const [colors, setColors] = useState<ColorRow[]>((initial?.colors ?? []).map(c => ({ ...c, id: newId() })));
   const [colorTipMode, setColorTipMode] = useState<'hex' | 'both' | 'label'>(initial?.colorTipMode ?? 'hex');
   // 색 점 테두리 (v2.0 사용자 요청) — 없음 / 1px(색 지정). 미지정이면 지금까지의 옅은 테두리
@@ -104,7 +117,11 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       colors: colors.filter(x => x.hex).map(({ hex, label }) => ({ hex, label })),
       colorTipMode,
       colorBd,
-      specs: specs.filter(s => s.label.trim()).map(({ label, value }) => ({ label: label.trim(), value })),
+      specs: rule
+        // 룰 항목은 게이지/관계표 등 구조화된 값을 그대로 보존해야 하므로 label/value만 남기지 않는다
+        ? specs.map(({ id, ...rest }) => rest)
+        : specs.filter(s => s.label.trim()).map(({ label, value }) => ({ label: label.trim(), value })),
+      rule: rule || undefined,
       tabs,   // 제목이 비어도 유지 — 필터로 사라지던 버그 수정 (v1.9 사용자 지적)
       basicHtml,
       visibility,
@@ -190,25 +207,34 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           ＋ ADD ART {arts.length === 0 && '(첫 장 등록 시 썸네일 크롭 지정)'}
         </button>
 
-        {/* 기본 정보 스펙 */}
+        {/* 기본 정보 스펙 — TRPG 룰을 선택하면 그 룰 전용 항목(게이지·관계표·기능표·STATUS 등)을
+            불러와 편집하고, 선택하지 않으면 기존과 같은 자유 항목(라벨/값) 그대로 편집한다 */}
         <label className="k-label" style={{ margin: 0 }}>기본 정보 항목</label>
-        <DragList items={specs} keyOf={s => s.id} onReorder={setSpecs}
-          render={s => (
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', width: '100%', padding: '2px 0' }}>
-              <span className="drag-h">⠿</span>
-              <KInput placeholder="항목" value={s.label} style={{ ...rowInp, width: 90 }}
-                onChange={e => setSpecs(l => l.map(x => x.id === s.id ? { ...x, label: e.target.value } : x))} />
-              <KInput placeholder="값" value={s.value} style={rowInp}
-                onChange={e => setSpecs(l => l.map(x => x.id === s.id ? { ...x, value: e.target.value } : x))} />
-              <span className="fx" onClick={() => {
-                const remove = () => setSpecs(l => l.filter(x => x.id !== s.id));
-                if (s.label.trim() || s.value.trim()) del.ask('이 항목을 삭제하시겠습니까?', remove, `${s.label} — ${s.value}`);
-                else remove();
-              }}>✕</span>
-            </div>
-          )} />
-        <button className="btn btn-ghost" style={addBtn}
-          onClick={() => setSpecs(l => [...l, { id: newId(), label: '', value: '' }])}>＋ ADD</button>
+        <RuleSelect rule={rule} onChange={handleRuleChange} />
+        {rule ? (
+          <RuleSpecsEditor rule={rule} specs={specs}
+            onChange={newSpecs => setSpecs(newSpecs.map(s => ({ ...s, id: s.key ?? newId() })))} />
+        ) : (
+          <>
+            <DragList items={specs} keyOf={s => s.id} onReorder={setSpecs}
+              render={s => (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', width: '100%', padding: '2px 0' }}>
+                  <span className="drag-h">⠿</span>
+                  <KInput placeholder="항목" value={s.label} style={{ ...rowInp, width: 90 }}
+                    onChange={e => setSpecs(l => l.map(x => x.id === s.id ? { ...x, label: e.target.value } : x))} />
+                  <KInput placeholder="값" value={s.value} style={rowInp}
+                    onChange={e => setSpecs(l => l.map(x => x.id === s.id ? { ...x, value: e.target.value } : x))} />
+                  <span className="fx" onClick={() => {
+                    const remove = () => setSpecs(l => l.filter(x => x.id !== s.id));
+                    if (s.label.trim() || s.value.trim()) del.ask('이 항목을 삭제하시겠습니까?', remove, `${s.label} — ${s.value}`);
+                    else remove();
+                  }}>✕</span>
+                </div>
+              )} />
+            <button className="btn btn-ghost" style={addBtn}
+              onClick={() => setSpecs(l => [...l, { id: newId(), label: '', value: '' }])}>＋ ADD</button>
+          </>
+        )}
 
         {/* 테마 컬러 — 한 줄에 2개 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -394,6 +420,15 @@ function TabEditView({ tab, onChange, onDelete, onBack }: {
         <KInput placeholder="소제목 (선택)" value={tab.subtitle ?? ''}
           onChange={e => onChange({ subtitle: e.target.value })} />
       </div>
+      {/* TRPG 룰 정보란 — 기본 정보 항목과 동일하게, 이 탭에도 룰을 선택하면
+          룰별 항목(게이지·관계표·기능표·STATUS 등)을 불러와 편집할 수 있다 (ADD TAB 요청) */}
+      <label className="k-label" style={{ margin: 0 }}>이 탭의 정보란 — 선택 시 아래 리치 본문 위에 표시됩니다</label>
+      <RuleSelect rule={tab.rule ?? ''}
+        onChange={(newRule, ruleSpecs) => onChange({ rule: newRule || undefined, specs: newRule ? ruleSpecs : [] })} />
+      {tab.rule && (
+        <RuleSpecsEditor rule={tab.rule} specs={tab.specs ?? []}
+          onChange={newSpecs => onChange({ specs: newSpecs })} />
+      )}
       {/* 리치 에디터 (TipTap) — 툴바로 서식·이미지 삽입, 출력은 HTML */}
       <RichEditor value={tab.html} onChange={html => onChange({ html })}
         placeholder="탭 내용을 작성하세요 — 이미지 삽입 가능 (스크립트 불허 6.3)" />

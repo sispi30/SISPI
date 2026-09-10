@@ -15,6 +15,11 @@ export interface CharTab {
   title: string;
   subtitle?: string;     // 제목 아래 작은 글씨 (선택)
   html: string;          // HTML 에디터 내용 (스크립트 불허 — 렌더 시 sanitize)
+  /** 이 탭 전용 TRPG 룰 이름 — 선택하면 기본 정보 항목과 같은 방식으로 룰별 정보란(specs)을
+   *  이 탭에도 띄울 수 있다(캐릭터 정보란 룰별 항목 기능, ADD TAB에도 동일 적용). 미선택 시 기존처럼
+   *  HTML 본문(html)만 있는 자유 탭 그대로 동작한다. */
+  rule?: string;
+  specs?: import('./charRuleConfig').Spec[];
 }
 
 export interface Character {
@@ -29,7 +34,10 @@ export interface Character {
    *  미지정이면 지금까지와 같은 옅은 테두리(안 정한 홈은 모습이 안 바뀐다) */
   colorBd?: string;
   colorTipMode?: 'hex' | 'both' | 'label'; // 색 점 툴팁 표기: hex / 이름+hex / 이름만
-  specs: { label: string; value: string }[];
+  specs: import('./charRuleConfig').Spec[];
+  /** 기본 정보 항목에 적용된 TRPG 룰 이름 (v2.1 — 자놀 캐릭터 룰별 정보란).
+   *  미지정/빈 문자열이면 지금까지와 같은 자유 항목(specs) 그대로 동작한다. */
+  rule?: string;
   tabs: CharTab[];       // 기본 정보 외 추가 탭
   basicHtml: string;     // 기본 정보 탭의 소개 본문 (HTML)
   visibility: Visibility;
@@ -77,7 +85,8 @@ export interface AuCharProfile {
   themeMode?: 'default' | 'custom';
   colors?: ColorChip[];
   colorTipMode?: 'hex' | 'both' | 'label';
-  specs?: { label: string; value: string }[];
+  specs?: import('./charRuleConfig').Spec[];
+  rule?: string;
   tabs?: CharTab[];
   thumbId?: string;
   thumbCrop?: import("@/components/ui/CropEditor").CropValue;
@@ -101,6 +110,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.colors !== undefined ? { colors: p.colors } : {}),
     ...(p.colorTipMode !== undefined ? { colorTipMode: p.colorTipMode } : {}),
     ...(p.specs !== undefined ? { specs: p.specs } : {}),
+    ...(p.rule !== undefined ? { rule: p.rule } : {}),
     ...(p.tabs !== undefined ? { tabs: p.tabs } : {}),
     ...(p.basicHtml !== undefined ? { basicHtml: p.basicHtml } : {}),
     // 이미지는 **물려받지 않는다** (v2.0 사용자 요청) — AU 프로필에 안 넣었으면 비워 둔다.

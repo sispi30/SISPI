@@ -18,6 +18,7 @@ import { CroppedBlobImg, CropEditor, type CropValue } from '@/components/ui/Crop
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useSectionTitle } from '@/lib/sectionStore';
 import { ConfirmModal } from '@/components/ui/Modal';
+import { SpecsDisplay } from '@/components/chars/SpecsDisplay';
 
 function CharDetailInner() {
   const { id } = useParams<{ id: string }>();
@@ -259,37 +260,35 @@ function CharDetailInner() {
             <>
               {/* 기본 정보 탭은 제목을 두지 않는다 — 처음 보이는 화면이라 안내가 필요 없다
                   (다른 탭은 무엇을 보는 중인지 알아야 하므로 제목을 그대로 둔다) */}
-              <dl className="spec">
-                {eff.specs.map(s => (
-                  <React.Fragment key={s.label}><dt>{s.label}</dt><dd>{s.value}</dd></React.Fragment>
-                ))}
-                {eff.colors.length > 0 && (
-                  <>
-                    <dt>테마컬러</dt>
-                    <dd>
-                      <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
-                        {/* 색 점 나열 — hex는 호버 툴팁만 (v1.8) */}
-                        {eff.colors.map(c => {
-                          // 툴팁 표기: hex / 이름+hex / 이름만 (등록 시 선택)
-                          const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
-                            : eff.colorTipMode === 'both' ? (c.label ? `${c.label} · ${c.hex.toUpperCase()}` : c.hex.toUpperCase())
-                            : c.hex.toUpperCase();
-                          return (
-                            <span key={c.hex + c.label} className="sw-static" data-hex={tip}
-                              style={{ background: c.hex, boxShadow: chipBorder(eff.colorBd) }} />
-                          );
-                        })}
-                      </span>
-                    </dd>
-                  </>
-                )}
-              </dl>
+              <SpecsDisplay specs={eff.specs} />
+              {eff.colors.length > 0 && (
+                <dl className="spec">
+                  <dt>테마컬러</dt>
+                  <dd>
+                    <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
+                      {/* 색 점 나열 — hex는 호버 툴팁만 (v1.8) */}
+                      {eff.colors.map(c => {
+                        // 툴팁 표기: hex / 이름+hex / 이름만 (등록 시 선택)
+                        const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
+                          : eff.colorTipMode === 'both' ? (c.label ? `${c.label} · ${c.hex.toUpperCase()}` : c.hex.toUpperCase())
+                          : c.hex.toUpperCase();
+                        return (
+                          <span key={c.hex + c.label} className="sw-static" data-hex={tip}
+                            style={{ background: c.hex, boxShadow: chipBorder(eff.colorBd) }} />
+                        );
+                      })}
+                    </span>
+                  </dd>
+                </dl>
+              )}
               <div className="prose" dangerouslySetInnerHTML={{ __html: basicHtml }} />
             </>
           ) : (
             <>
               <h3 className="tab-tt">{curTab?.title}</h3>
               {curTab?.subtitle && <div className="sub">{curTab.subtitle}</div>}
+              {/* 이 탭에 TRPG 룰을 지정했으면(ADD TAB에서도 지원) 정보란을 본문 위에 표시 */}
+              {curTab?.rule && curTab.specs?.length ? <SpecsDisplay specs={curTab.specs} /> : null}
               <div className="prose" dangerouslySetInnerHTML={{ __html: tabHtml }} />
             </>
           )}
