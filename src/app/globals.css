@@ -1045,8 +1045,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
    minmax(0,1fr)로 바꿔 진짜 동일 비율이 되도록 고침. 아트 칸도 TRPG 캐릭터 게시판(.tcd-img를
    감싸는 .panel)과 같은 흰 카드(.panel)로 감싸 사진이 카드 안에 놓이는 모양까지 맞춤 (v2.2) */
 .char-art-wrap{position:sticky;top:10px;display:flex;flex-direction:column;gap:10px}
-.profile-center{border-radius:var(--radius);overflow:hidden;aspect-ratio:3/4}
-.profile-center img{width:100%;height:100%;object-fit:cover}
+/* 흰 카드 대신 배경을 투명하게, 사진은 원본 비율 그대로(자르거나 늘이지 않음) 보여준다 (v2.3) */
+.char-art-wrap.panel{background:transparent;box-shadow:none}
+.profile-center{border-radius:var(--radius);display:flex;align-items:center;justify-content:center;min-height:200px}
 /* 스티키 안정성 (v1.9): 끝까지 스크롤했을 때 아트 하단 == 정보 패널 하단이 되도록
    하단 여백을 계산값으로 고정 — viewH(100vh-58) - top(10) - artH(100vh-150) = 82px */
 .page-char-detail{padding-bottom:82px}
@@ -1921,7 +1922,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
      순서: 아트 → 정보 → 아이콘 탭(가로, 맨 아래) */
   .profile-wrap{grid-template-columns:1fr;min-height:0;height:auto;align-items:start}
   .char-art-wrap{order:1;position:static;width:100%;max-width:560px;margin:0 auto}
-  .profile-center{aspect-ratio:3/4;width:100%}
+  .profile-center{width:100%}
   .profile-info{order:2;max-width:560px;margin:0 auto;width:100%}
   .side-icons{order:3;position:static;flex-direction:row;flex-wrap:wrap;padding:0;gap:8px;justify-content:center}
   /* 예외 — 자관 세부: 960px에서 바로 세로 스택 전환 (v1.9) */

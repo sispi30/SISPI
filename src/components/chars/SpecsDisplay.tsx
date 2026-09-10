@@ -4,12 +4,24 @@
 // 라벨을 위에 두고 그 아래 전체 폭으로 내용을 그린다.
 // (기존에는 사이트 공통 .spec 클래스의 고정폭 라벨 칸(76px)을 그대로 썼는데,
 //  룰 라벨이 길어지면서 라벨 자체가 여러 줄로 꺾이고 값이 그 아래로 밀려나 보이는 문제가 있었음)
+import type { ReactNode } from 'react';
 import { Spec, statusTotal } from '@/lib/charRuleConfig';
 
 export function SpecsDisplay({ specs }: { specs: Spec[] }) {
   return (
     <div style={{ marginBottom: 18, fontSize: 'calc(12.5px*var(--fs,1))' }}>
       {specs.map((s, i) => <SpecRow key={s.key ?? s.label ?? i} s={s} />)}
+    </div>
+  );
+}
+
+/** 라벨-값이 한 줄에서 좌우로 정렬되는 행 — CHARACTER SHEET 링크·테마컬러처럼
+ *  Spec 목록 바깥에서 같은 모양이 필요한 곳에 재사용한다 */
+export function PlainSpecRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '6px 0', fontSize: 'calc(12.5px*var(--fs,1))' }}>
+      <span style={{ color: 'var(--faint)', letterSpacing: '.06em', flexShrink: 0 }}>{label}</span>
+      <span style={{ color: 'var(--ink)', textAlign: 'right' }}>{children}</span>
     </div>
   );
 }
@@ -112,7 +124,7 @@ function SpecValue({ s }: { s: Spec }) {
     const gradeMap = s.gradeMap;
     if (!labels.length) return <span style={{ color: 'var(--faint)' }}>—</span>;
     return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'center' }}>
         <RadarChart labels={labels} values={values} max={max} />
         <div style={{ display: 'grid', gap: 3, fontSize: 12 }}>
           {labels.map((lb, i) => {

@@ -11,14 +11,26 @@ import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useFonts } from '@/lib/fontStore';
 import { useTheme } from '@/lib/ThemeProvider';
-import { createPortal } from 'react-dom';
 import { BlobImg, useBlobUrl } from '@/lib/blobStore';
 import { CroppedBlobImg, CropEditor, type CropValue } from '@/components/ui/CropEditor';
 
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useSectionTitle } from '@/lib/sectionStore';
 import { ConfirmModal } from '@/components/ui/Modal';
-import { SpecsDisplay } from '@/components/chars/SpecsDisplay';
+import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
+
+function NaturalArt({ fileRef, ph, label }: { fileRef?: string; ph: string; label?: string }) {
+  const url = useBlobUrl(fileRef);
+  if (!url) {
+    return (
+      <div className={`ph ${ph}`} style={{ width: '100%', minHeight: 200, display: 'grid', placeItems: 'center', borderRadius: 'var(--radius)' }}>
+        {label && <span>{label}</span>}
+      </div>
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: '76vh', display: 'block', margin: '0 auto', borderRadius: 'var(--radius)' }} />;
+}
 
 function CharDetailInner() {
   const { id } = useParams<{ id: string }>();
@@ -46,36 +58,10 @@ function CharDetailInner() {
     : []), [rels, ch]);
   // AU 편집에서 ?au= 로 돌아오면 그 AU가 선택된 채 시작
   const [auKey, setAuKey] = useState<string | null>(() => params.get('au'));
-  // 대표 아트 우클릭 → 상세 화면에 보일 위치 조정 (v2.0)
-  const [artCtx, setArtCtx] = useState<{ x: number; y: number; ref: string } | null>(null);
-  // 편집 중인 아트 참조 + 그때 실제 표시 영역의 가로/세로 비 (3:4가 아니라 화면 높이에 따라 달라진다)
-  const [artCropOpen, setArtCropOpen] = useState<{ ref: string; ratio: number } | null>(null);
-  const artBoxRef = useRef<HTMLDivElement>(null);
-  const artBoxRatio = () => {
-    const r = artBoxRef.current?.getBoundingClientRect();
-    return r && r.height > 1 ? r.width / r.height : 3 / 4;
-  };
-  useEffect(() => {
-    if (!artCtx) return;
-    const close = () => setArtCtx(null);
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setArtCtx(null); };
-    window.addEventListener('click', close);
-    window.addEventListener('keydown', key);
-    return () => { window.removeEventListener('click', close); window.removeEventListener('keydown', key); };
-  }, [artCtx]);
   // AU는 "새로 등록"하는 프로필 (v1.9 사용자 확정) — 등록 전엔 base를 보여주지 않고 등록 안내
   const auRegistered = !auKey || !!ch?.auProfiles?.[auKey];
   // 표시용 캐릭터 — AU에서 지정한 필드만 base를 대체 (이름·키·성별부터 전부 바뀔 수 있음)
   const eff = ch ? charWithAu(ch, auKey) : undefined;
-
-  /** 상세 화면 아트 위치 저장 (v2.0) — AU를 보는 중이면 그 AU에만, 아니면 원본에 */
-  const saveArtCrop = (c: CropValue | undefined) => {
-    setChars(chars.map(x => {
-      if (x.id !== id) return x;
-      if (!auKey) return { ...x, artCrop: c };
-      return { ...x, auProfiles: { ...x.auProfiles, [auKey]: { ...x.auProfiles?.[auKey], artCrop: c } } };
-    }));
-  };
 
   // AU 전환 시 탭 구성·아트가 달라지므로 리셋
   useEffect(() => { setTab('basic'); setArtIdx(0); }, [auKey]);
@@ -155,28 +141,23 @@ function CharDetailInner() {
             { label: 'CANCEL', kind: 'ghost', onClick: () => setDelAsk(false) },
           ]} />
       </div>
-      {/* AU 프로필 리스트 (v1.9) — 자관에 추가된 AU가 있으면 우상단, 각 AU의 저장 썸네일 기준 */}
+      {/* AU 프로필 리스트 (v1.9) — 자관에 추가된 AU가 있으면 우상단.
+          대표 썸네일 이미지는 목록(리스트) 화면 전용으로 두고, 캐릭터를 클릭해 들어온
+          이 상세 화면에서는 이미지 없이 라벨만 보이는 버튼으로 전환함 (v2.3) */}
       {charAus.length > 0 && (
         <div className="au-list" style={{ justifyContent: 'flex-end', marginBottom: 10 }}>
           <div className={`au-item ${auKey === null ? 'on' : ''} ph ${ch.thumbClass}`} style={{ borderColor: auKey === null ? 'var(--accent)' : 'var(--line)' }}
             onClick={() => setAuKey(null)}>
-            {(ch.thumbId || ch.arts?.[0]) && <CroppedBlobImg fileRef={ch.thumbId ?? ch.arts?.[0]} crop={ch.thumbCrop} ph={ch.thumbClass} />}
             <small>원본</small>
           </div>
-          {charAus.map(a => {
-            const av = charWithAu(ch, a.key);   // 이 AU에 넣은 썸네일 (안 넣었으면 색 플레이스홀더, v2.0)
-            return (
-              <div key={a.key} className={`au-item ${auKey === a.key ? 'on' : ''} ph ${ch.thumbClass}`}
-                style={{ borderColor: auKey === a.key ? 'var(--accent)' : 'var(--line)' }}
-                data-tip={`${a.relName} · ${a.label}`}
-                onClick={() => setAuKey(a.key)}>
-                {(av.thumbId || av.arts?.[0]) && (
-                  <CroppedBlobImg fileRef={av.thumbId ?? av.arts?.[0]} crop={av.thumbCrop} ph={ch.thumbClass} />
-                )}
-                <small>{a.label}</small>
-              </div>
-            );
-          })}
+          {charAus.map(a => (
+            <div key={a.key} className={`au-item ${auKey === a.key ? 'on' : ''} ph ${ch.thumbClass}`}
+              style={{ borderColor: auKey === a.key ? 'var(--accent)' : 'var(--line)' }}
+              data-tip={`${a.relName} · ${a.label}`}
+              onClick={() => setAuKey(a.key)}>
+              <small>{a.label}</small>
+            </div>
+          ))}
         </div>
       )}
       {/* AU 미등록 (v1.9 사용자 확정) — base를 보여주지 않고 그 AU에 맞춰 캐릭터를 새로 등록 */}
@@ -206,7 +187,8 @@ function CharDetailInner() {
           )}
         </div>
 
-        {/* 중앙 아트 — 스티키 · 추가 아트가 있으면 아래 썸네일 줄로 전환 (TRPG 캐릭터 게시판과 같은 방식) */}
+        {/* 중앙 아트 — 스티키 · 원본 비율 그대로 표시(자르거나 늘이지 않음, v2.3) ·
+            추가 아트가 있으면 아래 썸네일 줄로 전환 (TRPG 캐릭터 게시판과 같은 방식) */}
         {(() => {
           const arts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
           if (arts.length === 0 && !eff.artUrl) {
@@ -219,27 +201,17 @@ function CharDetailInner() {
           const cur = Math.min(artIdx, arts.length - 1);
           return (
             <div className="char-art-wrap panel" style={{ padding: 14 }}>
-              <div className="profile-center" ref={artBoxRef}
+              <div className="profile-center"
                 style={{ cursor: arts.length > 1 ? 'pointer' : undefined }}
-                onClick={() => { if (arts.length > 1) setArtIdx(i => (i + 1) % arts.length); }}
-                /* 대표 아트 우클릭 → 이 화면에 보일 위치 조정 (관리자, v2.0 사용자 확정) */
-                onContextMenu={e => {
-                  if (!(isAdmin || charGrant(ch, user?.id) === 'edit') || cur !== 0) return;
-                  e.preventDefault();
-                  setArtCtx({ x: e.clientX, y: e.clientY, ref: arts[0] });
-                }}>
-                {/* 지정한 크롭 위치를 여기서도 쓴다 — 예전에는 가운데 기준으로 잘려서
-                    리스트에서 맞춰 둔 위치와 다른 곳이 보였다 (대표 아트에만 적용) */}
-                <CroppedBlobImg fileRef={arts[cur] ?? eff.artUrl}
-                  crop={cur === 0 ? eff.artCrop : undefined}
-                  ph={ch.thumbClass} label="CHARACTER FULL ART" />
+                onClick={() => { if (arts.length > 1) setArtIdx(i => (i + 1) % arts.length); }}>
+                <NaturalArt fileRef={arts[cur] ?? eff.artUrl} ph={ch.thumbClass} label="CHARACTER FULL ART" />
               </div>
-              {/* 아트 여러 장 — TRPG 캐릭터 게시판(tc-faces)과 같은 모양의 썸네일 선택줄 */}
+              {/* 아트 여러 장 — TRPG 캐릭터 게시판(tc-faces)과 같은 모양의 썸네일 선택줄 (정사각 크롭 그대로 유지) */}
               {arts.length > 1 && (
                 <div className="tc-faces">
                   {arts.map((a, i) => (
                     <div key={i} className={`fc ${i === cur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
-                      <CroppedBlobImg fileRef={a} crop={i === 0 ? eff.artCrop : undefined} ph={ch.thumbClass} />
+                      <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
                     </div>
                   ))}
                 </div>
@@ -266,30 +238,26 @@ function CharDetailInner() {
                   (다른 탭은 무엇을 보는 중인지 알아야 하므로 제목을 그대로 둔다) */}
               <SpecsDisplay specs={eff.specs} />
               {eff.sheetUrl && (
-                <dl className="spec">
-                  <dt>CHARACTER SHEET</dt>
-                  <dd><a href={eff.sheetUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>LINK ↗</a></dd>
-                </dl>
+                <PlainSpecRow label="CHARACTER SHEET">
+                  <a href={eff.sheetUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>LINK ↗</a>
+                </PlainSpecRow>
               )}
               {eff.colors.length > 0 && (
-                <dl className="spec">
-                  <dt>테마컬러</dt>
-                  <dd>
-                    <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
-                      {/* 색 점 나열 — hex는 호버 툴팁만 (v1.8) */}
-                      {eff.colors.map(c => {
-                        // 툴팁 표기: hex / 이름+hex / 이름만 (등록 시 선택)
-                        const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
-                          : eff.colorTipMode === 'both' ? (c.label ? `${c.label} · ${c.hex.toUpperCase()}` : c.hex.toUpperCase())
-                          : c.hex.toUpperCase();
-                        return (
-                          <span key={c.hex + c.label} className="sw-static" data-hex={tip}
-                            style={{ background: c.hex, boxShadow: chipBorder(eff.colorBd) }} />
-                        );
-                      })}
-                    </span>
-                  </dd>
-                </dl>
+                <PlainSpecRow label="테마컬러">
+                  <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
+                    {/* 색 점 나열 — hex는 호버 툴팁만 (v1.8) */}
+                    {eff.colors.map(c => {
+                      // 툴팁 표기: hex / 이름+hex / 이름만 (등록 시 선택)
+                      const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
+                        : eff.colorTipMode === 'both' ? (c.label ? `${c.label} · ${c.hex.toUpperCase()}` : c.hex.toUpperCase())
+                        : c.hex.toUpperCase();
+                      return (
+                        <span key={c.hex + c.label} className="sw-static" data-hex={tip}
+                          style={{ background: c.hex, boxShadow: chipBorder(eff.colorBd) }} />
+                      );
+                    })}
+                  </span>
+                </PlainSpecRow>
               )}
               <div className="prose" dangerouslySetInnerHTML={{ __html: basicHtml }} />
             </>
@@ -306,24 +274,8 @@ function CharDetailInner() {
       </div>
       )}
 
-      {/* 대표 아트 우클릭 메뉴 (v2.0) — 상세 화면에 보일 위치 조정 */}
-      {artCtx && createPortal(
-        <div className="ctx-menu on" style={{ left: artCtx.x, top: artCtx.y }} onClick={e => e.stopPropagation()}>
-          <div className="ctx-ttl">대표 아트</div>
-          <button onClick={() => { setArtCropOpen({ ref: artCtx.ref, ratio: artBoxRatio() }); setArtCtx(null); }}>
-            이미지 위치 조정
-          </button>
-          {(eff?.artCrop) && (
-            <button onClick={() => { saveArtCrop(undefined); setArtCtx(null); }}>위치 지정 해제</button>
-          )}
-        </div>,
-        document.body,
-      )}
-      {artCropOpen && (
-        <ArtCropModal fileRef={artCropOpen.ref} ratio={artCropOpen.ratio} crop={eff?.artCrop}
-          onClose={() => setArtCropOpen(null)}
-          onApply={c => { saveArtCrop(c); setArtCropOpen(null); }} />
-      )}
+      {/* 대표 아트 위치 조정 기능은 사진을 잘라 채우던 방식(cover)일 때만 의미가 있었는데,
+          이제 원본 비율 그대로 보여주는 방식으로 바뀌어 더 이상 필요하지 않아 제거함 (v2.3) */}
     </section>
   );
 }
