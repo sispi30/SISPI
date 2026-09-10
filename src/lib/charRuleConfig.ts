@@ -43,7 +43,7 @@ export interface Spec {
 }
 
 export interface RuleFieldDef {
-  key: string;           // f2, f3, f4, f6, f7, f8, f9, f10 (그누보드 wr_N 슬롯 대응)
+  key: string;           // f2, f3, f4, f6, f7, f8, f10 (그누보드 wr_N 슬롯 대응 — f9/한마디류 항목은 삭제됨)
   label: string;
   type: SpecFieldType;
   placeholder?: string;
@@ -78,7 +78,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: '특징', type: 'text' },
     { key: 'f7', label: '신념', type: 'text' },
     { key: 'f8', label: 'HP | MP | SAN | 행운', type: 'gauge', gaugeKeys: ['HP', 'MP', 'SAN', '행운'] },
-    { key: 'f9', label: '캐치프레이즈', type: 'text' },
     { key: 'f10', label: '특성치', type: 'radar_stats', statLabels: ['근력', '건강', '크기', '민첩', '외모', '지능', '정신력', '교육'], statMax: 99 },
   ],
   '더블크로스 3rd': [
@@ -88,7 +87,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: 'SYNDROME(신드롬)', type: 'text' },
     { key: 'f7', label: 'AWAKE | IMPULSE(각성 | 충동)', type: 'text' },
     { key: 'f8', label: 'DLOIS(로이스)', type: 'text' },
-    { key: 'f9', label: '한 줄 인용구', type: 'text' },
     { key: 'f10', label: '4대 능력치', type: 'radar_stats', statLabels: ['육체', '감각', '정신', '사회'], statMax: 10 },
   ],
   '마기카로기아': [
@@ -98,7 +96,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: '사회적 신분', type: 'text' },
     { key: 'f7', label: '진정한 모습', type: 'text' },
     { key: 'f8', label: '공적점 | 마화', type: 'gauge', gaugeKeys: ['공적점', '마화'], gaugeNoMax: ['공적점', '마화'] },
-    { key: 'f9', label: '한마디', type: 'text' },
     {
       key: 'f10', label: '특성치', type: 'radar_stats',
       statLabels: ['계제', '공격력', '방어력', '근원력'], statMax: 10,
@@ -112,7 +109,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: '특기', type: 'text' },
     { key: 'f7', label: '어빌리티', type: 'text' },
     { key: 'f8', label: '생명력 | 이성치 | 공적점', type: 'gauge', gaugeKeys: ['생명력', '이성치', '공적점'], gaugeNoMax: ['공적점'] },
-    { key: 'f9', label: '한마디', type: 'text' },
     {
       key: 'f10', label: '관계', type: 'relation_table',
       columns: [
@@ -130,7 +126,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: '숙적 | 신념', type: 'text' },
     // wr_7 슬롯을 이 룰에서는 쓰지 않으므로(hide) 필드 정의 자체를 뺐다
     { key: 'f8', label: '추가생명력 | 공적점', type: 'gauge', gaugeKeys: ['추가생명력', '공적점'], gaugeNoMax: ['공적점'] },
-    { key: 'f9', label: '한마디', type: 'text' },
     {
       key: 'f10', label: '관계', type: 'relation_table',
       columns: [
@@ -150,7 +145,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: '1인칭 | 어조', type: 'text' },
     { key: 'f7', label: '말버릇', type: 'text' },
     { key: 'f8', label: '소중한 추억', type: 'text' },
-    { key: 'f9', label: '한마디', type: 'text' },
     {
       key: 'f10', label: '프래그먼트', type: 'relation_table',
       columns: [
@@ -167,7 +161,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: '좋아하는 것 | 싫어하는 것', type: 'text' },
     { key: 'f7', label: '직업', type: 'text' },
     { key: 'f8', label: '파트너', type: 'text' },
-    { key: 'f9', label: '한마디', type: 'text' },
     {
       key: 'f10', label: '기능표', type: 'skill_table',
       categories: [
@@ -185,7 +178,6 @@ export const RULE_CONFIG: Record<string, RuleFieldDef[]> = {
     { key: 'f6', label: '오리진 | 어뎁트', type: 'text' },
     { key: 'f7', label: '사연 | 경력', type: 'text' },
     { key: 'f8', label: '거주 | 의상 | 바디레인지', type: 'text' },
-    { key: 'f9', label: '한마디', type: 'text' },
     {
       key: 'f10', label: 'STATUS', type: 'status_block',
       subStats: ['카르마', '어드밴티지', '리로드', '배리어', '초기 BS'],

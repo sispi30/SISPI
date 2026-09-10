@@ -206,37 +206,41 @@ function CharDetailInner() {
           )}
         </div>
 
-        {/* 중앙 아트 — 스티키 · 추가 아트가 있으면 클릭으로 넘겨보기 */}
+        {/* 중앙 아트 — 스티키 · 추가 아트가 있으면 아래 썸네일 줄로 전환 (TRPG 캐릭터 게시판과 같은 방식) */}
         {(() => {
           const arts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
           if (arts.length === 0 && !eff.artUrl) {
-            return <div className={`profile-center ph ${ch.thumbClass}`}><span>CHARACTER FULL ART</span></div>;
+            return (
+              <div className="char-art-wrap panel" style={{ padding: 14 }}>
+                <div className={`profile-center ph ${ch.thumbClass}`}><span>CHARACTER FULL ART</span></div>
+              </div>
+            );
           }
           const cur = Math.min(artIdx, arts.length - 1);
           return (
-            <div className="profile-center" ref={artBoxRef}
-              style={{ cursor: arts.length > 1 ? 'pointer' : undefined }}
-              onClick={() => { if (arts.length > 1) setArtIdx(i => (i + 1) % arts.length); }}
-              /* 대표 아트 우클릭 → 이 화면에 보일 위치 조정 (관리자, v2.0 사용자 확정) */
-              onContextMenu={e => {
-                if (!(isAdmin || charGrant(ch, user?.id) === 'edit') || cur !== 0) return;
-                e.preventDefault();
-                setArtCtx({ x: e.clientX, y: e.clientY, ref: arts[0] });
-              }}>
-              {/* 지정한 크롭 위치를 여기서도 쓴다 — 예전에는 가운데 기준으로 잘려서
-                  리스트에서 맞춰 둔 위치와 다른 곳이 보였다 (대표 아트에만 적용) */}
-              {/* 리스트 썸네일 크롭은 3:4 기준이라 여기(화면 높이에 따라 비율이 달라지는 영역)에는
-                  맞지 않는다 — 여기서 따로 잡은 값이 있을 때만 쓰고, 없으면 가운데 기준 (v2.0) */}
-              <CroppedBlobImg fileRef={arts[cur] ?? eff.artUrl}
-                crop={cur === 0 ? eff.artCrop : undefined}
-                ph={ch.thumbClass} label="CHARACTER FULL ART" />
+            <div className="char-art-wrap panel" style={{ padding: 14 }}>
+              <div className="profile-center" ref={artBoxRef}
+                style={{ cursor: arts.length > 1 ? 'pointer' : undefined }}
+                onClick={() => { if (arts.length > 1) setArtIdx(i => (i + 1) % arts.length); }}
+                /* 대표 아트 우클릭 → 이 화면에 보일 위치 조정 (관리자, v2.0 사용자 확정) */
+                onContextMenu={e => {
+                  if (!(isAdmin || charGrant(ch, user?.id) === 'edit') || cur !== 0) return;
+                  e.preventDefault();
+                  setArtCtx({ x: e.clientX, y: e.clientY, ref: arts[0] });
+                }}>
+                {/* 지정한 크롭 위치를 여기서도 쓴다 — 예전에는 가운데 기준으로 잘려서
+                    리스트에서 맞춰 둔 위치와 다른 곳이 보였다 (대표 아트에만 적용) */}
+                <CroppedBlobImg fileRef={arts[cur] ?? eff.artUrl}
+                  crop={cur === 0 ? eff.artCrop : undefined}
+                  ph={ch.thumbClass} label="CHARACTER FULL ART" />
+              </div>
+              {/* 아트 여러 장 — TRPG 캐릭터 게시판(tc-faces)과 같은 모양의 썸네일 선택줄 */}
               {arts.length > 1 && (
-                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 12, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 3 }}>
-                  {arts.map((_, i) => (
-                    <i key={i} style={{
-                      width: i === cur ? 16 : 6, height: 6, borderRadius: 4,
-                      background: i === cur ? '#fff' : 'rgba(255,255,255,.45)', transition: '.2s',
-                    }} />
+                <div className="tc-faces">
+                  {arts.map((a, i) => (
+                    <div key={i} className={`fc ${i === cur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
+                      <CroppedBlobImg fileRef={a} crop={i === 0 ? eff.artCrop : undefined} ph={ch.thumbClass} />
+                    </div>
                   ))}
                 </div>
               )}

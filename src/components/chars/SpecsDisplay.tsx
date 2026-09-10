@@ -27,7 +27,12 @@ function SpecRow({ s }: { s: Spec }) {
   return (
     <div style={{ padding: '8px 0' }}>
       <div style={{ color: 'var(--faint)', letterSpacing: '.06em', marginBottom: 7 }}>{s.label}</div>
-      <SpecValue s={s} />
+      {/* 라벨은 그대로 왼쪽, 내용(게이지·관계표·기능표·STATUS·레이더차트)만 가운데로.
+          inline-block로 폭을 특정하지 않으면 게이지 바 등 flex:1 자식의 너비 계산이 깨져서,
+          고정 상한폭(520px, 좁으면 100%)을 주고 margin:auto로 가운데 정렬한다 */}
+      <div style={{ width: 'min(520px, 100%)', margin: '0 auto' }}>
+        <SpecValue s={s} />
+      </div>
     </div>
   );
 }

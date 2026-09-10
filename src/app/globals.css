@@ -1033,13 +1033,19 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .char-card .nm b{font-size:calc(14px*var(--fs,1));letter-spacing:.04em;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} /* 긴 이름 말줄임 (v1.9) */
 .char-card .nm i{width:11px;height:11px;border-radius:50%;font-style:normal;flex-shrink:0}
 /* 프로필 상세 — 좌측 탭·아트는 스티키, 정보는 페이지 흐름 (v1.9) */
-.profile-wrap{display:grid;grid-template-columns:64px 1fr 380px;gap:18px;align-items:start;min-height:560px}
+.profile-wrap{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start;min-height:560px}
 .side-icons{display:flex;flex-direction:column;gap:9px;padding:12px 0;position:sticky;top:10px}
 /* 색 4종은 디자인 탭 「캐릭터 탭 리스트」 · 특수문자 아이콘 확대 16→19 (v1.9 사용자 요청) */
 .side-icons button{width:46px;height:46px;border-radius:12px;background:var(--tab-bg,rgba(255,255,255,.08));color:var(--tab-fg,#aab0ba);font-size:calc(19px*var(--fs,1));display:grid;place-items:center;padding-bottom:4px;border:1px solid var(--line-dark);transition:.18s} /* 딩벳 글리프 아래 쏠림 보정 (v1.9 실측 — 사용자 미세조정 +1) */
 .side-icons button:hover{color:var(--tab-on-fg,#fff);background:var(--tab-on-bg,rgba(255,255,255,.16));opacity:.85}
 .side-icons button.on{background:var(--tab-on-bg,var(--panel-solid));color:var(--tab-on-fg,var(--ink));border-color:transparent;opacity:1}
-.profile-center{border-radius:var(--radius);overflow:hidden;position:sticky;top:10px;height:calc(100vh - 150px);min-height:480px}
+/* 캐릭터 상세 좌측 아트 — 큰 아트 + 아래 썸네일 선택줄로 (TRPG 캐릭터 게시판과 같은 방식, v2.1).
+   사진:정보 비중을 5:5로 맞추기 위해 .profile-wrap의 아트 칸도 380px 고정에서 1fr로 바꿨었는데,
+   1fr 트랙의 암묵적 min-width(콘텐츠 기준)가 서로 달라 실제로는 50:50이 아니었음 — 두 칸 모두
+   minmax(0,1fr)로 바꿔 진짜 동일 비율이 되도록 고침. 아트 칸도 TRPG 캐릭터 게시판(.tcd-img를
+   감싸는 .panel)과 같은 흰 카드(.panel)로 감싸 사진이 카드 안에 놓이는 모양까지 맞춤 (v2.2) */
+.char-art-wrap{position:sticky;top:10px;display:flex;flex-direction:column;gap:10px}
+.profile-center{border-radius:var(--radius);overflow:hidden;aspect-ratio:3/4}
 .profile-center img{width:100%;height:100%;object-fit:cover}
 /* 스티키 안정성 (v1.9): 끝까지 스크롤했을 때 아트 하단 == 정보 패널 하단이 되도록
    하단 여백을 계산값으로 고정 — viewH(100vh-58) - top(10) - artH(100vh-150) = 82px */
@@ -1914,7 +1920,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   /* 예외 — 캐릭터 세부: 960px에서 바로 모바일형 전환 (v1.9)
      순서: 아트 → 정보 → 아이콘 탭(가로, 맨 아래) */
   .profile-wrap{grid-template-columns:1fr;min-height:0;height:auto;align-items:start}
-  .profile-center{order:1;position:relative;top:auto;height:auto;min-height:0;aspect-ratio:3/4;width:100%;max-width:560px;margin:0 auto}
+  .char-art-wrap{order:1;position:static;width:100%;max-width:560px;margin:0 auto}
+  .profile-center{aspect-ratio:3/4;width:100%}
   .profile-info{order:2;max-width:560px;margin:0 auto;width:100%}
   .side-icons{order:3;position:static;flex-direction:row;flex-wrap:wrap;padding:0;gap:8px;justify-content:center}
   /* 예외 — 자관 세부: 960px에서 바로 세로 스택 전환 (v1.9) */
