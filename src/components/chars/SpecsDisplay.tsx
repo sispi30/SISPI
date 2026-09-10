@@ -1,19 +1,34 @@
 'use client';
-// 기본 정보/탭 정보란(dl.spec) 표시 — 자유 항목(text)은 기존과 동일하게 dt/dd,
-// 룰별 항목(게이지/관계표/기능표/STATUS)은 각각의 모양으로 렌더링한다.
-import React from 'react';
+// 기본 정보/탭 정보란 표시 — 자유 항목(text/select)은 라벨-값이 같은 줄에서
+// 좌우로 정렬되는 한 줄 행으로, 구조화된 항목(게이지/관계표/기능표/STATUS/레이더차트)은
+// 라벨을 위에 두고 그 아래 전체 폭으로 내용을 그린다.
+// (기존에는 사이트 공통 .spec 클래스의 고정폭 라벨 칸(76px)을 그대로 썼는데,
+//  룰 라벨이 길어지면서 라벨 자체가 여러 줄로 꺾이고 값이 그 아래로 밀려나 보이는 문제가 있었음)
 import { Spec, statusTotal } from '@/lib/charRuleConfig';
 
 export function SpecsDisplay({ specs }: { specs: Spec[] }) {
   return (
-    <dl className="spec">
-      {specs.map((s, i) => (
-        <React.Fragment key={s.key ?? s.label ?? i}>
-          <dt>{s.label}</dt>
-          <dd><SpecValue s={s} /></dd>
-        </React.Fragment>
-      ))}
-    </dl>
+    <div style={{ marginBottom: 18, fontSize: 'calc(12.5px*var(--fs,1))' }}>
+      {specs.map((s, i) => <SpecRow key={s.key ?? s.label ?? i} s={s} />)}
+    </div>
+  );
+}
+
+function SpecRow({ s }: { s: Spec }) {
+  const simple = !s.type || s.type === 'text' || s.type === 'select';
+  if (simple) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '6px 0' }}>
+        <span style={{ color: 'var(--faint)', letterSpacing: '.06em', flexShrink: 0 }}>{s.label}</span>
+        <span style={{ color: 'var(--ink)', textAlign: 'right' }}><SpecValue s={s} /></span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: '8px 0' }}>
+      <div style={{ color: 'var(--faint)', letterSpacing: '.06em', marginBottom: 7 }}>{s.label}</div>
+      <SpecValue s={s} />
+    </div>
   );
 }
 
