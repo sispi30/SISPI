@@ -191,33 +191,33 @@ function CharDetailInner() {
             추가 아트가 있으면 아래 썸네일 줄로 전환 (TRPG 캐릭터 게시판과 같은 방식) */}
         {(() => {
           const arts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
-          if (arts.length === 0 && !eff.artUrl) {
+          // 첫 장은 목록용 「대표·썸네일」 전용 — 상세 화면(큰 이미지·썸네일 줄 모두)에는
+          // 2번째 장부터("추가 아트")만 노출한다. 추가 아트가 하나도 없으면 예외적으로
+          // 대표 아트를 그대로 보여준다 (v2.4 사용자 확정) */
+          const displayArts = arts.length > 1 ? arts.slice(1) : arts;
+          if (displayArts.length === 0 && !eff.artUrl) {
             return (
               <div className="char-art-wrap panel" style={{ padding: 14 }}>
                 <div className={`profile-center ph ${ch.thumbClass}`}><span>CHARACTER FULL ART</span></div>
               </div>
             );
           }
-          const cur = Math.min(artIdx, arts.length - 1);
+          const cur = Math.min(artIdx, displayArts.length - 1);
           return (
             <div className="char-art-wrap panel" style={{ padding: 14 }}>
               <div className="profile-center"
-                style={{ cursor: arts.length > 1 ? 'pointer' : undefined }}
-                onClick={() => { if (arts.length > 1) setArtIdx(i => (i + 1) % arts.length); }}>
-                <NaturalArt fileRef={arts[cur] ?? eff.artUrl} ph={ch.thumbClass} label="CHARACTER FULL ART" />
+                style={{ cursor: displayArts.length > 1 ? 'pointer' : undefined }}
+                onClick={() => { if (displayArts.length > 1) setArtIdx(i => (i + 1) % displayArts.length); }}>
+                <NaturalArt fileRef={displayArts[cur] ?? eff.artUrl} ph={ch.thumbClass} label="CHARACTER FULL ART" />
               </div>
-              {/* 아트 여러 장 — 첫 장(대표·썸네일)은 위에 큰 이미지로 이미 보이므로,
-                  아래 선택줄에는 나머지("추가 아트")만 보여준다 (v2.3 사용자 확정) */}
-              {arts.length > 1 && (
+              {/* 썸네일 줄에도 같은 「추가 아트」 목록을 그대로 사용 */}
+              {displayArts.length > 1 && (
                 <div className="tc-faces">
-                  {arts.slice(1).map((a, i0) => {
-                    const i = i0 + 1;
-                    return (
-                      <div key={i} className={`fc ${i === cur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
-                        <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
-                      </div>
-                    );
-                  })}
+                  {displayArts.map((a, i) => (
+                    <div key={i} className={`fc ${i === cur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
+                      <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
