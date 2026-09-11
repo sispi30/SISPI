@@ -20,6 +20,9 @@ export interface CharTab {
    *  HTML 본문(html)만 있는 자유 탭 그대로 동작한다. */
   rule?: string;
   specs?: import('./charRuleConfig').Spec[];
+  /** 이 탭 전용 아트(상세 화면 좌측 대표 아트 대체) — 목록 대표·썸네일은 탭에서 바꿀 수 없어 따로
+   *  thumbId 개념 없이 전부 "추가 아트"로만 다룬다 (v2.4 ADD TAB 요청) */
+  arts?: string[];
 }
 
 export interface Character {

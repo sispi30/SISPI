@@ -34,6 +34,52 @@ function ArtThumb({ item, crop }: { item: ArtItem; crop?: CropValue }) {
   return <CropImg src={src} crop={crop} />;
 }
 
+function TabArtThumb({ fileRef }: { fileRef: string }) {
+  const url = useBlobUrl(fileRef);
+  if (!url) return <div className="ph" style={{ width: '100%', height: '100%' }} />;
+  return <CropImg src={url} />;
+}
+
+/** 탭 전용 아트 편집 — 대표·썸네일 개념 없이 전부 "추가 아트"로만 다룬다.
+ *  선택 즉시 업로드해 ref로 들고 있어(파일은 임시 보관하지 않음), 본 폼의 SAVE와 별개로 동작한다. */
+function TabArtEditor({ arts, onChange }: { arts: string[]; onChange: (arts: string[]) => void }) {
+  const [lb, setLb] = useState<number | null>(null);
+  const add = async (list: FileList | null) => {
+    if (!list || list.length === 0) return;
+    const refs = await Promise.all(Array.from(list).map(f => putBlob(f)));
+    onChange([...arts, ...refs]);
+  };
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      {arts.length > 0 && (
+        <DragList items={arts.map(ref => ({ ref }))} keyOf={a => a.ref} onReorder={list => onChange(list.map(a => a.ref))}
+          render={(a, i) => (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '3px 0' }}>
+              <span className="drag-h">⠿</span>
+              <div data-tip="클릭하면 원본 보기" onClick={() => setLb(i)}
+                style={{ width: 56, aspectRatio: '3/4', borderRadius: 7, overflow: 'hidden', position: 'relative', flexShrink: 0, cursor: 'zoom-in' }}>
+                <TabArtThumb fileRef={a.ref} />
+              </div>
+              <span className="pill">추가 아트</span>
+              <span className="fx" style={{ marginLeft: 'auto' }}
+                onClick={() => onChange(arts.filter((_, idx) => idx !== i))}>✕</span>
+            </div>
+          )} />
+      )}
+      <input id="tabArtsF" type="file" accept="image/*" multiple style={{ display: 'none' }}
+        onChange={e => { add(e.target.files); e.target.value = ''; }} />
+      <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11, justifySelf: 'start' }}
+        onClick={() => document.getElementById('tabArtsF')?.click()}
+        {...fileDrop(fl => add(fl))}>
+        ＋ ADD ART
+      </button>
+      {lb != null && arts[lb] != null && (
+        <Lightbox srcs={arts} index={lb} onClose={() => setLb(null)} />
+      )}
+    </div>
+  );
+}
+
 export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }: {
   initial: Character | null;               // null = 신규 등록
   onSave: (c: Character) => void;
@@ -426,6 +472,12 @@ function TabEditView({ tab, onChange, onDelete, onBack }: {
         <KInput placeholder="소제목 (선택)" value={tab.subtitle ?? ''}
           onChange={e => onChange({ subtitle: e.target.value })} />
       </div>
+      {/* 이 탭 전용 아트 (v2.4 ADD TAB 요청) — 채워두면 이 탭을 보는 동안 좌측 대표 아트 대신
+          여기 등록한 이미지를 보여준다. 목록 대표·썸네일은 여기서 바꿀 수 없고, 전부 "추가 아트"로만 관리 */}
+      <label className="k-label" style={{ margin: 0 }}>
+        이 탭의 아트 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 넣으면 이 탭을 보는 동안 좌측 대표 아트 대신 표시됩니다 (대표·썸네일은 여기서 바꿀 수 없음)</span>
+      </label>
+      <TabArtEditor arts={tab.arts ?? []} onChange={arts => onChange({ arts })} />
       {/* TRPG 룰 정보란 — 기본 정보 항목과 동일하게, 이 탭에도 룰을 선택하면
           룰별 항목(게이지·관계표·기능표·STATUS 등)을 불러와 편집할 수 있다 (ADD TAB 요청) */}
       <label className="k-label" style={{ margin: 0 }}>이 탭의 정보란 — 선택 시 아래 리치 본문 위에 표시됩니다</label>

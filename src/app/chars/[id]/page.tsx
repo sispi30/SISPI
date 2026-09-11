@@ -65,6 +65,8 @@ function CharDetailInner() {
 
   // AU 전환 시 탭 구성·아트가 달라지므로 리셋
   useEffect(() => { setTab('basic'); setArtIdx(0); }, [auKey]);
+  // 탭마다 다른 아트를 보여줄 수 있어(v2.4), 탭을 옮기면 이미지 인덱스를 처음으로
+  useEffect(() => { setArtIdx(0); }, [tab]);
 
   // 캐릭터 테마색 → 페이지 임시 테마 (4.18 방식, v1.9) — 「캐릭터 테마색」 선택 시에만, 벗어나면 원복
   const { setPageTheme } = useTheme();
@@ -188,14 +190,16 @@ function CharDetailInner() {
         </div>
 
         {/* 중앙 아트 — 스티키 · 원본 비율 그대로 표시(자르거나 늘이지 않음, v2.3) ·
-            추가 아트가 있으면 아래 썸네일 줄로 전환 (TRPG 캐릭터 게시판과 같은 방식) */}
+            추가 아트가 있으면 아래 썸네일 줄로 전환 (TRPG 캐릭터 게시판과 같은 방식) ·
+            탭에 전용 아트가 등록돼 있으면 그 탭을 보는 동안은 그 아트로 대체 (v2.4) */}
         {(() => {
-          const arts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
-          // 첫 장은 목록용 「대표·썸네일」 전용 — 상세 화면(큰 이미지·썸네일 줄 모두)에는
-          // 2번째 장부터("추가 아트")만 노출한다. 추가 아트가 하나도 없으면 예외적으로
-          // 대표 아트를 그대로 보여준다 (v2.4 사용자 확정) */
-          const displayArts = arts.length > 1 ? arts.slice(1) : arts;
-          if (displayArts.length === 0 && !eff.artUrl) {
+          const tabArts = curTab?.arts && curTab.arts.length > 0 ? curTab.arts : null;
+          const baseArts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
+          // 첫 장은 목록용 「대표·썸네일」 전용 — 상세 화면에는 2번째 장부터("추가 아트")만 노출한다.
+          // 탭 전용 아트는 애초에 전부 "추가 아트"라 이 제외 규칙이 적용되지 않는다.
+          const displayArts = tabArts ?? (baseArts.length > 1 ? baseArts.slice(1) : baseArts);
+          const fallbackUrl = tabArts ? undefined : eff.artUrl;
+          if (displayArts.length === 0 && !fallbackUrl) {
             return (
               <div className="char-art-wrap panel" style={{ padding: 14 }}>
                 <div className={`profile-center ph ${ch.thumbClass}`}><span>CHARACTER FULL ART</span></div>
@@ -208,9 +212,9 @@ function CharDetailInner() {
               <div className="profile-center"
                 style={{ cursor: displayArts.length > 1 ? 'pointer' : undefined }}
                 onClick={() => { if (displayArts.length > 1) setArtIdx(i => (i + 1) % displayArts.length); }}>
-                <NaturalArt fileRef={displayArts[cur] ?? eff.artUrl} ph={ch.thumbClass} label="CHARACTER FULL ART" />
+                <NaturalArt fileRef={displayArts[cur] ?? fallbackUrl} ph={ch.thumbClass} label="CHARACTER FULL ART" />
               </div>
-              {/* 썸네일 줄에도 같은 「추가 아트」 목록을 그대로 사용 */}
+              {/* 썸네일 줄에도 같은 목록을 그대로 사용 */}
               {displayArts.length > 1 && (
                 <div className="tc-faces">
                   {displayArts.map((a, i) => (
