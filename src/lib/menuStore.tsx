@@ -116,6 +116,14 @@ export const PLAYLOG_COLS: { key: string; label: string }[] = [
   { key: 'url', label: 'Url' },
 ];
 
+/** Character 열(v2.9)이 생기기 전에 저장해 둔 playlogPc엔 이 키가 없어서 안 보였다 —
+ *  Scenario 바로 다음 자리에 자동으로 끼워 넣는다(이미 있으면 그대로 둔다) */
+function migratePlaylogCharCol(cols: string[]): string[] {
+  if (cols.includes('character')) return cols;
+  const i = cols.indexOf('scenario');
+  return i === -1 ? [...cols, 'character'] : [...cols.slice(0, i + 1), 'character', ...cols.slice(i + 1)];
+}
+
 export const DEFAULT_MENU_SETTINGS: MenuSettings = {
   removedBoards: [],
   groupOrder: DEFAULT_MENU.map(m => m.label),
@@ -191,6 +199,9 @@ export function useMenuSettings(): [MenuSettings, (patch: Partial<MenuSettings>)
           ...p,
           // v1(노출 온오프) 설정만 있으면 자유 트리로 마이그레이션 (v1.9)
           tree: p.tree ?? migrateTree(p),
+          // Character 열 추가(v2.9) — 이 열이 생기기 전에 저장된 playlogPc엔 없어서
+          // 안 보였다. 저장된 값을 덮어쓰지 않고, 빠졌으면 자동으로 끼워 넣는다
+          playlogPc: p.playlogPc ? migratePlaylogCharCol(p.playlogPc) : DEFAULT_MENU_SETTINGS.playlogPc,
         });
       }
     } catch { /* 기본값 */ }
@@ -198,7 +209,10 @@ export function useMenuSettings(): [MenuSettings, (patch: Partial<MenuSettings>)
     const sync = () => {
       try {
         const raw = getRawSetting(KEY);
-        if (raw) setSt(s => ({ ...s, ...moveHrefs(JSON.parse(raw)) }));
+        if (raw) {
+          const p = moveHrefs(JSON.parse(raw) as Partial<MenuSettings>);
+          setSt(s => ({ ...s, ...p, playlogPc: p.playlogPc ? migratePlaylogCharCol(p.playlogPc) : s.playlogPc }));
+        }
       } catch { /* 무시 */ }
     };
     window.addEventListener('ohome-menuset', sync);
