@@ -3,6 +3,7 @@
 // 시나리오 자동완성(기존 기록 검색 드롭다운) · 로그 연결(외부 URL / 내 백업 로그 검색 토글)
 import React, { useState } from 'react';
 import { PlayRecord, TrpgLog, TRPG_SEED } from '@/lib/galleryStore';
+import { Character, CHAR_SEED } from '@/lib/charStore';
 import { useLocalList } from '@/lib/postStore';
 import { KInput, KDate } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
@@ -11,6 +12,10 @@ export interface PlaylogFormValue {
   date?: string; scenario: string; scenarioLink?: string;
   writer: string; withText: string; role: string; playtime: string;
   url?: string; logId?: string;
+  /** 참여 캐릭터 (v2.8) — 캐릭터 게시판(/chars)과 연동. 여기서 고른 캐릭터가
+   *  이 기록의 유일한 참여자 목록이며, 그 캐릭터의 상세 화면 TRPG 탭에도 그대로 보인다
+   *  (양쪽 다 이 값 하나만 보고 그리므로 어느 쪽에서 고쳐도 자동으로 반영됨). */
+  charIds?: string[];
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -43,6 +48,10 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
   const [logId, setLogId] = useState(initial?.logId ?? '');
   const [logQuery, setLogQuery] = useState('');
   const [scOpen, setScOpen] = useState(false);
+  // 참여 캐릭터 (v2.8) — 캐릭터 게시판과 연동
+  const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  const [charIds, setCharIds] = useState<string[]>(initial?.charIds ?? []);
+  const [charQuery, setCharQuery] = useState('');
 
   // 시나리오 자동완성 — 기존 기록에서 이름 중복 제거
   const scPool = [...new Map(records.map(r => [r.scenario, r])).values()]
@@ -59,6 +68,7 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
       writer: writer.trim(), withText: withText.trim(), role: role.trim(), playtime: playtime.trim(),
       url: linkMode === 'url' ? (url.trim() || undefined) : undefined,
       logId: linkMode === 'log' ? (logId || undefined) : undefined,
+      charIds: charIds.length ? charIds : undefined,
     });
   };
 
@@ -102,6 +112,32 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
           <Field label="Role"><KInput value={role} onChange={e => setRole(e.target.value)} /></Field>
         </div>
         <Field label="With"><KInput value={withText} onChange={e => setWithText(e.target.value)} /></Field>
+
+        {/* 참여 캐릭터 (v2.8) — 캐릭터 게시판(/chars)과 연동. 고른 캐릭터는 그 캐릭터의
+            상세 화면 TRPG 탭에도 자동으로 나타난다(양쪽이 이 charIds 하나만 봄) */}
+        <div>
+          <label className="k-label" style={{ marginBottom: 5 }}>
+            참여 캐릭터 (optional) <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— {charIds.length}명 선택</span>
+          </label>
+          <KInput placeholder="캐릭터 검색" value={charQuery} onChange={e => setCharQuery(e.target.value)} style={{ marginBottom: 6 }} />
+          <div style={{ maxHeight: 150, overflowY: 'auto', border: '1.5px solid var(--line)', borderRadius: 9 }}>
+            {chars
+              .filter(c => { const s = charQuery.trim().toLowerCase(); return !s || c.name.toLowerCase().includes(s) || c.sub.toLowerCase().includes(s); })
+              .map(c => (
+                <div key={c.id} onClick={() => setCharIds(l => (l.includes(c.id) ? l.filter(x => x !== c.id) : [...l, c.id]))}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', cursor: 'var(--cur-pointer,pointer)',
+                    fontSize: 12.5, borderBottom: '1px dashed var(--line)',
+                    background: charIds.includes(c.id) ? 'rgba(127,127,127,.12)' : undefined,
+                  }}>
+                  <i style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
+                  <b>{c.name}</b> <small style={{ color: 'var(--faint)' }}>{c.sub}</small>
+                  {charIds.includes(c.id) && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 700 }}>✓</span>}
+                </div>
+              ))}
+            {chars.length === 0 && <p className="hint" style={{ padding: 10 }}>등록된 캐릭터가 없습니다</p>}
+          </div>
+        </div>
 
         {/* 로그 연결 — 외부 URL 또는 내 홈 백업 로그 검색 (4.16) */}
         <div>

@@ -240,6 +240,9 @@ export interface PlayRecord {
   url?: string;              // Url (optional) — 클립 아이콘, 새 탭
   logId?: string;            // 내 홈 로그 백업 연결 (모바일: Playtime 밑줄)
   postId?: string;           // 세션 게시판(타래형 board) 글 연결 (5.4) — /board/{postId}로 이동
+  /** 참여 캐릭터 (v2.8) — 캐릭터 게시판(/chars)과 연동. 캐릭터 상세 화면의 TRPG 탭은
+   *  이 필드로 자신이 참여한 기록을 찾아 보여준다(단일 출처라 어느 쪽에서 고쳐도 자동 반영됨). */
+  charIds?: string[];
 }
 
 export const PLAYLOG_SEED: PlayRecord[] = [];

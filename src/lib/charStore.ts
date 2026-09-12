@@ -50,6 +50,10 @@ export interface Character {
    *  빈 배열이어도 "갤러리 켜짐" 상태이며, /chars/{id}/gallery 에서 그리드+라이트박스로 보여준다.
    *  AU별로 따로 두지 않고 캐릭터(원본) 하나에만 있다. */
   gallery?: GalleryImg[];
+  /** TRPG 참여 세션 탭 (v2.8) — 켜져 있으면 상세 화면에 TRPG 버튼이 보인다.
+   *  실제 세션 목록은 여기 저장하지 않고, 플레이기록 게시판(PlayRecord.charIds)에서
+   *  이 캐릭터 id를 참조하는 기록을 찾아 그때그때 보여준다(단일 출처로 양쪽 자동 반영). */
+  trpgEnabled?: boolean;
   basicHtml: string;     // 기본 정보 탭의 소개 본문 (HTML)
   visibility: Visibility;
   /** 페이지 주소 별명 (v2.0 사용자 요청) — /chars/{별명}. 만들 때 정하는 주소(id)와 달리

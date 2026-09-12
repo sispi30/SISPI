@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { useSectionParam, filterSection, sectionSetter, secQuery } from '@/lib/sectionStore';
 import { useLocalList } from '@/lib/postStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
+import { Character, CHAR_SEED } from '@/lib/charStore';
 import { useMenuSettings } from '@/lib/menuStore';
 import { useMainStore } from '@/lib/mainStore';
 import { useCardSort, mergeOrder } from '@/lib/cardSort';
@@ -29,6 +30,8 @@ function PlaylogPageInner() {
   const router = useRouter();
   const { isAdmin } = useAuth();
   const [recordsAll, setRecordsAll, loaded] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
+  // 참여 캐릭터 이름 표시·이동용 (v2.8) — 캐릭터 게시판과 연동
+  const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   // 여러 개로 만든 섹션 (v2.0) — 주소의 ?s= 가 가리키는 것만 보여 준다
   const sec = useSectionParam('playlog');
   const records = filterSection(recordsAll, sec.id);
@@ -137,7 +140,22 @@ function PlaylogPageInner() {
                   </td>
                 )}
                 {show('writer') && <td>{r.writer}</td>}
-                {show('with') && <td>{r.withText}</td>}
+                {show('with') && (
+                  <td>
+                    {r.charIds && r.charIds.length > 0 ? (
+                      r.charIds.map((cid, i) => {
+                        const c = chars.find(x => x.id === cid);
+                        if (!c) return null;
+                        return (
+                          <React.Fragment key={cid}>
+                            {i > 0 && ', '}
+                            <a onClick={e => { e.stopPropagation(); router.push(`/chars/${c.id}`); }} style={{ cursor: 'var(--cur-pointer,pointer)' }}>{c.name}</a>
+                          </React.Fragment>
+                        );
+                      })
+                    ) : r.withText}
+                  </td>
+                )}
                 {show('role') && <td className="td-role">{r.role}</td>}
                 {show('playtime') && (
                   <td className={`td-pt ${(r.logId || r.postId) ? 'linked' : ''}`}

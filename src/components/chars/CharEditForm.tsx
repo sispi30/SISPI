@@ -4,11 +4,12 @@
 // 아트는 여러 장 — 첫 장이 대표 풀 아트이자 리스트 썸네일(3:4 크롭) 원본 (6.1)
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg } from '@/lib/charStore';
+import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, CHAR_SEED } from '@/lib/charStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import { RuleSelect, RuleSpecsEditor } from '@/components/chars/RuleSpecsEditor';
 import { Spec } from '@/lib/charRuleConfig';
-import { newId } from '@/lib/postStore';
+import { newId, useLocalList } from '@/lib/postStore';
+import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { putBlob, getBlob, useBlobUrl } from '@/lib/blobStore';
 import { useFonts, deVarFamily } from '@/lib/fontStore';
 import { KInput, KSelect, KStep, KCheck } from '@/components/ui/Kit';
@@ -29,6 +30,8 @@ interface ArtItem { id: string; ref?: string; url?: string; file?: File }
 
 /** 탭 목록 아래 "갤러리" 항목 전용 화면으로 쓰는 view 값 (탭 id와 겹치지 않는 고정 문자열) */
 const GALLERY_VIEW = '__gallery__';
+/** 탭 목록 아래 "TRPG 기록" 항목 전용 화면으로 쓰는 view 값 */
+const TRPG_VIEW = '__trpg__';
 
 function ArtThumb({ item, crop }: { item: ArtItem; crop?: CropValue }) {
   const loaded = useBlobUrl(item.ref);
@@ -129,6 +132,9 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [tabs, setTabs] = useState<CharTab[]>(initial?.tabs ?? []);
   // 캐릭터 갤러리 (v2.5) — undefined면 갤러리 기능 자체를 안 씀, 배열이면(빈 배열 포함) 켜진 상태
   const [gallery, setGallery] = useState<GalleryImg[] | undefined>(initial?.gallery);
+  // TRPG 참여 세션 탭 (v2.8) — 신규(아직 저장 전) 캐릭터는 안정된 id가 없어 플레이기록과
+  // 연동할 수 없으므로, 기존 캐릭터를 수정할 때만 켤 수 있다
+  const [trpgEnabled, setTrpgEnabled] = useState<boolean>(!!initial?.trpgEnabled);
   const [arts, setArts] = useState<ArtItem[]>(() => {
     const refs = initial?.arts ?? (initial?.artId ? [initial.artId] : initial?.thumbId ? [initial.thumbId] : []);
     return refs.map(r => ({ id: newId(), ref: r }));
@@ -177,6 +183,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       sheetUrl: sheetUrl.trim() || undefined,
       tabs,   // 제목이 비어도 유지 — 필터로 사라지던 버그 수정 (v1.9 사용자 지적)
       gallery,
+      trpgEnabled: trpgEnabled || undefined,
       basicHtml,
       visibility,
       fontId,
@@ -228,6 +235,11 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         onBack={() => setView('main')} />
       {del.element}
     </>;
+  }
+
+  /* ---------- TRPG 기록 연동 화면 (v2.8) — 플레이기록 게시판과 즉시 연동(저장 대기 없음) ---------- */
+  if (view === TRPG_VIEW && initial?.id) {
+    return <TrpgLinkEditView charId={initial.id} onBack={() => setView('main')} />;
   }
 
   /* ---------- 메인 폼 ---------- */
@@ -379,6 +391,26 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           </button>
         )}
 
+        {/* TRPG 참여 세션 (v2.8) — 상세 화면 TRPG 버튼(EDIT·DELETE·GALLERY와 같은 자리·모양)으로
+            보여주는 탭. 신규 캐릭터는 저장 전이라 안정된 id가 없어 연동을 켤 수 없다 */}
+        {initial?.id && (
+          trpgEnabled ? (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
+              <span style={{ width: 28, height: 28, borderRadius: 8, background: '#eef0f2', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>🎲</span>
+              <b style={{ fontSize: 13 }}>TRPG 기록</b>
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>플레이기록 게시판과 연동</small>
+              <button className="btn btn-ghost" style={{ marginLeft: 'auto', height: 27, padding: '0 10px', fontSize: 11 }}
+                onClick={() => setTrpgEnabled(false)}>탭 끄기</button>
+              <button className="btn btn-dark" style={{ height: 27, padding: '0 12px', fontSize: 11 }}
+                onClick={() => setView(TRPG_VIEW)}>편집 ›</button>
+            </div>
+          ) : (
+            <button className="btn btn-ghost" style={addBtn} onClick={() => { setTrpgEnabled(true); setView(TRPG_VIEW); }}>
+              ＋ ADD TRPG
+            </button>
+          )
+        )}
+
         {/* 회원 권한 — 역극 플레이 / 편집까지 (3차 회원-캐릭터 연결, v1.9) — AU 편집에선 base 소관.
             **관리자만** (v2.0 사용자 확정) — 편집 권한을 받은 회원이 이 화면에 들어와도
             권한 관리는 못 한다. 열어 두면 자기가 받은 권한으로 남에게 권한을 나눠 줄 수 있다.
@@ -518,6 +550,59 @@ function GalleryArtEditor({ images, onChange }: { images: GalleryImg[]; onChange
       {lb != null && images[lb] != null && (
         <Lightbox srcs={images.map(g => g.ref)} index={lb} onClose={() => setLb(null)} />
       )}
+    </div>
+  );
+}
+
+function TrpgLinkEditView({ charId, onBack }: { charId: string; onBack: () => void }) {
+  const [records, setRecords] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
+  const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  const [q, setQ] = useState('');
+  const nameOf = (id: string) => chars.find(c => c.id === id)?.name ?? '';
+  const query = q.trim().toLowerCase();
+  const matches = records.filter(r =>
+    !query
+    || r.scenario.toLowerCase().includes(query)
+    || (r.charIds ?? []).some(cid => nameOf(cid).toLowerCase().includes(query)));
+  const toggle = (rec: PlayRecord) => {
+    const has = (rec.charIds ?? []).includes(charId);
+    setRecords(records.map(r => (r.id === rec.id
+      ? { ...r, charIds: has ? (r.charIds ?? []).filter(x => x !== charId) : [...(r.charIds ?? []), charId] }
+      : r)));
+  };
+  return (
+    <div className="panel" style={{ padding: 24, display: 'grid', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button className="btn btn-ghost" onClick={onBack}>‹ 돌아가기</button>
+        <b style={{ fontSize: 14 }}>TRPG 기록 연동</b>
+        <span className="hint" style={{ margin: 0 }}>플레이기록 게시판과 바로 연동됩니다 — 여기서 링크/해제하면 그 화면에도 즉시 반영됩니다</span>
+      </div>
+      <label className="k-label" style={{ margin: 0 }}>
+        세션 찾기 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 제목이나 참여 캐릭터 이름으로 검색해 이 캐릭터를 연결하세요</span>
+      </label>
+      <KInput placeholder="세션 제목 또는 캐릭터 이름 검색" value={q} onChange={e => setQ(e.target.value)} />
+      <div style={{ display: 'grid', gap: 6, maxHeight: 340, overflowY: 'auto' }}>
+        {matches.map(r => {
+          const linked = (r.charIds ?? []).includes(charId);
+          const withNames = (r.charIds ?? []).map(nameOf).filter(Boolean).join(', ') || r.withText;
+          return (
+            <div key={r.id} onClick={() => toggle(r)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', cursor: 'var(--cur-pointer,pointer)',
+                border: `1.5px solid ${linked ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 8,
+              }}>
+              <div style={{ display: 'grid', gap: 2 }}>
+                <b style={{ fontSize: 12.5 }}>{r.scenario}</b>
+                <small style={{ color: 'var(--faint)' }}>{[r.date, withNames].filter(Boolean).join(' · ')}</small>
+              </div>
+              {linked && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 700, fontSize: 12 }}>연결됨 ✓</span>}
+            </div>
+          );
+        })}
+        {matches.length === 0 && records.length > 0 && <p className="hint">검색 결과가 없습니다</p>}
+        {records.length === 0 && <p className="hint">등록된 플레이기록이 없습니다 — 플레이기록 게시판에서 먼저 작성해 주세요</p>}
+      </div>
+      <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={onBack}>완료 — 목록으로</button>
     </div>
   );
 }

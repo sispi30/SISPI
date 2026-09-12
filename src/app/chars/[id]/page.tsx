@@ -8,6 +8,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
 import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey} from '@/lib/charStore';
+import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useFonts } from '@/lib/fontStore';
 import { useTheme } from '@/lib/ThemeProvider';
@@ -18,6 +19,61 @@ import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useSectionTitle } from '@/lib/sectionStore';
 import { ConfirmModal } from '@/components/ui/Modal';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
+
+/** 우측 정보 패널에서 「기본 정보」·탭 다음으로 쓰는 세 번째 특수 탭 값 — TRPG 버튼(EDIT·DELETE·
+ *  GALLERY와 같은 자리)을 누르면 새 탭 전환과 같은 방식으로 이 값으로 바뀐다 (v2.8) */
+const TRPG_TAB = '__trpg__';
+
+/** TRPG 탭 내용 — 플레이기록 게시판에서 이 캐릭터가 참여자로 등록된 기록만 모아 보여준다.
+ *  단일 출처(PlayRecord.charIds)라 플레이기록 게시판에서 고치면 여기도 자동으로 반영된다 (v2.8) */
+function TrpgSessionsList({ charId, records, chars }: { charId: string; records: PlayRecord[]; chars: Character[] }) {
+  const router = useRouter();
+  const mine = records
+    .filter(r => r.charIds?.includes(charId))
+    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+  const nameOf = (id: string) => chars.find(c => c.id === id)?.name ?? '';
+
+  if (mine.length === 0) {
+    return <p className="hint">아직 연결된 플레이기록이 없습니다</p>;
+  }
+
+  return (
+    <div style={{ display: 'grid', gap: 8, marginTop: 4 }}>
+      {mine.map(r => {
+        const others = (r.charIds ?? []).filter(id => id !== charId);
+        return (
+          <div key={r.id} style={{ border: '1.5px solid var(--line)', borderRadius: 9, padding: '10px 13px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              {r.postId ? (
+                <a onClick={() => router.push(`/board/${r.postId}`)} style={{ fontWeight: 700, cursor: 'var(--cur-pointer,pointer)' }}>{r.scenario}</a>
+              ) : r.scenarioLink ? (
+                <a href={r.scenarioLink} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>{r.scenario}</a>
+              ) : (
+                <b>{r.scenario}</b>
+              )}
+              {r.date && <small style={{ color: 'var(--faint)' }}>{r.date}</small>}
+              {r.role && <span className="pill" style={{ fontSize: 10.5 }}>{r.role}</span>}
+            </div>
+            {(others.length > 0 || r.withText) && (
+              <div style={{ fontSize: 12, color: 'var(--faint)', marginTop: 4 }}>
+                With: {others.length > 0
+                  ? others.map((id, i) => (
+                    <React.Fragment key={id}>
+                      {i > 0 && ', '}
+                      {nameOf(id)
+                        ? <a onClick={() => router.push(`/chars/${id}`)} style={{ cursor: 'var(--cur-pointer,pointer)' }}>{nameOf(id)}</a>
+                        : null}
+                    </React.Fragment>
+                  ))
+                  : r.withText}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function NaturalArt({ fileRef, ph, label }: { fileRef?: string; ph: string; label?: string }) {
   const url = useBlobUrl(fileRef);
@@ -38,6 +94,8 @@ function CharDetailInner() {
   const { user, isAdmin } = useAuth();
   const [chars, setChars, loaded] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
+  // TRPG 참여 세션 (v2.8) — 플레이기록 게시판(PlayRecord.charIds)에서 이 캐릭터를 찾아 보여준다
+  const [playRecords] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
   const { familyOf } = useFonts();
   // 큰 글씨 — 추가 섹션(창고캐 등)이면 그 이름, 눌렀을 때도 그 목록으로 (v2.0 사용자 제보)
   const tt = useSectionTitle('chars', findByKey(chars, id)?.secId, 'CHARACTERS');
@@ -140,6 +198,10 @@ function CharDetailInner() {
           {/* 캐릭터당 갤러리 하나 — 켜져 있으면(gallery !== undefined) 그리드+라이트박스 화면으로 (v2.5) */}
           {ch.gallery !== undefined && (
             <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}/gallery`)}>GALLERY</button>
+          )}
+          {/* TRPG 참여 세션 — 새 페이지로 가지 않고 새 탭 전환과 같은 방식으로 우측 패널만 교체 (v2.8) */}
+          {ch.trpgEnabled && (
+            <button className="btn btn-dark" onClick={() => setTab(TRPG_TAB)}>TRPG</button>
           )}
           {isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}
         </div>
@@ -277,6 +339,11 @@ function CharDetailInner() {
                 </PlainSpecRow>
               )}
               <div className="prose" dangerouslySetInnerHTML={{ __html: basicHtml }} />
+            </>
+          ) : tab === TRPG_TAB ? (
+            <>
+              <h3 className="tab-tt">TRPG</h3>
+              <TrpgSessionsList charId={ch.id} records={playRecords} chars={chars} />
             </>
           ) : (
             <>
