@@ -68,13 +68,18 @@ function CharDetailInner() {
   // 탭마다 다른 아트를 보여줄 수 있어(v2.4), 탭을 옮기면 이미지 인덱스를 처음으로
   useEffect(() => { setArtIdx(0); }, [tab]);
 
-  // 캐릭터 테마색 → 페이지 임시 테마 (4.18 방식, v1.9) — 「캐릭터 테마색」 선택 시에만, 벗어나면 원복
+  // 캐릭터 테마색 → 페이지 임시 테마 (4.18 방식, v1.9) — 기본 테마는 이제 공용 레이아웃
+  // (chars/[id]/layout.tsx)이 계속 맡고 있어, 여기서는 AU가 기본과 다른 색을 쓸 때만
+  // "얹어서" 덮어쓴다. 벗어날 때도 null이 아니라 레이아웃의 기본색으로 돌려줘야
+  // 상세↔갤러리 이동 때 배경이 깜빡이던 문제가 재발하지 않는다 (v2.7)
   const { setPageTheme } = useTheme();
-  const pageColor = auRegistered && eff?.themeMode === 'custom' ? eff.color : null;
+  const baseColor = ch?.themeMode === 'custom' ? ch.color : null;
+  const auColor = auRegistered && eff?.themeMode === 'custom' ? eff.color : null;
   useEffect(() => {
-    setPageTheme(pageColor);
-    return () => setPageTheme(null);
-  }, [pageColor, setPageTheme]);
+    if (!auColor || auColor === baseColor) return; // 기본과 같으면 레이아웃이 이미 칠해 둔 색 그대로 둔다
+    setPageTheme(auColor);
+    return () => setPageTheme(baseColor);
+  }, [auColor, baseColor, setPageTheme]);
 
   const curTab = eff?.tabs.find(t => t.id === tab);
   const tabHtml = useMemo(

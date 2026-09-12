@@ -1,14 +1,14 @@
 'use client';
 // 캐릭터 갤러리 (4.4 v2.5) — 상세 화면의 GALLERY 버튼(EDIT·DELETE와 같은 자리·모양)으로 들어오는
 // 전용 화면. 참고 화면처럼 담벼락(masonry) 그리드로 늘어놓고, 클릭하면 라이트박스로 원본+작가 표기.
-// 캐릭터 테마색(대표 테마색)을 상세 화면과 같은 방식으로 적용하고, 상세로 돌아가는 PROFILE
-// 버튼을 GALLERY 버튼이 있던 자리에 그대로 둔다 (v2.6).
-import React, { useEffect, useState } from 'react';
+// 캐릭터 테마색은 공용 레이아웃(chars/[id]/layout.tsx)이 이 화면에서도 계속 적용해 준다
+// (상세 ↔ 갤러리 이동 때 배경이 깜빡이던 문제를 거기서 고쳤음, v2.7). PROFILE 버튼을
+// GALLERY 버튼이 있던 자리에 그대로 둔다.
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Character, CHAR_SEED, findByKey } from '@/lib/charStore';
 import { useLocalList } from '@/lib/postStore';
 import { useBlobUrl } from '@/lib/blobStore';
-import { useTheme } from '@/lib/ThemeProvider';
 import { PageTitle } from '@/components/ui/PageText';
 import { Lightbox } from '@/components/ui/Lightbox';
 
@@ -30,15 +30,6 @@ export default function CharGalleryPage() {
   const [lb, setLb] = useState<number | null>(null);
 
   const ch = findByKey(chars, id);
-
-  // 캐릭터 테마색 → 페이지 임시 테마 (상세 화면과 같은 방식, v1.9) — 여기도 AU 개념이 없어
-  // (갤러리는 캐릭터 하나에만 있음) ch.themeMode만 본다
-  const { setPageTheme } = useTheme();
-  const pageColor = ch?.themeMode === 'custom' ? ch.color : null;
-  useEffect(() => {
-    setPageTheme(pageColor);
-    return () => setPageTheme(null);
-  }, [pageColor, setPageTheme]);
 
   if (!loaded) return <section className="page" />;
   if (!ch || ch.gallery === undefined) {
