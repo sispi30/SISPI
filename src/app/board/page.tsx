@@ -75,12 +75,13 @@ function BoardInner() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [bannerManageOpen, setBannerManageOpen] = useState(false); // 배너 게시판 전용 — 관리(수정/삭제) 패널 토글
-  // 세션 게시판(타래형) 정렬 — 사용자 지정(편집모드 드래그)/작성일순/이름순 (5.11)
-  const [threadSortBy, setThreadSortBy] = useState<ThreadSort>('postDate');
+  // 세션 게시판(타래형) 정렬 — 사용자 지정(편집모드 드래그)/작성일순/Date/이름순 (5.11).
+  // 처음 열었을 때 기본값은 Date(플레이 기록 연동 날짜) 순 — 다른 정렬 옵션은 그대로 유지 (v3.2 사용자 요청)
+  const [threadSortBy, setThreadSortBy] = useState<ThreadSort>('sessionDate');
 
   // 게시판 전환 시 필터·페이지 초기화
   const [prevBid, setPrevBid] = useState(bid);
-  if (prevBid !== bid) { setPrevBid(bid); setCat('전체'); setQ(''); setPage(1); setThreadSortBy('postDate'); }
+  if (prevBid !== bid) { setPrevBid(bid); setCat('전체'); setQ(''); setPage(1); setThreadSortBy('sessionDate'); }
 
   // 권한 3단계 — mock 단계에선 로그인 전제 (로드뷰 4.10과 동일 규칙)
   const allow = (p: BoardPerm) => (p === 'admin' ? isAdmin : p === 'member' ? !!user : true);
