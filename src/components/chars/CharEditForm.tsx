@@ -136,6 +136,10 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // 연동할 수 없으므로, 기존 캐릭터를 수정할 때만 켤 수 있다
   const [trpgEnabled, setTrpgEnabled] = useState<boolean>(!!initial?.trpgEnabled);
   const [trpgOrder, setTrpgOrder] = useState<string[]>(initial?.trpgOrder ?? []);
+  // 이미 플레이기록 게시판 쪽에서 이 캐릭터를 참여자로 연결해 둔 게 있으면,
+  // ADD TRPG를 따로 누르지 않아도 탭이 있는 것으로 본다 (v3.0 사용자 요청)
+  const [playRecordsForCheck] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
+  const hasTrpgLinks = !!initial?.id && playRecordsForCheck.some(r => r.charIds?.includes(initial.id!));
   const [arts, setArts] = useState<ArtItem[]>(() => {
     const refs = initial?.arts ?? (initial?.artId ? [initial.artId] : initial?.thumbId ? [initial.thumbId] : []);
     return refs.map(r => ({ id: newId(), ref: r }));
@@ -394,16 +398,24 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         )}
 
         {/* TRPG 참여 세션 (v2.8) — 상세 화면 TRPG 버튼(EDIT·DELETE·GALLERY와 같은 자리·모양)으로
-            보여주는 탭. 신규 캐릭터는 저장 전이라 안정된 id가 없어 연동을 켤 수 없다 */}
+            보여주는 탭. 신규 캐릭터는 저장 전이라 안정된 id가 없어 연동을 켤 수 없다.
+            플레이기록 게시판 쪽에서 이미 이 캐릭터를 연결해 둔 게 있으면(hasTrpgLinks) ADD TRPG를
+            누르지 않아도 자동으로 탭이 생긴다 (v3.0 사용자 요청) */}
         {initial?.id && (
-          trpgEnabled ? (
+          (trpgEnabled || hasTrpgLinks) ? (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
               <span style={{ width: 28, height: 28, borderRadius: 8, background: '#eef0f2', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>🎲</span>
               <b style={{ fontSize: 13 }}>TRPG 기록</b>
-              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>플레이기록 게시판과 연동</small>
-              <button className="btn btn-ghost" style={{ marginLeft: 'auto', height: 27, padding: '0 10px', fontSize: 11 }}
-                onClick={() => setTrpgEnabled(false)}>탭 끄기</button>
-              <button className="btn btn-dark" style={{ height: 27, padding: '0 12px', fontSize: 11 }}
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>
+                {hasTrpgLinks ? '연결된 세션이 있어 자동으로 표시됨' : '플레이기록 게시판과 연동'}
+              </small>
+              {/* 연결된 세션이 있으면 꺼도 자동으로 다시 켜져 의미가 없으므로, 연결이 하나도
+                  없을 때(수동으로 켠 경우)만 끌 수 있게 한다 */}
+              {!hasTrpgLinks && (
+                <button className="btn btn-ghost" style={{ marginLeft: 'auto', height: 27, padding: '0 10px', fontSize: 11 }}
+                  onClick={() => setTrpgEnabled(false)}>탭 끄기</button>
+              )}
+              <button className="btn btn-dark" style={{ height: 27, padding: '0 12px', fontSize: 11, ...(hasTrpgLinks ? { marginLeft: 'auto' } : {}) }}
                 onClick={() => setView(TRPG_VIEW)}>편집 ›</button>
             </div>
           ) : (

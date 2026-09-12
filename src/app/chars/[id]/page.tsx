@@ -187,6 +187,9 @@ function CharDetailInner() {
   };
 
   const editHref = auKey ? `/chars/${ch.id}/edit?au=${encodeURIComponent(auKey)}` : `/chars/${ch.id}/edit`;
+  // 플레이기록 게시판 쪽에서 이미 이 캐릭터를 참여자로 연결해 둔 게 있으면, trpgEnabled를
+  // 켜지 않았어도 TRPG 탭이 자동으로 보인다 (v3.0 사용자 요청)
+  const hasTrpgLinks = playRecords.some(r => r.charIds?.includes(ch.id));
 
   return (
     <section className="page page-char-detail">
@@ -206,7 +209,7 @@ function CharDetailInner() {
             <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}/gallery`)}>GALLERY</button>
           )}
           {/* TRPG 참여 세션 — 새 페이지로 가지 않고 새 탭 전환과 같은 방식으로 우측 패널만 교체 (v2.8) */}
-          {ch.trpgEnabled && (
+          {(ch.trpgEnabled || hasTrpgLinks) && (
             <button className="btn btn-dark" onClick={() => setTab(TRPG_TAB)}>TRPG</button>
           )}
           {isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}

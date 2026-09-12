@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { Character, CHAR_SEED, charGrant, findByKey } from '@/lib/charStore';
+import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { useLocalList } from '@/lib/postStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { useSectionTitle } from '@/lib/sectionStore';
@@ -31,6 +32,7 @@ export default function CharGalleryPage() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
   const [chars, setChars, loaded] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  const [playRecords] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
   const [lb, setLb] = useState<number | null>(null);
   const [delAsk, setDelAsk] = useState(false);
   const tt = useSectionTitle('chars', findByKey(chars, id)?.secId, 'CHARACTERS');
@@ -60,9 +62,9 @@ export default function CharGalleryPage() {
           {(isAdmin || charGrant(ch, user?.id) === 'edit') && (
             <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}/edit`)}>EDIT</button>
           )}
-          {ch.trpgEnabled && (
+          {ch.trpgEnabled || playRecords.some(r => r.charIds?.includes(ch.id)) ? (
             <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}?tab=trpg`)}>TRPG</button>
-          )}
+          ) : null}
           {isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}
         </div>
       </div>
