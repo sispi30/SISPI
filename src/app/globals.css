@@ -1469,6 +1469,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .pl-table col.c-url{width:36px}    /* 맨 끝 클립 칸 */
 .pl-table col.c-mng{width:58px}
 .pl-table col.c-with{width:22%}
+.pl-table col.c-char{width:20%}
 .pl-table th{font-size:calc(10px*var(--fs,1));letter-spacing:.14em;color:var(--faint);font-weight:600;text-align:center;padding:10px 6px;border-bottom:1.5px solid var(--line)}
 .pl-table th.sortable{cursor:var(--cur-pointer,pointer);user-select:none}
 .pl-table th.sortable:hover{color:var(--ink)}
@@ -1491,7 +1492,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .pl-table .td-mng button{width:22px;height:22px;border-radius:6px;font-size:calc(10.5px*var(--fs,1));color:var(--faint);transition:.13s;vertical-align:middle;margin:-2px 0}
 .pl-table .td-mng button:hover{background:rgba(127,127,127,.14);color:var(--ink)}
 /* 모바일 기본 4열: Date/Scenario/Role/Playtime (4.16 — 열 선택 설정은 메뉴 관리 구현 시) */
-@media (max-width:620px){.pl-table .hide-m,.pl-table col.c-wr,.pl-table col.c-with,.pl-table col.c-url,.pl-table col.c-mng{display:none}}
+@media (max-width:620px){.pl-table .hide-m,.pl-table col.c-wr,.pl-table col.c-with,.pl-table col.c-char,.pl-table col.c-url,.pl-table col.c-mng{display:none}}
 
 /* ---------- 그림게시판 로드뷰 (4.10) ---------- */
 .roadview-item{display:grid;grid-template-columns:1fr 390px;margin-bottom:22px;overflow:hidden;padding:0} /* 우측 댓글 폭 확대 (320→390) */

@@ -102,6 +102,7 @@ function PlaylogPageInner() {
           <colgroup>
             {show('date') && <col className="c-date" />}
             {show('scenario') && <col className="c-sc" />}
+            {show('character') && <col className="c-char" />}
             {show('writer') && <col className="c-wr" />}
             {show('with') && <col className="c-with" />}
             {show('role') && <col className="c-role" />}
@@ -117,6 +118,7 @@ function PlaylogPageInner() {
                 </th>
               )}
               {show('scenario') && <th>Scenario</th>}
+              {show('character') && <th>Character</th>}
               {show('writer') && <th>Writer</th>}
               {show('with') && <th>With</th>}
               {show('role') && <th>Role</th>}
@@ -139,23 +141,23 @@ function PlaylogPageInner() {
                     ) : r.scenario}
                   </td>
                 )}
-                {show('writer') && <td>{r.writer}</td>}
-                {show('with') && (
+                {/* 참여 캐릭터 (v2.9) — With 칸을 대신하지 않고 Scenario·With 사이에 별도 열로 표시 */}
+                {show('character') && (
                   <td>
-                    {r.charIds && r.charIds.length > 0 ? (
-                      r.charIds.map((cid, i) => {
-                        const c = chars.find(x => x.id === cid);
-                        if (!c) return null;
-                        return (
-                          <React.Fragment key={cid}>
-                            {i > 0 && ', '}
-                            <a onClick={e => { e.stopPropagation(); router.push(`/chars/${c.id}`); }} style={{ cursor: 'var(--cur-pointer,pointer)' }}>{c.name}</a>
-                          </React.Fragment>
-                        );
-                      })
-                    ) : r.withText}
+                    {(r.charIds ?? []).map((cid, ci) => {
+                      const c = chars.find(x => x.id === cid);
+                      if (!c) return null;
+                      return (
+                        <React.Fragment key={cid}>
+                          {ci > 0 && ', '}
+                          <a onClick={e => { e.stopPropagation(); router.push(`/chars/${c.id}`); }} style={{ cursor: 'var(--cur-pointer,pointer)' }}>{c.name}</a>
+                        </React.Fragment>
+                      );
+                    })}
                   </td>
                 )}
+                {show('writer') && <td>{r.writer}</td>}
+                {show('with') && <td>{r.withText}</td>}
                 {show('role') && <td className="td-role">{r.role}</td>}
                 {show('playtime') && (
                   <td className={`td-pt ${(r.logId || r.postId) ? 'linked' : ''}`}

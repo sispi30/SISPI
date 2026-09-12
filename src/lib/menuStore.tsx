@@ -108,6 +108,7 @@ export const newGroupId = () => `g-${newId()}`;
 export const PLAYLOG_COLS: { key: string; label: string }[] = [
   { key: 'date', label: 'Date' },
   { key: 'scenario', label: 'Scenario' },
+  { key: 'character', label: 'Character' },
   { key: 'writer', label: 'Writer' },
   { key: 'with', label: 'With' },
   { key: 'role', label: 'Role' },

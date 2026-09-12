@@ -6,10 +6,13 @@
 // GALLERY 버튼이 있던 자리에 그대로 둔다.
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Character, CHAR_SEED, findByKey } from '@/lib/charStore';
+import { useAuth } from '@/lib/auth';
+import { Character, CHAR_SEED, charGrant, findByKey } from '@/lib/charStore';
 import { useLocalList } from '@/lib/postStore';
 import { useBlobUrl } from '@/lib/blobStore';
+import { useSectionTitle } from '@/lib/sectionStore';
 import { PageTitle } from '@/components/ui/PageText';
+import { ConfirmModal } from '@/components/ui/Modal';
 import { Lightbox } from '@/components/ui/Lightbox';
 
 function GalleryThumb({ fileRef, onClick }: { fileRef: string; onClick: () => void }) {
@@ -26,8 +29,11 @@ function GalleryThumb({ fileRef, onClick }: { fileRef: string; onClick: () => vo
 export default function CharGalleryPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [chars, , loaded] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  const { user, isAdmin } = useAuth();
+  const [chars, setChars, loaded] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   const [lb, setLb] = useState<number | null>(null);
+  const [delAsk, setDelAsk] = useState(false);
+  const tt = useSectionTitle('chars', findByKey(chars, id)?.secId, 'CHARACTERS');
 
   const ch = findByKey(chars, id);
 
@@ -50,6 +56,14 @@ export default function CharGalleryPage() {
           {/* GALLERY 버튼이 있던 자리 — 프로필로 돌아가는 길을 눈에 띄게 (v2.6 사용자 지적:
               제목 글씨를 눌러도 되지만 한눈에 알아보기 어려움) */}
           <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}`)}>PROFILE</button>
+          {/* 상세 화면과 같은 EDIT·DELETE·TRPG 버튼도 여기서 바로 쓸 수 있게 (v2.9 사용자 요청) */}
+          {(isAdmin || charGrant(ch, user?.id) === 'edit') && (
+            <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}/edit`)}>EDIT</button>
+          )}
+          {ch.trpgEnabled && (
+            <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}?tab=trpg`)}>TRPG</button>
+          )}
+          {isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}
         </div>
       </div>
       {images.length === 0 ? (
@@ -65,6 +79,13 @@ export default function CharGalleryPage() {
         <Lightbox srcs={images.map(g => g.ref)} index={lb} onClose={() => setLb(null)}
           captions={images.map(g => g.artist)} />
       )}
+      <ConfirmModal open={delAsk} title="캐릭터를 삭제하시겠습니까?"
+        body="프로필·탭 정보가 함께 삭제되며 복구할 수 없습니다. 이 캐릭터가 들어간 자관에서는 멤버 표시가 사라집니다."
+        onClose={() => setDelAsk(false)}
+        buttons={[
+          { label: 'DELETE', kind: 'accent', onClick: () => { setChars(chars.filter(c => c.id !== ch.id)); router.push(tt.href); } },
+          { label: 'CANCEL', kind: 'ghost', onClick: () => setDelAsk(false) },
+        ]} />
     </section>
   );
 }

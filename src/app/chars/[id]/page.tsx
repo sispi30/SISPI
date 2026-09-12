@@ -26,11 +26,17 @@ const TRPG_TAB = '__trpg__';
 
 /** TRPG 탭 내용 — 플레이기록 게시판에서 이 캐릭터가 참여자로 등록된 기록만 모아 보여준다.
  *  단일 출처(PlayRecord.charIds)라 플레이기록 게시판에서 고치면 여기도 자동으로 반영된다 (v2.8) */
-function TrpgSessionsList({ charId, records, chars }: { charId: string; records: PlayRecord[]; chars: Character[] }) {
+function TrpgSessionsList({ charId, order, records, chars }: { charId: string; order?: string[]; records: PlayRecord[]; chars: Character[] }) {
   const router = useRouter();
-  const mine = records
-    .filter(r => r.charIds?.includes(charId))
-    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+  const linkedAll = records.filter(r => r.charIds?.includes(charId));
+  // 편집 화면(TrpgLinkEditView)에서 드래그로 정한 순서(trpgOrder)가 있으면 그대로,
+  // 없으면(또는 순서에 없는 새 연결) 최신 날짜순으로 보여준다 (v2.9)
+  const mine = order && order.length > 0
+    ? [
+      ...order.map(id => linkedAll.find(r => r.id === id)).filter((r): r is PlayRecord => !!r),
+      ...linkedAll.filter(r => !order.includes(r.id)).sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')),
+    ]
+    : [...linkedAll].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
   const nameOf = (id: string) => chars.find(c => c.id === id)?.name ?? '';
 
   if (mine.length === 0) {
@@ -100,7 +106,7 @@ function CharDetailInner() {
   // 큰 글씨 — 추가 섹션(창고캐 등)이면 그 이름, 눌렀을 때도 그 목록으로 (v2.0 사용자 제보)
   const tt = useSectionTitle('chars', findByKey(chars, id)?.secId, 'CHARACTERS');
   const params = useSearchParams();
-  const [tab, setTab] = useState('basic');
+  const [tab, setTab] = useState(() => (params.get('tab') === 'trpg' ? TRPG_TAB : 'basic'));
   const [artIdx, setArtIdx] = useState(0);
   const [delAsk, setDelAsk] = useState(false);   // 캐릭터 삭제 확인
   const infoRef = useRef<HTMLDivElement>(null);
@@ -343,7 +349,7 @@ function CharDetailInner() {
           ) : tab === TRPG_TAB ? (
             <>
               <h3 className="tab-tt">TRPG</h3>
-              <TrpgSessionsList charId={ch.id} records={playRecords} chars={chars} />
+              <TrpgSessionsList charId={ch.id} order={ch.trpgOrder} records={playRecords} chars={chars} />
             </>
           ) : (
             <>

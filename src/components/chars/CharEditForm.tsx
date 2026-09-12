@@ -135,6 +135,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // TRPG 참여 세션 탭 (v2.8) — 신규(아직 저장 전) 캐릭터는 안정된 id가 없어 플레이기록과
   // 연동할 수 없으므로, 기존 캐릭터를 수정할 때만 켤 수 있다
   const [trpgEnabled, setTrpgEnabled] = useState<boolean>(!!initial?.trpgEnabled);
+  const [trpgOrder, setTrpgOrder] = useState<string[]>(initial?.trpgOrder ?? []);
   const [arts, setArts] = useState<ArtItem[]>(() => {
     const refs = initial?.arts ?? (initial?.artId ? [initial.artId] : initial?.thumbId ? [initial.thumbId] : []);
     return refs.map(r => ({ id: newId(), ref: r }));
@@ -184,6 +185,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       tabs,   // 제목이 비어도 유지 — 필터로 사라지던 버그 수정 (v1.9 사용자 지적)
       gallery,
       trpgEnabled: trpgEnabled || undefined,
+      trpgOrder: trpgOrder.length ? trpgOrder : undefined,
       basicHtml,
       visibility,
       fontId,
@@ -239,7 +241,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
 
   /* ---------- TRPG 기록 연동 화면 (v2.8) — 플레이기록 게시판과 즉시 연동(저장 대기 없음) ---------- */
   if (view === TRPG_VIEW && initial?.id) {
-    return <TrpgLinkEditView charId={initial.id} onBack={() => setView('main')} />;
+    return <TrpgLinkEditView charId={initial.id} order={trpgOrder} onOrderChange={setTrpgOrder} onBack={() => setView('main')} />;
   }
 
   /* ---------- 메인 폼 ---------- */
@@ -554,22 +556,36 @@ function GalleryArtEditor({ images, onChange }: { images: GalleryImg[]; onChange
   );
 }
 
-function TrpgLinkEditView({ charId, onBack }: { charId: string; onBack: () => void }) {
+function TrpgLinkEditView({ charId, order, onOrderChange, onBack }: {
+  charId: string; order: string[]; onOrderChange: (order: string[]) => void; onBack: () => void;
+}) {
   const [records, setRecords] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
   const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   const [q, setQ] = useState('');
   const nameOf = (id: string) => chars.find(c => c.id === id)?.name ?? '';
+
+  const linkedAll = records.filter(r => r.charIds?.includes(charId));
+  // 저장해 둔 순서(order) 먼저, 새로 연결됐는데 아직 순서에 없는 건 뒤에 붙인다
+  const linked = [
+    ...order.map(id => linkedAll.find(r => r.id === id)).filter((r): r is PlayRecord => !!r),
+    ...linkedAll.filter(r => !order.includes(r.id)),
+  ];
+
+  const unlink = (recId: string) => {
+    setRecords(records.map(r => (r.id === recId ? { ...r, charIds: (r.charIds ?? []).filter(x => x !== charId) } : r)));
+    onOrderChange(order.filter(x => x !== recId));
+  };
+  const link = (rec: PlayRecord) => {
+    setRecords(records.map(r => (r.id === rec.id ? { ...r, charIds: [...(r.charIds ?? []), charId] } : r)));
+    onOrderChange([...order.filter(x => x !== rec.id), rec.id]);
+  };
+
   const query = q.trim().toLowerCase();
   const matches = records.filter(r =>
-    !query
-    || r.scenario.toLowerCase().includes(query)
-    || (r.charIds ?? []).some(cid => nameOf(cid).toLowerCase().includes(query)));
-  const toggle = (rec: PlayRecord) => {
-    const has = (rec.charIds ?? []).includes(charId);
-    setRecords(records.map(r => (r.id === rec.id
-      ? { ...r, charIds: has ? (r.charIds ?? []).filter(x => x !== charId) : [...(r.charIds ?? []), charId] }
-      : r)));
-  };
+    !r.charIds?.includes(charId)
+    && query
+    && (r.scenario.toLowerCase().includes(query) || (r.charIds ?? []).some(cid => nameOf(cid).toLowerCase().includes(query))));
+
   return (
     <div className="panel" style={{ padding: 24, display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -577,31 +593,53 @@ function TrpgLinkEditView({ charId, onBack }: { charId: string; onBack: () => vo
         <b style={{ fontSize: 14 }}>TRPG 기록 연동</b>
         <span className="hint" style={{ margin: 0 }}>플레이기록 게시판과 바로 연동됩니다 — 여기서 링크/해제하면 그 화면에도 즉시 반영됩니다</span>
       </div>
+
+      <label className="k-label" style={{ margin: 0 }}>
+        연결된 세션 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 드래그로 상세 화면에 보일 순서를 바꿀 수 있습니다</span>
+      </label>
+      {linked.length === 0 ? (
+        <p className="hint">아직 연결한 세션이 없습니다 — 아래에서 검색해 연결해 보세요</p>
+      ) : (
+        <DragList items={linked} keyOf={r => r.id} onReorder={list => onOrderChange(list.map(r => r.id))}
+          render={r => {
+            const withNames = (r.charIds ?? []).filter(id => id !== charId).map(nameOf).filter(Boolean).join(', ') || r.withText;
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '3px 0' }}>
+                <span className="drag-h">⠿</span>
+                <div style={{ display: 'grid', gap: 2, flex: 1, minWidth: 0 }}>
+                  <b style={{ fontSize: 12.5 }}>{r.scenario}</b>
+                  <small style={{ color: 'var(--faint)' }}>{[r.date, withNames].filter(Boolean).join(' · ')}</small>
+                </div>
+                <span className="fx" onClick={() => unlink(r.id)}>✕</span>
+              </div>
+            );
+          }} />
+      )}
+
       <label className="k-label" style={{ margin: 0 }}>
         세션 찾기 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 제목이나 참여 캐릭터 이름으로 검색해 이 캐릭터를 연결하세요</span>
       </label>
       <KInput placeholder="세션 제목 또는 캐릭터 이름 검색" value={q} onChange={e => setQ(e.target.value)} />
-      <div style={{ display: 'grid', gap: 6, maxHeight: 340, overflowY: 'auto' }}>
-        {matches.map(r => {
-          const linked = (r.charIds ?? []).includes(charId);
-          const withNames = (r.charIds ?? []).map(nameOf).filter(Boolean).join(', ') || r.withText;
-          return (
-            <div key={r.id} onClick={() => toggle(r)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', cursor: 'var(--cur-pointer,pointer)',
-                border: `1.5px solid ${linked ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 8,
-              }}>
-              <div style={{ display: 'grid', gap: 2 }}>
-                <b style={{ fontSize: 12.5 }}>{r.scenario}</b>
-                <small style={{ color: 'var(--faint)' }}>{[r.date, withNames].filter(Boolean).join(' · ')}</small>
+      {query && (
+        <div style={{ display: 'grid', gap: 6, maxHeight: 260, overflowY: 'auto' }}>
+          {matches.map(r => {
+            const withNames = (r.charIds ?? []).map(nameOf).filter(Boolean).join(', ') || r.withText;
+            return (
+              <div key={r.id} onClick={() => link(r)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', cursor: 'var(--cur-pointer,pointer)', border: '1.5px solid var(--line)', borderRadius: 8 }}>
+                <div style={{ display: 'grid', gap: 2 }}>
+                  <b style={{ fontSize: 12.5 }}>{r.scenario}</b>
+                  <small style={{ color: 'var(--faint)' }}>{[r.date, withNames].filter(Boolean).join(' · ')}</small>
+                </div>
+                <span style={{ marginLeft: 'auto', color: 'var(--faint)', fontSize: 11 }}>연결 +</span>
               </div>
-              {linked && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 700, fontSize: 12 }}>연결됨 ✓</span>}
-            </div>
-          );
-        })}
-        {matches.length === 0 && records.length > 0 && <p className="hint">검색 결과가 없습니다</p>}
-        {records.length === 0 && <p className="hint">등록된 플레이기록이 없습니다 — 플레이기록 게시판에서 먼저 작성해 주세요</p>}
-      </div>
+            );
+          })}
+          {matches.length === 0 && <p className="hint">검색 결과가 없습니다</p>}
+        </div>
+      )}
+      {records.length === 0 && <p className="hint">등록된 플레이기록이 없습니다 — 플레이기록 게시판에서 먼저 작성해 주세요</p>}
+
       <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={onBack}>완료 — 목록으로</button>
     </div>
   );

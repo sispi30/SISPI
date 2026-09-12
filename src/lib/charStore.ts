@@ -54,6 +54,9 @@ export interface Character {
    *  실제 세션 목록은 여기 저장하지 않고, 플레이기록 게시판(PlayRecord.charIds)에서
    *  이 캐릭터 id를 참조하는 기록을 찾아 그때그때 보여준다(단일 출처로 양쪽 자동 반영). */
   trpgEnabled?: boolean;
+  /** TRPG 탭에서 세션을 보여줄 순서 (v2.9) — PlayRecord id 배열. 여기 없는(새로 연결된)
+   *  기록은 이 목록 뒤에 붙는다. 연결을 끊으면 여기서도 제거해 목록을 깔끔하게 유지한다. */
+  trpgOrder?: string[];
   basicHtml: string;     // 기본 정보 탭의 소개 본문 (HTML)
   visibility: Visibility;
   /** 페이지 주소 별명 (v2.0 사용자 요청) — /chars/{별명}. 만들 때 정하는 주소(id)와 달리
