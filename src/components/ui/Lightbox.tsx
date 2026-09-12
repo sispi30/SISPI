@@ -4,10 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useBlobUrl } from '@/lib/blobStore';
 
-export function Lightbox({ srcs, index, onClose }: {
+export function Lightbox({ srcs, index, onClose, captions }: {
   srcs: string[];              // IndexedDB 파일 id 또는 URL 혼용 가능
   index: number;
   onClose: () => void;
+  captions?: (string | undefined)[];   // srcs와 같은 길이 — 예: 갤러리 "Artist : ..." 표기 (v2.5)
 }) {
   const [i, setI] = useState(index);
   useEffect(() => setI(index), [index]);
@@ -30,8 +31,11 @@ export function Lightbox({ srcs, index, onClose }: {
 
   return createPortal(
     <div className="lightbox" onClick={onClose}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {url && <img src={url} alt="" onClick={e => e.stopPropagation()} />}
+      <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {url && <img src={url} alt="" />}
+        {captions?.[i] && <div className="lightbox-caption">Artist : {captions[i]}</div>}
+      </div>
       {srcs.length > 1 && (
         <>
           <button className="nv l" onClick={e => { e.stopPropagation(); setI(x => (x - 1 + srcs.length) % srcs.length); }}>‹</button>

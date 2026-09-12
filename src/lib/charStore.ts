@@ -25,6 +25,8 @@ export interface CharTab {
   arts?: string[];
 }
 
+export interface GalleryImg { ref: string; artist?: string }
+
 export interface Character {
   id: string;
   name: string;          // 대표 이름 (전용 폰트 적용 대상)
@@ -44,6 +46,10 @@ export interface Character {
   /** CHARACTER SHEET 외부 링크 (v2.1) — 룰 선택 여부와 무관하게 항상 편집 가능한 고정 필드 */
   sheetUrl?: string;
   tabs: CharTab[];       // 기본 정보 외 추가 탭
+  /** 캐릭터 갤러리 (v2.5) — 미지정이면 갤러리 기능 자체를 안 쓰는 캐릭터.
+   *  빈 배열이어도 "갤러리 켜짐" 상태이며, /chars/{id}/gallery 에서 그리드+라이트박스로 보여준다.
+   *  AU별로 따로 두지 않고 캐릭터(원본) 하나에만 있다. */
+  gallery?: GalleryImg[];
   basicHtml: string;     // 기본 정보 탭의 소개 본문 (HTML)
   visibility: Visibility;
   /** 페이지 주소 별명 (v2.0 사용자 요청) — /chars/{별명}. 만들 때 정하는 주소(id)와 달리

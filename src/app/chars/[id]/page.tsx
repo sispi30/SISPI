@@ -132,6 +132,10 @@ function CharDetailInner() {
           {(isAdmin || charGrant(ch, user?.id) === 'edit') && (
             <button className="btn btn-dark" onClick={() => router.push(editHref)}>EDIT</button>
           )}
+          {/* 캐릭터당 갤러리 하나 — 켜져 있으면(gallery !== undefined) 그리드+라이트박스 화면으로 (v2.5) */}
+          {ch.gallery !== undefined && (
+            <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}/gallery`)}>GALLERY</button>
+          )}
           {isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}
         </div>
 

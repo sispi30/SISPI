@@ -4,7 +4,7 @@
 // 아트는 여러 장 — 첫 장이 대표 풀 아트이자 리스트 썸네일(3:4 크롭) 원본 (6.1)
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Character, CharTab, ColorChip, Visibility, CharGrant } from '@/lib/charStore';
+import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg } from '@/lib/charStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import { RuleSelect, RuleSpecsEditor } from '@/components/chars/RuleSpecsEditor';
 import { Spec } from '@/lib/charRuleConfig';
@@ -26,6 +26,9 @@ import { Lightbox } from '@/components/ui/Lightbox';
 interface SpecRow extends Spec { id: string }
 interface ColorRow extends ColorChip { id: string }
 interface ArtItem { id: string; ref?: string; url?: string; file?: File }
+
+/** 탭 목록 아래 "갤러리" 항목 전용 화면으로 쓰는 view 값 (탭 id와 겹치지 않는 고정 문자열) */
+const GALLERY_VIEW = '__gallery__';
 
 function ArtThumb({ item, crop }: { item: ArtItem; crop?: CropValue }) {
   const loaded = useBlobUrl(item.ref);
@@ -124,6 +127,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [colorBd, setColorBd] = useState<string | undefined>(initial?.colorBd);
   const [basicHtml, setBasicHtml] = useState(initial?.basicHtml ?? '');
   const [tabs, setTabs] = useState<CharTab[]>(initial?.tabs ?? []);
+  // 캐릭터 갤러리 (v2.5) — undefined면 갤러리 기능 자체를 안 씀, 배열이면(빈 배열 포함) 켜진 상태
+  const [gallery, setGallery] = useState<GalleryImg[] | undefined>(initial?.gallery);
   const [arts, setArts] = useState<ArtItem[]>(() => {
     const refs = initial?.arts ?? (initial?.artId ? [initial.artId] : initial?.thumbId ? [initial.thumbId] : []);
     return refs.map(r => ({ id: newId(), ref: r }));
@@ -171,6 +176,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       rule: rule || undefined,
       sheetUrl: sheetUrl.trim() || undefined,
       tabs,   // 제목이 비어도 유지 — 필터로 사라지던 버그 수정 (v1.9 사용자 지적)
+      gallery,
       basicHtml,
       visibility,
       fontId,
@@ -208,6 +214,17 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         tab={curTab}
         onChange={patch => setTabs(l => l.map(x => (x.id === curTab.id ? { ...x, ...patch } : x)))}
         onDelete={() => askDeleteTab(curTab.id, () => setView('main'))}
+        onBack={() => setView('main')} />
+      {del.element}
+    </>;
+  }
+
+  /* ---------- 갤러리 전용 편집 화면 (v2.5) ---------- */
+  if (view === GALLERY_VIEW && gallery !== undefined) {
+    return <>
+      <GalleryEditView images={gallery} onChange={setGallery}
+        onDelete={() => del.ask('갤러리를 삭제하시겠습니까?', () => { setGallery(undefined); setView('main'); },
+          '등록한 사진이 모두 함께 사라집니다. 저장(SAVE) 전까지는 CANCEL로 폼을 벗어나면 되돌릴 수 있습니다.')}
         onBack={() => setView('main')} />
       {del.element}
     </>;
@@ -345,6 +362,23 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
             setView(id); // 바로 전용 편집 화면으로
           }}>＋ ADD TAB</button>
 
+        {/* 갤러리 (v2.5) — 캐릭터당 하나, 상세 화면 GALLERY 버튼(EDIT·DELETE와 같은 자리·모양)으로
+            /chars/{id}/gallery 그리드+라이트박스 화면에서 보여준다. "이 탭의 아트"와 같은 방식으로
+            사진을 추가한다(GalleryArtEditor) */}
+        {gallery !== undefined ? (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#eef0f2', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>🖼</span>
+            <b style={{ fontSize: 13 }}>갤러리</b>
+            <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{gallery.length > 0 ? `사진 ${gallery.length}장` : '비어 있음'}</small>
+            <button className="btn btn-dark" style={{ marginLeft: 'auto', height: 27, padding: '0 12px', fontSize: 11 }}
+              onClick={() => setView(GALLERY_VIEW)}>편집 ›</button>
+          </div>
+        ) : (
+          <button className="btn btn-ghost" style={addBtn} onClick={() => { setGallery([]); setView(GALLERY_VIEW); }}>
+            ＋ ADD GALLERY
+          </button>
+        )}
+
         {/* 회원 권한 — 역극 플레이 / 편집까지 (3차 회원-캐릭터 연결, v1.9) — AU 편집에선 base 소관.
             **관리자만** (v2.0 사용자 확정) — 편집 권한을 받은 회원이 이 화면에 들어와도
             권한 관리는 못 한다. 열어 두면 자기가 받은 권한으로 남에게 권한을 나눠 줄 수 있다.
@@ -448,6 +482,69 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
 }
 
 /* ---------- 탭 전용 편집 화면 — 큰 에디터 + 실시간 미리보기 ---------- */
+/** 갤러리 아트 편집 — TabArtEditor와 같은 방식(선택 즉시 업로드)이지만, 이미지마다
+ *  작가 표기(artist)를 함께 입력할 수 있다 (라이트박스에 "Artist : ..."로 표시) */
+function GalleryArtEditor({ images, onChange }: { images: GalleryImg[]; onChange: (images: GalleryImg[]) => void }) {
+  const [lb, setLb] = useState<number | null>(null);
+  const add = async (list: FileList | null) => {
+    if (!list || list.length === 0) return;
+    const refs = await Promise.all(Array.from(list).map(f => putBlob(f)));
+    onChange([...images, ...refs.map(ref => ({ ref }))]);
+  };
+  return (
+    <div style={{ display: 'grid', gap: 8 }}>
+      {images.length > 0 && (
+        <DragList items={images.map((g, i) => ({ ...g, _k: i }))} keyOf={a => a.ref + a._k} onReorder={list => onChange(list.map(({ _k, ...g }) => g))}
+          render={(a, i) => (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '3px 0' }}>
+              <span className="drag-h">⠿</span>
+              <div data-tip="클릭하면 원본 보기" onClick={() => setLb(i)}
+                style={{ width: 56, aspectRatio: '3/4', borderRadius: 7, overflow: 'hidden', position: 'relative', flexShrink: 0, cursor: 'zoom-in' }}>
+                <TabArtThumb fileRef={a.ref} />
+              </div>
+              <KInput placeholder="작가 표기 (선택) — 예: 장아 / @jyjyaa_" value={a.artist ?? ''} style={{ fontSize: 12, padding: '6px 9px' }}
+                onChange={e => onChange(images.map((g, idx) => (idx === i ? { ...g, artist: e.target.value } : g)))} />
+              <span className="fx" onClick={() => onChange(images.filter((_, idx) => idx !== i))}>✕</span>
+            </div>
+          )} />
+      )}
+      <input id="galleryArtsF" type="file" accept="image/*" multiple style={{ display: 'none' }}
+        onChange={e => { add(e.target.files); e.target.value = ''; }} />
+      <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11, justifySelf: 'start' }}
+        onClick={() => document.getElementById('galleryArtsF')?.click()}
+        {...fileDrop(fl => add(fl))}>
+        ＋ ADD PHOTO
+      </button>
+      {lb != null && images[lb] != null && (
+        <Lightbox srcs={images.map(g => g.ref)} index={lb} onClose={() => setLb(null)} />
+      )}
+    </div>
+  );
+}
+
+function GalleryEditView({ images, onChange, onDelete, onBack }: {
+  images: GalleryImg[];
+  onChange: (images: GalleryImg[]) => void;
+  onDelete: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="panel" style={{ padding: 24, display: 'grid', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button className="btn btn-ghost" onClick={onBack}>‹ 돌아가기</button>
+        <b style={{ fontSize: 14 }}>갤러리 편집</b>
+        <span className="hint" style={{ margin: 0 }}>이 화면의 내용은 프로필 [SAVE] 시 함께 저장됩니다</span>
+        <button className="btn btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }} onClick={onDelete}>갤러리 삭제</button>
+      </div>
+      <label className="k-label" style={{ margin: 0 }}>
+        사진 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 순서 변경 · 상세 화면 GALLERY 버튼으로 이동하는 화면에 그리드로 보여줍니다</span>
+      </label>
+      <GalleryArtEditor images={images} onChange={onChange} />
+      <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={onBack}>완료 — 목록으로</button>
+    </div>
+  );
+}
+
 function TabEditView({ tab, onChange, onDelete, onBack }: {
   tab: CharTab;
   onChange: (patch: Partial<CharTab>) => void;
