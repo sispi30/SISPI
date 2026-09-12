@@ -7,8 +7,9 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey} from '@/lib/charStore';
+import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryImg} from '@/lib/charStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
+import { Lightbox } from '@/components/ui/Lightbox';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useFonts } from '@/lib/fontStore';
 import { useTheme } from '@/lib/ThemeProvider';
@@ -23,6 +24,41 @@ import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
 /** 우측 정보 패널에서 「기본 정보」·탭 다음으로 쓰는 세 번째 특수 탭 값 — TRPG 버튼(EDIT·DELETE·
  *  GALLERY와 같은 자리)을 누르면 새 탭 전환과 같은 방식으로 이 값으로 바뀐다 (v2.8) */
 const TRPG_TAB = '__trpg__';
+/** 갤러리도 TRPG와 같은 방식 — 새 페이지로 가지 않고 우측 패널만 이 값으로 교체한다 (v3.1) */
+const GALLERY_TAB = '__gallery__';
+
+/** 갤러리 탭 내용 — TRPG 탭과 같은 방식으로 우측 패널만 교체해 보여준다 (v3.1).
+ *  좌측 아이콘 탭·아트·상단 버튼은 그대로 PROFILE 화면과 같은 자리에 있다 */
+function GalleryPanel({ images }: { images: GalleryImg[] }) {
+  const [lb, setLb] = useState<number | null>(null);
+  if (images.length === 0) {
+    return <p className="hint">아직 등록된 사진이 없습니다</p>;
+  }
+  return (
+    <>
+      <div className="char-gallery-grid">
+        {images.map((g, i) => (
+          <GalleryThumb key={g.ref + i} fileRef={g.ref} onClick={() => setLb(i)} />
+        ))}
+      </div>
+      {lb != null && (
+        <Lightbox srcs={images.map(g => g.ref)} index={lb} onClose={() => setLb(null)}
+          captions={images.map(g => g.artist)} />
+      )}
+    </>
+  );
+}
+
+function GalleryThumb({ fileRef, onClick }: { fileRef: string; onClick: () => void }) {
+  const url = useBlobUrl(fileRef);
+  if (!url) return null;
+  return (
+    <div className="char-gallery-card" onClick={onClick}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" />
+    </div>
+  );
+}
 
 /** TRPG 탭 내용 — 플레이기록 게시판에서 이 캐릭터가 참여자로 등록된 기록만 모아 보여준다.
  *  단일 출처(PlayRecord.charIds)라 플레이기록 게시판에서 고치면 여기도 자동으로 반영된다 (v2.8) */
@@ -106,7 +142,10 @@ function CharDetailInner() {
   // 큰 글씨 — 추가 섹션(창고캐 등)이면 그 이름, 눌렀을 때도 그 목록으로 (v2.0 사용자 제보)
   const tt = useSectionTitle('chars', findByKey(chars, id)?.secId, 'CHARACTERS');
   const params = useSearchParams();
-  const [tab, setTab] = useState(() => (params.get('tab') === 'trpg' ? TRPG_TAB : 'basic'));
+  const [tab, setTab] = useState(() => {
+    const t = params.get('tab');
+    return t === 'trpg' ? TRPG_TAB : t === 'gallery' ? GALLERY_TAB : 'basic';
+  });
   const [artIdx, setArtIdx] = useState(0);
   const [delAsk, setDelAsk] = useState(false);   // 캐릭터 삭제 확인
   const infoRef = useRef<HTMLDivElement>(null);
@@ -204,9 +243,11 @@ function CharDetailInner() {
           {(isAdmin || charGrant(ch, user?.id) === 'edit') && (
             <button className="btn btn-dark" onClick={() => router.push(editHref)}>EDIT</button>
           )}
-          {/* 캐릭터당 갤러리 하나 — 켜져 있으면(gallery !== undefined) 그리드+라이트박스 화면으로 (v2.5) */}
+          {/* 캐릭터당 갤러리 하나 — TRPG와 같은 방식으로, 새 페이지로 가지 않고
+              우측 패널만 갤러리 그리드로 교체한다 (v3.1 사용자 요청 — 좌측 아이콘 탭·아트와
+              상단 버튼 위치를 PROFILE 화면과 통일) */}
           {ch.gallery !== undefined && (
-            <button className="btn btn-dark" onClick={() => router.push(`/chars/${ch.id}/gallery`)}>GALLERY</button>
+            <button className="btn btn-dark" onClick={() => setTab(GALLERY_TAB)}>GALLERY</button>
           )}
           {/* TRPG 참여 세션 — 새 페이지로 가지 않고 새 탭 전환과 같은 방식으로 우측 패널만 교체 (v2.8) */}
           {(ch.trpgEnabled || hasTrpgLinks) && (
@@ -353,6 +394,11 @@ function CharDetailInner() {
             <>
               <h3 className="tab-tt">TRPG</h3>
               <TrpgSessionsList charId={ch.id} order={ch.trpgOrder} records={playRecords} chars={chars} />
+            </>
+          ) : tab === GALLERY_TAB ? (
+            <>
+              <h3 className="tab-tt">Gallery</h3>
+              <GalleryPanel images={ch.gallery ?? []} />
             </>
           ) : (
             <>
