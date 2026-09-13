@@ -64,6 +64,9 @@ function WriteInner() {
   const [sPlaytime, setSPlaytime] = useState('');
   const [sUrl, setSUrl] = useState('');
   const [sRecordId, setSRecordId] = useState('');
+  // 기존 세션(플레이 기록) 검색해서 연동 (v3.4 사용자 요청) — 새로 만들지 않고 이미 있는
+  // 기록을 찾아 이 글에 연결한다
+  const [sQuery, setSQuery] = useState('');
   // 본문 이미지 목록 — HTML <img> + Markdown 이미지
   const bodyImages = useMemo(() => {
     const out: string[] = [];
@@ -299,7 +302,38 @@ function WriteInner() {
           {board.skin === 'thread' && (
             <div className="panel widget" style={{ marginBottom: 14 }}>
               <h4>플레이 기록 연동</h4>
-              <p className="hint" style={{ marginTop: -4 }}>제목이 Scenario로, 작성자가 Writer로 그대로 연결됩니다</p>
+              <p className="hint" style={{ marginTop: -4 }}>제목이 Scenario로, 작성자가 Writer로 그대로 연결됩니다 — 아래에서 기존 세션을 찾아 연결하면 그 기록의 Scenario도 이 글 제목으로 바뀝니다</p>
+              <div style={{ marginBottom: 10 }}>
+                <label className="k-label" style={{ marginBottom: 5 }}>기존 세션 연동 (optional)</label>
+                {sRecordId && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', border: '1.5px solid var(--accent)', borderRadius: 8, marginBottom: 6, fontSize: 12.5 }}>
+                    <b>{records.find(r => r.id === sRecordId)?.scenario ?? '(찾을 수 없음)'}</b>
+                    <span style={{ marginLeft: 'auto', color: 'var(--faint)', fontSize: 11, cursor: 'var(--cur-pointer,pointer)' }}
+                      onClick={() => setSRecordId('')}>연동 해제 ✕</span>
+                  </div>
+                )}
+                <KInput placeholder="세션 제목 검색" value={sQuery} onChange={e => setSQuery(e.target.value)} />
+                {sQuery.trim() && (() => {
+                  const q = sQuery.trim().toLowerCase();
+                  const found = records.filter(r => (!r.postId || r.postId === editing?.id) && r.scenario.toLowerCase().includes(q));
+                  return (
+                    <div style={{ marginTop: 6, maxHeight: 150, overflowY: 'auto', border: '1.5px solid var(--line)', borderRadius: 9 }}>
+                      {found.map(r => (
+                        <div key={r.id} onClick={() => {
+                          setSRecordId(r.id);
+                          setSDate(r.date ?? ''); setSScenarioLink(r.scenarioLink ?? '');
+                          setSWith(r.withText ?? ''); setSRole(r.role ?? '');
+                          setSPlaytime(r.playtime ?? ''); setSUrl(r.url ?? '');
+                          setSQuery('');
+                        }} style={{ padding: '7px 11px', cursor: 'var(--cur-pointer,pointer)', fontSize: 12.5, borderBottom: '1px dashed var(--line)' }}>
+                          <b>{r.scenario}</b> {r.date && <small style={{ color: 'var(--faint)' }}>{r.date}</small>}
+                        </div>
+                      ))}
+                      {found.length === 0 && <p className="hint" style={{ padding: 8 }}>검색 결과가 없습니다</p>}
+                    </div>
+                  );
+                })()}
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <label className="k-label" style={{ marginBottom: 5 }}>Date</label>
