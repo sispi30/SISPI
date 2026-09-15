@@ -121,7 +121,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--bg-angle', `${pageBg.angle}deg`);
       root.style.setProperty('--bg-image', 'none');   // 사이트 배경 이미지가 덮지 않게
     }
-  }, [draft, pageColor, pageBg, loaded]);
+    // 자관 헤더 사진(pageBgImageUrl, v3.5)이 있으면 흐림 정도도 페이지 안 배너와 맞춘다
+    // (.rel-backdrop .img가 16px로 블러하는 것과 동일값) — 사이트 테마의 블러값을 여기서
+    // 덮어써 두고, pageBgImageUrl이 풀리면 이 effect가 다시 실행되면서 자연히 테마값으로
+    // 되돌아간다(별도 cleanup 불필요) (v3.6 사용자 제보 — 블러값이 달라 눈에 띄었음)
+    if (pageBgImageUrl) {
+      root.style.setProperty('--bg-blur', '16px');
+      root.style.setProperty('--bg-brightness', '.8');
+      root.style.setProperty('--bg-saturate', '.9');
+    } else {
+      root.style.removeProperty('--bg-brightness');
+      root.style.removeProperty('--bg-saturate');
+    }
+  }, [draft, pageColor, pageBg, pageBgImageUrl, loaded]);
 
   // 배경 이미지 (v1.9) — IndexedDB 파일을 blob URL로 풀어 --bg-image 적용 (그라데이션 모드면 해제).
   // 자관 헤더 사진(pageBgImageUrl, v3.5)이 있으면 그게 최우선 — 상단 바가 투명이라

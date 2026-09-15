@@ -54,7 +54,7 @@ body{
 body::before{
   content:"";position:fixed;z-index:-1;inset:calc(var(--bg-blur,0px)*-2);
   background-image:var(--bg-image,none);background-size:cover;background-position:center;
-  filter:blur(var(--bg-blur,0px));pointer-events:none;
+  filter:blur(var(--bg-blur,0px)) brightness(var(--bg-brightness,1)) saturate(var(--bg-saturate,1));pointer-events:none;
 }
 button{font-family:inherit;cursor:var(--cur-pointer,pointer);border:none;background:none;color:inherit}
 /* 브라우저 기본이 pointer인 요소도 커스텀 커서 변수 경유 (5.1 v1.9) */
