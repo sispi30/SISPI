@@ -361,7 +361,7 @@ export default function RelDetailPage() {
 
   // 자관별 페이지 테마 (4.18 방식) — 별도 테마컬러면 홈 전체 팔레트를 임시 전환, 벗어나면 원복.
   // AU별 (v1.9): AU에 테마를 지정했으면 그것, 미지정이면 base(원본) 테마 따라가기
-  const { setPageTheme, setPageBg } = useTheme();
+  const { setPageTheme, setPageBg, setPageBgImage } = useTheme();
   const themeAu = rel?.aus.find(a => a.id === auId);
   const auTheme = themeAu && themeAu.id !== 'base' ? themeAu.theme : undefined;
   const effThemeMode = auTheme?.mode ?? rel?.themeMode;
@@ -400,6 +400,16 @@ export default function RelDetailPage() {
   const au = rel?.aus.find(a => a.id === auId) ?? rel?.aus[0];
   // AU별 프로필 데이터 (v1.9) — base(원본)는 Relation 최상위, 그 외 AU는 aus 항목에 저장
   const isBaseAu = (au?.id ?? 'base') === 'base';
+
+  // 자관 헤더 사진 → 페이지(body) 배경으로도 깔아, 투명한 상단 바 뒤로 같은 사진이
+  // 이어져 보이게 한다 (v3.5 사용자 요청 — 전에는 상단 바 뒤가 빈 기본 배경이라 경계가 보였음)
+  const hdrIdForBg = (isBaseAu ? rel?.headerImgId : au?.headerImgId) ?? undefined;
+  const hdrBgUrl = useBlobUrl(hdrIdForBg);
+  useEffect(() => {
+    setPageBgImage(hdrBgUrl ?? null);
+    return () => setPageBgImage(null);
+  }, [hdrBgUrl, setPageBgImage]);
+
   const auArts = (isBaseAu ? rel?.arts : au?.arts) ?? [];
   const auTimeline = (isBaseAu ? rel?.timeline : au?.timeline) ?? [];
   const auQuestions = (isBaseAu ? rel?.questions : au?.questions) ?? [];

@@ -22,6 +22,9 @@ interface ThemeCtx {
   /** 페이지 배경만 따로 (v2.0 사용자 요청 — 자관별 배경 그라데이션).
    *  테마컬러(setPageTheme)가 팔레트 전체를 바꾸는 것과 달리 배경 두 색·각도만 덮어쓴다. */
   setPageBg: (bg: PageBg | null) => void;
+  /** 페이지 배경 사진 (v3.5 사용자 요청) — 자관 헤더 이미지를 body 배경으로도 깔아,
+   *  투명한 상단 바 뒤로 같은 사진이 이어져 보이게 한다. 이미 풀어 둔 blob/원격 URL을 그대로 받는다. */
+  setPageBgImage: (url: string | null) => void;
   /** 현재(드래프트) 상태 — 기존 소비자 호환 형태 {mode, pointTone, vars} */
   state: ThemeState;
   dirty: boolean;                              // 저장 안 된 변경 존재
@@ -68,6 +71,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [presets, setPresets] = useState<ThemePreset[]>([]);
   const [pageColor, setPageColor] = useState<{ color: string; tone?: PointTone } | null>(null);
   const [pageBg, setPageBgState] = useState<PageBg | null>(null);   // 자관별 배경 (v2.0)
+  const [pageBgImageUrl, setPageBgImageUrl] = useState<string | null>(null); // 자관 헤더 사진 (v3.5)
   const [loaded, setLoaded] = useState(false);   // 저장본 로드 전 기본 다크를 DOM에 쓰지 않기 (FOUC 방지)
 
   // 최초 로드 — v2 우선, 없으면 v1 마이그레이션 (기존 vars를 해당 모드의 수정본으로 승계)
@@ -119,11 +123,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [draft, pageColor, pageBg, loaded]);
 
-  // 배경 이미지 (v1.9) — IndexedDB 파일을 blob URL로 풀어 --bg-image 적용 (그라데이션 모드면 해제)
+  // 배경 이미지 (v1.9) — IndexedDB 파일을 blob URL로 풀어 --bg-image 적용 (그라데이션 모드면 해제).
+  // 자관 헤더 사진(pageBgImageUrl, v3.5)이 있으면 그게 최우선 — 상단 바가 투명이라
+  // body 배경이 그대로 비쳐 보이므로, 헤더 사진을 body 배경으로도 깔아 위쪽 빈 띠가 안 생기게 한다
   useEffect(() => {
     if (!loaded) return;
-    const vars = draft.perMode[draft.mode];
     const root = document.documentElement;
+    if (pageBgImageUrl) {
+      root.style.setProperty('--bg-image', `url("${pageBgImageUrl}")`);
+      return;
+    }
+    const vars = draft.perMode[draft.mode];
     if (vars.bgType === 'image' && vars.bgImageId && !pageColor && !pageBg) {
       const ref = vars.bgImageId;
       /* **주소면 그대로 쓴다** (v2.0 사용자 발견 — 「배경에 사진을 올렸는데 안 바뀐다」).
@@ -150,7 +160,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       };
     }
     root.style.removeProperty('--bg-image');
-  }, [draft, pageColor, pageBg, loaded]);
+  }, [draft, pageColor, pageBg, pageBgImageUrl, loaded]);
 
   const dirty = useMemo(() => JSON.stringify(saved) !== JSON.stringify(draft), [saved, draft]);
 
@@ -225,6 +235,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setPageTheme = useCallback((color: string | null, tone?: PointTone) =>
     setPageColor(color ? { color, tone } : null), []);
   const setPageBg = useCallback((bg: PageBg | null) => setPageBgState(bg), []);
+  const setPageBgImage = useCallback((url: string | null) => setPageBgImageUrl(url), []);
 
   // 기존 소비자 호환 — state.vars = 현재 모드의 드래프트 값
   const state: ThemeState = useMemo(() => ({
@@ -234,7 +245,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={{
       state, dirty, setMode, setPointAccent, setPointTone, setVar,
-      resetMode, save, discard, presets, savePreset, applyPreset, removePreset, setPageTheme, setPageBg,
+      resetMode, save, discard, presets, savePreset, applyPreset, removePreset, setPageTheme, setPageBg, setPageBgImage,
     }}>
       {children}
     </Ctx.Provider>
