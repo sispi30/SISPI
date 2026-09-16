@@ -963,6 +963,19 @@ export default function RelDetailPage() {
                   style={{ background: 'transparent', zIndex: front ? 3 : 2 }}>
                   <FullImg refId={fullRef} scale={m?.fullScale ?? 90} offX={m?.fullOffX ?? 0} offY={m?.fullOffY ?? 0}
                     shadow={fullShadow(auSt.nameShadowColor, auSt.nameShadow)} />
+                  {/* 전신 위 캐릭터 이름 겹침 표시 (v3.9 사용자 요청 — 참고 사이트처럼 전신 위에
+                      그 캐릭터의 실제 이름·부제를 겹쳐 보여준다). 카드(MiniProf)는 그대로 두고
+                      추가만 한 것 — 카드 정보를 옮기거나 없애지 않았다 */}
+                  {(() => {
+                    const nc = charOf(cid);
+                    if (!nc) return null;
+                    return (
+                      <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}`} style={{ fontFamily: familyOf(nc.fontId) }}>
+                        <b>{nc.name}</b>
+                        {nc.sub && <small>{nc.sub}</small>}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

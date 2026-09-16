@@ -1133,6 +1133,13 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .rel-center .fb-l{left:-4%;z-index:2}
 .rel-center .fb-r{right:-4%;top:12%;z-index:3}
 .rel-center.one-mode .fb{display:none}
+/* 전신 위 캐릭터 이름 겹침 (v3.9) — 참고 사이트(전신 위에 큰 이름이 겹치는 스타일)처럼,
+   왼쪽 인물은 왼쪽 정렬로 위쪽에, 오른쪽 인물은 오른쪽 정렬로 위쪽에 둔다 */
+.fb-name{position:absolute;top:4%;display:flex;flex-direction:column;gap:2px;color:#fff;text-shadow:0 3px 14px rgba(0,0,0,.55);pointer-events:none;z-index:4}
+.fb-name b{font-size:clamp(20px,3.4vw,40px);font-weight:800;line-height:1.05;letter-spacing:-.01em}
+.fb-name small{font-size:12.5px;opacity:.85;letter-spacing:.04em}
+.fb-name-l{left:6%;align-items:flex-start;text-align:left}
+.fb-name-r{right:6%;align-items:flex-end;text-align:right}
 .rel-center .single{position:absolute;inset:0;display:none}
 .rel-center.one-mode .single{display:grid}
 .illu-toggle{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;opacity:0;pointer-events:none;transition:opacity .2s}
