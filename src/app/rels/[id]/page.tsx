@@ -938,90 +938,93 @@ export default function RelDetailPage() {
       </div>
 
       {isDuo ? (
-        <div className="rel-body" style={{ fontFamily: familyOf(rel.bodyFontId) }}>
-          {pairSlots[0]
-            ? <MiniProf member={pairSlots[0]} char={charOf(pairSlots[0].charId)} isAdmin={isAdmin}
-                auUnregistered={auUnregOf(pairSlots[0].charId)}
-                side="l" onMoveSide={() => moveSide(pairSlots[0]!.charId)}
-                onFaceCrop={ref => setFaceEdit({ charId: pairSlots[0]!.charId, ref, crop: pairSlots[0]!.faceCrop })}
-                onGo={() => router.push(charHref(pairSlots[0]!.charId))}
-                onRemove={() => removeMember(pairSlots[0]!.charId)} />
-            : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
-          <div className={`rel-center ${single ? 'one-mode' : ''}`}
-            style={{ background: 'rgba(255,255,255,.04)', border: '1px solid var(--line-dark)' }}>
-            {/* 전신 — 등록 이미지(AU별 우선) + 크기/앞뒤는 자관 수정의 미리보기에서 (v1.9) */}
-            {pairSlots.map((sl, i) => {
-              const cid = sl?.charId ?? '';
-              // 전신 위치·크기도 AU 값 우선 (v2.0) — sl이 이미 AU 값으로 갈아 끼운 멤버다
-              const m = sl ?? rel.members.find(x => x.charId === cid);
-              // AU는 자기 전신만 — base 전신을 물려받지 않음 (v1.9 사용자 확정)
-              const fullRef = isBaseAu ? m?.fullImgId : au?.fulls?.[cid];
-              if (!fullRef) return null;   // 등록 안 된 전신은 자리도 만들지 않는다
-              const front = (rel.fullFront ?? pairSlots[1]?.charId) === cid;
-              return (
-                <div key={i} className={`fb fb-${i === 0 ? 'l' : 'r'}`}
-                  style={{ background: 'transparent', zIndex: front ? 3 : 2 }}>
-                  <FullImg refId={fullRef} scale={m?.fullScale ?? 90} offX={m?.fullOffX ?? 0} offY={m?.fullOffY ?? 0}
-                    shadow={fullShadow(auSt.nameShadowColor, auSt.nameShadow)} />
-                  {/* 전신 위 캐릭터 이름 겹침 표시 (v3.9 사용자 요청 — 참고 사이트처럼 전신 위에
-                      그 캐릭터의 실제 이름·부제를 겹쳐 보여준다). 카드(MiniProf)는 그대로 두고
-                      추가만 한 것 — 카드 정보를 옮기거나 없애지 않았다 */}
-                  {(() => {
-                    const nc = charOf(cid);
-                    if (!nc) return null;
-                    return (
-                      <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}`} style={{ fontFamily: familyOf(nc.fontId) }}>
-                        <b>{nc.name}</b>
-                        {nc.sub && <small>{nc.sub}</small>}
-                      </div>
-                    );
-                  })()}
-                </div>
-              );
-            })}
-            <div className="single" ref={artBoxRef} style={{ cursor: auArts.length > 1 ? 'pointer' : undefined }}
-              onClick={() => { const n = auArts.length; if (n > 1) setArtIdx(i => (i + 1) % n); }}
-              onContextMenu={e => {
-                if (!isAdmin || !curArt) return;
-                e.preventDefault();
-                setArtCtx({ x: e.clientX, y: e.clientY, ref: curArt });
-              }}>
-              {auArts.length > 0 ? (
-                <>
-                  {/* 잡아 둔 위치가 있으면 그대로 (v2.0) — 없으면 예전처럼 통째로 */}
-                  <CroppedBlobImg fileRef={auArts[Math.min(artIdx, auArts.length - 1)]} crop={rel.artCrops?.[curArt]} ph="" label="MAIN ILLUST" />
-                  {auArts.length > 1 && (
-                    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 44, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 3 }}>
-                      {auArts.map((_, i) => (
-                        <i key={i} style={{ width: i === Math.min(artIdx, auArts.length - 1) ? 16 : 6, height: 6, borderRadius: 4, background: i === Math.min(artIdx, auArts.length - 1) ? '#fff' : 'rgba(255,255,255,.45)', transition: '.2s' }} />
-                      ))}
+        <div className={`rel-center rel-center-full ${single ? 'one-mode' : ''}`}
+          style={{ fontFamily: familyOf(rel.bodyFontId) }}>
+          {/* 전신 — 등록 이미지(AU별 우선) + 크기/앞뒤는 자관 수정의 미리보기에서 (v1.9).
+              화면 양 끝까지 가득 채우는 전면 개편(v4.0 사용자 확정) — 카드 경계 없는 히어로 섹션 */}
+          {pairSlots.map((sl, i) => {
+            const cid = sl?.charId ?? '';
+            // 전신 위치·크기도 AU 값 우선 (v2.0) — sl이 이미 AU 값으로 갈아 끼운 멤버다
+            const m = sl ?? rel.members.find(x => x.charId === cid);
+            // AU는 자기 전신만 — base 전신을 물려받지 않음 (v1.9 사용자 확정)
+            const fullRef = isBaseAu ? m?.fullImgId : au?.fulls?.[cid];
+            if (!fullRef) return null;   // 등록 안 된 전신은 자리도 만들지 않는다
+            const front = (rel.fullFront ?? pairSlots[1]?.charId) === cid;
+            return (
+              <div key={i} className={`fb fb-${i === 0 ? 'l' : 'r'}`}
+                style={{ background: 'transparent', zIndex: front ? 3 : 2 }}>
+                <FullImg refId={fullRef} scale={m?.fullScale ?? 90} offX={m?.fullOffX ?? 0} offY={m?.fullOffY ?? 0}
+                  shadow={fullShadow(auSt.nameShadowColor, auSt.nameShadow)} />
+                {/* 전신 위 캐릭터 이름 겹침 표시 (v3.9 사용자 요청 — 참고 사이트처럼 전신 위에
+                    그 캐릭터의 실제 이름·부제를 겹쳐 보여준다) */}
+                {(() => {
+                  const nc = charOf(cid);
+                  if (!nc) return null;
+                  return (
+                    <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}`} style={{ fontFamily: familyOf(nc.fontId) }}>
+                      <b>{nc.name}</b>
+                      {nc.sub && <small>{nc.sub}</small>}
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="ph" style={{ position: 'absolute', inset: 0 }}><span>MAIN ILLUST</span></div>
-              )}
-            </div>
-            {/* 스위치 색 — 자관별 지정(EDIT) 없으면 테마·포인트색 (v1.9).
-                전신이 하나도 없으면 고를 것이 없으므로 스위치 자체를 숨긴다 */}
-            {hasFull && (
-              <div className="illu-toggle seg" style={{
-                ['--illu-bg' as string]: auSt.illuBg,
-                ['--illu-on' as string]: auSt.illuOn,
-              } as React.CSSProperties}>
-                <button className={!single ? 'on' : ''} onClick={() => setOneMode(false)}>전신</button>
-                <button className={single ? 'on' : ''} onClick={() => setOneMode(true)}>일러스트</button>
+                  );
+                })()}
               </div>
+            );
+          })}
+          <div className="single" ref={artBoxRef} style={{ cursor: auArts.length > 1 ? 'pointer' : undefined }}
+            onClick={() => { const n = auArts.length; if (n > 1) setArtIdx(i => (i + 1) % n); }}
+            onContextMenu={e => {
+              if (!isAdmin || !curArt) return;
+              e.preventDefault();
+              setArtCtx({ x: e.clientX, y: e.clientY, ref: curArt });
+            }}>
+            {auArts.length > 0 ? (
+              <>
+                {/* 잡아 둔 위치가 있으면 그대로 (v2.0) — 없으면 예전처럼 통째로 */}
+                <CroppedBlobImg fileRef={auArts[Math.min(artIdx, auArts.length - 1)]} crop={rel.artCrops?.[curArt]} ph="" label="MAIN ILLUST" />
+                {auArts.length > 1 && (
+                  <div style={{ position: 'absolute', left: 0, right: 0, bottom: 44, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 3 }}>
+                    {auArts.map((_, i) => (
+                      <i key={i} style={{ width: i === Math.min(artIdx, auArts.length - 1) ? 16 : 6, height: 6, borderRadius: 4, background: i === Math.min(artIdx, auArts.length - 1) ? '#fff' : 'rgba(255,255,255,.45)', transition: '.2s' }} />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="ph" style={{ position: 'absolute', inset: 0 }}><span>MAIN ILLUST</span></div>
             )}
           </div>
-          {pairSlots[1]
-            ? <MiniProf member={pairSlots[1]} char={charOf(pairSlots[1].charId)} isAdmin={isAdmin}
-                auUnregistered={auUnregOf(pairSlots[1].charId)}
-                side="r" onMoveSide={() => moveSide(pairSlots[1]!.charId)}
-                onFaceCrop={ref => setFaceEdit({ charId: pairSlots[1]!.charId, ref, crop: pairSlots[1]!.faceCrop })}
-                onGo={() => router.push(charHref(pairSlots[1]!.charId))}
-                onRemove={() => removeMember(pairSlots[1]!.charId)} />
-            : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
+          {/* 스위치 색 — 자관별 지정(EDIT) 없으면 테마·포인트색 (v1.9).
+              전신이 하나도 없으면 고를 것이 없으므로 스위치 자체를 숨긴다 */}
+          {hasFull && (
+            <div className="illu-toggle seg" style={{
+              ['--illu-bg' as string]: auSt.illuBg,
+              ['--illu-on' as string]: auSt.illuOn,
+            } as React.CSSProperties}>
+              <button className={!single ? 'on' : ''} onClick={() => setOneMode(false)}>전신</button>
+              <button className={single ? 'on' : ''} onClick={() => setOneMode(true)}>일러스트</button>
+            </div>
+          )}
+          {/* 정보 카드는 카드 경계를 없앤 히어로 위에 좌하단·우하단으로 겹쳐 보여준다 (v4.0) */}
+          <div className="fb-card fb-card-l">
+            {pairSlots[0]
+              ? <MiniProf member={pairSlots[0]} char={charOf(pairSlots[0].charId)} isAdmin={isAdmin}
+                  auUnregistered={auUnregOf(pairSlots[0].charId)}
+                  side="l" onMoveSide={() => moveSide(pairSlots[0]!.charId)}
+                  onFaceCrop={ref => setFaceEdit({ charId: pairSlots[0]!.charId, ref, crop: pairSlots[0]!.faceCrop })}
+                  onGo={() => router.push(charHref(pairSlots[0]!.charId))}
+                  onRemove={() => removeMember(pairSlots[0]!.charId)} />
+              : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
+          </div>
+          <div className="fb-card fb-card-r">
+            {pairSlots[1]
+              ? <MiniProf member={pairSlots[1]} char={charOf(pairSlots[1].charId)} isAdmin={isAdmin}
+                  auUnregistered={auUnregOf(pairSlots[1].charId)}
+                  side="r" onMoveSide={() => moveSide(pairSlots[1]!.charId)}
+                  onFaceCrop={ref => setFaceEdit({ charId: pairSlots[1]!.charId, ref, crop: pairSlots[1]!.faceCrop })}
+                  onGo={() => router.push(charHref(pairSlots[1]!.charId))}
+                  onRemove={() => removeMember(pairSlots[1]!.charId)} />
+              : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
+          </div>
         </div>
       ) : (
         /* 다인 자관 — 프로토타입 multi-body: 좌 멤버 리스트(430px) + 우 그룹 일러 */

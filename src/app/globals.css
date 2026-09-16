@@ -1129,10 +1129,29 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .card-thumbs .t:hover{opacity:.8}
 /* 중앙 일러 — 전신 2장 겹침 / 일러 1장 (2인 한정, v1.8) */
 .rel-center{aspect-ratio:3/4.1;border-radius:var(--radius);overflow:hidden;position:relative}
-.rel-center .fb{position:absolute;top:5%;bottom:-2%;width:62%;border-radius:12px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.4))}
-.rel-center .fb-l{left:-4%;z-index:2}
-.rel-center .fb-r{right:-4%;top:12%;z-index:3}
+.rel-center .fb{position:absolute;top:5%;bottom:-2%;width:46%;border-radius:12px;filter:drop-shadow(0 10px 24px rgba(0,0,0,.4))}
+.rel-center .fb-l{left:0;z-index:2}
+.rel-center .fb-r{right:0;z-index:2}
 .rel-center.one-mode .fb{display:none}
+/* 전면 개편(v4.0 사용자 확정) — 카드 경계를 없애고 화면 양 끝까지 가득 채우는 히어로.
+   기존 .rel-center(다인 자관 그룹 일러 등)는 그대로 두고, 이 보정 클래스만 덧붙여 겹쳐쓴다 */
+.rel-center-full{
+  width:100vw;left:50%;transform:translateX(-50%);
+  height:calc(100vh - 58px);aspect-ratio:auto;border-radius:0;
+  background:transparent!important;border:none!important;margin-top:0;
+}
+.rel-center-full .fb{top:auto;bottom:0;height:100%;width:44%;border-radius:0;filter:drop-shadow(0 14px 30px rgba(0,0,0,.45))}
+.rel-center-full .fb-l{left:0}
+.rel-center-full .fb-r{right:0}
+.rel-center-full .single{border-radius:0}
+/* 카드는 경계를 없앤 히어로 위에 좌하단·우하단으로 겹쳐서 (v4.0) */
+.fb-card{position:absolute;bottom:26px;width:320px;z-index:5}
+.fb-card-l{left:26px}
+.fb-card-r{right:26px}
+@media(max-width:960px){
+  .rel-center-full{height:86vh}
+  .fb-card{position:static;width:calc(100% - 32px);margin:10px auto}
+}
 /* 전신 위 캐릭터 이름 겹침 (v3.9) — 참고 사이트(전신 위에 큰 이름이 겹치는 스타일)처럼,
    왼쪽 인물은 왼쪽 정렬로 위쪽에, 오른쪽 인물은 오른쪽 정렬로 위쪽에 둔다 */
 .fb-name{position:absolute;top:4%;display:flex;flex-direction:column;gap:2px;color:#fff;text-shadow:0 3px 14px rgba(0,0,0,.55);pointer-events:none;z-index:4}
