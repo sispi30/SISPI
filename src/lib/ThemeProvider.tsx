@@ -129,9 +129,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--bg-blur', '16px');
       root.style.setProperty('--bg-brightness', '.8');
       root.style.setProperty('--bg-saturate', '.9');
+      // 자관 배너(.rel-backdrop)와 상자 높이를 똑같이 맞춰야 cover 크롭 비율이 일치한다 (v3.7)
+      root.style.setProperty('--bg-page-height', '600px');
     } else {
       root.style.removeProperty('--bg-brightness');
       root.style.removeProperty('--bg-saturate');
+      root.style.removeProperty('--bg-page-height');
     }
   }, [draft, pageColor, pageBg, pageBgImageUrl, loaded]);
 

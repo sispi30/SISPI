@@ -50,9 +50,15 @@ body{
     linear-gradient(var(--bg-angle,180deg),var(--bg-g1) 0%,var(--bg-g2) 100%); /* 각도 = 환경설정 (v1.9) */
   background-attachment:fixed;
 }
-/* 배경 이미지 레이어 (v1.9) — 그라데이션 위·콘텐츠 아래, 블러는 가장자리 번짐 방지로 살짝 확장 */
+/* 배경 이미지 레이어 (v1.9) — 그라데이션 위·콘텐츠 아래, 블러는 가장자리 번짐 방지로 살짝 확장.
+   자관 헤더 사진(v3.7)일 때는 --bg-page-height로 상자 높이를 자관 배너(.rel-backdrop, 600px)와
+   똑같이 맞춘다 — 상자 크기가 같아야 "cover" 크롭·확대 비율이 정확히 같아져(뷰포트 전체 높이로
+   덮으면 배너보다 더 확대돼 보이는 크롭이 나와서 이어지는 자리가 어긋나 보였음), 상단 바 뒤로
+   보이는 부분이 배너와 이가 맞는다 */
 body::before{
-  content:"";position:fixed;z-index:-1;inset:calc(var(--bg-blur,0px)*-2);
+  content:"";position:fixed;z-index:-1;
+  top:calc(var(--bg-blur,0px)*-2);left:calc(var(--bg-blur,0px)*-2);right:calc(var(--bg-blur,0px)*-2);
+  height:calc(var(--bg-page-height,100vh) + var(--bg-blur,0px)*4);
   background-image:var(--bg-image,none);background-size:cover;background-position:center;
   filter:blur(var(--bg-blur,0px)) brightness(var(--bg-brightness,1)) saturate(var(--bg-saturate,1));pointer-events:none;
 }
