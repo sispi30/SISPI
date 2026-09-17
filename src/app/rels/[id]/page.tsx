@@ -327,6 +327,8 @@ export default function RelDetailPage() {
      리스트 썸네일 좌표만 잡을 수 있고 상세는 못 잡던 것 — 여러 장이면 보고 있는 장을 잡는다.
      표시 영역은 화면 높이에 따라 달라지므로 고정 비율이 아니라 **실제 상자 비율**로 연다. */
   const [artCtx, setArtCtx] = useState<{ x: number; y: number; ref: string } | null>(null);
+  // 전신 위 이름 우클릭 — 흰 카드가 없어져 「멤버 제거」를 여기로 옮겨 둠 (v4.2)
+  const [fbCtx, setFbCtx] = useState<{ x: number; y: number; cid: string } | null>(null);
   const [artCropOpen, setArtCropOpen] = useState<{ ref: string; ratio: number } | null>(null);
   const artBoxRef = useRef<HTMLDivElement>(null);
   const artBoxRatio = () => {
@@ -341,6 +343,14 @@ export default function RelDetailPage() {
     window.addEventListener('keydown', key);
     return () => { window.removeEventListener('click', close); window.removeEventListener('keydown', key); };
   }, [artCtx]);
+  useEffect(() => {
+    if (!fbCtx) return;
+    const close = () => setFbCtx(null);
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setFbCtx(null); };
+    window.addEventListener('click', close);
+    window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('click', close); window.removeEventListener('keydown', key); };
+  }, [fbCtx]);
   const [qOpen, setQOpen] = useState(false);
   const [qText, setQText] = useState('');
   const [auOpen, setAuOpen] = useState(false);
@@ -955,15 +965,33 @@ export default function RelDetailPage() {
                 style={{ background: 'transparent', zIndex: front ? 3 : 2 }}>
                 <FullImg refId={fullRef} scale={m?.fullScale ?? 90} offX={m?.fullOffX ?? 0} offY={m?.fullOffY ?? 0}
                   shadow={fullShadow(auSt.nameShadowColor, auSt.nameShadow)} />
-                {/* 전신 위 캐릭터 이름 겹침 표시 (v3.9 사용자 요청 — 참고 사이트처럼 전신 위에
-                    그 캐릭터의 실제 이름·부제를 겹쳐 보여준다) */}
+                {/* 전신 위 캐릭터 이름·부제·키워드 (v4.1 사용자 요청 — 참고 사이트의 이름 밑
+                    「예시」 태그 3개 자리에 이 캐릭터의 키워드를 놓고, 우하단 흰 정보 카드는
+                    없앴다). 이름을 누르면 예전 카드처럼 캐릭터 페이지로 이동한다.
+                    흰 카드에만 있던 스펙(이름/키·몸무게 등)·테마색 팔레트도 없애지 말고
+                    키워드와 같은 자리에 넣어 달라고 해서 함께 붙임 (v4.2) */}
                 {(() => {
                   const nc = charOf(cid);
                   if (!nc) return null;
                   return (
-                    <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}`} style={{ fontFamily: familyOf(nc.fontId) }}>
+                    <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}`} style={{ fontFamily: familyOf(nc.fontId), cursor: 'var(--cur-pointer,pointer)' }}
+                      onClick={() => router.push(charHref(cid))}
+                      onContextMenu={e => {
+                        if (!isAdmin) return;
+                        e.preventDefault(); e.stopPropagation();
+                        setFbCtx({ x: e.clientX, y: e.clientY, cid });
+                      }}>
                       <b>{nc.name}</b>
                       {nc.sub && <small>{nc.sub}</small>}
+                      {((m && m.keywords.length > 0) || nc.specs.length > 0 || (nc.colors ?? m?.palette ?? []).length > 0) && (
+                        <div className="fb-kw-row">
+                          {m?.keywords.map(k => <span key={k} className="pill">{k}</span>)}
+                          {nc.specs.map(s => <span key={s.label} className="pill">{s.label} {s.value}</span>)}
+                          {(nc.colors ?? m?.palette ?? []).map(p => (
+                            <span key={p.hex + p.label} className="fb-gem" data-tip={p.label} style={{ background: p.hex }} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -1004,27 +1032,22 @@ export default function RelDetailPage() {
               <button className={single ? 'on' : ''} onClick={() => setOneMode(true)}>일러스트</button>
             </div>
           )}
-          {/* 정보 카드는 카드 경계를 없앤 히어로 위에 좌하단·우하단으로 겹쳐 보여준다 (v4.0) */}
-          <div className="fb-card fb-card-l">
-            {pairSlots[0]
-              ? <MiniProf member={pairSlots[0]} char={charOf(pairSlots[0].charId)} isAdmin={isAdmin}
-                  auUnregistered={auUnregOf(pairSlots[0].charId)}
-                  side="l" onMoveSide={() => moveSide(pairSlots[0]!.charId)}
-                  onFaceCrop={ref => setFaceEdit({ charId: pairSlots[0]!.charId, ref, crop: pairSlots[0]!.faceCrop })}
-                  onGo={() => router.push(charHref(pairSlots[0]!.charId))}
-                  onRemove={() => removeMember(pairSlots[0]!.charId)} />
-              : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
-          </div>
-          <div className="fb-card fb-card-r">
-            {pairSlots[1]
-              ? <MiniProf member={pairSlots[1]} char={charOf(pairSlots[1].charId)} isAdmin={isAdmin}
-                  auUnregistered={auUnregOf(pairSlots[1].charId)}
-                  side="r" onMoveSide={() => moveSide(pairSlots[1]!.charId)}
-                  onFaceCrop={ref => setFaceEdit({ charId: pairSlots[1]!.charId, ref, crop: pairSlots[1]!.faceCrop })}
-                  onGo={() => router.push(charHref(pairSlots[1]!.charId))}
-                  onRemove={() => removeMember(pairSlots[1]!.charId)} />
-              : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
-          </div>
+          {/* 빈 자리(멤버 미정)만 관리자에게 추가 버튼으로 안내 — 흰 정보 카드는 없앴으므로
+              여기서만 최소한으로 보여준다 (v4.1) */}
+          {isAdmin && !pairSlots[0] && (
+            <button className="fb-add fb-add-l" onClick={() => setMemberOpen(true)}>＋ 멤버 추가</button>
+          )}
+          {isAdmin && !pairSlots[1] && (
+            <button className="fb-add fb-add-r" onClick={() => setMemberOpen(true)}>＋ 멤버 추가</button>
+          )}
+          {/* 전신 이름 우클릭 메뉴 — 관리자만, 멤버 제거 (v4.2, 흰 카드에 있던 기능 복구) */}
+          {fbCtx && createPortal(
+            <div className="ctx-menu on" style={{ left: fbCtx.x, top: fbCtx.y }} onClick={e => e.stopPropagation()}>
+              <div className="ctx-ttl">{charOf(fbCtx.cid)?.name}</div>
+              <button className="danger" onClick={() => { removeMember(fbCtx.cid); setFbCtx(null); }}>멤버 제거</button>
+            </div>,
+            document.body,
+          )}
         </div>
       ) : (
         /* 다인 자관 — 프로토타입 multi-body: 좌 멤버 리스트(430px) + 우 그룹 일러 */
