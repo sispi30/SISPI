@@ -1145,10 +1145,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .rel-center-full .fb-r{right:0}
 .rel-center-full .single{border-radius:0}
 /* 카드는 없앴다(v4.1) — 이름 밑에 그 캐릭터의 키워드만 나란히 (참고 사이트의 "예시" 자리) */
-.fb-kw-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.fb-kw-row{display:flex;flex-direction:column;align-items:inherit;gap:6px;margin-top:8px}
 .fb-kw-row .pill{background:rgba(255,255,255,.14);color:#fff;backdrop-filter:blur(4px)}
 .fb-gem{display:inline-block;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.5)}
-.fb-name-r .fb-kw-row{justify-content:flex-end}
 /* 멤버가 비어 있을 때만 최소한의 추가 버튼 (v4.1) — 흰 카드 없이 그 자리에 작게 */
 .fb-add{position:absolute;bottom:26px;padding:10px 18px;border-radius:999px;
   background:rgba(20,21,24,.55);color:#fff;font-size:12.5px;backdrop-filter:blur(6px);
@@ -1177,6 +1176,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* AU 리스트 (우상단, v1.8) — 자식 일괄 relative 규칙보다 뒤에서 absolute로 재고정 */
 .au-list{display:flex;gap:8px;align-items:flex-start}
 .page-rel-detail > .au-list{position:absolute;top:20px;right:28px;left:auto;z-index:6}
+/* 2인 자관은 전신 사이 중앙 하단으로 (v4.3 사용자 요청 — 참고 사진의 PairName 자리) */
+.page-rel-detail > .au-list.au-list-hero{
+  top:calc(100vh - 58px - 190px);right:auto;left:50%;transform:translateX(-50%);
+}
 /* 관리자 액션 (좌상단) — 자관 수정 등 */
 .page-rel-detail > .rel-admin-actions{position:absolute;top:20px;left:28px;z-index:6;display:flex;gap:8px}
 .au-item.add{border-style:dashed;display:grid;place-items:center;color:rgba(255,255,255,.75);font-size:calc(16px*var(--fs,1));background:rgba(255,255,255,.06)}

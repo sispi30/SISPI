@@ -844,10 +844,11 @@ export default function RelDetailPage() {
       })()}
 
       {(rel.aus.length > 1 || isAdmin) && (
-        <div className="au-list">
+        <div className={`au-list ${isDuo ? 'au-list-hero' : ''}`}>
           {/* AU 네모에 대표 이미지를 넣는다 (v2.0 사용자 요청 — 색만 들어가 있어 밋밋했다).
               원본은 자관 썸네일(잡아 둔 크롭 그대로), 그 외 AU는 그 AU의 첫 아트 = 대표 이미지.
-              등록된 이미지가 없으면 예전처럼 색 플레이스홀더가 그대로 나온다 */}
+              등록된 이미지가 없으면 예전처럼 색 플레이스홀더가 그대로 나온다.
+              2인 자관은 전신 히어로 중앙 하단으로(v4.3 사용자 요청 — 참고 사진의 PairName 자리) */}
           {rel.aus.map((a, i) => {
             const isBase = a.id === 'base';
             const thumb = isBase ? (rel.thumbId ?? rel.arts?.[0]) : a.arts?.[0];
