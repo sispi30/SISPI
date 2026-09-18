@@ -821,8 +821,8 @@ export default function RelDetailPage() {
                   똑같은 요소(같은 fileRef·crop)를 하나 더 만들어, 58px짜리 창으로만 그 맨 위쪽을
                   오려 보여준다 — 계산 방식이 같은 요소끼리라 반드시 이가 맞는다 (v3.8) */}
               {typeof document !== 'undefined' && createPortal(
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 58, overflow: 'hidden', zIndex: 5, pointerEvents: 'none' }}>
-                  <div className="rel-backdrop" style={{ position: 'absolute', top: -542, left: '50%', transform: 'translateX(-50%)' }}>
+                <div style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100vw', height: 66, overflow: 'hidden', zIndex: 5, pointerEvents: 'none' }}>
+                  <div className="rel-backdrop" style={{ position: 'absolute', top: -534, left: '50%', transform: 'translateX(-50%)' }}>
                     <div className="img custom">
                       <CroppedBlobImg fileRef={hdrId} crop={hdrCrop} ph="" />
                     </div>
