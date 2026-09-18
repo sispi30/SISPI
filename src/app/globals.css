@@ -1087,7 +1087,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 자관 상세 — 헤더 이미지: 풀폭 블러 + 아래로 페이드아웃 (v1.5) */
 .page-rel-detail{position:relative;max-width:1280px}
 /* 배경 위 레이어링 — absolute로 배치되는 요소(AU·관리자 액션·모달)는 제외 */
-.page-rel-detail > *:not(.rel-backdrop):not(.modal-ov):not(.au-list):not(.rel-admin-actions){position:relative;z-index:1}
+.page-rel-detail > *:not(.rel-backdrop):not(.modal-ov):not(.au-list):not(.rel-admin-actions):not(.pair-name){position:relative;z-index:1}
 .rel-backdrop{position:absolute;top:0;left:50%;transform:translateX(-50%);width:100vw;height:600px;z-index:0!important;overflow:hidden;pointer-events:none;
   -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 35%,transparent 96%);
   mask-image:linear-gradient(to bottom,#000 0%,#000 35%,transparent 96%);}
@@ -1179,6 +1179,12 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 2인 자관은 전신 사이 중앙 하단으로 (v4.3 사용자 요청 — 참고 사진의 PairName 자리) */
 .page-rel-detail > .au-list.au-list-hero{
   top:calc(100vh - 58px - 190px);right:auto;left:50%;transform:translateX(-50%);
+}
+/* 페어명 — AU 배지 줄 바로 위, 같은 가운데 축 (v4.4) */
+.page-rel-detail > .pair-name{
+  position:absolute;top:calc(100vh - 58px - 232px);left:50%;transform:translateX(-50%);
+  z-index:6;color:#fff;font-weight:800;font-size:clamp(16px,2vw,22px);
+  text-shadow:0 3px 12px rgba(0,0,0,.5);white-space:nowrap;
 }
 /* 관리자 액션 (좌상단) — 자관 수정 등 */
 .page-rel-detail > .rel-admin-actions{position:absolute;top:20px;left:28px;z-index:6;display:flex;gap:8px}

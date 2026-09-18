@@ -843,6 +843,14 @@ export default function RelDetailPage() {
         );
       })()}
 
+      {/* 페어명 — 전신 히어로일 때만, AU 배지 줄 바로 위에 작게 (v4.4 사용자 요청,
+          참고 사진의 "PairName" 자리). AU가 하나뿐이라 배지 줄이 안 보여도 페어명은 그대로 둔다 */}
+      {isDuo && (
+        <div className="pair-name" style={{ fontFamily: familyOf(rel.fontId) }}>
+          {(!isBaseAu && au?.name?.trim()) || rel.name}
+        </div>
+      )}
+
       {(rel.aus.length > 1 || isAdmin) && (
         <div className={`au-list ${isDuo ? 'au-list-hero' : ''}`}>
           {/* AU 네모에 대표 이미지를 넣는다 (v2.0 사용자 요청 — 색만 들어가 있어 밋밋했다).
