@@ -1100,7 +1100,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
    인용구·캐치프레이즈뿐인데, 그래도 padding·줄 높이만큼 자리를 차지해 전신 히어로 전체가
    그만큼 아래로 밀려 보였다(v4.6 사용자 제보 — "글씨가 살짝 아래로 내려갔다"). 흐름 높이를
    0으로 만들어 밀어내지 않게 하고, 내용(인용구)은 overflow:visible로 그대로 보이게 둔다 */
-.rel-hero.rel-hero-flat{padding:0;height:0;overflow:visible;margin-top:-16px}
+.rel-hero.rel-hero-flat{padding:0;height:0;overflow:visible}
 .rel-hero .quote{position:absolute;top:auto;bottom:-10px;font-family:var(--serif);font-size:calc(15px*var(--fs,1));letter-spacing:.08em;color:#d7dae0}
 .rel-hero .quote.l{left:2%}.rel-hero .quote.r{right:2%}
 .rel-hero .quote::before{content:"\201C";color:var(--q-mark,var(--accent-soft));font-size:calc(22px*var(--fs,1));margin-right:5px} /* 따옴표색 — 자관 수정에서 멤버별 지정 (v1.9) */
@@ -1190,9 +1190,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .page-rel-detail > .au-list.au-list-hero{
   top:calc(100vh - 58px - 190px);right:auto;left:50%;transform:translateX(-50%);
 }
-/* 페어명 — AU 배지 줄 바로 위, 같은 가운데 축 (v4.4~4.5, 위쪽 CP/NCP 뱃지도 같이 옮겨 옴) */
+/* 페어명 — AU 배지 줄 바로 위, 같은 가운데 축 (v4.4~4.5, 위쪽 CP/NCP 뱃지도 같이 옮겨 옴).
+   뱃지+이름 내용 높이가 예상보다 커서 AU 줄과 겹쳐 보였다 — 간격을 더 넉넉하게 (v4.8) */
 .page-rel-detail > .pair-name{
-  position:absolute;top:calc(100vh - 58px - 248px);left:50%;transform:translateX(-50%);
+  position:absolute;top:calc(100vh - 58px - 290px);left:50%;transform:translateX(-50%);
   z-index:6;display:flex;flex-direction:column;align-items:center;gap:6px;
   color:#fff;font-weight:800;font-size:clamp(16px,2vw,22px);
   text-shadow:0 3px 12px rgba(0,0,0,.5);white-space:nowrap;
