@@ -1096,6 +1096,11 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .rel-backdrop .img{position:absolute;inset:-40px;filter:blur(16px) brightness(.8) saturate(.9)}
 .rel-backdrop .img img{width:100%;height:100%;object-fit:cover}
 .rel-hero{position:relative;text-align:center;padding:34px 0 10px;color:#fff}
+/* 2인 전신 히어로에서는 제목·뱃지를 아래(.pair-name)로 옮겨서 이 칸의 실제 내용이
+   인용구·캐치프레이즈뿐인데, 그래도 padding·줄 높이만큼 자리를 차지해 전신 히어로 전체가
+   그만큼 아래로 밀려 보였다(v4.6 사용자 제보 — "글씨가 살짝 아래로 내려갔다"). 흐름 높이를
+   0으로 만들어 밀어내지 않게 하고, 내용(인용구)은 overflow:visible로 그대로 보이게 둔다 */
+.rel-hero.rel-hero-flat{padding:0;height:0;overflow:visible}
 .rel-hero .quote{position:absolute;top:auto;bottom:-10px;font-family:var(--serif);font-size:calc(15px*var(--fs,1));letter-spacing:.08em;color:#d7dae0}
 .rel-hero .quote.l{left:2%}.rel-hero .quote.r{right:2%}
 .rel-hero .quote::before{content:"\201C";color:var(--q-mark,var(--accent-soft));font-size:calc(22px*var(--fs,1));margin-right:5px} /* 따옴표색 — 자관 수정에서 멤버별 지정 (v1.9) */
@@ -1189,6 +1194,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 }
 /* 관리자 액션 (좌상단) — 자관 수정 등 */
 .page-rel-detail > .rel-admin-actions{position:absolute;top:20px;left:28px;z-index:6;display:flex;gap:8px}
+/* 2인 전신 히어로에서는 우하단(BGM 플레이어 위)으로 — 스크롤해도 따라오도록 fixed (v4.6) */
+.page-rel-detail > .rel-admin-actions.rel-admin-hero{position:fixed;top:auto;left:auto;bottom:84px;right:20px;z-index:65}
 .au-item.add{border-style:dashed;display:grid;place-items:center;color:rgba(255,255,255,.75);font-size:calc(16px*var(--fs,1));background:rgba(255,255,255,.06)}
 .au-item{width:48px;aspect-ratio:1;border-radius:11px;cursor:var(--cur-pointer,pointer);overflow:hidden;position:relative;border:2px solid rgba(255,255,255,.25);transition:.15s}
 .au-item:hover{border-color:rgba(255,255,255,.6)}

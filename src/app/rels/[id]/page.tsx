@@ -882,9 +882,9 @@ export default function RelDetailPage() {
         </div>
       )}
 
-      {/* 관리자 액션 (좌상단) */}
+      {/* 관리자 액션 — 기본은 좌상단, 2인 전신 히어로에서는 BGM 플레이어 위 우하단으로 (v4.6 사용자 요청) */}
       {isAdmin && (
-        <div className="rel-admin-actions">
+        <div className={`rel-admin-actions ${isDuo ? 'rel-admin-hero' : ''}`}>
           {/* AU 선택 중이면 그 AU의 일러·캐치프레이즈를 편집 (v1.9) */}
           <button className="btn btn-dark" style={{ height: 30, padding: '0 13px', fontSize: 11 }}
             onClick={() => router.push(`/rels/${rel.id}/edit${isBaseAu ? '' : `?au=${au!.id}`}`)}>
@@ -930,7 +930,7 @@ export default function RelDetailPage() {
           { label: 'CANCEL', kind: 'ghost', onClick: () => setDelAsk(false) },
         ]} />
 
-      <div className="rel-hero">
+      <div className={`rel-hero ${isDuo ? 'rel-hero-flat' : ''}`}>
         {isDuo && pairSlots[0] && (
           <div className="quote l" style={{
             color: pairSlots[0].quoteColor,
@@ -957,9 +957,11 @@ export default function RelDetailPage() {
             textShadow: `0 4px 30px ${withAlpha(auSt.nameShadowColor ?? '#000000', 0.6 * ((auSt.nameShadow ?? 100) / 100))}`,
           }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</h1>
         )}
-        <div className="catch" style={{ color: auSt.cpColor }}>
-          {au?.catchphrase || rel.catchphrase}
-        </div>
+        {!isDuo && (
+          <div className="catch" style={{ color: auSt.cpColor }}>
+            {au?.catchphrase || rel.catchphrase}
+          </div>
+        )}
         {isDuo && pairSlots[1] && (
           <div className="quote r" style={{
             color: pairSlots[1].quoteColor,
