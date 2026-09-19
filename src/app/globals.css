@@ -1180,10 +1180,11 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .page-rel-detail > .au-list.au-list-hero{
   top:calc(100vh - 58px - 190px);right:auto;left:50%;transform:translateX(-50%);
 }
-/* 페어명 — AU 배지 줄 바로 위, 같은 가운데 축 (v4.4) */
+/* 페어명 — AU 배지 줄 바로 위, 같은 가운데 축 (v4.4~4.5, 위쪽 CP/NCP 뱃지도 같이 옮겨 옴) */
 .page-rel-detail > .pair-name{
-  position:absolute;top:calc(100vh - 58px - 232px);left:50%;transform:translateX(-50%);
-  z-index:6;color:#fff;font-weight:800;font-size:clamp(16px,2vw,22px);
+  position:absolute;top:calc(100vh - 58px - 248px);left:50%;transform:translateX(-50%);
+  z-index:6;display:flex;flex-direction:column;align-items:center;gap:6px;
+  color:#fff;font-weight:800;font-size:clamp(16px,2vw,22px);
   text-shadow:0 3px 12px rgba(0,0,0,.5);white-space:nowrap;
 }
 /* 관리자 액션 (좌상단) — 자관 수정 등 */

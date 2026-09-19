@@ -844,10 +844,17 @@ export default function RelDetailPage() {
       })()}
 
       {/* 페어명 — 전신 히어로일 때만, AU 배지 줄 바로 위에 작게 (v4.4 사용자 요청,
-          참고 사진의 "PairName" 자리). AU가 하나뿐이라 배지 줄이 안 보여도 페어명은 그대로 둔다 */}
+          참고 사진의 "PairName" 자리). CP/NCP 뱃지도 같이 옮겨 왔다 (v4.5 — 위쪽 큰 제목과
+          중복으로 두 번 보이던 걸 화살표로 여기로 옮기라고 표시해 줌). AU가 하나뿐이라
+          배지 줄이 안 보여도 페어명은 그대로 둔다 */}
       {isDuo && (
-        <div className="pair-name" style={{ fontFamily: familyOf(rel.fontId) }}>
-          {(!isBaseAu && au?.name?.trim()) || rel.name}
+        <div className="pair-name">
+          {auCpTag && (
+            <span className="pill" style={{ marginBottom: 6, ...(auSt.cpTagBg || auSt.cpTagFg
+              ? { background: auSt.cpTagBg, color: auSt.cpTagFg, borderColor: auSt.cpTagBg }
+              : {}) }}>{CP_LABEL[auCpTag]}</span>
+          )}
+          <div style={{ fontFamily: familyOf(rel.fontId) }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</div>
         </div>
       )}
 
@@ -930,8 +937,10 @@ export default function RelDetailPage() {
             ['--q-mark' as string]: pairSlots[0].quoteMarkColor,
           } as React.CSSProperties}>{pairSlots[0].quote}</div>
         )}
-        {/* CP/NCP 뱃지 — 자관명 위 가운데 (v2.0 사용자 요청) · 색은 자관 수정에서 */}
-        {auCpTag && (
+        {/* CP/NCP 뱃지 — 자관명 위 가운데 (v2.0 사용자 요청) · 색은 자관 수정에서.
+            2인 전신 히어로에서는 자관명을 AU 배지 줄 위(.pair-name)로 옮겨 뒀으므로
+            여기서 또 보이면 중복이라 숨긴다 (v4.5 사용자 확인 — 화살표로 옮기라고 표시함) */}
+        {auCpTag && !isDuo && (
           <div className="cp-top">
             <span className="pill" style={auSt.cpTagBg || auSt.cpTagFg
               ? { background: auSt.cpTagBg, color: auSt.cpTagFg, borderColor: auSt.cpTagBg }
@@ -940,11 +949,14 @@ export default function RelDetailPage() {
         )}
         {/* 자관명·캐치프레이즈 글씨색 — 직접 지정 시 (v1.9 사용자 요청, 미지정: 테마) */}
         {/* 이름 그림자 — 색·강도 직접 지정 (v2.0 사용자 요청, 미지정: 검정 60% · 기존과 동일) */}
-        {/* 이름 자체는 AU마다 다르게 붙일 수 있다 (v2.0 사용자 요청) — 안 정했으면 자관 이름 그대로 */}
-        <h1 style={{
-          fontFamily: familyOf(rel.fontId), color: auSt.nameColor,
-          textShadow: `0 4px 30px ${withAlpha(auSt.nameShadowColor ?? '#000000', 0.6 * ((auSt.nameShadow ?? 100) / 100))}`,
-        }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</h1>
+        {/* 이름 자체는 AU마다 다르게 붙일 수 있다 (v2.0 사용자 요청) — 안 정했으면 자관 이름 그대로.
+            2인 전신 히어로에서는 .pair-name으로 옮겨서 여기서는 안 그린다 (v4.5) */}
+        {!isDuo && (
+          <h1 style={{
+            fontFamily: familyOf(rel.fontId), color: auSt.nameColor,
+            textShadow: `0 4px 30px ${withAlpha(auSt.nameShadowColor ?? '#000000', 0.6 * ((auSt.nameShadow ?? 100) / 100))}`,
+          }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</h1>
+        )}
         <div className="catch" style={{ color: auSt.cpColor }}>
           {au?.catchphrase || rel.catchphrase}
         </div>
