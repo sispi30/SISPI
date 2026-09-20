@@ -1183,6 +1183,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .illu-toggle.seg{background:var(--illu-bg,color-mix(in srgb,var(--btn-dark,#1d2025) 82%,transparent));border-color:color-mix(in srgb,var(--accent-soft,#c96a73) 45%,transparent);backdrop-filter:blur(6px)}
 .illu-toggle.seg button{padding:5px 11px;font-size:calc(10px*var(--fs,1));color:var(--btn-dark-fg,#dfe2e7);opacity:.75}
 .illu-toggle.seg button.on{background:var(--illu-on,var(--accent));color:#fff;opacity:1}
+/* 2인 전신 히어로 — 전신/일러스트 스위치를 AU 버튼 바로 아래로 (v5.3 사용자 요청: 둘 사이 간격이
+   너무 떨어져 있었다). AU 줄(.au-list-hero)과 같은 기준(top:100vh-58px-190px, 높이 48px)에서
+   14px만 띄워 붙인다 — 히어로 높이가 화면 폭에 따라 달라도(86vh) AU 줄과 같이 움직인다 */
+.rel-center-full .illu-toggle{top:calc(100vh - 58px - 190px + 48px + 14px);bottom:auto}
 /* AU 리스트 (우상단, v1.8) — 자식 일괄 relative 규칙보다 뒤에서 absolute로 재고정 */
 .au-list{display:flex;gap:8px;align-items:flex-start}
 .page-rel-detail > .au-list{position:absolute;top:20px;right:28px;left:auto;z-index:6}
