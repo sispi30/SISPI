@@ -366,6 +366,7 @@ export interface RelAu {
   fulls?: Record<string, string>;  // AU별 전신 이미지 (charId → blob id, 없으면 멤버 공통 전신)
   headerImgId?: string | null;     // AU별 헤더 이미지 (v1.9) — base를 물려받지 않음, 이 AU 것만
   headerCrop?: import("@/components/ui/CropEditor").CropValue;
+  headerBlur?: number;             // AU별 헤더 배경 블러(px) (v5.0)
   // AU별 페이지 테마 (v1.9 사용자 확정) — 미지정이면 base(원본) 테마 따라가기
   theme?: { mode: 'site' | 'custom'; color?: string; tone?: 'dark' | 'light' };
   /** 상세 하단의 역극/로그 연동 리스트 숨김 (v2.0 사용자 요청) — AU마다 따로.
@@ -387,6 +388,7 @@ export interface Relation {
   arts?: string[];               // 아트 목록 (첫 장 = 대표 = 리스트 썸네일 원본)
   headerImgId?: string;          // 헤더 이미지 (v1.5 — 상단 풀폭 블러 + 페이드아웃)
   headerCrop?: import("@/components/ui/CropEditor").CropValue; // 헤더 이미지 위치 크롭 (원본 무손실)
+  headerBlur?: number;           // 헤더 배경 이미지 블러(px) (v5.0)
   themeMode?: 'site' | 'custom'; // 페이지 테마: 홈페이지 그대로 / 별도 테마컬러 (4.18 방식)
   themeColor?: string;           // 별도 테마컬러 (custom일 때)
   themeTone?: 'dark' | 'light';  // 테마컬러의 다크/라이트 느낌
