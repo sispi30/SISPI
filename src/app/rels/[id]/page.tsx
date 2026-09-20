@@ -475,7 +475,10 @@ export default function RelDetailPage() {
   const fullRefOf = (cid: string) =>
     (isBaseAu ? rel?.members.find(x => x.charId === cid)?.fullImgId : au?.fulls?.[cid]);
   const hasFull = !!rel?.members.some(m => fullRefOf(m.charId));
-  const single = hasFull ? (oneMode ?? rel?.illustMode === 'one') : true;
+  // 일러스트 모드는 대표(=리스트 썸네일 원본) 아트 말고 추가 일러스트가 더 있을 때만 (v5.4 사용자 요청) —
+  // 대표 썸네일 아트 한 장만 등록돼 있으면 상세에서 일러스트 모드를 보여 주지도, 고르게 하지도 않는다
+  const hasIllust = auArts.length > 1;
+  const single = hasIllust && (hasFull ? (oneMode ?? rel?.illustMode === 'one') : true);
 
   // 멤버 캐릭터 — AU 선택 시 그 캐릭터의 AU 프로필(이름·사진 등)로 합성해 표시 (v1.9)
   const auCharKey = rel && !isBaseAu && au ? `${rel.id}:${au.id}` : null;
@@ -1022,7 +1025,7 @@ export default function RelDetailPage() {
           </div>
           {/* 스위치 색 — 자관별 지정(EDIT) 없으면 테마·포인트색 (v1.9).
               전신이 하나도 없으면 고를 것이 없으므로 스위치 자체를 숨긴다 */}
-          {hasFull && (
+          {hasFull && hasIllust && (
             <div className="illu-toggle seg" style={{
               ['--illu-bg' as string]: auSt.illuBg,
               ['--illu-on' as string]: auSt.illuOn,
