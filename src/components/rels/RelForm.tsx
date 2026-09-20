@@ -66,6 +66,25 @@ export interface RelFormValue {
 
 interface FullDraft { ref?: string; file?: File; url?: string }
 
+/** 상세 전신 히어로(.rel-center-full)와 똑같은 가로:세로 비 (v5.2 사용자 요청).
+ *  상세는 화면 폭 100vw × 높이 calc(100vh - 58px) (폭 960px 이하는 86vh)로 깔린다.
+ *  예전 미리보기는 3:4.1 고정 상자라 여기서 잡은 위치·크기가 실제 화면과 어긋났다 —
+ *  지금 브라우저 창 크기로 같은 비를 계산해 쓰므로, 위치·크기(모두 상자 대비 %)가 그대로 일치한다. */
+function useHeroAspect() {
+  const [ratio, setRatio] = useState(16 / 9);
+  useEffect(() => {
+    const calc = () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      const boxH = w <= 960 ? h * 0.86 : h - 58;
+      if (w > 0 && boxH > 0) setRatio(w / boxH);
+    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
+  return ratio;
+}
+
 /** 전신 미리보기 한 장 (v1.9 조작 개편 — 사용자 확정)
  *  · 드래그 = 위치 이동 (가로·세로)  · 휠 = 크기 (비율 유지)  · 우클릭 = 앞으로/뒤로 메뉴
  *  배치는 상세 FullImg와 동일(부모 fb 박스 기준 하단 중앙 + 오프셋) — 미리보기 = 실제 */
@@ -185,6 +204,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     const refs = auObj ? (auObj.arts ?? []) : (initial?.arts ?? (initial?.thumbId ? [initial.thumbId] : []));
     return refs.map(r => ({ id: newId(), ref: r }));
   });
+  const heroRatio = useHeroAspect();
   const [thumbCrop, setThumbCrop] = useState<CropValue | undefined>(initial?.thumbCrop);
   const [cropOpen, setCropOpen] = useState(false);
   const [lb, setLb] = useState<number | null>(null);   // 아트 썸네일 클릭 → 원본 보기
@@ -485,16 +505,17 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               })}
             </div>
             {Object.keys(fulls).length > 0 && (
-              /* 실제 표시와 같은 비율(3/4.1)·같은 배치(fb 좌우 박스) — 여기서 잡은 크기가 상세 그대로 (v1.9) */
+              /* 실제 상세 화면(.rel-center-full)과 같은 가로:세로 비·같은 배치(.fb 좌우 박스:
+                 폭 44%, 높이 100%, 바닥 정렬) — 여기서 잡은 위치·크기가 상세 그대로 (v5.2).
+                 너무 커지지 않게 높이는 화면의 70%까지만 */
               <div style={{
-                position: 'relative', width: '100%', maxWidth: 340, margin: '0 auto', aspectRatio: '3/4.1', borderRadius: 10,
+                position: 'relative', width: `min(100%, calc(70vh * ${heroRatio}))`, margin: '0 auto', aspectRatio: `${heroRatio}`, borderRadius: 10,
                 overflow: 'hidden', background: 'linear-gradient(180deg,#262b33,#181b20)', border: '1px solid var(--line)',
               }}>
                 {pairMembers.map((m, i) => (
                   <div key={m.charId} style={{
-                    position: 'absolute', width: '62%', bottom: '-2%',
-                    top: i === 0 ? '5%' : '12%',
-                    ...(i === 0 ? { left: '-4%' } : { right: '-4%' }),
+                    position: 'absolute', width: '44%', height: '100%', bottom: 0,
+                    ...(i === 0 ? { left: 0 } : { right: 0 }),
                     zIndex: (fullFront ?? pairMembers[1]?.charId) === m.charId ? 3 : 2,
                   }}>
                     <FullPrevImg draft={fulls[m.charId]}
@@ -519,7 +540,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 )}
               </div>
             )}
-            <p className="hint" style={{ margin: '4px 0 0' }}>드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 — 미리보기 비율이 상세 화면과 동일합니다</p>
+            <p className="hint" style={{ margin: '4px 0 0' }}>드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
 
             {/* 좌/우 한마디 문구 (v2.0 사용자 발견 — 색만 있고 문구 칸이 없었다) */}
             <label className="k-label" style={{ margin: '10px 0 0' }}>한마디 — 상단 좌/우 대사</label>
