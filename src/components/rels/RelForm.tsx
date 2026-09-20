@@ -563,10 +563,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
 
         {/* 배경 이미지 (v1.5 → v5.0 사용자 요청 — 기존 "헤더 이미지" 선택을 환경설정의 배경
             변경(업로드·블러)과 똑같은 방식으로 바꿈. 위치 크롭은 없애고, 사이트 배경 설정처럼
-            업로드 + 블러 슬라이더만 남김. 여전히 상세 상단에 풀폭으로 깔리고 아래로 갈수록
-            투명해지며, 페이지 배경(상단 바 뒤)에도 같은 사진·블러가 이어져 보인다 */}
+            업로드 + 블러 슬라이더만 남김. v5.1 — 상단 배너·아래로 페이드아웃은 없애고, 환경설정
+            배경처럼 페이지 전체에 고정으로 깔려 끊김 없이 이어진다 */}
         <label className="k-label" style={{ margin: 0 }}>
-          배경 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 환경설정의 배경 변경과 같은 방식(업로드·블러). 상세 상단에 풀폭으로 깔리고 아래로 갈수록 투명해짐 (선택)</span>
+          배경 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 환경설정의 배경 변경과 같은 방식(업로드·블러). 페이지 전체 배경으로 깔림 (선택)</span>
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ width: 200, aspectRatio: '3/1', borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1.5px dashed var(--line)', cursor: 'var(--cur-pointer,pointer)' }}

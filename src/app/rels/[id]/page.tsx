@@ -411,14 +411,16 @@ export default function RelDetailPage() {
   // AU별 프로필 데이터 (v1.9) — base(원본)는 Relation 최상위, 그 외 AU는 aus 항목에 저장
   const isBaseAu = (au?.id ?? 'base') === 'base';
 
-  // 자관 헤더 사진 → 페이지(body) 배경으로도 깔아, 투명한 상단 바 뒤로 같은 사진이
-  // 이어져 보이게 한다 (v3.5 사용자 요청 — 전에는 상단 바 뒤가 빈 기본 배경이라 경계가 보였음)
+  // 자관 배경 이미지 (v5.1 사용자 요청) — 환경설정의 배경 변경과 똑같이 페이지 전체 배경으로
+  // (고정·cover·블러) 깐다. 예전처럼 상단에 배너를 따로 깔고 아래로 페이드아웃하지 않는다 —
+  // 상단 바 뒤·배너 아래 경계가 생기던 끊김이 없어지고, 화면 전체가 한 장으로 이어진다.
   const hdrIdForBg = (isBaseAu ? rel?.headerImgId : au?.headerImgId) ?? undefined;
+  const hdrBlurForBg = (isBaseAu ? rel?.headerBlur : au?.headerBlur) ?? 16;
   const hdrBgUrl = useBlobUrl(hdrIdForBg);
   useEffect(() => {
-    setPageBgImage(hdrBgUrl ?? null);
+    setPageBgImage(hdrBgUrl ?? null, hdrBlurForBg);
     return () => setPageBgImage(null);
-  }, [hdrBgUrl, setPageBgImage]);
+  }, [hdrBgUrl, hdrBlurForBg, setPageBgImage]);
 
   const auArts = (isBaseAu ? rel?.arts : au?.arts) ?? [];
   const auTimeline = (isBaseAu ? rel?.timeline : au?.timeline) ?? [];
@@ -800,39 +802,13 @@ export default function RelDetailPage() {
 
   return (
     <section className="page page-rel-detail">
-      {/* 헤더 이미지 (v1.5) — 풀폭 블러 + 아래로 페이드아웃.
-          AU별 완전 분리 (v1.9 사용자 확정): AU는 자기 헤더만 — base 것을 물려받지 않음.
+      {/* 배경 이미지는 위(useEffect)에서 페이지 전체 배경으로 깐다 (v5.1) — 여기엔 배너가 없다.
+          AU별 완전 분리 (v1.9 사용자 확정): AU는 자기 배경만 — base 것을 물려받지 않음.
           이미지가 없으면 아무것도 안 그리는 게 기본(v2.0) — 다만 자관 수정에서 배경 그라데이션을
           직접 지정해 뒀으면(base 소관, AU 무관) 그걸로 대신한다 */}
       {(() => {
         const hdrId = isBaseAu ? rel.headerImgId : (au?.headerImgId ?? undefined);
-        const hdrCrop = isBaseAu ? rel.headerCrop : au?.headerCrop;
-        if (hdrId) {
-          return (
-            <>
-              <div className="rel-backdrop">
-                <div className="img custom">
-                  <CroppedBlobImg fileRef={hdrId} crop={hdrCrop} ph="" />
-                </div>
-              </div>
-              {/* 상단 바 뒤로 보이는 58px만큼은 배너와 정확히 같은 크롭(잘라 낸 위치·확대율)이어야
-                  이가 맞는다 — CSS만으로는 body 배경의 cover 계산이 배너의 CropImg 계산과
-                  근본적으로 다른 방식이라 완벽히 못 맞췄음(v3.7 시도). 그래서 여기서는 배너와
-                  똑같은 요소(같은 fileRef·crop)를 하나 더 만들어, 58px짜리 창으로만 그 맨 위쪽을
-                  오려 보여준다 — 계산 방식이 같은 요소끼리라 반드시 이가 맞는다 (v3.8) */}
-              {typeof document !== 'undefined' && createPortal(
-                <div style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100vw', height: 66, overflow: 'hidden', zIndex: 5, pointerEvents: 'none' }}>
-                  <div className="rel-backdrop" style={{ position: 'absolute', top: -534, left: '50%', transform: 'translateX(-50%)' }}>
-                    <div className="img custom">
-                      <CroppedBlobImg fileRef={hdrId} crop={hdrCrop} ph="" />
-                    </div>
-                  </div>
-                </div>,
-                document.body,
-              )}
-            </>
-          );
-        }
+        if (hdrId) return null;
         if (!auSt.headerBgG1 && !auSt.headerBgG2) return null;
         return (
           <div className="rel-backdrop">

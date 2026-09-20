@@ -22,9 +22,10 @@ interface ThemeCtx {
   /** 페이지 배경만 따로 (v2.0 사용자 요청 — 자관별 배경 그라데이션).
    *  테마컬러(setPageTheme)가 팔레트 전체를 바꾸는 것과 달리 배경 두 색·각도만 덮어쓴다. */
   setPageBg: (bg: PageBg | null) => void;
-  /** 페이지 배경 사진 (v3.5 사용자 요청) — 자관 헤더 이미지를 body 배경으로도 깔아,
-   *  투명한 상단 바 뒤로 같은 사진이 이어져 보이게 한다. 이미 풀어 둔 blob/원격 URL을 그대로 받는다. */
-  setPageBgImage: (url: string | null) => void;
+  /** 페이지 배경 사진 (v3.5 → v5.1 사용자 요청) — 자관 배경 이미지를 환경설정의 배경 변경과
+   *  똑같이 페이지 전체 배경(고정·cover·블러)으로 깐다. 상단 배너·페이드 없이 화면 전체가
+   *  한 장으로 이어져 끊김이 없다. 이미 풀어 둔 blob/원격 URL과 블러(px)를 받는다. */
+  setPageBgImage: (url: string | null, blur?: number) => void;
   /** 현재(드래프트) 상태 — 기존 소비자 호환 형태 {mode, pointTone, vars} */
   state: ThemeState;
   dirty: boolean;                              // 저장 안 된 변경 존재
@@ -71,7 +72,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [presets, setPresets] = useState<ThemePreset[]>([]);
   const [pageColor, setPageColor] = useState<{ color: string; tone?: PointTone } | null>(null);
   const [pageBg, setPageBgState] = useState<PageBg | null>(null);   // 자관별 배경 (v2.0)
-  const [pageBgImageUrl, setPageBgImageUrl] = useState<string | null>(null); // 자관 헤더 사진 (v3.5)
+  const [pageBgImageState, setPageBgImageState] = useState<{ url: string; blur: number } | null>(null); // 자관 배경 사진 (v3.5, v5.1)
+  const pageBgImageUrl = pageBgImageState?.url ?? null;
+  const pageBgImageBlur = pageBgImageState?.blur ?? 0;
   const [loaded, setLoaded] = useState(false);   // 저장본 로드 전 기본 다크를 DOM에 쓰지 않기 (FOUC 방지)
 
   // 최초 로드 — v2 우선, 없으면 v1 마이그레이션 (기존 vars를 해당 모드의 수정본으로 승계)
@@ -121,22 +124,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--bg-angle', `${pageBg.angle}deg`);
       root.style.setProperty('--bg-image', 'none');   // 사이트 배경 이미지가 덮지 않게
     }
-    // 자관 헤더 사진(pageBgImageUrl, v3.5)이 있으면 흐림 정도도 페이지 안 배너와 맞춘다
-    // (.rel-backdrop .img가 16px로 블러하는 것과 동일값) — 사이트 테마의 블러값을 여기서
-    // 덮어써 두고, pageBgImageUrl이 풀리면 이 effect가 다시 실행되면서 자연히 테마값으로
-    // 되돌아간다(별도 cleanup 불필요) (v3.6 사용자 제보 — 블러값이 달라 눈에 띄었음)
+    // 자관 배경 사진(pageBgImageUrl)이 있으면 블러는 자관에서 지정한 값으로 — 환경설정의
+    // 배경 변경과 똑같이 화면 전체(고정)에 cover로 깔고, 밝기·채도·높이는 건드리지 않는다 (v5.1).
+    // pageBgImageUrl이 풀리면 이 effect가 다시 실행되면서 자연히 테마값으로 되돌아간다
     if (pageBgImageUrl) {
-      root.style.setProperty('--bg-blur', '16px');
-      root.style.setProperty('--bg-brightness', '.8');
-      root.style.setProperty('--bg-saturate', '.9');
-      // 자관 배너(.rel-backdrop)와 상자 높이를 똑같이 맞춰야 cover 크롭 비율이 일치한다 (v3.7)
-      root.style.setProperty('--bg-page-height', '600px');
-    } else {
-      root.style.removeProperty('--bg-brightness');
-      root.style.removeProperty('--bg-saturate');
-      root.style.removeProperty('--bg-page-height');
+      root.style.setProperty('--bg-blur', `${pageBgImageBlur}px`);
     }
-  }, [draft, pageColor, pageBg, pageBgImageUrl, loaded]);
+    root.style.removeProperty('--bg-brightness');
+    root.style.removeProperty('--bg-saturate');
+    root.style.removeProperty('--bg-page-height');
+  }, [draft, pageColor, pageBg, pageBgImageUrl, pageBgImageBlur, loaded]);
 
   // 배경 이미지 (v1.9) — IndexedDB 파일을 blob URL로 풀어 --bg-image 적용 (그라데이션 모드면 해제).
   // 자관 헤더 사진(pageBgImageUrl, v3.5)이 있으면 그게 최우선 — 상단 바가 투명이라
@@ -250,7 +247,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setPageTheme = useCallback((color: string | null, tone?: PointTone) =>
     setPageColor(color ? { color, tone } : null), []);
   const setPageBg = useCallback((bg: PageBg | null) => setPageBgState(bg), []);
-  const setPageBgImage = useCallback((url: string | null) => setPageBgImageUrl(url), []);
+  const setPageBgImage = useCallback((url: string | null, blur?: number) =>
+    setPageBgImageState(url ? { url, blur: Math.max(0, blur ?? 0) } : null), []);
 
   // 기존 소비자 호환 — state.vars = 현재 모드의 드래프트 값
   const state: ThemeState = useMemo(() => ({
