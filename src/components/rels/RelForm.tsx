@@ -31,6 +31,7 @@ export interface RelFormValue {
   headerImgId?: string;      // 헤더 이미지 (v1.5 — 풀폭 블러 + 페이드아웃)
   headerCrop?: CropValue;    // 헤더 위치 크롭 (원본 무손실)
   headerRemoved?: boolean;   // 헤더 제거 상태 (v1.9 — AU 편집에서 "없음 명시" 저장용)
+  headerBlur?: number;       // 배경 이미지 블러(px) — 환경설정 배경 변경과 같은 슬라이더 (v5.0)
   themeFollow?: boolean;     // AU 편집: true면 기존(base) 페이지 테마 따라가기 (v1.9)
   illuBg?: string;           // 전신/일러 스위치 배경색 (v1.9 — 미지정: 테마)
   illuOn?: string;           // 전신/일러 스위치 선택색 (미지정: 포인트색)
@@ -192,9 +193,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [headerRemoved, setHeaderRemoved] = useState(false);
   // AU 편집 모드 — 그 AU의 헤더만 시작점 (base 것을 복사해오지 않음, v1.9 AU별 완전 분리)
   const initHeaderId = auObj ? (auObj.headerImgId ?? undefined) : initial?.headerImgId;
+  const initHeaderBlur = auObj ? auObj.headerBlur : initial?.headerBlur;
+  const [headerBlur, setHeaderBlur] = useState(initHeaderBlur ?? 16);
+  // 위치 크롭 UI는 없앴지만(v5.0), 예전에 저장해 둔 값이 있으면 그냥 들고만 있다가 그대로 돌려준다
   const initHeaderCrop = auObj ? auObj.headerCrop : initial?.headerCrop;
-  const [headerCrop, setHeaderCrop] = useState<CropValue | undefined>(initHeaderCrop);
-  const [headerCropOpen, setHeaderCropOpen] = useState(false);
   // 페이지 테마 (v1.9 AU별) — AU 편집: 기존(base) 따라가기 또는 이 AU 전용 테마
   const [themeFollow, setThemeFollow] = useState<boolean>(auObj ? auObj.theme === undefined : false);
   const [themeMode, setThemeMode] = useState<'site' | 'custom'>(
@@ -315,7 +317,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       arts: artIds,
       thumbCrop,
       headerImgId: headerFile ? await putBlob(headerFile) : (headerRemoved ? undefined : initHeaderId),
-      headerCrop: headerRemoved ? undefined : headerCrop,
+      headerCrop: (headerRemoved || headerFile) ? undefined : initHeaderCrop,
+      headerBlur,
       headerRemoved,
       themeFollow,
       illuBg: illuCustom ? illuBg : undefined,
@@ -558,59 +561,53 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
           </>
         )}
 
-        {/* 헤더 이미지 (v1.5) — 상단 풀폭 블러 + 아래로 페이드아웃 · 위치 크롭(원본 무손실) */}
+        {/* 배경 이미지 (v1.5 → v5.0 사용자 요청 — 기존 "헤더 이미지" 선택을 환경설정의 배경
+            변경(업로드·블러)과 똑같은 방식으로 바꿈. 위치 크롭은 없애고, 사이트 배경 설정처럼
+            업로드 + 블러 슬라이더만 남김. 여전히 상세 상단에 풀폭으로 깔리고 아래로 갈수록
+            투명해지며, 페이지 배경(상단 바 뒤)에도 같은 사진·블러가 이어져 보인다 */}
         <label className="k-label" style={{ margin: 0 }}>
-          헤더 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 상단에 풀폭 블러로 깔리고 아래로 갈수록 투명해짐 (선택)</span>
+          배경 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 환경설정의 배경 변경과 같은 방식(업로드·블러). 상세 상단에 풀폭으로 깔리고 아래로 갈수록 투명해짐 (선택)</span>
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ width: 200, aspectRatio: '3/1', borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1.5px dashed var(--line)', cursor: 'var(--cur-pointer,pointer)' }}
             onClick={() => document.getElementById('relHeaderF')?.click()}
             {...fileDrop(fl => {
               const hf = fl[0];
-              if (hf) {
-                setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false);
-                setHeaderCrop(undefined); setHeaderCropOpen(true);
-              }
+              if (hf) { setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false); }
             })}>
             {headerUrl ? (
               <div style={{ position: 'absolute', inset: 0, filter: 'blur(2px)' }}>
-                <CropImg src={headerUrl} crop={headerCrop} />
+                <CropImg src={headerUrl} />
               </div>
             ) : (!headerRemoved && initHeaderId) ? (
-              <HeaderPreview refId={initHeaderId} crop={headerCrop} />
+              <HeaderPreview refId={initHeaderId} />
             ) : (
-              <div className="ph" style={{ width: '100%', height: '100%' }}><span style={{ fontSize: 10 }}>HEADER</span></div>
+              <div className="ph" style={{ width: '100%', height: '100%' }}><span style={{ fontSize: 10 }}>BACKGROUND</span></div>
             )}
           </div>
           <input id="relHeaderF" type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => {
               const hf = e.target.files?.[0];
-              if (hf) {
-                setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false);
-                setHeaderCrop(undefined); setHeaderCropOpen(true);   // 업로드 즉시 위치 지정
-              }
+              if (hf) { setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false); }
               e.target.value = '';
             }} />
+          <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+            onClick={() => document.getElementById('relHeaderF')?.click()}>
+            {(headerUrl || (!headerRemoved && initHeaderId)) ? 'CHANGE' : 'UPLOAD'}
+          </button>
           {(headerUrl || (!headerRemoved && initHeaderId)) && (
-            <>
-              <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
-                onClick={() => setHeaderCropOpen(true)}>✂ 위치</button>
-              <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
-                onClick={() => { setHeaderFile(null); setHeaderUrl(''); setHeaderRemoved(true); setHeaderCrop(undefined); }}>제거</button>
-            </>
+            <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+              onClick={() => { setHeaderFile(null); setHeaderUrl(''); setHeaderRemoved(true); }}>REMOVE</button>
           )}
+          <span className="cp-lb">블러</span>
+          <KStep value={headerBlur} min={0} max={30} step={2} suffix="px" onChange={setHeaderBlur} />
         </div>
-        {headerCropOpen && (headerUrl || (!headerRemoved && initHeaderId)) && (
-          <HeaderCrop src={headerUrl} refId={!headerUrl ? initHeaderId : undefined} crop={headerCrop}
-            onClose={() => setHeaderCropOpen(false)}
-            onApply={c => { setHeaderCrop(c); setHeaderCropOpen(false); }} />
-        )}
 
-        {/* 헤더 이미지가 없을 때 대신 깔 배경 (v2.0 사용자 요청) — 디자인 탭 배경 설정과 같은 방식.
+        {/* 배경 이미지가 없을 때 대신 깔 배경 (v2.0 사용자 요청) — 디자인 탭 배경 설정과 같은 방식.
             지정하지 않으면 예전처럼 그 자리엔 아무것도 안 그린다. AU마다 따로 정할 수 있다 */}
         {(
           <div style={{ marginTop: 10 }}>
-            <KCheck label="헤더 이미지 없을 때 배경 직접 지정" checked={headerBgCustom} onChange={setHeaderBgCustom} />
+            <KCheck label="배경 이미지 없을 때 배경 직접 지정" checked={headerBgCustom} onChange={setHeaderBgCustom} />
             {headerBgCustom && (
               <div className="cf-stack" style={{ marginTop: 8 }}>
                 <div className="cf-row">
@@ -849,25 +846,15 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   );
 }
 
-/** 저장된 헤더 이미지 미리보기 — 위치 크롭 반영 */
-function HeaderPreview({ refId, crop }: { refId: string; crop?: CropValue }) {
+/** 저장된 배경 이미지 미리보기 (v5.0 — 사이트 배경 설정과 같은 방식으로 단순화, 위치 크롭 없음) */
+function HeaderPreview({ refId }: { refId: string }) {
   const url = useBlobUrl(refId);
   if (!url) return <div className="ph" style={{ width: '100%', height: '100%' }} />;
   return (
     <div style={{ position: 'absolute', inset: 0, filter: 'blur(2px)' }}>
-      <CropImg src={url} crop={crop} />
+      <CropImg src={url} />
     </div>
   );
-}
-
-/** 헤더 위치 크롭 — 새 파일(objectURL) 또는 저장 블롭 소스, 프레임 비율 = 상세 헤더(약 3:1) */
-function HeaderCrop({ src, refId, crop, onClose, onApply }: {
-  src: string; refId?: string; crop?: CropValue; onClose: () => void; onApply: (c: CropValue) => void;
-}) {
-  const loaded = useBlobUrl(refId);
-  const s = src || loaded;
-  if (!s) return null;
-  return <CropEditor open src={s} aspect={3} aspectLabel="헤더 비율" initial={crop} onClose={onClose} onApply={onApply} />;
 }
 
 /** 첫 아트(새 파일 또는 저장된 blob)를 소스로 4:3 크롭 편집기 */
