@@ -178,6 +178,12 @@ export async function getBlob(id: string): Promise<Blob | null> {
     try {
       const res = await fetch(id);
       return res.ok ? await res.blob() : null;
+    } catch { /* 저장소 버킷 CORS 미설정 등으로 막힘 — 아래 같은 출처 중계로 다시 시도 */ }
+    // 브라우저가 CORS로 막으면 서버가 대신 받아 같은 출처로 내주는 중계(/api/font — 저장소 호스트만 허용,
+    // 폰트 등록에 이미 쓰는 것)로 받는다. 마우스 커서(.ani) 미리보기·적용이 이 경로를 쓴다 (v5.7)
+    try {
+      const res = await fetch(`/api/font?u=${encodeURIComponent(id)}`);
+      return res.ok ? await res.blob() : null;
     } catch { return null; }
   }
   const db = await openDb();
