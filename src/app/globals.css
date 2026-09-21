@@ -1138,6 +1138,11 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .rel-center .fb-l{left:0;z-index:2}
 .rel-center .fb-r{right:0;z-index:2}
 .rel-center.one-mode .fb{display:none}
+/* 모바일 뷰(960px 이하) 자관 상세는 main 브랜치 화면 그대로 (v5.5 사용자 요청) —
+   가운데 카드의 전신 배치를 main과 같게: 폭 62%, 좌우로 살짝 삐져나오고 오른쪽이 아래로 내려앉음 */
+.rel-center.rel-center-m .fb{width:62%}
+.rel-center.rel-center-m .fb-l{left:-4%;z-index:2}
+.rel-center.rel-center-m .fb-r{right:-4%;top:12%;z-index:3}
 /* 전면 개편(v4.0 사용자 확정) — 카드 경계를 없애고 화면 양 끝까지 가득 채우는 히어로.
    기존 .rel-center(다인 자관 그룹 일러 등)는 그대로 두고, 이 보정 클래스만 덧붙여 겹쳐쓴다 */
 .rel-center-full{
