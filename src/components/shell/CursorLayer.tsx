@@ -63,8 +63,37 @@ export function CursorLayer() {
       for (const key of Object.keys(st.states) as CursorState[]) {
         const entry = st.states[key];
         if (!entry) continue;
-        const blob = await getBlob(entry.imgId);
-        if (!blob || cancelled) continue;
+        let blob = await getBlob(entry.imgId);
+        // 저장소 CORS가 막혀 직접 받지 못하면 같은 출처 중계(/api/font — 폰트 등록에 이미 쓰는 저장소
+        // 허용 목록 중계)로 대신 받는다 → .ani도 프레임을 뽑아 재생할 수 있다 (v5.6 사용자 제보 —
+        // 「모든 상태에 ani를 등록했는데 반영되지 않는다」)
+        if (!blob && /^https?:/.test(entry.imgId)) {
+          try {
+            const res = await fetch(`/api/font?u=${encodeURIComponent(entry.imgId)}`);
+            if (res.ok) blob = await res.blob();
+          } catch { /* 아래 폴백으로 */ }
+        }
+        if (cancelled) continue;
+        if (!blob) {
+          // 서버 모드에서 등록한 커서는 저장소(Firebase Storage 등)의 공개 주소인데, getBlob은 그 주소를
+          // fetch로 받아 온다 — 저장소 버킷에 CORS가 안 열려 있으면 fetch만 막혀서 커서가 조용히 통째로
+          // 빠졌다 (v5.6 사용자 제보 — 「등록했는데 반영되지 않는다」). CSS의 cursor:url()은 이미지처럼
+          // CORS 없이 불러지므로, 받아 오지 못했을 땐 그 주소를 그대로 커서로 쓴다.
+          // (.ani는 프레임을 뽑으려면 내용을 읽어야 해서 위 중계로도 못 받으면 쓸 수 없다)
+          if (/^https?:/.test(entry.imgId)) {
+            const path = decodeURIComponent(entry.imgId.split('?')[0]).toLowerCase();
+            if (!path.endsWith('.ani')) {
+              const rule = RULES[key];
+              const hs = /\.(cur|ico)$/.test(path) ? '' : ` ${entry.hx} ${entry.hy}`;
+              staticParts.push(`${rule.sel}{cursor:url("${entry.imgId}")${hs}, ${rule.fallback} !important}`);
+              const vn = VAR_NAME[key];
+              if (vn) staticParts.push(`:root{${vn}:url("${entry.imgId}")${hs}, ${rule.fallback}}`);
+            } else {
+              console.warn('[ohome] 애니메이션 커서(.ani)를 받아 오지 못했습니다 — 저장소 CORS 설정 또는 /api/font 중계 확인이 필요합니다');
+            }
+          }
+          continue;
+        }
         const buf = await blob.arrayBuffer();
         if (cancelled) return;
         const ani = parseAni(buf);
