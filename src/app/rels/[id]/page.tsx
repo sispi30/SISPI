@@ -222,6 +222,19 @@ function MiniProf({ member, char, isAdmin, onGo, onRemove, auUnregistered, side,
 }
 
 /** 페어에서 멤버가 비었을 때 자리 카드 */
+/** 모바일 뷰 판정 (v5.5) — main 브랜치가 자관 세부를 세로 스택으로 바꾸는 폭(960px)과 같다 */
+function useMobileRelView() {
+  const [mob, setMob] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 960px)');
+    const on = () => setMob(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return mob;
+}
+
 function EmptyCard({ isAdmin, onAdd }: { isAdmin: boolean; onAdd: () => void }) {
   return (
     <div className="panel mini-prof" style={{
@@ -372,6 +385,7 @@ export default function RelDetailPage() {
   // 자관별 페이지 테마 (4.18 방식) — 별도 테마컬러면 홈 전체 팔레트를 임시 전환, 벗어나면 원복.
   // AU별 (v1.9): AU에 테마를 지정했으면 그것, 미지정이면 base(원본) 테마 따라가기
   const { setPageTheme, setPageBg, setPageBgImage } = useTheme();
+  const isMob = useMobileRelView();   // 모바일 뷰는 main 브랜치 화면 (v5.5)
   const themeAu = rel?.aus.find(a => a.id === auId);
   const auTheme = themeAu && themeAu.id !== 'base' ? themeAu.theme : undefined;
   const effThemeMode = auTheme?.mode ?? rel?.themeMode;
@@ -407,6 +421,12 @@ export default function RelDetailPage() {
   }, [loaded, charsLoaded, rel?.id, rel?.members.length, chars.length]);
 
   const isDuo = rel ? (rel.kind ? rel.kind === 'pair' : rel.members.length === 2) : false;
+  // PC의 2인 전신 히어로(v4.x)는 PC에서만 — 모바일은 main의 카드형 구성 (v5.5)
+  const heroDuo = isDuo && !isMob;
+  // 이름/본문 폰트·전신 앞뒤 — main 화면(모바일)에서 쓴다 (이 브랜치는 AU별 폰트 지정이 없어 자관 값 그대로)
+  const auFont = rel?.fontId;
+  const auBodyFont = rel?.bodyFontId;
+  const auFullFront = rel?.fullFront;
   const au = rel?.aus.find(a => a.id === auId) ?? rel?.aus[0];
   // AU별 프로필 데이터 (v1.9) — base(원본)는 Relation 최상위, 그 외 AU는 aus 항목에 저장
   const isBaseAu = (au?.id ?? 'base') === 'base';
@@ -826,7 +846,7 @@ export default function RelDetailPage() {
           참고 사진의 "PairName" 자리). CP/NCP 뱃지도 같이 옮겨 왔다 (v4.5 — 위쪽 큰 제목과
           중복으로 두 번 보이던 걸 화살표로 여기로 옮기라고 표시해 줌). AU가 하나뿐이라
           배지 줄이 안 보여도 페어명은 그대로 둔다 */}
-      {isDuo && (
+      {heroDuo && (
         <div className="pair-name">
           {auCpTag && (
             <span className="pill" style={{ marginBottom: 6, ...(auSt.cpTagBg || auSt.cpTagFg
@@ -838,7 +858,7 @@ export default function RelDetailPage() {
       )}
 
       {(rel.aus.length > 1 || isAdmin) && (
-        <div className={`au-list ${isDuo ? 'au-list-hero' : ''}`}>
+        <div className={`au-list ${heroDuo ? 'au-list-hero' : ''}`}>
           {/* AU 네모에 대표 이미지를 넣는다 (v2.0 사용자 요청 — 색만 들어가 있어 밋밋했다).
               원본은 자관 썸네일(잡아 둔 크롭 그대로), 그 외 AU는 그 AU의 첫 아트 = 대표 이미지.
               등록된 이미지가 없으면 예전처럼 색 플레이스홀더가 그대로 나온다.
@@ -863,7 +883,7 @@ export default function RelDetailPage() {
 
       {/* 관리자 액션 — 기본은 좌상단, 2인 전신 히어로에서는 BGM 플레이어 위 우하단으로 (v4.6 사용자 요청) */}
       {isAdmin && (
-        <div className={`rel-admin-actions ${isDuo ? 'rel-admin-hero' : ''}`}>
+        <div className={`rel-admin-actions ${heroDuo ? 'rel-admin-hero' : ''}`}>
           {/* AU 선택 중이면 그 AU의 일러·캐치프레이즈를 편집 (v1.9) */}
           <button className="btn btn-dark" style={{ height: 30, padding: '0 13px', fontSize: 11 }}
             onClick={() => router.push(`/rels/${rel.id}/edit${isBaseAu ? '' : `?au=${au!.id}`}`)}>
@@ -909,7 +929,7 @@ export default function RelDetailPage() {
           { label: 'CANCEL', kind: 'ghost', onClick: () => setDelAsk(false) },
         ]} />
 
-      <div className={`rel-hero ${isDuo ? 'rel-hero-flat' : ''}`}>
+      <div className={`rel-hero ${heroDuo ? 'rel-hero-flat' : ''}`}>
         {isDuo && pairSlots[0] && (
           <div className="quote l" style={{
             color: pairSlots[0].quoteColor,
@@ -919,7 +939,7 @@ export default function RelDetailPage() {
         {/* CP/NCP 뱃지 — 자관명 위 가운데 (v2.0 사용자 요청) · 색은 자관 수정에서.
             2인 전신 히어로에서는 자관명을 AU 배지 줄 위(.pair-name)로 옮겨 뒀으므로
             여기서 또 보이면 중복이라 숨긴다 (v4.5 사용자 확인 — 화살표로 옮기라고 표시함) */}
-        {auCpTag && !isDuo && (
+        {auCpTag && !heroDuo && (
           <div className="cp-top">
             <span className="pill" style={auSt.cpTagBg || auSt.cpTagFg
               ? { background: auSt.cpTagBg, color: auSt.cpTagFg, borderColor: auSt.cpTagBg }
@@ -930,13 +950,13 @@ export default function RelDetailPage() {
         {/* 이름 그림자 — 색·강도 직접 지정 (v2.0 사용자 요청, 미지정: 검정 60% · 기존과 동일) */}
         {/* 이름 자체는 AU마다 다르게 붙일 수 있다 (v2.0 사용자 요청) — 안 정했으면 자관 이름 그대로.
             2인 전신 히어로에서는 .pair-name으로 옮겨서 여기서는 안 그린다 (v4.5) */}
-        {!isDuo && (
+        {!heroDuo && (
           <h1 style={{
-            fontFamily: familyOf(rel.fontId), color: auSt.nameColor,
+            fontFamily: familyOf(isMob ? auFont : rel.fontId), color: auSt.nameColor,
             textShadow: `0 4px 30px ${withAlpha(auSt.nameShadowColor ?? '#000000', 0.6 * ((auSt.nameShadow ?? 100) / 100))}`,
           }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</h1>
         )}
-        {!isDuo && (
+        {!heroDuo && (
           <div className="catch" style={{ color: auSt.cpColor }}>
             {au?.catchphrase || rel.catchphrase}
           </div>
@@ -949,7 +969,7 @@ export default function RelDetailPage() {
         )}
       </div>
 
-      {isDuo ? (
+      {heroDuo ? (
         <div className={`rel-center rel-center-full ${single ? 'one-mode' : ''}`}
           style={{ fontFamily: familyOf(rel.bodyFontId) }}>
           {/* 전신 — 등록 이미지(AU별 우선) + 크기/앞뒤는 자관 수정의 미리보기에서 (v1.9).
@@ -1050,6 +1070,81 @@ export default function RelDetailPage() {
             </div>,
             document.body,
           )}
+        </div>
+      ) : isDuo ? (
+      /* 모바일 뷰(960px 이하)는 main 브랜치의 자관 상세 화면 그대로 (v5.5 사용자 요청) —
+         제목이 위에, 가운데 일러/전신 카드, 좌우 미니 프로필이 세로로 쌓이는 예전 구성 */
+        <div className="rel-body" style={{ fontFamily: familyOf(auBodyFont) }}>
+          {pairSlots[0]
+            ? <MiniProf member={pairSlots[0]} char={charOf(pairSlots[0].charId)} isAdmin={isAdmin}
+                auUnregistered={auUnregOf(pairSlots[0].charId)}
+                side="l" onMoveSide={() => moveSide(pairSlots[0]!.charId)}
+                onFaceCrop={ref => setFaceEdit({ charId: pairSlots[0]!.charId, ref, crop: pairSlots[0]!.faceCrop })}
+                onGo={() => router.push(charHref(pairSlots[0]!.charId))}
+                onRemove={() => removeMember(pairSlots[0]!.charId)} />
+            : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
+          <div className={`rel-center rel-center-m ${single ? 'one-mode' : ''}`}
+            style={{ background: 'rgba(255,255,255,.04)', border: '1px solid var(--line-dark)' }}>
+            {/* 전신 — 등록 이미지(AU별 우선) + 크기/앞뒤는 자관 수정의 미리보기에서 (v1.9) */}
+            {pairSlots.map((sl, i) => {
+              const cid = sl?.charId ?? '';
+              // 전신 위치·크기도 AU 값 우선 (v2.0) — sl이 이미 AU 값으로 갈아 끼운 멤버다
+              const m = sl ?? rel.members.find(x => x.charId === cid);
+              // AU는 자기 전신만 — base 전신을 물려받지 않음 (v1.9 사용자 확정)
+              const fullRef = isBaseAu ? m?.fullImgId : au?.fulls?.[cid];
+              if (!fullRef) return null;   // 등록 안 된 전신은 자리도 만들지 않는다
+              const front = (auFullFront ?? pairSlots[1]?.charId) === cid;
+              return (
+                <div key={i} className={`fb fb-${i === 0 ? 'l' : 'r'}`}
+                  style={{ background: 'transparent', zIndex: front ? 3 : 2 }}>
+                  <FullImg refId={fullRef} scale={m?.fullScale ?? 90} offX={m?.fullOffX ?? 0} offY={m?.fullOffY ?? 0}
+                    shadow={fullShadow(auSt.nameShadowColor, auSt.nameShadow)} />
+                </div>
+              );
+            })}
+            <div className="single" ref={artBoxRef} style={{ cursor: auArts.length > 1 ? 'pointer' : undefined }}
+              onClick={() => { const n = auArts.length; if (n > 1) setArtIdx(i => (i + 1) % n); }}
+              onContextMenu={e => {
+                if (!isAdmin || !curArt) return;
+                e.preventDefault();
+                setArtCtx({ x: e.clientX, y: e.clientY, ref: curArt });
+              }}>
+              {auArts.length > 0 ? (
+                <>
+                  {/* 잡아 둔 위치가 있으면 그대로 (v2.0) — 없으면 예전처럼 통째로 */}
+                  <CroppedBlobImg fileRef={auArts[Math.min(artIdx, auArts.length - 1)]} crop={rel.artCrops?.[curArt]} ph="" label="MAIN ILLUST" />
+                  {auArts.length > 1 && (
+                    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 44, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 3 }}>
+                      {auArts.map((_, i) => (
+                        <i key={i} style={{ width: i === Math.min(artIdx, auArts.length - 1) ? 16 : 6, height: 6, borderRadius: 4, background: i === Math.min(artIdx, auArts.length - 1) ? '#fff' : 'rgba(255,255,255,.45)', transition: '.2s' }} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="ph" style={{ position: 'absolute', inset: 0 }}><span>MAIN ILLUST</span></div>
+              )}
+            </div>
+            {/* 스위치 색 — 자관별 지정(EDIT) 없으면 테마·포인트색 (v1.9).
+                전신이 하나도 없으면 고를 것이 없으므로 스위치 자체를 숨긴다 */}
+            {hasFull && hasIllust && (
+              <div className="illu-toggle seg" style={{
+                ['--illu-bg' as string]: auSt.illuBg,
+                ['--illu-on' as string]: auSt.illuOn,
+              } as React.CSSProperties}>
+                <button className={!single ? 'on' : ''} onClick={() => setOneMode(false)}>전신</button>
+                <button className={single ? 'on' : ''} onClick={() => setOneMode(true)}>일러스트</button>
+              </div>
+            )}
+          </div>
+          {pairSlots[1]
+            ? <MiniProf member={pairSlots[1]} char={charOf(pairSlots[1].charId)} isAdmin={isAdmin}
+                auUnregistered={auUnregOf(pairSlots[1].charId)}
+                side="r" onMoveSide={() => moveSide(pairSlots[1]!.charId)}
+                onFaceCrop={ref => setFaceEdit({ charId: pairSlots[1]!.charId, ref, crop: pairSlots[1]!.faceCrop })}
+                onGo={() => router.push(charHref(pairSlots[1]!.charId))}
+                onRemove={() => removeMember(pairSlots[1]!.charId)} />
+            : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
         </div>
       ) : (
         /* 다인 자관 — 프로토타입 multi-body: 좌 멤버 리스트(430px) + 우 그룹 일러 */
