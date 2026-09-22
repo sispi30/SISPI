@@ -423,10 +423,6 @@ export default function RelDetailPage() {
   const isDuo = rel ? (rel.kind ? rel.kind === 'pair' : rel.members.length === 2) : false;
   // PC의 2인 전신 히어로(v4.x)는 PC에서만 — 모바일은 main의 카드형 구성 (v5.5)
   const heroDuo = isDuo && !isMob;
-  // 이름/본문 폰트·전신 앞뒤 — main 화면(모바일)에서 쓴다 (이 브랜치는 AU별 폰트 지정이 없어 자관 값 그대로)
-  const auFont = rel?.fontId;
-  const auBodyFont = rel?.bodyFontId;
-  const auFullFront = rel?.fullFront;
   const au = rel?.aus.find(a => a.id === auId) ?? rel?.aus[0];
   // AU별 프로필 데이터 (v1.9) — base(원본)는 Relation 최상위, 그 외 AU는 aus 항목에 저장
   const isBaseAu = (au?.id ?? 'base') === 'base';
