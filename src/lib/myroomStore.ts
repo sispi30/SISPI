@@ -19,6 +19,13 @@ export interface MyRoomItem {
   z: number;
 }
 
+/** 방 배경 — 환경설정의 배경 설정과 같은 구조(그라데이션 2색+각도 / 이미지+블러) */
+export interface MyRoomBg {
+  type: 'gradient' | 'image';
+  g1?: string; g2?: string; angle?: number;   // 그라데이션
+  imageId?: string; blur?: number;            // 이미지 (blobStore 참조)
+}
+
 /** 마이룸 방(글) 하나 */
 export interface MyRoomPost {
   /** 소속 섹션 (v2.0 다중 섹션 패턴) — 없으면 기본 섹션 */
@@ -29,6 +36,8 @@ export interface MyRoomPost {
   authorId: string;
   date: string;        // ISO
   items: MyRoomItem[];
+  /** 지정하지 않으면 사이트 기본 배경을 그대로 씀 */
+  bg?: MyRoomBg;
 }
 
 export const MYROOM_SEED: MyRoomPost[] = [];

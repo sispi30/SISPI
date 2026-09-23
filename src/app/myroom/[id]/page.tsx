@@ -9,14 +9,16 @@ import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
 import { useSectionParam, secQuery } from '@/lib/sectionStore';
 import {
-  MyRoomPost, MyRoomItem, MYROOM_SEED,
+  MyRoomPost, MyRoomItem, MyRoomBg, MYROOM_SEED,
   MyRoomCategory, MYROOM_CATEGORY_SEED, MyRoomCatalogItem, MYROOM_CATALOG_SEED,
   newMyRoomItemId,
 } from '@/lib/myroomStore';
 import { RoomCanvas } from '@/components/myroom/RoomCanvas';
 import { CatalogPanel } from '@/components/myroom/CatalogPanel';
-import { getBlob } from '@/lib/blobStore';
-import { KInput } from '@/components/ui/Kit';
+import { getBlob, useBlobUrl, putBlob } from '@/lib/blobStore';
+import { useTheme } from '@/lib/ThemeProvider';
+import { KInput, KStep, KCheck } from '@/components/ui/Kit';
+import { ColorField } from '@/components/ui/ColorField';
 import { Modal, useConfirmDelete } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 
@@ -51,6 +53,8 @@ function RoomEditorInner() {
   const room = rooms.find(r => r.id === params.id);
   const canManage = !!room && !!user && (isAdmin || room.authorId === user.id);
 
+  const { setPageBg, setPageBgImage } = useTheme();
+
   const [editMode, setEditMode] = useState(false);
   const [zoom, setZoom] = useState(1); // 30% ~ 200%, 화면비율 확대/축소
   const [items, setItems] = useState<MyRoomItem[]>([]);
@@ -59,7 +63,33 @@ function RoomEditorInner() {
   const [capturing, setCapturing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
+  const [bgCustom, setBgCustom] = useState(false);
+  const [bgType, setBgType] = useState<'gradient' | 'image'>('gradient');
+  const [bgG1, setBgG1] = useState('#2b3038');
+  const [bgG2, setBgG2] = useState('#121418');
+  const [bgAngle, setBgAngle] = useState(180);
+  const [bgImageId, setBgImageId] = useState<string | undefined>(undefined);
+  const [bgBlur, setBgBlur] = useState(0);
   const del = useConfirmDelete();
+
+  // 이 방의 배경을 지정해뒀으면 환경설정 배경 대신 이 방에 있는 동안만 덮어쓴다 (자관 배경과 같은 방식)
+  useEffect(() => {
+    const bg = room?.bg;
+    if (bg?.type === 'gradient') {
+      setPageBg({ g1: bg.g1 ?? '#2b3038', g2: bg.g2 ?? '#121418', angle: bg.angle ?? 180 });
+    } else {
+      setPageBg(null);
+    }
+    return () => setPageBg(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.bg, setPageBg]);
+
+  const roomBgImageUrl = useBlobUrl(room?.bg?.type === 'image' ? room.bg.imageId : undefined);
+  useEffect(() => {
+    setPageBgImage(roomBgImageUrl ?? null, room?.bg?.blur ?? 0);
+    return () => setPageBgImage(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomBgImageUrl, room?.bg?.blur, setPageBgImage]);
 
   useEffect(() => {
     if (room) { setItems(room.items); setDirty(false); }
@@ -122,10 +152,24 @@ function RoomEditorInner() {
     });
   };
 
-  const openSettings = () => { setDraftTitle(room.title); setSettingsOpen(true); };
+  const openSettings = () => {
+    setDraftTitle(room.title);
+    const bg = room.bg;
+    setBgCustom(!!bg);
+    setBgType(bg?.type ?? 'gradient');
+    setBgG1(bg?.g1 ?? '#2b3038');
+    setBgG2(bg?.g2 ?? '#121418');
+    setBgAngle(bg?.angle ?? 180);
+    setBgImageId(bg?.imageId);
+    setBgBlur(bg?.blur ?? 0);
+    setSettingsOpen(true);
+  };
   const applySettings = () => {
     const title = draftTitle.trim().slice(0, 10) || room.title;
-    setRooms(rooms.map(r => (r.id === room.id ? { ...r, title } : r)));
+    const bg: MyRoomBg | undefined = !bgCustom ? undefined
+      : bgType === 'gradient' ? { type: 'gradient', g1: bgG1, g2: bgG2, angle: bgAngle }
+      : { type: 'image', imageId: bgImageId, blur: bgBlur };
+    setRooms(rooms.map(r => (r.id === room.id ? { ...r, title, bg } : r)));
     setSettingsOpen(false);
     toast('방 설정을 수정했습니다');
   };
@@ -223,7 +267,7 @@ function RoomEditorInner() {
         </div>
       )}
 
-      <Modal open={settingsOpen} title="방 설정 수정" small onClose={() => setSettingsOpen(false)}
+      <Modal open={settingsOpen} title="방 설정 수정" onClose={() => setSettingsOpen(false)}
         actions={<>
           <button className="btn btn-dark" onClick={applySettings}>적용</button>
           <button className="btn btn-ghost" onClick={() => setSettingsOpen(false)}>취소</button>
@@ -232,6 +276,48 @@ function RoomEditorInner() {
           <label>방 이름</label>
           <KInput value={draftTitle} onChange={e => setDraftTitle(e.target.value)} maxLength={10} />
         </div>
+
+        <div className="mr-settings-field">
+          <KCheck label="이 방만 배경 직접 지정" checked={bgCustom} onChange={setBgCustom} />
+        </div>
+
+        {bgCustom && (
+          <div className="mr-settings-field" style={{ gap: 10 }}>
+            <div className="mini-seg">
+              <button type="button" className={bgType === 'gradient' ? 'on' : ''} onClick={() => setBgType('gradient')}>그라데이션</button>
+              <button type="button" className={bgType === 'image' ? 'on' : ''} onClick={() => setBgType('image')}>이미지</button>
+            </div>
+
+            {bgType === 'gradient' ? (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <ColorField value={bgG1} onChange={setBgG1} />
+                <span style={{ color: 'var(--faint)', fontSize: 11 }}>→</span>
+                <ColorField value={bgG2} onChange={setBgG2} />
+                <span className="cp-lb">각도</span>
+                <KStep value={bgAngle} min={0} max={360} step={15} suffix="°" onChange={setBgAngle} />
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input id="myroomBgFile" type="file" accept="image/*" style={{ display: 'none' }}
+                  onChange={async e => {
+                    const f = e.target.files?.[0];
+                    if (f) setBgImageId(await putBlob(f));
+                    e.target.value = '';
+                  }} />
+                <button type="button" className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                  onClick={() => document.getElementById('myroomBgFile')?.click()}>
+                  {bgImageId ? 'CHANGE' : 'UPLOAD'}
+                </button>
+                {bgImageId && (
+                  <button type="button" className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                    onClick={() => setBgImageId(undefined)}>REMOVE</button>
+                )}
+                <span className="cp-lb">블러</span>
+                <KStep value={bgBlur} min={0} max={30} step={2} suffix="px" onChange={setBgBlur} />
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
 
       {del.element}
