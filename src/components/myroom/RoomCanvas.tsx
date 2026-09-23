@@ -104,15 +104,13 @@ export function RoomCanvas({
           );
         })}
       </div>
-      {editable && (
-        <div className="mr-zoom-control">
-          <button type="button" onClick={() => setZoom(z => Math.max(0.3, Math.round((z - 0.1) * 10) / 10))}>－</button>
-          <input type="range" min={30} max={200} step={5} value={Math.round(zoom * 100)}
-            onChange={e => setZoom(Number(e.target.value) / 100)} />
-          <button type="button" onClick={() => setZoom(z => Math.min(2, Math.round((z + 0.1) * 10) / 10))}>＋</button>
-          <small>{Math.round(zoom * 100)}%</small>
-        </div>
-      )}
+      <div className="mr-zoom-control">
+        <button type="button" onClick={() => setZoom(z => Math.max(0.3, Math.round((z - 0.1) * 10) / 10))}>－</button>
+        <input type="range" min={30} max={200} step={5} value={Math.round(zoom * 100)}
+          onChange={e => setZoom(Number(e.target.value) / 100)} />
+        <button type="button" onClick={() => setZoom(z => Math.min(2, Math.round((z + 0.1) * 10) / 10))}>＋</button>
+        <small>{Math.round(zoom * 100)}%</small>
+      </div>
     </div>
   );
 }

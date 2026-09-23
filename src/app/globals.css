@@ -2169,11 +2169,45 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .mr-handle{position:absolute;width:20px;height:20px;display:grid;place-items:center;background:#fff;border:1.5px solid var(--ink);border-radius:50%;font-size:11px;cursor:pointer;user-select:none}
 .mr-handle-resize{right:-10px;bottom:-10px;cursor:nwse-resize}
 .mr-handle-rotate{left:50%;top:-28px;transform:translateX(-50%);cursor:grab}
-.mr-zoom-control{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border-top:1px solid var(--line)}
-.mr-zoom-control button{width:24px;height:24px;border-radius:6px;background:rgba(127,127,127,.12);font-size:13px}
+.mr-zoom-control{position:sticky;bottom:10px;left:10px;width:max-content;display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--panel);border:1px solid var(--line);border-radius:999px;box-shadow:var(--sh-md)}
+.mr-zoom-control button{width:22px;height:22px;border-radius:6px;background:rgba(127,127,127,.12);font-size:12px}
 .mr-zoom-control button:hover{background:rgba(127,127,127,.22)}
-.mr-zoom-control input[type=range]{flex:1}
-.mr-zoom-control small{color:var(--faint);width:38px;text-align:right}
+.mr-zoom-control input[type=range]{width:80px}
+.mr-zoom-control small{color:var(--faint);width:34px;text-align:right;font-size:10.5px}
+
+/* 헤더 — 리스트로 돌아가는 아이콘 + 방 제목/작성자 */
+.mr-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.mr-header-icon{width:36px;height:36px;flex:0 0 auto;border-radius:10px;background:rgba(127,127,127,.12);display:grid;place-items:center;font-size:17px;color:var(--ink)}
+.mr-header-icon:hover{background:rgba(127,127,127,.22)}
+.mr-header-text{min-width:0}
+.mr-header-title{font-size:calc(15px*var(--fs,1));font-weight:600;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-header-author{font-size:calc(10.5px*var(--fs,1));color:var(--faint);margin-top:1px}
+
+/* 캔버스 + 플로팅 툴바 + 편집 오버레이 패널을 겹쳐 놓는 무대 — 캔버스는 항상 화면 전체 폭 */
+.mr-stage{position:relative}
+.mr-float-toolbar{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;gap:9px;z-index:6}
+.mr-float-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:16px;
+  background:#fff;border:1px solid var(--line);box-shadow:var(--sh-md);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.mr-float-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.mr-float-btn.cap{background:#ffd23f}
+.mr-float-btn.edit{background:#4a6cf7;color:#fff}
+.mr-float-btn.edit.on{background:#1f3fd1;box-shadow:0 0 0 3px color-mix(in srgb,#4a6cf7 35%,transparent)}
+.mr-float-btn.del{background:#ff4d4f;color:#fff}
+
+.mr-edit-panel{position:absolute;top:0;right:0;bottom:0;width:300px;max-width:88vw;
+  background:var(--panel);border-left:1px solid var(--line);box-shadow:-8px 0 20px rgba(0,0,0,.1);
+  padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;
+  transform:translateX(100%);opacity:0;pointer-events:none;transition:transform .22s ease,opacity .22s ease;z-index:5}
+.mr-edit-panel.open{transform:translateX(0);opacity:1;pointer-events:auto}
+.mr-edit-panel-head{display:flex;align-items:center;justify-content:space-between}
+.mr-edit-panel-head button{width:24px;height:24px;border-radius:50%;background:rgba(127,127,127,.12);font-size:11px}
+.mr-edit-panel-head button:hover{background:rgba(127,127,127,.22)}
+
+.mr-settings-field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.mr-settings-field label{font-size:calc(11px*var(--fs,1));color:var(--sub)}
+.mr-canvas-size-row{display:flex;align-items:center;gap:6px}
+.mr-canvas-size-row input{width:84px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:calc(12px*var(--fs,1))}
+.mr-canvas-size-row span{color:var(--faint)}
 
 .mr-side-slot{flex:0 0 300px;max-width:100%;display:flex;flex-direction:column;gap:10px}
 .mr-selected-bar{display:flex;gap:6px;flex-wrap:wrap}
