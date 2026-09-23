@@ -34,7 +34,8 @@ service cloud.firestore {
       return name in [
         'posts', 'guestbook', 'characters', 'relations', 'gallery', 'roadview',
         'trpg_logs', 'trpg_chars', 'dotori', 'playlog', 'rp_rooms', 'threads',
-        'diary', 'memos', 'commissions', 'applicants', 'moods'
+        'diary', 'memos', 'commissions', 'applicants', 'moods',
+        'myroom_rooms', 'myroom_categories', 'myroom_catalog'
       ];
     }
 
