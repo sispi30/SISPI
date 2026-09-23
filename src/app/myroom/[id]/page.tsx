@@ -1,7 +1,7 @@
 'use client';
-// 마이룸 방 편집/보기 (v1.1) — 인터페이스 개선: 편집 인터페이스는 우측 하단 버튼으로 켜고 끄는
-// 오버레이 패널로 바뀌었고, 캔버스는 항상 화면 전체 폭을 쓴다 (그누보드판의 ✧ 진입 버튼 + 
-// 캡처(내보내기)/편집모드/설정/삭제 4버튼 리모콘을 참고).
+// 마이룸 방 편집/보기 (v1.2) — 고정 캔버스/흰 배경 없이 화면 전체를 편집 영역으로 쓴다.
+// 편집 버튼 4개 + 화면비율 확대/축소는 화면 우측 상단에 고정된 바 하나로 모았다 (스크롤/캔버스
+// 크기와 무관하게 항상 같은 자리에 떠 있음).
 import React, { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -51,17 +51,14 @@ function RoomEditorInner() {
   const room = rooms.find(r => r.id === params.id);
   const canManage = !!room && !!user && (isAdmin || room.authorId === user.id);
 
-  // 편집모드 — 우측 하단 소파 버튼으로 켜고 끈다. 꺼져 있으면 캔버스는 보기 전용(방문객과 동일)
   const [editMode, setEditMode] = useState(false);
-  // 편집 중인 아이템 임시 상태 — 저장 버튼을 눌러야 rooms 목록에 반영된다
+  const [zoom, setZoom] = useState(1); // 30% ~ 200%, 화면비율 확대/축소
   const [items, setItems] = useState<MyRoomItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
-  const [draftW, setDraftW] = useState(2000);
-  const [draftH, setDraftH] = useState(1500);
   const del = useConfirmDelete();
 
   useEffect(() => {
@@ -86,11 +83,10 @@ function RoomEditorInner() {
   };
   const addFromCatalog = (ci: MyRoomCatalogItem) => {
     const maxZ = items.reduce((m, it) => Math.max(m, it.z), 0);
-    const w = Math.min(ci.w, room.canvasW), h = Math.min(ci.h, room.canvasH);
+    const n = items.length % 8;
     const it: MyRoomItem = {
       id: newMyRoomItemId(), catalogId: ci.id, src: ci.src,
-      x: Math.round((room.canvasW - w) / 2), y: Math.round((room.canvasH - h) / 2),
-      w, h, rot: 0, z: maxZ + 1,
+      x: 60 + n * 26, y: 60 + n * 22, w: ci.w, h: ci.h, rot: 0, z: maxZ + 1,
     };
     setItems(cur => [...cur, it]);
     setSelectedId(it.id);
@@ -126,17 +122,10 @@ function RoomEditorInner() {
     });
   };
 
-  const openSettings = () => {
-    setDraftTitle(room.title);
-    setDraftW(room.canvasW);
-    setDraftH(room.canvasH);
-    setSettingsOpen(true);
-  };
+  const openSettings = () => { setDraftTitle(room.title); setSettingsOpen(true); };
   const applySettings = () => {
     const title = draftTitle.trim().slice(0, 10) || room.title;
-    const canvasW = Math.min(4000, Math.max(100, draftW || 2000));
-    const canvasH = Math.min(4000, Math.max(100, draftH || 1500));
-    setRooms(rooms.map(r => (r.id === room.id ? { ...r, title, canvasW, canvasH } : r)));
+    setRooms(rooms.map(r => (r.id === room.id ? { ...r, title } : r)));
     setSettingsOpen(false);
     toast('방 설정을 수정했습니다');
   };
@@ -145,9 +134,11 @@ function RoomEditorInner() {
     if (capturing) return;
     setCapturing(true);
     try {
+      const maxRight = items.reduce((m, it) => Math.max(m, it.x + it.w), 0);
+      const maxBottom = items.reduce((m, it) => Math.max(m, it.y + it.h), 0);
       const cv = document.createElement('canvas');
-      cv.width = room.canvasW;
-      cv.height = room.canvasH;
+      cv.width = Math.max(1, maxRight + 40);
+      cv.height = Math.max(1, maxBottom + 40);
       const ctx = cv.getContext('2d');
       if (!ctx) throw new Error('no-ctx');
       ctx.fillStyle = '#ffffff';
@@ -186,48 +177,51 @@ function RoomEditorInner() {
         </div>
       </div>
 
-      <div className="mr-stage">
-        <RoomCanvas
-          canvasW={room.canvasW} canvasH={room.canvasH} items={items}
-          editable={canManage && editMode} selectedId={selectedId} onSelect={setSelectedId} onChange={patchItem}
-        />
+      <RoomCanvas
+        items={items} editable={canManage && editMode} selectedId={selectedId}
+        onSelect={setSelectedId} onChange={patchItem} zoom={zoom}
+      />
 
-        {canManage && (
-          <>
-            <div className="mr-float-toolbar">
-              <button type="button" className="mr-float-btn cap" title="캡처(내보내기)" disabled={capturing} onClick={captureRoom}>
-                {capturing ? '…' : '📷'}
-              </button>
-              <button type="button" className={`mr-float-btn edit${editMode ? ' on' : ''}`} title="편집모드"
-                onClick={() => setEditMode(v => !v)}>🛋</button>
-              <button type="button" className="mr-float-btn" title="방 설정 수정" onClick={openSettings}>⚙</button>
-              <button type="button" className="mr-float-btn del" title="방 삭제" onClick={deleteRoom}>🗑</button>
+      {canManage && (
+        <div className="mr-fixed-rail">
+          <div className="mr-fixed-zoom">
+            <button type="button" onClick={() => setZoom(z => Math.min(2, Math.round((z + 0.1) * 10) / 10))}>＋</button>
+            <small>{Math.round(zoom * 100)}%</small>
+            <button type="button" onClick={() => setZoom(z => Math.max(0.3, Math.round((z - 0.1) * 10) / 10))}>－</button>
+          </div>
+          <button type="button" className="mr-float-btn cap" title="캡처(내보내기)" disabled={capturing} onClick={captureRoom}>
+            {capturing ? '…' : '📷'}
+          </button>
+          <button type="button" className={`mr-float-btn edit${editMode ? ' on' : ''}`} title="편집모드"
+            onClick={() => setEditMode(v => !v)}>🛋</button>
+          <button type="button" className="mr-float-btn" title="방 설정 수정" onClick={openSettings}>⚙</button>
+          <button type="button" className="mr-float-btn del" title="방 삭제" onClick={deleteRoom}>🗑</button>
+        </div>
+      )}
+
+      {canManage && (
+        <div className={`mr-edit-panel${editMode ? ' open' : ''}`}>
+          <div className="mr-edit-panel-head">
+            <b style={{ fontSize: 13 }}>꾸미기</b>
+            <button type="button" onClick={() => setEditMode(false)} title="닫기">✕</button>
+          </div>
+
+          {selectedId && (
+            <div className="mr-selected-bar">
+              <button type="button" onClick={bringFront}>맨 앞으로</button>
+              <button type="button" onClick={sendBack}>맨 뒤로</button>
+              <button type="button" className="danger" onClick={deleteSelected}>삭제</button>
             </div>
+          )}
 
-            <div className={`mr-edit-panel${editMode ? ' open' : ''}`}>
-              <div className="mr-edit-panel-head">
-                <b style={{ fontSize: 13 }}>꾸미기</b>
-                <button type="button" onClick={() => setEditMode(false)} title="닫기">✕</button>
-              </div>
+          <CatalogPanel
+            categories={cats} catalog={catalog} isAdmin={isAdmin}
+            onAddToCanvas={addFromCatalog} onCategoriesChange={setCats} onCatalogChange={setCatalog}
+          />
 
-              {selectedId && (
-                <div className="mr-selected-bar">
-                  <button type="button" onClick={bringFront}>맨 앞으로</button>
-                  <button type="button" onClick={sendBack}>맨 뒤로</button>
-                  <button type="button" className="danger" onClick={deleteSelected}>삭제</button>
-                </div>
-              )}
-
-              <CatalogPanel
-                categories={cats} catalog={catalog} isAdmin={isAdmin}
-                onAddToCanvas={addFromCatalog} onCategoriesChange={setCats} onCatalogChange={setCatalog}
-              />
-
-              <button type="button" className="btn btn-dark" disabled={!dirty} onClick={save}>저장</button>
-            </div>
-          </>
-        )}
-      </div>
+          <button type="button" className="btn btn-dark" disabled={!dirty} onClick={save}>저장</button>
+        </div>
+      )}
 
       <Modal open={settingsOpen} title="방 설정 수정" small onClose={() => setSettingsOpen(false)}
         actions={<>
@@ -237,14 +231,6 @@ function RoomEditorInner() {
         <div className="mr-settings-field">
           <label>방 이름</label>
           <KInput value={draftTitle} onChange={e => setDraftTitle(e.target.value)} maxLength={10} />
-        </div>
-        <div className="mr-settings-field">
-          <label>캔버스 크기</label>
-          <div className="mr-canvas-size-row">
-            <input type="number" min={100} max={4000} value={draftW} onChange={e => setDraftW(Number(e.target.value))} />
-            <span>×</span>
-            <input type="number" min={100} max={4000} value={draftH} onChange={e => setDraftH(Number(e.target.value))} />
-          </div>
         </div>
       </Modal>
 

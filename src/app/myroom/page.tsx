@@ -13,14 +13,19 @@ import { useConfirmDelete } from '@/components/ui/Modal';
 
 function RoomPreview({ room }: { room: MyRoomPost }) {
   if (!room.items.length) return <div className="mr-preview-empty">방 미리보기</div>;
-  const scale = Math.min(200 / room.canvasW, 168 / room.canvasH) * 1.2;
+  const minX = Math.min(...room.items.map(it => it.x));
+  const minY = Math.min(...room.items.map(it => it.y));
+  const maxX = Math.max(...room.items.map(it => it.x + it.w));
+  const maxY = Math.max(...room.items.map(it => it.y + it.h));
+  const bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
+  const scale = Math.min(180 / bw, 148 / bh);
   const sorted = [...room.items].sort((a, b) => a.z - b.z);
   return (
     <div className="mr-preview-frame">
-      <div className="mr-preview-canvas" style={{ width: room.canvasW, height: room.canvasH, transform: `translate(-50%, -50%) scale(${scale})` }}>
+      <div className="mr-preview-canvas" style={{ width: bw, height: bh, transform: `translate(-50%, -50%) scale(${scale})` }}>
         {sorted.map(it => (
           <div key={it.id} className="mr-preview-item"
-            style={{ left: it.x, top: it.y, width: it.w, height: it.h, transform: `rotate(${it.rot || 0}deg)` }}>
+            style={{ left: it.x - minX, top: it.y - minY, width: it.w, height: it.h, transform: `rotate(${it.rot || 0}deg)` }}>
             <BlobImg fileRef={it.src} imgStyle={{ objectFit: 'contain' }} />
           </div>
         ))}
@@ -47,7 +52,7 @@ function MyRoomPageInner() {
     const id = `room-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     setRooms([...rooms, {
       id, title, author: user.nickname, authorId: user.id, date: new Date().toISOString(),
-      canvasW: 2000, canvasH: 1500, items: [],
+      items: [],
     }]);
     router.push(`/myroom/${id}${secQuery('myroom', sec.id)}`);
   };

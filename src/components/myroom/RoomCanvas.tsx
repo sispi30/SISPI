@@ -1,37 +1,27 @@
 'use client';
-// 마이룸 캔버스 (v1) — 드래그 이동 · 우하단 리사이즈 · 상단 회전 핸들 · 클릭 선택.
-// 그누보드판(myroom-editor.js)의 조작 방식을 옮기되, 포인터 이벤트 하나로 마우스/터치를 함께
-// 처리해서 단순화했다. 줌은 슬라이더 하나로, 멀티셀렉트·잠금·좌우반전·사운드클릭 등은 v1 밖.
-import React, { useEffect, useRef, useState } from 'react';
+// 마이룸 스테이지 (v1.2) — 메인 페이지 위젯 편집 영역처럼 고정 캔버스/흰 배경 없이,
+// 편집 화면(부모가 주는 실제 컨테이너 크기) 그대로를 좌표 기준으로 쓴다.
+// 줌은 부모(page)가 상태를 들고 있는 controlled prop — 화면 우측 고정 바에서 조절한다.
+import React, { useEffect, useRef } from 'react';
 import { BlobImg } from '@/lib/blobStore';
 import type { MyRoomItem } from '@/lib/myroomStore';
 
 type DragKind = 'move' | 'resize' | 'rotate';
 
 export function RoomCanvas({
-  canvasW, canvasH, items, editable, selectedId, onSelect, onChange,
+  items, editable, selectedId, onSelect, onChange, zoom,
 }: {
-  canvasW: number;
-  canvasH: number;
   items: MyRoomItem[];
   editable: boolean;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onChange: (id: string, patch: Partial<MyRoomItem>) => void;
+  zoom: number;
 }) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(1);       // 0.3 ~ 2
   const dragRef = useRef<{
     kind: DragKind; id: string; startX: number; startY: number;
     it: MyRoomItem; cx: number; cy: number;
   } | null>(null);
-
-  // 처음 열었을 때 컨테이너 폭에 맞춰 자동으로 한 번 축소 (그 다음은 사용자가 슬라이더로 조절)
-  useEffect(() => {
-    const w = outerRef.current?.clientWidth;
-    if (w && w < canvasW) setZoom(Math.max(0.3, Math.round((w / canvasW) * 100) / 100));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvasW]);
 
   useEffect(() => {
     if (!editable) return;
@@ -71,45 +61,40 @@ export function RoomCanvas({
     };
   };
 
+  // 캔버스 경계가 없으므로, 아이템이 놓인 만큼만 스테이지 높이가 늘어난다 (빈 방은 최소 높이 확보)
+  const maxBottom = items.reduce((m, it) => Math.max(m, it.y + it.h), 0);
+  const stageHeight = Math.max(560, Math.round((maxBottom + 140) * zoom));
+
   const sorted = [...items].sort((a, b) => a.z - b.z);
 
   return (
-    <div className="mr-canvas-outer" ref={outerRef}>
-      <div
-        className="mr-canvas"
-        style={{ width: canvasW, height: canvasH, transform: `scale(${zoom})` }}
-        onPointerDown={() => onSelect(null)}
-      >
-        {sorted.map(it => {
-          const sel = editable && selectedId === it.id;
-          return (
-            <div
-              key={it.id}
-              className={`mr-item${sel ? ' sel' : ''}`}
-              style={{
-                left: it.x, top: it.y, width: it.w, height: it.h,
-                transform: `rotate(${it.rot || 0}deg)`, zIndex: it.z,
-                cursor: editable ? 'grab' : 'default',
-              }}
-              onPointerDown={e => startDrag(e, 'move', it)}
-            >
-              <BlobImg fileRef={it.src} imgStyle={{ objectFit: 'contain', pointerEvents: 'none' }} />
-              {sel && (
-                <>
-                  <div className="mr-handle mr-handle-rotate" onPointerDown={e => startDrag(e, 'rotate', it)}>⟳</div>
-                  <div className="mr-handle mr-handle-resize" onPointerDown={e => startDrag(e, 'resize', it)}>⇲</div>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="mr-zoom-control">
-        <button type="button" onClick={() => setZoom(z => Math.max(0.3, Math.round((z - 0.1) * 10) / 10))}>－</button>
-        <input type="range" min={30} max={200} step={5} value={Math.round(zoom * 100)}
-          onChange={e => setZoom(Number(e.target.value) / 100)} />
-        <button type="button" onClick={() => setZoom(z => Math.min(2, Math.round((z + 0.1) * 10) / 10))}>＋</button>
-        <small>{Math.round(zoom * 100)}%</small>
+    <div className="mr-stage-scroll">
+      <div className="mr-stage-inner" style={{ height: stageHeight }} onPointerDown={() => onSelect(null)}>
+        <div className="mr-stage-scale" style={{ transform: `scale(${zoom})` }}>
+          {sorted.map(it => {
+            const sel = editable && selectedId === it.id;
+            return (
+              <div
+                key={it.id}
+                className={`mr-item${sel ? ' sel' : ''}`}
+                style={{
+                  left: it.x, top: it.y, width: it.w, height: it.h,
+                  transform: `rotate(${it.rot || 0}deg)`, zIndex: it.z,
+                  cursor: editable ? 'grab' : 'default',
+                }}
+                onPointerDown={e => startDrag(e, 'move', it)}
+              >
+                <BlobImg fileRef={it.src} imgStyle={{ objectFit: 'contain', pointerEvents: 'none' }} />
+                {sel && (
+                  <>
+                    <div className="mr-handle mr-handle-rotate" onPointerDown={e => startDrag(e, 'rotate', it)}>⟳</div>
+                    <div className="mr-handle mr-handle-resize" onPointerDown={e => startDrag(e, 'resize', it)}>⇲</div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
