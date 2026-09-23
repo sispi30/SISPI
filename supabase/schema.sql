@@ -78,7 +78,10 @@ declare content_tables text[] := array[
   'memos',        -- 스티커 메모
   'commissions',  -- 커미션
   'applicants',   -- 신청자
-  'moods'         -- 무드 목록
+  'moods',        -- 무드 목록
+  'myroom_rooms',      -- 마이룸 방(캔버스 배치)
+  'myroom_categories', -- 마이룸 리모콘 카테고리
+  'myroom_catalog'     -- 마이룸 리모콘 카탈로그 아이템
 ];
 begin
   foreach t in array content_tables loop
