@@ -122,6 +122,11 @@ export const COLLECTION_OF: Record<string, string> = {
   // 알림 — 기기 보관이던 것을 서버로 (v2.0 포크 제보 「알림이 안 와요」).
   // 행 주인(authorId)을 받는 사람으로 적어, 받는 사람 계정이 어느 기기에서나 받아 간다
   'ohome.notif.v1': 'notifications',
+  // 마이룸 (v1) — 방(캔버스 배치) · 리모콘 카테고리 · 리모콘 카탈로그 아이템, 3개 목록으로 분리.
+  // 그누보드판처럼 카테고리·카탈로그는 방과 독립된 테이블이라 방을 안 건드리고 관리자가 편집한다
+  'ohome.myroom.v1': 'myroom_rooms',
+  'ohome.myroomcat.v1': 'myroom_categories',
+  'ohome.myroomcatalog.v1': 'myroom_catalog',
 };
 
 export const CONTENT_COLLECTIONS = Object.values(COLLECTION_OF);
