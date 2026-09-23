@@ -2156,3 +2156,68 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 @media (max-width:768px){
   .tf-fixed{max-width:calc(100vw - 20px);overflow-x:auto}
 }
+
+/* ---------- 마이룸 (v1) ---------- */
+.mr-back-to-list{font-size:calc(11.5px*var(--fs,1));color:var(--sub);letter-spacing:.03em}
+.mr-back-to-list:hover{color:var(--ink)}
+.mr-layout{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.mr-canvas-outer{position:relative;flex:1 1 auto;max-width:100%;overflow:auto;border:1px solid var(--line);border-radius:var(--radius-s);background:repeating-conic-gradient(#f4f5f7 0% 25%,#fff 0% 50%) 50%/16px 16px}
+.mr-canvas{position:relative;transform-origin:top left;background:#fff}
+.mr-item{position:absolute;box-sizing:border-box}
+.mr-item img{width:100%;height:100%;display:block;pointer-events:none;object-fit:contain}
+.mr-item.sel{outline:2px dashed var(--accent);outline-offset:1px}
+.mr-handle{position:absolute;width:20px;height:20px;display:grid;place-items:center;background:#fff;border:1.5px solid var(--ink);border-radius:50%;font-size:11px;cursor:pointer;user-select:none}
+.mr-handle-resize{right:-10px;bottom:-10px;cursor:nwse-resize}
+.mr-handle-rotate{left:50%;top:-28px;transform:translateX(-50%);cursor:grab}
+.mr-zoom-control{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border-top:1px solid var(--line)}
+.mr-zoom-control button{width:24px;height:24px;border-radius:6px;background:rgba(127,127,127,.12);font-size:13px}
+.mr-zoom-control button:hover{background:rgba(127,127,127,.22)}
+.mr-zoom-control input[type=range]{flex:1}
+.mr-zoom-control small{color:var(--faint);width:38px;text-align:right}
+
+.mr-side-slot{flex:0 0 300px;max-width:100%;display:flex;flex-direction:column;gap:10px}
+.mr-selected-bar{display:flex;gap:6px;flex-wrap:wrap}
+.mr-selected-bar button{flex:1;padding:7px 8px;border-radius:var(--radius-s);background:rgba(127,127,127,.12);font-size:calc(11px*var(--fs,1))}
+.mr-selected-bar button:hover{background:rgba(127,127,127,.22)}
+.mr-selected-bar button.danger{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+
+.mr-catalog{background:var(--panel);border-radius:var(--radius);box-shadow:var(--sh-md);padding:14px}
+.mr-catalog-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.mr-catalog-tabs button{padding:6px 12px;border-radius:999px;font-size:calc(11px*var(--fs,1));background:rgba(127,127,127,.1);color:var(--sub)}
+.mr-catalog-tabs button.on{background:var(--btn-dark,var(--ink));color:var(--btn-dark-fg,#fff)}
+.mr-catalog-tab-add{width:26px;height:26px;border-radius:50%!important;padding:0!important;display:grid;place-items:center}
+.mr-catalog-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mr-catalog-item{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;background:#fff;display:grid;place-items:center}
+.mr-catalog-item:hover{border-color:var(--accent)}
+.mr-catalog-item img{width:100%;height:100%;object-fit:contain}
+.mr-catalog-item-remove{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(15,17,20,.6);color:#fff;font-size:11px;line-height:1}
+.mr-catalog-add{color:var(--faint);font-size:18px;cursor:pointer}
+.mr-catalog-empty{grid-column:1/-1;color:var(--faint);font-size:calc(11.5px*var(--fs,1));text-align:center;padding:20px 0}
+.mr-catalog-manage{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+.mr-catalog-manage summary{cursor:pointer;font-size:calc(11.5px*var(--fs,1));color:var(--sub)}
+.mr-catalog-manage-row{display:flex;align-items:center;gap:6px;margin-top:8px}
+.mr-catalog-manage-row input{flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:calc(11.5px*var(--fs,1))}
+.mr-catalog-manage-row button{width:24px;height:24px;border-radius:6px;background:rgba(127,127,127,.12);font-size:11px}
+.mr-catalog-manage-row button.danger{width:auto;padding:0 8px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+
+.mr-remote-actions{display:flex;flex-direction:column;gap:8px}
+.mr-remote-actions .danger{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+
+/* 목록 카드 */
+.mr-room-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:960px){.mr-room-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.mr-room-grid{grid-template-columns:1fr}}
+.mr-room-card{position:relative;padding:0;overflow:hidden;transition:.2s}
+.mr-room-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+.mr-room-card-link{display:block;color:inherit}
+.mr-preview-frame{position:relative;width:100%;height:168px;overflow:hidden;background:#f4f5f7}
+.mr-preview-canvas{position:absolute;left:50%;top:50%;transform-origin:center;margin:0}
+.mr-preview-item{position:absolute}
+.mr-preview-item img{width:100%;height:100%;object-fit:contain}
+.mr-preview-empty{display:grid;place-items:center;height:100%;color:var(--faint);font-size:calc(11.5px*var(--fs,1))}
+.mr-room-info{padding:11px 14px 13px}
+.mr-room-title{font-size:calc(13px*var(--fs,1));letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-room-writer{margin-top:3px;font-size:calc(10.5px*var(--fs,1));color:var(--faint)}
+.mr-room-card .hv-actions{position:absolute;top:8px;right:8px;z-index:3}
+.mr-room-card:hover .hv-actions{opacity:1;pointer-events:auto}
+.mr-room-card .hv-actions .del{font-size:calc(10px*var(--fs,1));padding:4px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 75%,transparent);color:#fff}
