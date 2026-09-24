@@ -51,10 +51,11 @@ export function RoomCanvas({
   }, [editable, zoom, onChange]);
 
   const startDrag = (e: React.PointerEvent, kind: DragKind, it: MyRoomItem) => {
-    if (!editable || it.locked) return;
+    if (!editable) return;
     e.stopPropagation();
     e.preventDefault();
     onSelect(it.id);
+    if (it.locked) return; // 선택(툴바)은 계속 가능하게 하고, 실제 이동/리사이즈/회전만 막는다
     const rect = (e.currentTarget.closest('.mr-item') as HTMLElement)?.getBoundingClientRect();
     dragRef.current = {
       kind, id: it.id, startX: e.clientX, startY: e.clientY, it,
@@ -89,6 +90,7 @@ export function RoomCanvas({
                   cursor: editable ? (it.locked ? 'not-allowed' : 'grab') : 'default',
                 }}
                 onPointerDown={e => startDrag(e, 'move', it)}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); if (editable) onSelect(it.id); }}
               >
                 <BlobImg fileRef={it.src} imgStyle={{ objectFit: 'contain', pointerEvents: 'none' }} />
                 {sel && !it.locked && (
