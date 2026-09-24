@@ -111,6 +111,7 @@ export const PLAYLOG_COLS: { key: string; label: string }[] = [
   { key: 'character', label: 'Character' },
   { key: 'writer', label: 'Writer' },
   { key: 'with', label: 'With' },
+  { key: 'rels', label: 'RELS' },
   { key: 'role', label: 'Role' },
   { key: 'playtime', label: 'Playtime' },
   { key: 'url', label: 'Url' },
@@ -119,9 +120,18 @@ export const PLAYLOG_COLS: { key: string; label: string }[] = [
 /** Character 열(v2.9)이 생기기 전에 저장해 둔 playlogPc엔 이 키가 없어서 안 보였다 —
  *  Scenario 바로 다음 자리에 자동으로 끼워 넣는다(이미 있으면 그대로 둔다) */
 function migratePlaylogCharCol(cols: string[]): string[] {
-  if (cols.includes('character')) return cols;
-  const i = cols.indexOf('scenario');
-  return i === -1 ? [...cols, 'character'] : [...cols.slice(0, i + 1), 'character', ...cols.slice(i + 1)];
+  let out = cols;
+  if (!out.includes('character')) {
+    const i = out.indexOf('scenario');
+    out = i === -1 ? [...out, 'character'] : [...out.slice(0, i + 1), 'character', ...out.slice(i + 1)];
+  }
+  // RELS 열(자관 연동)도 같은 방식 — 이 열이 생기기 전에 저장된 설정엔 없어서 안 보이므로
+  // With 바로 다음 자리에 자동으로 끼워 넣는다(이미 있으면 그대로 둔다)
+  if (!out.includes('rels')) {
+    const i = out.indexOf('with');
+    out = i === -1 ? [...out, 'rels'] : [...out.slice(0, i + 1), 'rels', ...out.slice(i + 1)];
+  }
+  return out;
 }
 
 export const DEFAULT_MENU_SETTINGS: MenuSettings = {

@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { useSectionParam, filterSection, sectionSetter, secQuery } from '@/lib/sectionStore';
 import { useLocalList } from '@/lib/postStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
-import { Character, CHAR_SEED } from '@/lib/charStore';
+import { Character, CHAR_SEED, Relation, REL_SEED, relPath } from '@/lib/charStore';
 import { useMenuSettings } from '@/lib/menuStore';
 import { useMainStore } from '@/lib/mainStore';
 import { useCardSort, mergeOrder } from '@/lib/cardSort';
@@ -32,6 +32,8 @@ function PlaylogPageInner() {
   const [recordsAll, setRecordsAll, loaded] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
   // 참여 캐릭터 이름 표시·이동용 (v2.8) — 캐릭터 게시판과 연동
   const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  // 자관 연동 (RELS 열) — 클릭하면 자관 상세로 이동
+  const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
   // 여러 개로 만든 섹션 (v2.0) — 주소의 ?s= 가 가리키는 것만 보여 준다
   const sec = useSectionParam('playlog');
   const records = filterSection(recordsAll, sec.id);
@@ -97,7 +99,7 @@ function PlaylogPageInner() {
       </div>
 
       <div className="panel" style={{ padding: '10px 16px 16px', overflowX: 'auto' }}>
-        <table className="pl-table">
+        <table className={`pl-table${show('rels') ? ' has-rel' : ''}`}>
           {/* 열 구성 — 환경설정 > 메뉴 관리에서 PC/모바일 각각 선택 (4.16 v1.8) */}
           <colgroup>
             {show('date') && <col className="c-date" />}
@@ -105,6 +107,7 @@ function PlaylogPageInner() {
             {show('character') && <col className="c-char" />}
             {show('writer') && <col className="c-wr" />}
             {show('with') && <col className="c-with" />}
+            {show('rels') && <col className="c-rel" />}
             {show('role') && <col className="c-role" />}
             {show('playtime') && <col className="c-pt" />}
             {show('url') && <col className="c-url" />}
@@ -121,6 +124,7 @@ function PlaylogPageInner() {
               {show('character') && <th>Character</th>}
               {show('writer') && <th>Writer</th>}
               {show('with') && <th>With</th>}
+              {show('rels') && <th>RELS</th>}
               {show('role') && <th>Role</th>}
               {show('playtime') && <th>Playtime</th>}
               {show('url') && <th aria-label="Url" />}
@@ -158,6 +162,18 @@ function PlaylogPageInner() {
                 )}
                 {show('writer') && <td>{r.writer}</td>}
                 {show('with') && <td>{r.withText}</td>}
+                {/* RELS — 자관이 연동돼 있으면 이름을 눌러 자관 상세로 이동 */}
+                {show('rels') && (
+                  <td>
+                    {(() => {
+                      const rel = r.relId ? rels.find(x => x.id === r.relId) : undefined;
+                      return rel ? (
+                        <a onClick={e => { e.stopPropagation(); router.push(relPath(rel)); }}
+                          style={{ cursor: 'var(--cur-pointer,pointer)' }} data-tip="자관 페이지로 이동">{rel.name}</a>
+                      ) : null;
+                    })()}
+                  </td>
+                )}
                 {show('role') && <td className="td-role">{r.role}</td>}
                 {show('playtime') && (
                   <td className={`td-pt ${(r.logId || r.postId) ? 'linked' : ''}`}

@@ -3,7 +3,7 @@
 // 시나리오 자동완성(기존 기록 검색 드롭다운) · 로그 연결(외부 URL / 내 백업 로그 검색 토글)
 import React, { useState } from 'react';
 import { PlayRecord, TrpgLog, TRPG_SEED } from '@/lib/galleryStore';
-import { Character, CHAR_SEED } from '@/lib/charStore';
+import { Character, CHAR_SEED, Relation, REL_SEED } from '@/lib/charStore';
 import { useLocalList } from '@/lib/postStore';
 import { KInput, KDate } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
@@ -16,6 +16,8 @@ export interface PlaylogFormValue {
    *  이 기록의 유일한 참여자 목록이며, 그 캐릭터의 상세 화면 TRPG 탭에도 그대로 보인다
    *  (양쪽 다 이 값 하나만 보고 그리므로 어느 쪽에서 고쳐도 자동으로 반영됨). */
   charIds?: string[];
+  /** 연동 자관 — 세션 게시판·로그 백업의 자관 연동과 같은 방식 (자관 이름 검색) */
+  relId?: string;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -52,6 +54,10 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
   const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   const [charIds, setCharIds] = useState<string[]>(initial?.charIds ?? []);
   const [charQuery, setCharQuery] = useState('');
+  // 자관 연동 — 이름을 검색해 하나를 연결한다 (세션 게시판 글쓰기와 같은 방식)
+  const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
+  const [relId, setRelId] = useState(initial?.relId ?? '');
+  const [relQuery, setRelQuery] = useState('');
 
   // 시나리오 자동완성 — 기존 기록에서 이름 중복 제거
   const scPool = [...new Map(records.map(r => [r.scenario, r])).values()]
@@ -69,6 +75,7 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
       url: linkMode === 'url' ? (url.trim() || undefined) : undefined,
       logId: linkMode === 'log' ? (logId || undefined) : undefined,
       charIds: charIds.length ? charIds : undefined,
+      relId: relId || undefined,
     });
   };
 
@@ -112,6 +119,34 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
           <Field label="Role"><KInput value={role} onChange={e => setRole(e.target.value)} /></Field>
         </div>
         <Field label="With"><KInput value={withText} onChange={e => setWithText(e.target.value)} /></Field>
+
+        {/* 자관 연동 (optional) — 자관 이름을 검색해 연결. 연결하면 표의 RELS 열에서 자관 상세로 이동할 수 있다 */}
+        <div>
+          <label className="k-label" style={{ marginBottom: 5 }}>자관 연동 (optional)</label>
+          {relId && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', border: '1.5px solid var(--accent)', borderRadius: 8, marginBottom: 6, fontSize: 12.5 }}>
+              <b>{rels.find(r => r.id === relId)?.name ?? '(찾을 수 없음)'}</b>
+              <span style={{ marginLeft: 'auto', color: 'var(--faint)', fontSize: 11, cursor: 'var(--cur-pointer,pointer)' }}
+                onClick={() => setRelId('')}>연동 해제 ✕</span>
+            </div>
+          )}
+          <KInput placeholder="자관 이름 검색" value={relQuery} onChange={e => setRelQuery(e.target.value)} />
+          {relQuery.trim() && (() => {
+            const s = relQuery.trim().toLowerCase();
+            const found = rels.filter(r => r.id !== relId && r.name.toLowerCase().includes(s));
+            return (
+              <div style={{ marginTop: 6, maxHeight: 150, overflowY: 'auto', border: '1.5px solid var(--line)', borderRadius: 9 }}>
+                {found.map(r => (
+                  <div key={r.id} onClick={() => { setRelId(r.id); setRelQuery(''); }}
+                    style={{ padding: '7px 11px', cursor: 'var(--cur-pointer,pointer)', fontSize: 12.5, borderBottom: '1px dashed var(--line)' }}>
+                    <b>{r.name}</b> {r.catchphrase && <small style={{ color: 'var(--faint)' }}>{r.catchphrase}</small>}
+                  </div>
+                ))}
+                {found.length === 0 && <p className="hint" style={{ padding: 8, margin: 0 }}>검색 결과가 없습니다</p>}
+              </div>
+            );
+          })()}
+        </div>
 
         {/* 참여 캐릭터 (v2.8) — 캐릭터 게시판(/chars)과 연동. 고른 캐릭터는 그 캐릭터의
             상세 화면 TRPG 탭에도 자동으로 나타난다(양쪽이 이 charIds 하나만 봄) */}
