@@ -122,21 +122,10 @@ function RoomEditorInner() {
     setSelectedId(it.id);
     setDirty(true);
   };
-  const deleteSelected = () => {
-    if (!selectedId) return;
-    setItems(cur => cur.filter(it => it.id !== selectedId));
-    setSelectedId(null);
+  const deleteItem = (id: string) => {
+    setItems(cur => cur.filter(it => it.id !== id));
+    setSelectedId(cur => (cur === id ? null : cur));
     setDirty(true);
-  };
-  const bringFront = () => {
-    if (!selectedId) return;
-    const maxZ = items.reduce((m, it) => Math.max(m, it.z), 0);
-    patchItem(selectedId, { z: maxZ + 1 });
-  };
-  const sendBack = () => {
-    if (!selectedId) return;
-    const minZ = items.reduce((m, it) => Math.min(m, it.z), 0);
-    patchItem(selectedId, { z: minZ - 1 });
   };
 
   const save = () => {
@@ -223,7 +212,7 @@ function RoomEditorInner() {
 
       <RoomCanvas
         items={items} editable={canManage && editMode} selectedId={selectedId}
-        onSelect={setSelectedId} onChange={patchItem} zoom={zoom}
+        onSelect={setSelectedId} onChange={patchItem} onDelete={deleteItem} zoom={zoom}
       />
 
       {canManage && (
@@ -249,14 +238,6 @@ function RoomEditorInner() {
             <b style={{ fontSize: 13 }}>꾸미기</b>
             <button type="button" onClick={() => setEditMode(false)} title="닫기">✕</button>
           </div>
-
-          {selectedId && (
-            <div className="mr-selected-bar">
-              <button type="button" onClick={bringFront}>맨 앞으로</button>
-              <button type="button" onClick={sendBack}>맨 뒤로</button>
-              <button type="button" className="danger" onClick={deleteSelected}>삭제</button>
-            </div>
-          )}
 
           <CatalogPanel
             categories={cats} catalog={catalog} isAdmin={isAdmin}

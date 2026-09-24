@@ -17,6 +17,9 @@ export interface MyRoomItem {
   h: number;
   rot: number;   // deg
   z: number;
+  flip?: boolean;      // 좌우반전
+  locked?: boolean;    // 고정 — 잠긴 동안 이동/리사이즈/회전/반전/삭제 불가, 잠금 해제만 가능
+  opacity?: number;    // 0~100, 생략 시 100(불투명)
 }
 
 /** 방 배경 — 환경설정의 배경 설정과 같은 구조(그라데이션 2색+각도 / 이미지+블러) */

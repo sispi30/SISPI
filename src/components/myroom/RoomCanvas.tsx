@@ -1,27 +1,29 @@
 'use client';
-// 마이룸 스테이지 (v1.2) — 메인 페이지 위젯 편집 영역처럼 고정 캔버스/흰 배경 없이,
-// 편집 화면(부모가 주는 실제 컨테이너 크기) 그대로를 좌표 기준으로 쓴다.
-// 줌은 부모(page)가 상태를 들고 있는 controlled prop — 화면 우측 고정 바에서 조절한다.
-import React, { useEffect, useRef } from 'react';
+// 마이룸 스테이지 (v1.3) — 고정 캔버스/흰 배경 없이 편집 화면 전체를 좌표 기준으로 쓴다.
+// 아이템 선택 시 위에 뜨는 플로팅 툴바(투명도·좌우반전·맨앞/맨뒤·고정·삭제) + 코너의
+// 리사이즈·회전 핸들로 조작한다. 고정(잠금)된 아이템은 잠금 해제 전까지 다른 조작이 막힌다.
+import React, { useEffect, useRef, useState } from 'react';
 import { BlobImg } from '@/lib/blobStore';
 import type { MyRoomItem } from '@/lib/myroomStore';
 
 type DragKind = 'move' | 'resize' | 'rotate';
 
 export function RoomCanvas({
-  items, editable, selectedId, onSelect, onChange, zoom,
+  items, editable, selectedId, onSelect, onChange, onDelete, zoom,
 }: {
   items: MyRoomItem[];
   editable: boolean;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onChange: (id: string, patch: Partial<MyRoomItem>) => void;
+  onDelete: (id: string) => void;
   zoom: number;
 }) {
   const dragRef = useRef<{
     kind: DragKind; id: string; startX: number; startY: number;
     it: MyRoomItem; cx: number; cy: number;
   } | null>(null);
+  const [showOpacity, setShowOpacity] = useState(false);
 
   useEffect(() => {
     if (!editable) return;
@@ -49,7 +51,7 @@ export function RoomCanvas({
   }, [editable, zoom, onChange]);
 
   const startDrag = (e: React.PointerEvent, kind: DragKind, it: MyRoomItem) => {
-    if (!editable) return;
+    if (!editable || it.locked) return;
     e.stopPropagation();
     e.preventDefault();
     onSelect(it.id);
@@ -66,6 +68,9 @@ export function RoomCanvas({
   const stageHeight = Math.max(560, Math.round((maxBottom + 140) * zoom));
 
   const sorted = [...items].sort((a, b) => a.z - b.z);
+  const selItem = editable ? items.find(it => it.id === selectedId) : undefined;
+  const maxZ = items.reduce((m, it) => Math.max(m, it.z), 0);
+  const minZ = items.reduce((m, it) => Math.min(m, it.z), 0);
 
   return (
     <div className="mr-stage-scroll">
@@ -76,16 +81,17 @@ export function RoomCanvas({
             return (
               <div
                 key={it.id}
-                className={`mr-item${sel ? ' sel' : ''}`}
+                className={`mr-item${sel ? ' sel' : ''}${it.locked ? ' locked' : ''}`}
                 style={{
                   left: it.x, top: it.y, width: it.w, height: it.h,
-                  transform: `rotate(${it.rot || 0}deg)`, zIndex: it.z,
-                  cursor: editable ? 'grab' : 'default',
+                  transform: `rotate(${it.rot || 0}deg) scaleX(${it.flip ? -1 : 1})`, zIndex: it.z,
+                  opacity: (it.opacity ?? 100) / 100,
+                  cursor: editable ? (it.locked ? 'not-allowed' : 'grab') : 'default',
                 }}
                 onPointerDown={e => startDrag(e, 'move', it)}
               >
                 <BlobImg fileRef={it.src} imgStyle={{ objectFit: 'contain', pointerEvents: 'none' }} />
-                {sel && (
+                {sel && !it.locked && (
                   <>
                     <div className="mr-handle mr-handle-rotate" onPointerDown={e => startDrag(e, 'rotate', it)}>⟳</div>
                     <div className="mr-handle mr-handle-resize" onPointerDown={e => startDrag(e, 'resize', it)}>⇲</div>
@@ -95,6 +101,31 @@ export function RoomCanvas({
             );
           })}
         </div>
+
+        {selItem && (
+          <div className="mr-sel-toolbar" style={{ left: (selItem.x + selItem.w / 2) * zoom, top: selItem.y * zoom }}
+            onPointerDown={e => e.stopPropagation()}>
+            <div className="mr-sel-toolbar-row">
+              <button type="button" disabled={selItem.locked} title="투명도" onClick={() => setShowOpacity(v => !v)}>👁</button>
+              <button type="button" disabled={selItem.locked} title="좌우반전"
+                onClick={() => onChange(selItem.id, { flip: !selItem.flip })}>↔</button>
+              <button type="button" disabled={selItem.locked} title="맨 앞으로"
+                onClick={() => onChange(selItem.id, { z: maxZ + 1 })}>↑</button>
+              <button type="button" disabled={selItem.locked} title="맨 뒤로"
+                onClick={() => onChange(selItem.id, { z: minZ - 1 })}>↓</button>
+              <button type="button" title={selItem.locked ? '잠금 해제' : '고정'}
+                onClick={() => onChange(selItem.id, { locked: !selItem.locked })}>{selItem.locked ? '🔒' : '🔓'}</button>
+              <button type="button" disabled={selItem.locked} title="삭제" onClick={() => onDelete(selItem.id)}>🗑</button>
+            </div>
+            {showOpacity && !selItem.locked && (
+              <div className="mr-sel-opacity">
+                <input type="range" min={10} max={100} step={5} value={selItem.opacity ?? 100}
+                  onChange={e => onChange(selItem.id, { opacity: Number(e.target.value) })} />
+                <small>{selItem.opacity ?? 100}%</small>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

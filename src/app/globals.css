@@ -2169,6 +2169,17 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .mr-handle{position:absolute;width:20px;height:20px;display:grid;place-items:center;background:#fff;border:1.5px solid var(--ink);border-radius:50%;font-size:11px;cursor:pointer;user-select:none}
 .mr-handle-resize{right:-10px;bottom:-10px;cursor:nwse-resize}
 .mr-handle-rotate{left:50%;top:-28px;transform:translateX(-50%);cursor:grab}
+.mr-item.locked{outline:1.5px dashed rgba(127,127,127,.5);outline-offset:1px}
+
+/* 아이템 선택 시 위에 뜨는 플로팅 툴바 — 투명도·좌우반전·맨앞/맨뒤·고정·삭제 */
+.mr-sel-toolbar{position:absolute;transform:translate(-50%,calc(-100% - 10px));z-index:8;display:flex;flex-direction:column;align-items:center;gap:6px}
+.mr-sel-toolbar-row{display:flex;gap:3px;padding:5px;background:#1c1f24;border-radius:12px;box-shadow:var(--sh-md)}
+.mr-sel-toolbar-row button{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:14px;color:#eceef1;background:transparent}
+.mr-sel-toolbar-row button:hover:not(:disabled){background:rgba(255,255,255,.14)}
+.mr-sel-toolbar-row button:disabled{opacity:.3;cursor:not-allowed}
+.mr-sel-opacity{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#1c1f24;border-radius:999px;box-shadow:var(--sh-md)}
+.mr-sel-opacity input[type=range]{width:90px}
+.mr-sel-opacity small{color:#eceef1;font-size:10px;width:28px}
 
 /* 헤더 — 리스트로 돌아가는 아이콘 + 방 제목/작성자 */
 .mr-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
