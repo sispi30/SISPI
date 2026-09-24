@@ -650,6 +650,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
             )}
           </div>
         )}
+
+        {/* 상세 하단 연동 리스트 선택 + 연동 항목 검색 — 로그 백업 / 세션 게시판.
+            자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
+        {!auObj && <RelLinkBoard relId={initial?.id} mode={linkBoard} onMode={setLinkBoard} />}
       </div>
 
       {/* 우: 기본 정보 + 저장 */}
@@ -808,9 +812,6 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 </p>
               </div>
             )}
-
-            {/* 상세 하단 연동 리스트 선택 — 로그 백업 / 세션 게시판. 자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
-            {!auObj && <RelLinkBoard relId={initial?.id} mode={linkBoard} onMode={setLinkBoard} />}
 
             {/* 페이지 배경 (v2.0 사용자 요청) — 이 페이지에 있는 동안의 바탕 그라데이션. AU마다 따로 */}
             {(
