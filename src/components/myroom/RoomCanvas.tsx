@@ -124,6 +124,15 @@ export function RoomCanvas({
   const selItem = editable && !panning ? items.find(it => it.id === selectedId) : undefined;
   const maxZ = items.reduce((m, it) => Math.max(m, it.z), 0);
   const minZ = items.reduce((m, it) => Math.min(m, it.z), 0);
+  const stepZ = (dir: 1 | -1) => {
+    if (!selItem) return;
+    const ord = [...items].sort((a, b) => a.z - b.z);
+    const idx = ord.findIndex(i => i.id === selItem.id);
+    const other = ord[idx + dir];
+    if (!other) return; // 이미 맨 앞/맨 뒤
+    onChange(selItem.id, { z: other.z });
+    onChange(other.id, { z: selItem.z });
+  };
 
   return (
     <div className="mr-stage-scroll">
@@ -164,9 +173,13 @@ export function RoomCanvas({
               <button type="button" disabled={selItem.locked} title="좌우반전"
                 onClick={() => onChange(selItem.id, { flip: !selItem.flip })}>↔</button>
               <button type="button" disabled={selItem.locked} title="맨 앞으로"
-                onClick={() => onChange(selItem.id, { z: maxZ + 1 })}>↑</button>
+                onClick={() => onChange(selItem.id, { z: maxZ + 1 })}>⇈</button>
+              <button type="button" disabled={selItem.locked} title="앞으로"
+                onClick={() => stepZ(1)}>↑</button>
+              <button type="button" disabled={selItem.locked} title="뒤로"
+                onClick={() => stepZ(-1)}>↓</button>
               <button type="button" disabled={selItem.locked} title="맨 뒤로"
-                onClick={() => onChange(selItem.id, { z: minZ - 1 })}>↓</button>
+                onClick={() => onChange(selItem.id, { z: minZ - 1 })}>⇊</button>
               <button type="button" title={selItem.locked ? '잠금 해제' : '고정'}
                 onClick={() => onChange(selItem.id, { locked: !selItem.locked })}>{selItem.locked ? '🔒' : '🔓'}</button>
               <button type="button" disabled={selItem.locked} title="삭제" onClick={() => onDelete(selItem.id)}>🗑</button>
