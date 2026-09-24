@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { useLocalList, BOARD_SEED, Post, newId, FoldType, SessionMeta } from '@/lib/postStore';
 import { useBoards, boardHref, MAIN_BOARD_ID, BoardPerm } from '@/lib/boardStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
+import { Relation, REL_SEED } from '@/lib/charStore';
 import { renderBody } from '@/lib/sanitize';
 import { KInput, KTextarea, KSelect, KCheck, KDate } from '@/components/ui/Kit';
 import { CropEditor, CropImg, CropValue } from '@/components/ui/CropEditor';
@@ -67,6 +68,12 @@ function WriteInner() {
   // 기존 세션(플레이 기록) 검색해서 연동 (v3.4 사용자 요청) — 새로 만들지 않고 이미 있는
   // 기록을 찾아 이 글에 연결한다
   const [sQuery, setSQuery] = useState('');
+  // 자관 연동 — 로그 백업과 같은 방식(제목 검색 → 연결). undefined = 아직 손대지 않음이라 연결된 기록에
+  // 이미 걸려 있는 자관을 그대로 보여 준다(수정 화면에서 기록 로드 시점과 무관하게 맞도록 파생값으로 둠)
+  const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
+  const [sRelPick, setSRelPick] = useState<string | undefined>(undefined);
+  const [sRelQuery, setSRelQuery] = useState('');
+  const sRelId = sRelPick !== undefined ? sRelPick : (records.find(r => r.id === sRecordId)?.relId ?? '');
   // 본문 이미지 목록 — HTML <img> + Markdown 이미지
   const bodyImages = useMemo(() => {
     const out: string[] = [];
@@ -142,6 +149,8 @@ function WriteInner() {
     const syncRecord = (postId: string): string | undefined => {
       if (!isSession) return undefined;
       const rec: PlayRecord = {
+        // 기존 기록에 붙어 있던 참여 캐릭터·로그 연결 등을 지우지 않도록 먼저 펼친다
+        ...(records.find(r => r.id === sRecordId) ?? {}),
         id: sRecordId || newId(),
         secId: records.find(r => r.id === sRecordId)?.secId,
         date: sDate || undefined,
@@ -153,6 +162,7 @@ function WriteInner() {
         playtime: sPlaytime.trim(),
         url: sUrl.trim() || undefined,
         postId,
+        relId: sRelId || undefined,
       };
       setRecords(sRecordId ? records.map(r => (r.id === sRecordId ? rec : r)) : [...records, rec]);
       return rec.id;
@@ -327,6 +337,34 @@ function WriteInner() {
                           setSQuery('');
                         }} style={{ padding: '7px 11px', cursor: 'var(--cur-pointer,pointer)', fontSize: 12.5, borderBottom: '1px dashed var(--line)' }}>
                           <b>{r.scenario}</b> {r.date && <small style={{ color: 'var(--faint)' }}>{r.date}</small>}
+                        </div>
+                      ))}
+                      {found.length === 0 && <p className="hint" style={{ padding: 8 }}>검색 결과가 없습니다</p>}
+                    </div>
+                  );
+                })()}
+              </div>
+              {/* 자관 연동 (optional) — 로그 백업의 자관 연동과 같이 제목으로 검색해 연결한다.
+                  연결되면 자관 상세에 이 세션이 보이고, 이 글에는 자관으로 가는 버튼이 생긴다 */}
+              <div style={{ marginBottom: 10 }}>
+                <label className="k-label" style={{ marginBottom: 5 }}>자관 연동 (optional)</label>
+                {sRelId && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', border: '1.5px solid var(--accent)', borderRadius: 8, marginBottom: 6, fontSize: 12.5 }}>
+                    <b>{rels.find(r => r.id === sRelId)?.name ?? '(찾을 수 없음)'}</b>
+                    <span style={{ marginLeft: 'auto', color: 'var(--faint)', fontSize: 11, cursor: 'var(--cur-pointer,pointer)' }}
+                      onClick={() => setSRelPick('')}>연동 해제 ✕</span>
+                  </div>
+                )}
+                <KInput placeholder="자관 제목 검색" value={sRelQuery} onChange={e => setSRelQuery(e.target.value)} />
+                {sRelQuery.trim() && (() => {
+                  const q = sRelQuery.trim().toLowerCase();
+                  const found = rels.filter(r => r.id !== sRelId && r.name.toLowerCase().includes(q));
+                  return (
+                    <div style={{ marginTop: 6, maxHeight: 150, overflowY: 'auto', border: '1.5px solid var(--line)', borderRadius: 9 }}>
+                      {found.map(r => (
+                        <div key={r.id} onClick={() => { setSRelPick(r.id); setSRelQuery(''); }}
+                          style={{ padding: '7px 11px', cursor: 'var(--cur-pointer,pointer)', fontSize: 12.5, borderBottom: '1px dashed var(--line)' }}>
+                          <b>{r.name}</b> {r.catchphrase && <small style={{ color: 'var(--faint)' }}>{r.catchphrase}</small>}
                         </div>
                       ))}
                       {found.length === 0 && <p className="hint" style={{ padding: 8 }}>검색 결과가 없습니다</p>}

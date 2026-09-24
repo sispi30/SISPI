@@ -12,6 +12,8 @@ import {
 } from '@/lib/postStore';
 import { useBoards, boardHref, MAIN_BOARD_ID, BoardPerm } from '@/lib/boardStore';
 import { renderBody } from '@/lib/sanitize';
+import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
+import { Relation, REL_SEED, relPath } from '@/lib/charStore';
 import { putBlob, BlobImg, useBlobUrl } from '@/lib/blobStore';
 import { KInput, KSelect, KTextarea } from '@/components/ui/Kit';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
@@ -75,6 +77,9 @@ export default function BoardDetailPage() {
   // 일반 회원이 관리자 글에 댓글을 달 수 없었다 (포크 사용자 제보)
   const [cmtRows, setCmtRows] = useLocalList<CommentRow>(COMMENT_KEY, COMMENT_SEED);
   const { boards } = useBoards();                  // 소속 게시판 (5.2 다중 게시판)
+  // 자관 연동 — 세션 글 ↔ 플레이 기록(recordId) ↔ 자관(relId). 로그 상세의 자관 버튼과 같은 방식
+  const [records] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
+  const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
   const [open, setOpen] = useState(false);         // 접기 해제
   const [cmt, setCmt] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -145,6 +150,8 @@ export default function BoardDetailPage() {
   const canComment = allow(board.permComment) && (!!user || guestMode);
 
   const canManage = isAdmin || isAuthor;
+  const linkedRelId = post.session?.recordId ? records.find(r => r.id === post.session!.recordId)?.relId : undefined;
+  const linkedRel = linkedRelId ? rels.find(r => r.id === linkedRelId) : undefined;
   const update = (patch: Partial<Post>) =>
     setPosts(posts.map(p => (p.id === post.id ? { ...p, ...patch } : p)));
 
@@ -335,6 +342,10 @@ export default function BoardDetailPage() {
           </p>
         )}
         <div className="head-actions">
+          {/* 자관이 연동된 세션이면 그 자관 페이지로 가는 버튼 (연동 전에는 나타나지 않음) */}
+          {linkedRel && (
+            <button className="btn btn-dark" onClick={() => router.push(relPath(linkedRel))}>{linkedRel.name} ›</button>
+          )}
           {/* 수정은 작성자 본인만 — 관리자도 타인 글은 삭제만 (v1.9) */}
           {isAuthor && (
             <button className="btn btn-dark" onClick={() => router.push(`/board/write?edit=${post.id}`)}>EDIT</button>

@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/ThemeProvider';
-import { useLocalList, newId } from '@/lib/postStore';
+import { useLocalList, newId, Post, BOARD_SEED } from '@/lib/postStore';
 import {
   Relation, REL_SEED, Character, CHAR_SEED, RelMember, QaEntry, QaAnswer, TlItem, findChar, Visibility, CharGrant,
   auMember, auStyle, fullShadow, hasRelGrant,
@@ -18,7 +18,7 @@ import {
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { putBlob } from '@/lib/blobStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
-import { TrpgLog, TRPG_SEED } from '@/lib/galleryStore';
+import { TrpgLog, TRPG_SEED, PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { RpRoom, RP_SEED } from '@/lib/rpStore';
 import { useFonts } from '@/lib/fontStore';
 import { Tip, KInput, KTextarea, KSelect, KRadio, KCheck } from '@/components/ui/Kit';
@@ -257,6 +257,9 @@ export default function RelDetailPage() {
   const [rels, setRels, loaded] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
   const [chars, setChars, charsLoaded] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   const [logs] = useLocalList<TrpgLog>('ohome.trpg.v1', TRPG_SEED);
+  // 세션 게시판 연동 — 플레이 기록(PlayRecord.relId)과 그 기록에 붙은 세션 글
+  const [records] = useLocalList<PlayRecord>('ohome.playlog.v1', PLAYLOG_SEED);
+  const [sessionPosts] = useLocalList<Post>('ohome.board.v1', BOARD_SEED);
   const [rooms] = useLocalList<RpRoom>('ohome.rp.v1', RP_SEED);
   const [tab, setTab] = useState<'tl' | 'qa'>('tl');
   const [auId, setAuId] = useState('base');
@@ -524,6 +527,16 @@ export default function RelDetailPage() {
     [rel, auId, qaQuery],
   );
   const relLogs = useMemo(() => logs.filter(l => l.relId === rel?.id), [logs, rel]);
+  // 연동된 세션 — 세션 글이 붙어 있으면 비밀글은 관리자·작성자에게만 (제목이 새지 않게),
+  // 글 없이 기록만 있는 세션은 플레이기록 표로 안내
+  const relSessions = useMemo(() => records
+    .filter(r => r.relId === rel?.id)
+    .filter(r => {
+      if (!r.postId) return true;
+      const p = sessionPosts.find(x => x.id === r.postId);
+      if (!p) return isAdmin;
+      return !p.secret || isAdmin || (!!p.authorId && p.authorId === user?.id);
+    }), [records, sessionPosts, rel, isAdmin, user]);
   // 역극 연동 (4.9) — 내가 참여한 방 + 공개 전환된 완결 방만 (비참여 방은 존재 자체 비노출)
   const relRooms = useMemo(() => rooms.filter(rm => rm.relId === rel?.id
     && ((user && rm.memberIds.includes(user.id)) || (rm.status === 'done' && rm.isPublic))),
@@ -1444,7 +1457,19 @@ export default function RelDetailPage() {
           )}
         </div>
         )}
-        {!au?.hideLog && (
+        {!au?.hideLog && rel?.linkBoard === 'session' && (
+        <div className="panel widget" style={{ margin: 0, ...(au?.hideRp ? { gridColumn: '1/-1' } : null) }}>
+          <h4>세션 <span className="more" onClick={() => router.push('/playlog')}>더보기 ›</span></h4>
+          {relSessions.length > 0 ? relSessions.map(s => (
+            <div key={s.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }}
+              onClick={() => router.push(s.postId ? `/board/${s.postId}` : '/playlog')}>
+              <span>{s.scenario}</span>
+              <b style={{ fontSize: 11, color: 'var(--faint)' }}>{s.date?.replace(/-/g, '.') ?? ''}</b>
+            </div>
+          )) : <p className="hint" style={{ margin: 0 }}>연동된 세션이 없습니다 — 세션 등록 시 자관을 선택하면 여기에 표시</p>}
+        </div>
+        )}
+        {!au?.hideLog && rel?.linkBoard !== 'session' && (
         <div className="panel widget" style={{ margin: 0, ...(au?.hideRp ? { gridColumn: '1/-1' } : null) }}>
           <h4>로그 <span className="more" onClick={() => router.push('/trpg')}>더보기 ›</span></h4>
           {relLogs.length > 0 ? relLogs.map(l => (
@@ -1620,7 +1645,7 @@ export default function RelDetailPage() {
               <div style={{ display: 'flex', gap: 16 }}>
                 <KCheck label={<span style={{ fontSize: 11.5 }}>역극 리스트 숨김</span>} checked={!!a.hideRp}
                   onChange={v => updateRel({ aus: rel.aus.map(x => (x.id === a.id ? { ...x, hideRp: v || undefined } : x)) })} />
-                <KCheck label={<span style={{ fontSize: 11.5 }}>로그 리스트 숨김</span>} checked={!!a.hideLog}
+                <KCheck label={<span style={{ fontSize: 11.5 }}>{rel.linkBoard === 'session' ? '세션' : '로그'} 리스트 숨김</span>} checked={!!a.hideLog}
                   onChange={v => updateRel({ aus: rel.aus.map(x => (x.id === a.id ? { ...x, hideLog: v || undefined } : x)) })} />
               </div>
             </div>

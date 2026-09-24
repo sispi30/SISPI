@@ -439,6 +439,8 @@ export interface Relation {
    *  **화면에서 가리는 것일 뿐 완전한 차단이 아니다** — 답변은 공개로 저장돼 있어 주소를 직접
    *  다루는 사람에게는 보일 수 있다. 설정 화면에도 그대로 적어 둔다. */
   qaHide?: boolean;
+  /** 상세 하단에 보일 연동 리스트 — 로그 백업(log) / 세션 게시판(session). 미지정이면 지금까지대로 로그 */
+  linkBoard?: 'log' | 'session';
 }
 
 export const CHAR_SEED: Character[] = [];

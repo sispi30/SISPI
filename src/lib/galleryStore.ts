@@ -243,6 +243,9 @@ export interface PlayRecord {
   /** 참여 캐릭터 (v2.8) — 캐릭터 게시판(/chars)과 연동. 캐릭터 상세 화면의 TRPG 탭은
    *  이 필드로 자신이 참여한 기록을 찾아 보여준다(단일 출처라 어느 쪽에서 고쳐도 자동 반영됨). */
   charIds?: string[];
+  /** 자관 연동 — 자관 게시판(/rels)과 연동. 로그 백업(TrpgLog.relId)과 같은 방식으로, 이 값 하나만 보고
+   *  자관 상세의 세션 리스트와 세션 글의 자관 버튼을 그린다(단일 출처라 어느 쪽에서 고쳐도 자동 반영됨). */
+  relId?: string;
 }
 
 export const PLAYLOG_SEED: PlayRecord[] = [];

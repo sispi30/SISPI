@@ -17,6 +17,7 @@ import { Lightbox } from '@/components/ui/Lightbox';
 import { useConfirmDelete } from '@/components/ui/Modal';
 import { fileDrop } from '@/lib/dnd';
 import { useToast } from '@/components/ui/Toast';
+import { RelLinkBoard } from '@/components/rels/RelLinkBoard';
 
 export interface RelFormValue {
   slug?: string;             // 페이지 주소 /rels/{slug} (v1.9 — 신규 등록 시, 비우면 자동 id)
@@ -61,6 +62,7 @@ export interface RelFormValue {
   fullFront?: string;                          // 앞에 보일 캐릭터 id
   auName?: string;           // AU별 자관명 (v2.0 사용자 요청 — AU 편집일 때만)
   qaHide?: boolean;          // 문답 답변 숨기기 (v2.0 사용자 요청)
+  linkBoard?: 'log' | 'session'; // 상세 하단에 보일 연동 리스트 — 로그 백업 / 세션 게시판 (자관 전체 설정)
   pickedCharIds: string[];   // 등록 시 연동할 내 캐릭터 (수정 모드에선 빈 배열)
 }
 
@@ -289,6 +291,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [auName, setAuName] = useState(auObj?.name ?? '');
   // 문답 답변 가리기 (v2.0 사용자 요청) — 질문은 그대로 두고 답변 내용만
   const [qaHide, setQaHide] = useState(!!initial?.qaHide);
+  const [linkBoard, setLinkBoard] = useState<'log' | 'session'>(initial?.linkBoard ?? 'log');
   // 전신 앞뒤도 AU별 (v2.0) — AU에서 바꾼 앞뒤가 원본·다른 AU를 건드리지 않게
   const [fullFront, setFullFront] = useState<string | undefined>(auObj?.fullFront ?? initial?.fullFront);
 
@@ -363,6 +366,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       cp,
       auName: auObj ? auName.trim() : undefined,
       qaHide: qaHide || undefined,
+      linkBoard: linkBoard === 'session' ? 'session' : undefined,
       fulls: pairMembers.length
         ? Object.fromEntries(await Promise.all(pairMembers.map(async m => {
           const d = fulls[m.charId];
@@ -804,6 +808,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 </p>
               </div>
             )}
+
+            {/* 상세 하단 연동 리스트 선택 — 로그 백업 / 세션 게시판. 자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
+            {!auObj && <RelLinkBoard relId={initial?.id} mode={linkBoard} onMode={setLinkBoard} />}
 
             {/* 페이지 배경 (v2.0 사용자 요청) — 이 페이지에 있는 동안의 바탕 그라데이션. AU마다 따로 */}
             {(

@@ -59,7 +59,7 @@ function RelEditInner() {
                 headerBgG1: v.headerBgG1, headerBgG2: v.headerBgG2, headerBgAngle: v.headerBgAngle,
                 pageBgG1: v.pageBgG1, pageBgG2: v.pageBgG2, pageBgAngle: v.pageBgAngle }),
             // CP/문답 숨김은 자관 전체 설정(AU 폼에는 없음) · 전신 앞뒤는 AU면 그 AU에만 (v2.0)
-            ...(auObj ? {} : { cp: v.cp, qaHide: v.qaHide, fullFront: v.fullFront ?? r.fullFront }),
+            ...(auObj ? {} : { cp: v.cp, qaHide: v.qaHide, linkBoard: v.linkBoard, fullFront: v.fullFront ?? r.fullFront }),
             illustMode: v.kind === 'pair' ? r.illustMode : 'one',
             // 전신 크기·위치·한마디·대사 색 — **AU를 편집 중이면 자관 공통을 건드리지 않는다**
             // (v2.0 사용자 발견: AU에서 고치면 다른 AU 페이지까지 같이 바뀌던 것.
