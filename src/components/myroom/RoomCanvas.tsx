@@ -1,7 +1,8 @@
 'use client';
-// 마이룸 스테이지 (v1.3) — 고정 캔버스/흰 배경 없이 편집 화면 전체를 좌표 기준으로 쓴다.
+// 마이룸 스테이지 (v1.4) — 고정 캔버스/흰 배경 없이 편집 화면 전체를 좌표 기준으로 쓴다.
 // 아이템 선택 시 위에 뜨는 플로팅 툴바(투명도·좌우반전·맨앞/맨뒤·고정·삭제) + 코너의
-// 리사이즈·회전 핸들로 조작한다. 고정(잠금)된 아이템은 잠금 해제 전까지 다른 조작이 막힌다.
+// 리사이즈·회전 핸들로 조작한다. 화면 이동 모드(또는 스페이스바 누른 채 드래그) 중에는
+// 아이템을 건드리지 않고 화면(페이지 스크롤)만 움직인다.
 import React, { useEffect, useRef, useState } from 'react';
 import { BlobImg } from '@/lib/blobStore';
 import type { MyRoomItem } from '@/lib/myroomStore';
@@ -9,7 +10,7 @@ import type { MyRoomItem } from '@/lib/myroomStore';
 type DragKind = 'move' | 'resize' | 'rotate';
 
 export function RoomCanvas({
-  items, editable, selectedId, onSelect, onChange, onDelete, zoom,
+  items, editable, selectedId, onSelect, onChange, onDelete, zoom, gridOn, panMode,
 }: {
   items: MyRoomItem[];
   editable: boolean;
@@ -18,12 +19,33 @@ export function RoomCanvas({
   onChange: (id: string, patch: Partial<MyRoomItem>) => void;
   onDelete: (id: string) => void;
   zoom: number;
+  gridOn: boolean;
+  panMode: boolean;
 }) {
   const dragRef = useRef<{
     kind: DragKind; id: string; startX: number; startY: number;
     it: MyRoomItem; cx: number; cy: number;
   } | null>(null);
+  const panRef = useRef<{ startX: number; startY: number; scrollX: number; scrollY: number } | null>(null);
   const [showOpacity, setShowOpacity] = useState(false);
+  const [spaceHeld, setSpaceHeld] = useState(false);
+  const panning = editable && (panMode || spaceHeld);
+
+  // 스페이스바를 누른 채 드래그해도 화면 이동 모드와 같은 동작 (입력창에 포커스 중일 땐 무시)
+  useEffect(() => {
+    if (!editable) return;
+    const kd = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.repeat) return;
+      const tag = (document.activeElement as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      e.preventDefault();
+      setSpaceHeld(true);
+    };
+    const ku = (e: KeyboardEvent) => { if (e.code === 'Space') setSpaceHeld(false); };
+    window.addEventListener('keydown', kd);
+    window.addEventListener('keyup', ku);
+    return () => { window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); };
+  }, [editable]);
 
   useEffect(() => {
     if (!editable) return;
@@ -32,26 +54,51 @@ export function RoomCanvas({
       if (!d) return;
       const dx = (e.clientX - d.startX) / zoom;
       const dy = (e.clientY - d.startY) / zoom;
+      // 메인 페이지 그리드와 동일: 위치·크기는 10px, 회전은 5° 단위로 스냅
       if (d.kind === 'move') {
-        onChange(d.id, { x: Math.round(d.it.x + dx), y: Math.round(d.it.y + dy) });
+        const nx = d.it.x + dx, ny = d.it.y + dy;
+        onChange(d.id, gridOn
+          ? { x: Math.round(nx / 10) * 10, y: Math.round(ny / 10) * 10 }
+          : { x: Math.round(nx), y: Math.round(ny) });
       } else if (d.kind === 'resize') {
+        const nw = d.it.w + dx, nh = d.it.h + dy;
         onChange(d.id, {
-          w: Math.max(20, Math.round(d.it.w + dx)),
-          h: Math.max(20, Math.round(d.it.h + dy)),
+          w: Math.max(20, gridOn ? Math.round(nw / 10) * 10 : Math.round(nw)),
+          h: Math.max(20, gridOn ? Math.round(nh / 10) * 10 : Math.round(nh)),
         });
       } else if (d.kind === 'rotate') {
         const ang = Math.atan2(e.clientY - d.cy, e.clientX - d.cx) * (180 / Math.PI) + 90;
-        onChange(d.id, { rot: Math.round(ang) });
+        onChange(d.id, { rot: gridOn ? Math.round(ang / 5) * 5 : Math.round(ang) });
       }
     };
     const up = () => { dragRef.current = null; };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
     return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
-  }, [editable, zoom, onChange]);
+  }, [editable, zoom, gridOn, onChange]);
+
+  // 화면 이동 — 아이템 좌표는 그대로 두고 페이지 스크롤만 옮긴다
+  useEffect(() => {
+    if (!panning) return;
+    const move = (e: PointerEvent) => {
+      const p = panRef.current;
+      if (!p) return;
+      window.scrollTo({ left: p.scrollX - (e.clientX - p.startX), top: p.scrollY - (e.clientY - p.startY) });
+    };
+    const up = () => { panRef.current = null; };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  }, [panning]);
+
+  const startPan = (e: React.PointerEvent) => {
+    e.preventDefault();
+    panRef.current = { startX: e.clientX, startY: e.clientY, scrollX: window.scrollX, scrollY: window.scrollY };
+  };
 
   const startDrag = (e: React.PointerEvent, kind: DragKind, it: MyRoomItem) => {
     if (!editable) return;
+    if (panning) { startPan(e); return; }
     e.stopPropagation();
     e.preventDefault();
     onSelect(it.id);
@@ -64,21 +111,26 @@ export function RoomCanvas({
     };
   };
 
+  const onStagePointerDown = (e: React.PointerEvent) => {
+    if (panning) { startPan(e); return; }
+    onSelect(null);
+  };
+
   // 캔버스 경계가 없으므로, 아이템이 놓인 만큼만 스테이지 높이가 늘어난다 (빈 방은 최소 높이 확보)
   const maxBottom = items.reduce((m, it) => Math.max(m, it.y + it.h), 0);
   const stageHeight = Math.max(560, Math.round((maxBottom + 140) * zoom));
 
   const sorted = [...items].sort((a, b) => a.z - b.z);
-  const selItem = editable ? items.find(it => it.id === selectedId) : undefined;
+  const selItem = editable && !panning ? items.find(it => it.id === selectedId) : undefined;
   const maxZ = items.reduce((m, it) => Math.max(m, it.z), 0);
   const minZ = items.reduce((m, it) => Math.min(m, it.z), 0);
 
   return (
     <div className="mr-stage-scroll">
-      <div className="mr-stage-inner" style={{ height: stageHeight }} onPointerDown={() => onSelect(null)}>
-        <div className="mr-stage-scale" style={{ transform: `scale(${zoom})` }}>
+      <div className={`mr-stage-inner${panning ? ' panning' : ''}`} style={{ height: stageHeight }} onPointerDown={onStagePointerDown}>
+        <div className={`mr-stage-scale${gridOn && editable ? ' gridlines' : ''}`} style={{ transform: `scale(${zoom})` }}>
           {sorted.map(it => {
-            const sel = editable && selectedId === it.id;
+            const sel = !panning && editable && selectedId === it.id;
             return (
               <div
                 key={it.id}
@@ -87,10 +139,10 @@ export function RoomCanvas({
                   left: it.x, top: it.y, width: it.w, height: it.h,
                   transform: `rotate(${it.rot || 0}deg) scaleX(${it.flip ? -1 : 1})`, zIndex: it.z,
                   opacity: (it.opacity ?? 100) / 100,
-                  cursor: editable ? (it.locked ? 'not-allowed' : 'grab') : 'default',
+                  cursor: !editable ? 'default' : panning ? 'grab' : (it.locked ? 'not-allowed' : 'grab'),
                 }}
                 onPointerDown={e => startDrag(e, 'move', it)}
-                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); if (editable) onSelect(it.id); }}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); if (editable && !panning) onSelect(it.id); }}
               >
                 <BlobImg fileRef={it.src} imgStyle={{ objectFit: 'contain', pointerEvents: 'none' }} />
                 {sel && !it.locked && (

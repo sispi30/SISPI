@@ -24,15 +24,15 @@ import { useToast } from '@/components/ui/Toast';
 
 /** 방 참조(blobStore ref) → 캔버스에 그릴 수 있는 <img> 엘리먼트로 (캡처/내보내기용) */
 async function refToImage(ref: string): Promise<HTMLImageElement> {
-  let src = ref;
-  if (!/^(https?:|data:|blob:)/.test(ref)) {
-    const blob = await getBlob(ref);
-    if (!blob) throw new Error('no-blob');
-    src = URL.createObjectURL(blob);
-  }
+  // 항상 getBlob을 거친다 — 서버 모드 URL이면 저장소 CORS가 막혀 있어도 getBlob이 자동으로
+  // /api/font 동일 출처 중계로 우회해서 받아온다 (fetch 폰트 중계와 같은 경로). 여기서 직접
+  // img.crossOrigin + 원격 URL을 쓰면 저장소가 CORS 헤더를 안 줄 때 캔버스가 오염돼 내보내기가
+  // 조용히 실패한다 — 실제로 겪은 「내보내기 실패」 원인이 이것.
+  const blob = await getBlob(ref);
+  if (!blob) throw new Error('no-blob');
+  const src = URL.createObjectURL(blob);
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error('load-failed'));
     img.src = src;
@@ -57,6 +57,8 @@ function RoomEditorInner() {
 
   const [editMode, setEditMode] = useState(false);
   const [zoom, setZoom] = useState(1); // 30% ~ 200%, 화면비율 확대/축소
+  const [gridOn, setGridOn] = useState(false); // 메인 페이지와 동일한 10px 격자 스냅
+  const [panMode, setPanMode] = useState(false); // 화면 이동 모드 — 켜져 있으면 아이템 대신 화면(스크롤)만 움직임
   const [items, setItems] = useState<MyRoomItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -193,8 +195,9 @@ function RoomEditorInner() {
       a.download = `${room.title || 'myroom'}.png`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      toast('이미지로 내보내기에 실패했습니다 (이미지 저장소 CORS 설정을 확인해주세요)');
+    } catch (err) {
+      console.error('myroom capture failed', err);
+      toast('이미지로 내보내기에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setCapturing(false);
     }
@@ -212,7 +215,7 @@ function RoomEditorInner() {
 
       <RoomCanvas
         items={items} editable={canManage && editMode} selectedId={selectedId}
-        onSelect={setSelectedId} onChange={patchItem} onDelete={deleteItem} zoom={zoom}
+        onSelect={setSelectedId} onChange={patchItem} onDelete={deleteItem} zoom={zoom} gridOn={gridOn} panMode={panMode}
       />
 
       {canManage && (
@@ -222,6 +225,10 @@ function RoomEditorInner() {
             <small>{Math.round(zoom * 100)}%</small>
             <button type="button" onClick={() => setZoom(z => Math.max(0.3, Math.round((z - 0.1) * 10) / 10))}>－</button>
           </div>
+          <button type="button" className={`mr-float-btn grid${gridOn ? ' on' : ''}`} title="그리드"
+            onClick={() => setGridOn(v => !v)}>▦</button>
+          <button type="button" className={`mr-float-btn pan${panMode ? ' on' : ''}`} title="화면 이동 모드 (스페이스바+드래그도 동일)"
+            onClick={() => setPanMode(v => !v)}>🖐</button>
           <button type="button" className="mr-float-btn cap" title="캡처(내보내기)" disabled={capturing} onClick={captureRoom}>
             {capturing ? '…' : '📷'}
           </button>
