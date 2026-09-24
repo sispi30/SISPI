@@ -15,6 +15,7 @@ import {
   QaAnswerRow, QA_KEY, QA_SEED, MergedAnswer, answersFor,
   findByKey, charPath,
 } from '@/lib/charStore';
+import { isPlainSpec } from '@/lib/charRuleConfig';
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { putBlob } from '@/lib/blobStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
@@ -160,7 +161,7 @@ function MiniProf({ member, char, isAdmin, onGo, onRemove, auUnregistered, side,
         </div>
       </div>
       <div className="specs">
-        {char.specs.map(s => <div key={s.label}><b>{s.label}</b> {s.value}</div>)}
+        {char.specs.filter(isPlainSpec).map(s => <div key={s.label}><b>{s.label}</b> {s.value}</div>)}
       </div>
       {/* 캐릭터의 지금 색 팔레트를 그대로 읽는다 (v2.0 사용자 발견).
           예전엔 멤버를 추가할 때 복사해 둔 member.palette 스냅샷을 보여 줘서, 캐릭터 쪽에서 색을
@@ -1017,10 +1018,10 @@ export default function RelDetailPage() {
                       }}>
                       <b>{nc.name}</b>
                       {nc.sub && <small>{nc.sub}</small>}
-                      {((m && m.keywords.length > 0) || nc.specs.length > 0 || (nc.colors ?? m?.palette ?? []).length > 0) && (
+                      {((m && m.keywords.length > 0) || nc.specs.some(isPlainSpec) || (nc.colors ?? m?.palette ?? []).length > 0) && (
                         <div className="fb-kw-row">
                           {m?.keywords.map(k => <span key={k} className="pill">{k}</span>)}
-                          {nc.specs.map(s => <span key={s.label} className="pill">{s.label} {s.value}</span>)}
+                          {nc.specs.filter(isPlainSpec).map(s => <span key={s.label} className="pill">{s.label} {s.value}</span>)}
                           {(nc.colors ?? m?.palette ?? []).map(p => (
                             <span key={p.hex + p.label} className="fb-gem" data-tip={p.label} style={{ background: p.hex }} />
                           ))}
@@ -1184,7 +1185,7 @@ export default function RelDetailPage() {
                     ) : (
                       <>
                         <b style={{ fontFamily: familyOf(c.fontId) }}>{c.name}</b><i>{c.sub}</i>
-                        <small>{c.specs.slice(0, 3).map(s => s.value).join(' · ')}</small>
+                        <small>{c.specs.filter(isPlainSpec).slice(0, 3).map(s => s.value).join(' · ')}</small>
                         {(m.quote || noteOf(m) || m.keywords[0]) && (
                           <span className="ext">{m.quote || noteOf(m) || m.keywords[0]}</span>
                         )}

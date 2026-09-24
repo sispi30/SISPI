@@ -8,6 +8,11 @@ import { newId } from '@/lib/postStore';
 
 export type SpecFieldType = 'text' | 'select' | 'gauge' | 'relation_table' | 'skill_table' | 'status_block' | 'radar_stats';
 
+/** 한 줄 글자로 보여 줄 수 있는 항목인가 — 자유 입력(text)·선택(select)만 true.
+ *  게이지(공적점·추가생명력)·관계표·기능표·STATUS·레이더차트(4대 능력치)처럼 표나 그래프로 그려야 하는
+ *  항목은 false — 자관 상세의 배지(알약) 표시에서는 이런 항목을 뺀다. */
+export const isPlainSpec = (s: { type?: SpecFieldType }) => !s.type || s.type === 'text' || s.type === 'select';
+
 export interface GaugeRowValue { key: string; cur: string; max?: string; noMax?: boolean }
 export interface RelationColumnDef { key: string; label: string; type: 'text' | 'checkbox' }
 export type RelationRowValue = Record<string, string | boolean>;
