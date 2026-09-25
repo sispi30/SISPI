@@ -535,7 +535,10 @@ export default function RelDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rel, auId, qaQuery],
   );
-  const relLogs = useMemo(() => logs.filter(l => l.relId === rel?.id), [logs, rel]);
+  // 날짜(YYYY-MM-DD, ISO)순 정렬 — 등록 순서가 아니라 「세션/로그에 기입된 날짜」 기준으로 보여야 한다.
+  // 날짜를 안 적은 항목은 맨 뒤로 보낸다(기존엔 정렬을 안 해서 등록 순서대로 섞여 나왔다 — 사용자 제보)
+  const byDate = <T extends { date?: string }>(a: T, b: T) => (a.date || '9999') < (b.date || '9999') ? -1 : (a.date || '9999') > (b.date || '9999') ? 1 : 0;
+  const relLogs = useMemo(() => logs.filter(l => l.relId === rel?.id).sort(byDate), [logs, rel]);
   // 연동된 세션 — 세션 글이 붙어 있으면 비밀글은 관리자·작성자에게만 (제목이 새지 않게),
   // 글 없이 기록만 있는 세션은 플레이기록 표로 안내
   const relSessions = useMemo(() => records
@@ -545,7 +548,8 @@ export default function RelDetailPage() {
       const p = sessionPosts.find(x => x.id === r.postId);
       if (!p) return isAdmin;
       return !p.secret || isAdmin || (!!p.authorId && p.authorId === user?.id);
-    }), [records, sessionPosts, rel, isAdmin, user]);
+    })
+    .sort(byDate), [records, sessionPosts, rel, isAdmin, user]);
   // 역극 연동 (4.9) — 내가 참여한 방 + 공개 전환된 완결 방만 (비참여 방은 존재 자체 비노출)
   const relRooms = useMemo(() => rooms.filter(rm => rm.relId === rel?.id
     && ((user && rm.memberIds.includes(user.id)) || (rm.status === 'done' && rm.isPublic))),

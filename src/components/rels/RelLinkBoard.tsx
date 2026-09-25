@@ -28,10 +28,11 @@ export function RelLinkBoard({ relId, mode, onMode }: {
     : logs.map(l => ({ id: l.id, title: l.title, sub: logNo(l), relId: l.relId }));
 
   const query = q.trim().toLowerCase();
-  // 연결된 항목을 위로 — 목록이 길어도 무엇을 연결했는지 바로 보이게
+  // 연결된 항목을 위로, 그 안에서는 날짜순 — 목록이 길어도 무엇을 연결했는지 바로 보이고,
+  // 검색해서 찾을 때도 등록 순서가 아니라 항목에 적힌 날짜 순으로 보이게 한다
   const shown = items
     .filter(it => !query || it.title.toLowerCase().includes(query))
-    .sort((a, b) => Number(b.relId === relId) - Number(a.relId === relId));
+    .sort((a, b) => Number(b.relId === relId) - Number(a.relId === relId) || (a.sub || '9999').localeCompare(b.sub || '9999'));
   const linkedCount = items.filter(it => it.relId === relId).length;
 
   const toggle = (it: Item) => {
