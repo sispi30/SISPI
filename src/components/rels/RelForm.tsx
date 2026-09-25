@@ -58,6 +58,9 @@ export interface RelFormValue {
   quotes?: Record<string, string>;                              // 히어로 좌/우 한마디 문구 (v2.0)
   nameSizes?: Record<string, number>;                           // 멤버 카드 이름 크기 px (v2.0)
   nameBolds?: Record<string, boolean>;                          // 멤버 카드 이름 볼드 (v2.0 — 기본 켜짐)
+  heroNameSizes?: Record<string, number>;                       // PC 상세 전신 위 캐릭터 이름 크기 px (안 정하면 자동)
+  badgeAligns?: Record<string, 'top' | 'mid' | 'bottom'>;       // PC 상세 전신 위 이름·배지 묶음 세로 위치
+  titleSize?: number;                                           // 자관 이름(제목) 크기 px (안 정하면 기본)
   quoteColors?: Record<string, { fg?: string; mark?: string }>; // 히어로 대사 글씨/따옴표색 (페어, v1.9)
   fullFront?: string;                          // 앞에 보일 캐릭터 id
   auName?: string;           // AU별 자관명 (v2.0 사용자 요청 — AU 편집일 때만)
@@ -65,6 +68,9 @@ export interface RelFormValue {
   linkBoard?: 'log' | 'session'; // 상세 하단에 보일 연동 리스트 — 로그 백업 / 세션 게시판 (자관 전체 설정)
   pickedCharIds: string[];   // 등록 시 연동할 내 캐릭터 (수정 모드에선 빈 배열)
 }
+
+/** 전신 위 이름의 자동 크기 근처 값(창 폭 1000px일 때 약 34px) — 스텝퍼의 시작 표시값 */
+const HERO_NAME_DEFAULT = 34;
 
 interface FullDraft { ref?: string; file?: File; url?: string }
 
@@ -281,6 +287,31 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   // 멤버 카드 이름 크기 (v2.0) — 카드 폭이 좁아 이름마다 알맞은 크기가 다르다
   const [nameSizes, setNameSizes] = useState<Record<string, number>>(
     () => Object.fromEntries(pairMembers.map(m => [m.charId, mOf(m).nameSize ?? 17])));
+  // PC 상세 전신 위 캐릭터 이름 크기 — 안 정한 멤버는 자동(창 폭에 맞춤)이라 값이 없다
+  const [heroNameSizes, setHeroNameSizes] = useState<Record<string, number | undefined>>(
+    () => Object.fromEntries(pairMembers.map(m => [m.charId, mOf(m).heroNameSize])));
+  // 이름·배지 묶음 세로 위치 — 위(기본)/중앙/아래
+  const [badgeAligns, setBadgeAligns] = useState<Record<string, 'top' | 'mid' | 'bottom'>>(
+    () => Object.fromEntries(pairMembers.map(m => [m.charId, mOf(m).badgeAlign ?? 'top'])));
+  // 자관 이름(제목) 크기 — AU 편집이면 그 AU에 정해 둔 값부터, 없으면 자관 값
+  const [titleSize, setTitleSize] = useState<number | undefined>(auObj?.titleSize ?? initial?.titleSize);
+  // 자관 이름(제목) 크기 조절 — 2인 전신 히어로는 작은 제목(22px), 그 외는 큰 제목(64px)이 기본
+  const titleDefault = pairMembers.length > 0 ? 22 : 64;
+  const titleSizeCtl = (
+    <>
+      <label className="k-label" style={{ margin: '10px 0 0' }}>
+        자관 이름 크기 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 화면의 자관 이름(제목){auObj ? ` · ${auObj.label} AU` : ''} · 기본 {titleDefault}px</span>
+      </label>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <KStep value={titleSize ?? titleDefault} onChange={(v: number) => setTitleSize(v)}
+          min={10} max={120} step={1} suffix="px" />
+        {titleSize !== undefined && (
+          <button className="btn btn-ghost" style={{ padding: '3px 9px', fontSize: 10.5 }}
+            onClick={() => setTitleSize(undefined)}>기본으로</button>
+        )}
+      </div>
+    </>
+  );
   // 이름 볼드 (v2.0 사용자 요청) — 폰트에 따라 볼드가 어색한 경우가 있어 끌 수 있게. 기본은 볼드
   const [nameBolds, setNameBolds] = useState<Record<string, boolean>>(
     () => Object.fromEntries(pairMembers.map(m => [m.charId, mOf(m).nameBold ?? true])));
@@ -378,6 +409,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       quotes: pairMembers.length ? quotes : undefined,
       nameSizes: pairMembers.length ? nameSizes : undefined,
       nameBolds: pairMembers.length ? nameBolds : undefined,
+      heroNameSizes: pairMembers.length
+        ? Object.fromEntries(Object.entries(heroNameSizes).filter(([, n]) => n !== undefined) as [string, number][]) : undefined,
+      badgeAligns: pairMembers.length ? badgeAligns : undefined,
+      titleSize,
       quoteColors: pairMembers.length ? quoteColors : undefined,
       fullFront,
       pickedCharIds: picked,
@@ -559,16 +594,45 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               </div>
             ))}
 
-            {/* 멤버 카드 이름 크기 (v2.0 사용자 확정) — 자동으로 줄이지 않고 직접 정한다 */}
-            <label className="k-label" style={{ margin: '10px 0 0' }}>이름 크기 — 멤버 카드</label>
+            {/* 자관 이름(제목) 크기 — 이름 크기 항목 바로 위 */}
+            {titleSizeCtl}
+
+            {/* 캐릭터 이름 크기 — PC 상세 전신 위 이름과 모바일 멤버 카드 이름에 함께 적용된다
+                (v2.0 이후 모바일 카드는 별도 필드를 봐서 여기서 조정해도 반영되지 않던 것을 통합).
+                안 정하면 창 폭에 맞춰 자동(모바일 카드는 카드 기본 크기) */}
+            <label className="k-label" style={{ margin: '10px 0 0' }}>
+              캐릭터 이름 크기 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 화면 전신 위 이름 · 모바일 멤버 카드 이름 · 기본은 자동</span>
+            </label>
             {pairMembers.map((m, i) => (
-              <div key={m.charId} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div key={m.charId} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <b style={{ fontSize: 12, width: 92, flexShrink: 0 }}>{i === 0 ? '왼쪽' : '오른쪽'} · {memberNames?.[m.charId] ?? m.charId}</b>
                 <KCheck label="Bold" checked={nameBolds[m.charId] ?? true}
                   onChange={(v: boolean) => setNameBolds(s => ({ ...s, [m.charId]: v }))} />
-                <KStep value={nameSizes[m.charId] ?? 17}
-                  onChange={(v: number) => setNameSizes(s => ({ ...s, [m.charId]: v }))}
-                  min={10} max={32} step={1} suffix="px" />
+                <KStep value={heroNameSizes[m.charId] ?? HERO_NAME_DEFAULT}
+                  onChange={(v: number) => setHeroNameSizes(s => ({ ...s, [m.charId]: v }))}
+                  min={12} max={80} step={1} suffix="px" />
+                {heroNameSizes[m.charId] !== undefined && (
+                  <button className="btn btn-ghost" style={{ padding: '3px 9px', fontSize: 10.5 }}
+                    onClick={() => setHeroNameSizes(s => ({ ...s, [m.charId]: undefined }))}>자동</button>
+                )}
+              </div>
+            ))}
+
+            {/* 배지 위치 — 위/중앙/아래. 기준은 위 미리보기와 같은 영역(브라우저 창 기준 상세 화면).
+                여기 없으면 아직 자관 정보 수정 화면에 해당 코드가 반영·배포되지 않은 것이다 —
+                이 블록은 pairMembers.length > 0(=페어 자관)일 때만 나타난다 */}
+            <label className="k-label" style={{ margin: '10px 0 0' }}>
+              배지 위치 (위 / 중앙 / 아래) <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 화면 전신 위 이름·정보 배지 묶음을 세로로 어디에 둘지</span>
+            </label>
+            {pairMembers.map((m, i) => (
+              <div key={m.charId} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <b style={{ fontSize: 12, width: 92, flexShrink: 0 }}>{i === 0 ? '왼쪽' : '오른쪽'} · {memberNames?.[m.charId] ?? m.charId}</b>
+                <div className="mini-seg">
+                  {([['top', '위'], ['mid', '중앙'], ['bottom', '아래']] as const).map(([k, lb2]) => (
+                    <button key={k} className={(badgeAligns[m.charId] ?? 'top') === k ? 'on' : ''}
+                      onClick={() => setBadgeAligns(s => ({ ...s, [m.charId]: k }))}>{lb2}</button>
+                  ))}
+                </div>
               </div>
             ))}
 
@@ -592,6 +656,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
             변경(업로드·블러)과 똑같은 방식으로 바꿈. 위치 크롭은 없애고, 사이트 배경 설정처럼
             업로드 + 블러 슬라이더만 남김. v5.1 — 상단 배너·아래로 페이드아웃은 없애고, 환경설정
             배경처럼 페이지 전체에 고정으로 깔려 끊김 없이 이어진다 */}
+        {pairMembers.length === 0 && titleSizeCtl}
+
         <label className="k-label" style={{ margin: 0 }}>
           배경 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 환경설정의 배경 변경과 같은 방식(업로드·블러). 페이지 전체 배경으로 깔림 (선택)</span>
         </label>
