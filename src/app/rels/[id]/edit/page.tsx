@@ -50,7 +50,7 @@ function RelEditInner() {
             ...r,
             name: v.name, kind: v.kind, visibility: v.visibility,
             // 폰트는 AU 편집이면 그 AU에만 (v2.0 사용자 제보 — 여태 원본에 저장돼 전체가 같이 바뀌었다)
-            ...(auObj ? {} : { fontId: v.fontId, bodyFontId: v.bodyFontId }),
+            ...(auObj ? {} : { fontId: v.fontId, bodyFontId: v.bodyFontId, titleSize: v.titleSize }),
             // 헤더는 AU 편집이면 그 AU에만 저장 — base 헤더는 유지 (v1.9 AU별 헤더 분리)
             ...(auObj ? {} : { headerImgId: v.headerImgId, headerCrop: v.headerCrop, headerBlur: v.headerBlur, slug: v.slug }),
             // 페이지 테마 — AU 편집이면 그 AU에만 (base 테마는 유지, v1.9)
@@ -74,6 +74,8 @@ function RelEditInner() {
                 quote: v.quotes?.[m.charId] ?? m.quote,
                 nameSize: v.nameSizes?.[m.charId] ?? m.nameSize,
                 nameBold: v.nameBolds?.[m.charId] ?? m.nameBold,
+                heroNameSize: v.heroNameSizes?.[m.charId] ?? m.heroNameSize,
+                badgeAlign: v.badgeAligns?.[m.charId] ?? m.badgeAlign,
                 quoteColor: v.quoteColors?.[m.charId]?.fg ?? m.quoteColor,
                 quoteMarkColor: v.quoteColors?.[m.charId]?.mark ?? m.quoteMarkColor,
               }))
@@ -86,7 +88,7 @@ function RelEditInner() {
                   // AU별 자관명 (v2.0 사용자 요청) — 비우면 자관 이름 그대로 쓰게 아예 지운다
                   name: v.auName?.trim() ? v.auName.trim() : undefined,
                   // AU별 폰트·전신 앞뒤 (v2.0 사용자 제보) — 원본이 아니라 이 AU에 담는다
-                  fontId: v.fontId, bodyFontId: v.bodyFontId, fullFront: v.fullFront,
+                  fontId: v.fontId, bodyFontId: v.bodyFontId, titleSize: v.titleSize, fullFront: v.fullFront,
                   // AU별 색·배경 (v2.0 사용자 요청) — 「직접 지정」을 끄면 undefined가 되어
                   // 자관 값으로 되돌아간다(auStyle이 묶음 단위로 판정한다)
                   style: {
@@ -106,6 +108,8 @@ function RelEditInner() {
                     quote: v.quotes?.[m.charId],
                     nameSize: v.nameSizes?.[m.charId],
                     nameBold: v.nameBolds?.[m.charId],
+                    heroNameSize: v.heroNameSizes?.[m.charId],
+                    badgeAlign: v.badgeAligns?.[m.charId],
                     quoteColor: v.quoteColors?.[m.charId]?.fg,
                     quoteMarkColor: v.quoteColors?.[m.charId]?.mark,
                   }])),
@@ -132,6 +136,8 @@ function RelEditInner() {
                       quote: v.quotes?.[m.charId] ?? m.quote,
                       nameSize: v.nameSizes?.[m.charId] ?? m.nameSize,
                       nameBold: v.nameBolds?.[m.charId] ?? m.nameBold,
+                heroNameSize: v.heroNameSizes?.[m.charId] ?? m.heroNameSize,
+                badgeAlign: v.badgeAligns?.[m.charId] ?? m.badgeAlign,
                       quoteColor: v.quoteColors?.[m.charId]?.fg ?? m.quoteColor,
                       quoteMarkColor: v.quoteColors?.[m.charId]?.mark ?? m.quoteMarkColor,
                     })),

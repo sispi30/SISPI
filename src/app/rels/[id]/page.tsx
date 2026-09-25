@@ -151,7 +151,12 @@ function MiniProf({ member, char, isAdmin, onGo, onRemove, auUnregistered, side,
           {/* 이름 폰트는 캐릭터 프로필에서 지정한 것을 그대로 쓰고,
               크기는 이 자관에서 정한 값 (자관 수정의 「이름 크기」 — 기본 17px, v2.0) */}
           <b style={{
-            fontFamily: familyOf(char.fontId), fontSize: member.nameSize ?? undefined,
+            fontFamily: familyOf(char.fontId),
+            // 이름 크기 — 자관 수정의 「캐릭터 이름 크기」(heroNameSize) 그대로 따른다.
+            // 예전엔 이 멤버 카드만 별도 필드(nameSize)를 봐서, 그 항목을 조정해도 여기(모바일
+            // 카드)엔 반영되지 않았다(v2.0 이후 방치된 사용자 제보) — 이제 한 항목으로 합친다.
+            // 옛 데이터 호환을 위해 nameSize도 다음 순위로 본다.
+            fontSize: (member.heroNameSize ?? member.nameSize) ?? undefined,
             // 굵기는 끌 수 있다 (v2.0 사용자 요청) — 기본은 지금처럼 굵게(<b>)
             fontWeight: (member.nameBold ?? true) ? undefined : 400,
           }}>
@@ -446,6 +451,9 @@ export default function RelDetailPage() {
   // AU별 이름/본문 폰트·전신 앞뒤 (v2.0 사용자 제보 — 분리가 안 되던 것) — 미지정이면 자관 기본
   const auFont = (isBaseAu ? undefined : au?.fontId) ?? rel?.fontId;
   const auBodyFont = (isBaseAu ? undefined : au?.bodyFontId) ?? rel?.bodyFontId;
+  // 자관 이름(제목) 크기 — AU에 정해 둔 값 우선, 없으면 자관 기본, 그것도 없으면 CSS 기본
+  const auTitleSize = (isBaseAu ? undefined : au?.titleSize) ?? rel?.titleSize;
+  const titleFs = auTitleSize ? `calc(${auTitleSize}px*var(--fs,1))` : undefined;
   const auFullFront = (isBaseAu ? undefined : au?.fullFront) ?? rel?.fullFront;
   const auTimeline = (isBaseAu ? rel?.timeline : au?.timeline) ?? [];
   const auQuestions = (isBaseAu ? rel?.questions : au?.questions) ?? [];
@@ -867,7 +875,7 @@ export default function RelDetailPage() {
               ? { background: auSt.cpTagBg, color: auSt.cpTagFg, borderColor: auSt.cpTagBg }
               : {}) }}>{CP_LABEL[auCpTag]}</span>
           )}
-          <div style={{ fontFamily: familyOf(rel.fontId) }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</div>
+          <div style={{ fontFamily: familyOf(rel.fontId), fontSize: titleFs }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</div>
         </div>
       )}
 
@@ -964,7 +972,7 @@ export default function RelDetailPage() {
         {/* 이름 그림자 — 색·강도 직접 지정 (v2.0 사용자 요청, 미지정: 검정 60% · 기존과 동일) */}
 {!heroDuo && (
   <h1 style={{
-    fontFamily: familyOf(auFont), color: auSt.nameColor,
+    fontFamily: familyOf(auFont), color: auSt.nameColor, fontSize: titleFs,
     textShadow: `0 4px 30px ${withAlpha(auSt.nameShadowColor ?? '#000000', 0.6 * ((auSt.nameShadow ?? 100) / 100))}`,
   }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</h1>
 )}
@@ -1009,14 +1017,19 @@ export default function RelDetailPage() {
                   const nc = charOf(cid);
                   if (!nc) return null;
                   return (
-                    <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}`} style={{ fontFamily: familyOf(nc.fontId), cursor: 'var(--cur-pointer,pointer)' }}
+                    <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}${m?.badgeAlign === 'mid' ? ' fb-name-mid' : m?.badgeAlign === 'bottom' ? ' fb-name-bottom' : ''}`}
+                      style={{ fontFamily: familyOf(nc.fontId), cursor: 'var(--cur-pointer,pointer)' }}
                       onClick={() => router.push(charHref(cid))}
                       onContextMenu={e => {
                         if (!isAdmin) return;
                         e.preventDefault(); e.stopPropagation();
                         setFbCtx({ x: e.clientX, y: e.clientY, cid });
                       }}>
-                      <b>{nc.name}</b>
+                      {/* 이름 크기·굵기는 자관 수정의 「캐릭터 이름 크기」 — 안 정했으면 창 폭에 맞춘 기본 크기 */}
+                      <b style={{
+                        fontSize: m?.heroNameSize ? `${m.heroNameSize}px` : undefined,
+                        fontWeight: (m?.nameBold ?? true) ? undefined : 400,
+                      }}>{nc.name}</b>
                       {nc.sub && <small>{nc.sub}</small>}
                       {((m && m.keywords.length > 0) || nc.specs.some(isPlainSpec) || (nc.colors ?? m?.palette ?? []).length > 0) && (
                         <div className="fb-kw-row">

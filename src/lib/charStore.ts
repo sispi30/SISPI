@@ -184,6 +184,10 @@ export interface RelMember {
   nameBold?: boolean;
   /** 멤버 카드 이름 크기 px (v2.0) — 기본 17. 카드 폭이 좁아 이름마다 알맞은 크기가 다르다 */
   nameSize?: number;
+  /** PC 상세 전신 히어로의 캐릭터 이름 크기 px — 미지정이면 창 폭에 맞춰 자동(clamp). 위 nameSize(멤버 카드)와 별개 */
+  heroNameSize?: number;
+  /** PC 상세 전신 히어로의 이름·배지 묶음 세로 위치 — 위(기본)/중앙/아래 */
+  badgeAlign?: 'top' | 'mid' | 'bottom';
   quoteColor?: string;           // 히어로 대사 글씨색 (페어, v1.9 — 기본 #d7dae0)
   quoteMarkColor?: string;       // 히어로 대사 따옴표색 (기본 포인트 소프트)
 }
@@ -258,6 +262,8 @@ export interface RelAuMember {
   fullOffY?: number;
   nameSize?: number;
   nameBold?: boolean;
+  heroNameSize?: number;
+  badgeAlign?: 'top' | 'mid' | 'bottom';
   quoteColor?: string;
   quoteMarkColor?: string;
   /** 멤버 카드 얼굴칸 위치 — AU마다 따로 (v2.0 사용자 제보 — 원본에서 바꾸면 AU도 같이 바뀌었다).
@@ -356,6 +362,8 @@ export interface RelAu {
    *  미지정이면 자관 기본 폰트 */
   fontId?: string;
   bodyFontId?: string;
+  /** AU별 자관 이름(제목) 크기 px — 미지정이면 자관 기본 */
+  titleSize?: number;
   /** AU별 전신 앞뒤 (v2.0) — AU 편집의 앞으로/뒤로가 원본 배치를 바꾸지 않게. 미지정: 자관 기본 */
   fullFront?: string;
   /** AU별 색·배경 — 없으면 자관 기본 (위 RelAuStyle 설명 참조) */
@@ -391,6 +399,7 @@ export interface Relation {
   kind?: 'pair' | 'multi';         // 페어(2인) / 다인(3인+) — 등록 시 선택
   fontId?: string;               // 자관 이름 폰트 (4.5 필수 요구 — 5.1 라이브러리)
   bodyFontId?: string;           // 본문 폰트 — 카드 소개·타임라인·문답 텍스트
+  titleSize?: number;            // 자관 이름(제목) 크기 px — 미지정이면 기본 크기(PC 2인 히어로 22px·그 외 64px)
   arts?: string[];               // 아트 목록 (첫 장 = 대표 = 리스트 썸네일 원본)
   headerImgId?: string;          // 헤더 이미지 (v1.5 — 상단 풀폭 블러 + 페이드아웃)
   headerCrop?: import("@/components/ui/CropEditor").CropValue; // 헤더 이미지 위치 크롭 (원본 무손실)
