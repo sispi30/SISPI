@@ -2331,7 +2331,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .np-pal>div{text-align:center}
 .np-pal i{display:block;width:56px;height:56px;border-radius:50%}
 .np-pal span{display:block;margin-top:10px;font-family:var(--np-mono);font-size:11px;color:var(--np-sub)}
-.np-notes{display:grid;grid-template-columns:repeat(var(--n,1),1fr);gap:clamp(20px,4vw,48px);padding-top:30px}
+.np-notes{display:grid;grid-template-columns:1fr;gap:clamp(20px,4vw,48px);padding-top:30px}
 .np-notes .np-cell{border-top:1px solid var(--np-line);padding-top:26px}
 .np-notes .np-lab{letter-spacing:.2em}
 .np-notes p{font-size:15px;line-height:1.8;margin:0 0 14px;white-space:pre-wrap}
