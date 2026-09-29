@@ -4,33 +4,69 @@
  * 비어 있는 칸은 통째로 감춘다(쓰지 않은 칸의 제목만 덩그러니 남지 않게).
  * 글자는 전부 React가 이스케이프해서 그리므로 별도 정화가 필요 없다.
  */
-import React from 'react';
-import { useBlobUrl } from '@/lib/blobStore';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { CroppedBlobImg } from '@/components/ui/CropEditor';
+import { normalizeInternalLink } from '@/lib/link';
 import { isValidColor, normalizeColor } from '@/lib/color';
 import type { IntroProfile } from '@/lib/introStore';
 
 export const clean = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
 const num = (i: number) => String(i + 1).padStart(2, '0');
 
+/** 가운데 큰 이미지 — 메인 「슬라이드 배너」와 같은 출력(크로스페이드 · 캡션 · 점 · 링크 · 같은 비율) */
 function Hero({ p }: { p: IntroProfile }) {
-  const src = useBlobUrl(p.heroImg.trim() || undefined);
-  if (!p.heroImg.trim()) return null;
+  const router = useRouter();
+  const slides = p.heroSlides.filter(sl => sl.imgId || sl.img || sl.cap.trim());
+  const [cur, setCur] = useState(0);
+  const interval = p.heroInterval;
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    const t = setInterval(() => setCur(c => (c + 1) % slides.length), Math.max(2, interval) * 1000);
+    return () => clearInterval(t);
+  }, [slides.length, interval]);
+
+  if (!slides.length) return null;
+  const at = Math.min(cur, slides.length - 1);
+  const s = slides[at];
   const pct = Math.max(0, Math.min(100, p.heroPercent));
+  const go = () => {
+    if (!s.link) return;
+    const l = normalizeInternalLink(s.link);
+    if (/^https?:\/\//.test(l)) window.open(l, '_blank');
+    else router.push(l);
+  };
+
   return (
     <div className="np-hero">
       <div className="np-phone">
-        {src && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt="" />
-        )}
-        {p.heroLabel.trim() && (
-          <div className="np-hud">
-            <span className="np-hud-lab">{p.heroLabel}</span>
-            <span className="np-bar"><i style={{ width: `${pct}%` }} /></span>
-            <span className="np-hud-pct">{pct}%</span>
+        <div className="banner" style={{ cursor: s.link ? 'pointer' : undefined }} onClick={go}>
+          {slides.map((sl, i) => (
+            <div key={sl.id} className={`slide ${i === at ? 'on' : ''}`}>
+              {sl.imgId
+                ? <CroppedBlobImg fileRef={sl.imgId} crop={sl.crop} ph="" />
+                : sl.img
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={sl.img} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <div className="ph" style={{ position: 'absolute', inset: 0 }} />}
+            </div>
+          ))}
+          {p.heroLabel.trim() && (
+            <div className="np-hud">
+              <span className="np-hud-lab">{p.heroLabel}</span>
+              <span className="np-bar"><i style={{ width: `${pct}%` }} /></span>
+              <span className="np-hud-pct">{pct}%</span>
+            </div>
+          )}
+          {p.heroCount.trim() && <span className="np-count">{p.heroCount}</span>}
+          <div className="cap"><b>{s.cap}</b><span>{s.sub}</span></div>
+          <div className="dots" onClick={e => e.stopPropagation()}>
+            {slides.map((sl, i) => (
+              <i key={sl.id} className={i === at ? 'on' : ''} onClick={() => setCur(i)} />
+            ))}
           </div>
-        )}
-        {p.heroCount.trim() && <span className="np-count">{p.heroCount}</span>}
+        </div>
       </div>
     </div>
   );

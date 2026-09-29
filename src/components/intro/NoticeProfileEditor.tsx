@@ -5,11 +5,15 @@
  * 편집 중에는 빈 줄을 지우지 않는다 — 줄바꿈을 치는 순간 사라지면 다음 항목을 쓸 수 없다.
  * 빈 줄 정리는 저장할 때 한다 (cleanProfile).
  */
-import React, { useRef } from 'react';
-import { KInput, KLabel, KTextarea } from '@/components/ui/Kit';
+import React, { useRef, useState } from 'react';
+import { KInput, KLabel, KStep, KTextarea } from '@/components/ui/Kit';
+import { DragList } from '@/components/ui/DragList';
+import { CropEditor, CroppedBlobImg } from '@/components/ui/CropEditor';
+import { useConfirmDelete } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { putBlob } from '@/lib/blobStore';
-import type { IntroProfile, ListBlock } from '@/lib/introStore';
+import { putBlob, useBlobUrl } from '@/lib/blobStore';
+import { normalizeInternalLink } from '@/lib/link';
+import type { HeroSlide, IntroProfile, ListBlock } from '@/lib/introStore';
 
 const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
 
@@ -17,6 +21,8 @@ const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
 export function cleanProfile(p: IntroProfile): IntroProfile {
   return {
     ...p,
+    heroImg: '',
+    heroSlides: p.heroSlides.filter(sl => sl.imgId || sl.img || sl.cap.trim()),
     profile: cleanArr(p.profile), flow: cleanArr(p.flow),
     kwQuotes: cleanArr(p.kwQuotes), kwTags: cleanArr(p.kwTags), palette: cleanArr(p.palette),
     stats: p.stats.filter(s => s.value.trim() || s.label.trim()),
@@ -75,16 +81,102 @@ function Blocks({ blocks, onChange, max, noun, ph }: {
   );
 }
 
-export function NoticeProfileEditor({ value: p, onChange }: { value: IntroProfile; onChange: (p: IntroProfile) => void }) {
-  const toast = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const set = (patch: Partial<IntroProfile>) => onChange({ ...p, ...patch });
+/** 슬라이드 배너 관리와 같은 구성 — 이미지 올리기 · ✂ 위치 · 캡션/설명 · 링크 · ⠿ 순서 · 전환 간격 */
+const BANNER_RATIO = 610 / 210;
 
-  const pickImage = async (f?: File) => {
-    if (!f) return;
-    try { set({ heroImg: await putBlob(f) }); }
-    catch { toast('이미지를 올리지 못했습니다'); }
+function SlideCrop({ sl, onClose, onApply }: { sl: HeroSlide; onClose: () => void; onApply: (c: HeroSlide['crop']) => void }) {
+  const src = useBlobUrl(sl.imgId);
+  if (!src) return null;
+  return <CropEditor open src={src} aspect={BANNER_RATIO} aspectLabel="현재 배너 비율" initial={sl.crop} onClose={onClose} onApply={onApply} />;
+}
+
+function HeroSlidesEditor({ p, set }: { p: IntroProfile; set: (patch: Partial<IntroProfile>) => void }) {
+  const toast = useToast();
+  const del = useConfirmDelete();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [fileFor, setFileFor] = useState<string | null>(null);
+  const [cropFor, setCropFor] = useState<string | null>(null);
+  const slides = p.heroSlides;
+  const setSlides = (heroSlides: HeroSlide[]) => set({ heroSlides });
+  const patch = (id: string, x: Partial<HeroSlide>) => setSlides(slides.map(s => (s.id === id ? { ...s, ...x } : s)));
+
+  const pick = async (f?: File) => {
+    const id = fileFor;
+    setFileFor(null);
+    if (!f || !id) return;
+    try {
+      patch(id, { imgId: await putBlob(f), img: undefined, crop: undefined });
+      setCropFor(id);
+    } catch { toast('이미지를 올리지 못했습니다'); }
   };
+
+  const row = (sl: HeroSlide) => (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0', borderBottom: '1px dashed var(--line)', width: '100%' }}>
+      <span className="drag-h">⠿</span>
+      <div style={{ width: 96, aspectRatio: String(BANNER_RATIO), borderRadius: 7, overflow: 'hidden', position: 'relative', flexShrink: 0, border: '1.5px dashed var(--line)', cursor: 'var(--cur-pointer,pointer)' }}
+        onClick={() => { setFileFor(sl.id); fileRef.current?.click(); }}>
+        {sl.imgId
+          ? <CroppedBlobImg fileRef={sl.imgId} crop={sl.crop} ph="" />
+          : sl.img
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={sl.img} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <div className="ph" style={{ position: 'absolute', inset: 0 }}><span style={{ fontSize: 8 }}>BANNER</span></div>}
+      </div>
+      <div style={{ display: 'grid', gap: 6, flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <KInput placeholder="캡션" value={sl.cap} onChange={e => patch(sl.id, { cap: e.target.value })} />
+          <KInput placeholder="설명" value={sl.sub} onChange={e => patch(sl.id, { sub: e.target.value })} />
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <KInput placeholder="링크 (선택)" value={sl.link} onChange={e => patch(sl.id, { link: normalizeInternalLink(e.target.value) })} />
+          {sl.imgId && (
+            <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+              onClick={() => setCropFor(sl.id)}>✂ 위치</button>
+          )}
+          {(sl.imgId || sl.img) && (
+            <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+              onClick={() => patch(sl.id, { imgId: undefined, img: undefined, crop: undefined })}>이미지 제거</button>
+          )}
+        </div>
+      </div>
+      <button type="button" className="btn btn-ghost" style={{ height: 24, padding: '0 11px', fontSize: 10.5, display: 'inline-flex', alignItems: 'center' }}
+        onClick={() => del.ask(`슬라이드${sl.cap ? ` 「${sl.cap}」` : ''}를 삭제하시겠습니까?`,
+          () => setSlides(slides.filter(x => x.id !== sl.id)),
+          '삭제는 [SAVE]를 눌러야 확정됩니다.')}>DELETE</button>
+    </div>
+  );
+
+  const cropTarget = slides.find(x => x.id === cropFor);
+
+  return (
+    <div>
+      <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+        onChange={e => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
+      {slides.length > 0 && <DragList items={slides} keyOf={sl => sl.id} onReorder={setSlides} render={row} />}
+      <p className="hint" style={{ marginTop: 8 }}>
+        이미지는 원본 그대로 저장되고 <b>보이는 위치·확대만</b> 기록됩니다 — 메인 슬라이드 배너와 같은 비율로 보이며, [✂ 위치]로 언제든 다시 조정할 수 있습니다. 비워 두면 이 칸은 나오지 않습니다.
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, flexWrap: 'wrap', gap: 8 }}>
+        <button type="button" className="btn btn-ghost" onClick={() =>
+          setSlides([...slides, { id: `h-${Date.now().toString(36)}`, cap: '', sub: '', link: '' }])}>
+          ＋ ADD SLIDE
+        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: 11.5, color: 'var(--sub)' }}>전환 간격</span>
+          <KStep value={p.heroInterval} min={2} max={30} suffix="초" onChange={heroInterval => set({ heroInterval })} />
+        </div>
+      </div>
+      {cropTarget && (
+        <SlideCrop sl={cropTarget} onClose={() => setCropFor(null)}
+          onApply={c => { patch(cropTarget.id, { crop: c }); setCropFor(null); }} />
+      )}
+      {del.element}
+    </div>
+  );
+}
+
+export function NoticeProfileEditor({ value: p, onChange }: { value: IntroProfile; onChange: (p: IntroProfile) => void }) {
+  const set = (patch: Partial<IntroProfile>) => onChange({ ...p, ...patch });
 
   return (
     <div>
@@ -102,16 +194,7 @@ export function NoticeProfileEditor({ value: p, onChange }: { value: IntroProfil
       </Group>
 
       <Group title="IMAGE — 가운데 큰 이미지">
-        <Field label="이미지" hint="파일을 올리거나 주소(https://…)를 붙여 넣으세요. 비워 두면 이 칸은 나오지 않습니다.">
-          <div style={{ display: 'flex', gap: 8 }}>
-            <KInput value={/^https?:/.test(p.heroImg) ? p.heroImg : ''} placeholder={p.heroImg && !/^https?:/.test(p.heroImg) ? '(올린 파일 사용 중)' : 'https://'}
-              onChange={e => set({ heroImg: e.target.value })} />
-            <button type="button" className="btn btn-dark" onClick={() => fileRef.current?.click()}>올리기</button>
-            {p.heroImg && <button type="button" className="btn btn-ghost" onClick={() => set({ heroImg: '' })}>제거</button>}
-          </div>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={e => { void pickImage(e.target.files?.[0]); e.target.value = ''; }} />
-        </Field>
+        <Field label="이미지 (슬라이드)"><HeroSlidesEditor p={p} set={set} /></Field>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10 }}>
           <Field label="게이지 이름" hint="비우면 게이지를 숨깁니다."><KInput value={p.heroLabel} onChange={e => set({ heroLabel: e.target.value })} /></Field>
           <Field label="게이지 %"><KInput type="number" min={0} max={100} value={p.heroPercent}

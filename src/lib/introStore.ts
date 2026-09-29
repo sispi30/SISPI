@@ -14,10 +14,18 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { getRawSetting, setSetting } from './settingStore';
+import type { CropValue } from '@/components/ui/CropEditor';
 
 const KEY = 'ohome.intro.v1';
 
 export interface StatItem { value: string; label: string }
+
+/** 가운데 큰 이미지의 한 장면 — 메인 「슬라이드 배너」의 슬라이드와 같은 구성
+ *  (원본은 imgId로 보존하고 보이는 위치만 crop으로 기록 · 옛 주소 이미지는 img) */
+export interface HeroSlide {
+  id: string; cap: string; sub: string; link: string;
+  imgId?: string; img?: string; crop?: CropValue;
+}
 export interface ListBlock { title: string; items: string[] }
 
 /** 프로필 양식의 내용 — 비어 있는 칸은 화면에서 통째로 감춘다 */
@@ -27,7 +35,9 @@ export interface IntroProfile {
   quote: string;           // 한 줄 소개
   profileTitle: string;    // 오른쪽 위 목록 제목
   profile: string[];       // 오른쪽 위 목록(점 목록) — 한 줄이 한 항목
-  heroImg: string;         // 가운데 큰 이미지(파일 참조 또는 주소)
+  heroImg: string;         // (옛 값) 가운데 큰 이미지 한 장 — 읽을 때 heroSlides 한 장으로 옮긴다
+  heroSlides: HeroSlide[]; // 가운데 큰 이미지 — 슬라이드 배너와 같은 방식(여러 장·위치 조정·캡션·링크)
+  heroInterval: number;    // 슬라이드 전환 간격(초)
   heroLabel: string;       // 이미지 위 게이지 이름 (비우면 게이지 숨김)
   heroPercent: number;     // 게이지 0~100
   heroCount: string;       // 이미지 오른쪽 위 작은 표시 (예: ×4)
@@ -58,7 +68,7 @@ export interface IntroDoc {
 export const EMPTY_PROFILE: IntroProfile = {
   name: '', sub: 'NOTICE PROFILE', quote: '',
   profileTitle: 'PROFILE', profile: [],
-  heroImg: '', heroLabel: 'ACTIVITY', heroPercent: 78, heroCount: '',
+  heroImg: '', heroSlides: [], heroInterval: 4, heroLabel: 'ACTIVITY', heroPercent: 78, heroCount: '',
   accountTitle: 'ACCOUNT', stats: [],
   cols: [{ title: 'LOVE', items: [] }, { title: 'HATE', items: [] }],
   flowTitle: '', flow: [],
@@ -73,6 +83,21 @@ const blocks = (v: unknown, fallback: ListBlock[]): ListBlock[] =>
     ? v.map(b => ({ title: typeof b?.title === 'string' ? b.title : '', items: strs(b?.items) }))
     : fallback;
 
+const heroSlides = (v: unknown, legacy: string): HeroSlide[] => {
+  const str = (x: unknown) => (typeof x === 'string' ? x : '');
+  const list: HeroSlide[] = Array.isArray(v)
+    ? v.filter(x => x && typeof x === 'object').map((x, i) => ({
+        id: str(x.id) || `h${i}`, cap: str(x.cap), sub: str(x.sub), link: str(x.link),
+        imgId: str(x.imgId) || undefined, img: str(x.img) || undefined,
+        crop: x.crop && typeof x.crop === 'object' ? x.crop as CropValue : undefined,
+      }))
+    : [];
+  /* 예전에 한 장만 넣던 값 — 있으면 첫 장면으로 옮겨 그대로 보이게 */
+  const old = legacy.trim();
+  if (!list.length && old) list.push({ id: 'h0', cap: '', sub: '', link: '', ...(/^https?:/.test(old) ? { img: old } : { imgId: old }) });
+  return list;
+};
+
 /** 저장본(또는 일부만 있는 값)을 안전하게 완성된 프로필로 — 옛 값·깨진 값이 와도 화면이 죽지 않게 */
 export function normProfile(p?: Partial<IntroProfile> | null): IntroProfile {
   const b = EMPTY_PROFILE;
@@ -80,7 +105,9 @@ export function normProfile(p?: Partial<IntroProfile> | null): IntroProfile {
   return {
     name: s(p?.name, b.name), sub: s(p?.sub, b.sub), quote: s(p?.quote, b.quote),
     profileTitle: s(p?.profileTitle, b.profileTitle), profile: strs(p?.profile),
-    heroImg: s(p?.heroImg, b.heroImg), heroLabel: s(p?.heroLabel, b.heroLabel),
+    heroImg: '', heroSlides: heroSlides(p?.heroSlides, s(p?.heroImg, '')),
+    heroInterval: typeof p?.heroInterval === 'number' ? Math.max(2, Math.min(30, p.heroInterval)) : b.heroInterval,
+    heroLabel: s(p?.heroLabel, b.heroLabel),
     heroPercent: typeof p?.heroPercent === 'number' ? Math.max(0, Math.min(100, p.heroPercent)) : b.heroPercent,
     heroCount: s(p?.heroCount, b.heroCount),
     accountTitle: s(p?.accountTitle, b.accountTitle),
