@@ -2280,8 +2280,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .mr-room-card .hv-actions .del{font-size:calc(10px*var(--fs,1));padding:4px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 75%,transparent);color:#fff}
 
 /* ===== 인트로 프로필 양식 (NoticeProfile) — 어두운 카드 위에 라벨·번호 목록·게이지 ===== */
-.np{--np-bg:#0b0b0c;--np-fg:#e9e9ea;--np-sub:#9a9ca1;--np-line:rgba(255,255,255,.14);--np-mono:var(--mono,Consolas,"D2Coding",monospace);
-  background:var(--np-bg);color:var(--np-fg);border-radius:var(--radius);padding:clamp(22px,4vw,46px);font-family:var(--sans)}
+.np{--np-bg:var(--panel);--np-fg:var(--ink);--np-sub:var(--sub);--np-line:color-mix(in srgb,var(--ink) 16%,transparent);--np-mono:var(--mono,Consolas,"D2Coding",monospace);
+  background:var(--np-bg);color:var(--np-fg);border-radius:var(--radius);box-shadow:var(--sh-md);padding:clamp(22px,4vw,46px);font-family:var(--sans)}
 .np-top{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,5vw,72px);align-items:start}
 .np-name{font-size:clamp(46px,9vw,92px);font-weight:200;letter-spacing:.02em;line-height:1;margin:0;color:var(--np-fg);cursor:default}
 .np-sub{font-family:var(--np-mono);font-size:12px;letter-spacing:.42em;color:var(--np-sub);margin-top:22px}
