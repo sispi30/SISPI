@@ -37,7 +37,7 @@ import { useSections, sectionsOf, sectionMenuEntries, MAIN_SEC, inSection } from
 import { useCustomLinks, linkEntries, toInternalPath } from '@/lib/linkStore';
 import { useSiteDraft } from '@/lib/siteStore';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCursorSettings, CursorState, CURSOR_STATE_LABEL } from '@/lib/cursorStore';
+import { useCursorSettings, CursorState, CURSOR_STATE_LABEL, DEFAULT_MOUSE_FX, normFx } from '@/lib/cursorStore';
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { SymbolInput } from '@/components/ui/SymbolInput';
 import { allBlobs, putBlobAs, useBlobUrl, getBlob } from '@/lib/blobStore';
@@ -1540,7 +1540,7 @@ function CursorPane() {
   return (
     <div className="set-sec">
       <h3>마우스 커서</h3>
-      <div className="d">상태별 커서 등록 (png·gif·cur·ani — 32px 내외 권장) + 클릭 지점(핫스팟) — ani는 애니메이션 재생 · cur/ani는 내장 핫스팟 사용 · 등록하지 않은 상태는 기본 커서</div>
+      <div className="d">마우스 효과(클릭 별 · 이동 반짝이) + 상태별 커서 등록 (png·gif·cur·ani — 32px 내외 권장) + 클릭 지점(핫스팟) — ani는 애니메이션 재생 · cur/ani는 내장 핫스팟 사용 · 등록하지 않은 상태는 기본 커서</div>
       <p className="hint" style={{ margin: '-6px 0 10px' }}>
         브라우저는 128px가 넘는 이미지를 커서로 쓰지 못합니다 — 큰 이미지를 올리면 자동으로 줄여서 등록합니다
       </p>
@@ -1548,8 +1548,41 @@ function CursorPane() {
         <div className="l"><b>커스텀 커서 사용</b><small>끄면 전부 기본 커서로 (등록 이미지는 보존)</small></div>
         <KToggle checked={st.enabled} onChange={v => patch({ enabled: v })} />
       </div>
+      <MouseFxRows />
       {(Object.keys(CURSOR_STATE_LABEL) as CursorState[]).map(s => <CursorRow key={s} state={s} />)}
     </div>
+  );
+}
+
+/** 마우스 효과 — 클릭 별 · 이동 반짝이의 켜기/끄기 · 개수 · 색 (커서 이미지와 별개로 동작) */
+function MouseFxRows() {
+  const [st, patch] = useCursorSettings();
+  const fx = normFx(st.fx);
+  const set = (x: Partial<typeof fx>) => patch({ fx: { ...fx, ...x } });
+  const setColor = (i: number, hex: string) => set({ colors: fx.colors.map((c, j) => (j === i ? hex : c)) });
+  return (
+    <>
+      <div className="set-row">
+        <div className="l"><b>클릭 별 효과</b><small>클릭한 자리에서 ✦ 별이 떠오르며 사라집니다</small></div>
+        <KToggle checked={fx.click} onChange={v => set({ click: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>이동 반짝이 효과</b><small>마우스를 움직이면 커서를 따라 반짝이가 떨어집니다</small></div>
+        <KToggle checked={fx.trail} onChange={v => set({ trail: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>반짝이 개수</b><small>동시에 보이는 최대 개수 — 많을수록 촘촘합니다 (5~100)</small></div>
+        <KStep value={fx.count} min={5} max={100} step={5} suffix="개" onChange={v => set({ count: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>효과 색</b><small>클릭 별과 반짝이가 이 색들 중에서 무작위로 골라 씁니다</small></div>
+        <div className="cp-group" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {fx.colors.map((c, i) => <ColorField key={i} value={c} onChange={hex => setColor(i, hex)} />)}
+          <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+            onClick={() => set({ colors: DEFAULT_MOUSE_FX.colors })}>기본색</button>
+        </div>
+      </div>
+    </>
   );
 }
 

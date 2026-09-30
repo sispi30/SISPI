@@ -11,9 +11,30 @@ export type CursorState = 'default' | 'pointer' | 'text' | 'active' | 'grab'
 
 export interface CursorEntry { imgId: string; hx: number; hy: number } // 핫스팟 (px)
 
+/** 마우스 효과 (사용자 요청) — 클릭 ✦ 별 · 이동 팅커벨 반짝이. 커서 설정과 같은 곳에 저장한다 */
+export interface MouseFxSettings {
+  click: boolean;      // 클릭 별 효과
+  trail: boolean;      // 이동 반짝이 효과
+  colors: string[];    // 효과 색 (클릭 별·반짝이가 이 중에서 무작위로 고른다)
+  count: number;       // 반짝이 동시 최대 개수
+}
+export const DEFAULT_MOUSE_FX: MouseFxSettings = {
+  click: true, trail: true, colors: ['#344ABD', '#1C55FF', '#2E3FAC'], count: 50,
+};
+export const normFx = (v?: Partial<MouseFxSettings> | null): MouseFxSettings => {
+  const colors = Array.isArray(v?.colors) ? v!.colors!.filter(c => typeof c === 'string' && c.trim()) : [];
+  return {
+    click: typeof v?.click === 'boolean' ? v.click : DEFAULT_MOUSE_FX.click,
+    trail: typeof v?.trail === 'boolean' ? v.trail : DEFAULT_MOUSE_FX.trail,
+    colors: colors.length ? colors : DEFAULT_MOUSE_FX.colors,
+    count: typeof v?.count === 'number' ? Math.max(5, Math.min(100, Math.round(v.count))) : DEFAULT_MOUSE_FX.count,
+  };
+};
+
 export interface CursorSettings {
   enabled: boolean;
   states: Partial<Record<CursorState, CursorEntry>>;
+  fx: MouseFxSettings;
 }
 
 export const CURSOR_STATE_LABEL: Record<CursorState, { label: string; desc: string }> = {
@@ -28,7 +49,7 @@ export const CURSOR_STATE_LABEL: Record<CursorState, { label: string; desc: stri
   rsNs: { label: '크기조절 ↕', desc: '세로 크기 조절 (선택)' },
 };
 
-export const DEFAULT_CURSOR_SETTINGS: CursorSettings = { enabled: true, states: {} };
+export const DEFAULT_CURSOR_SETTINGS: CursorSettings = { enabled: true, states: {}, fx: DEFAULT_MOUSE_FX };
 
 const KEY = 'ohome.cursor.v1';
 const EVT = 'ohome-cursor';
@@ -40,7 +61,7 @@ export function useCursorSettings(): [CursorSettings, (patch: Partial<CursorSett
     const load = () => {
       try {
         const raw = getRawSetting(KEY);
-        if (raw) setSt({ ...DEFAULT_CURSOR_SETTINGS, ...JSON.parse(raw) });
+        if (raw) { const j = JSON.parse(raw); setSt({ ...DEFAULT_CURSOR_SETTINGS, ...j, fx: normFx(j?.fx) }); }
       } catch { /* 기본값 */ }
     };
     load();

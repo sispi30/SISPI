@@ -11,6 +11,7 @@ import { BgmPlayer } from '@/components/shell/BgmPlayer';
 import { TipLayer } from '@/components/ui/TipLayer';
 import { CursorLayer } from '@/components/shell/CursorLayer';
 import { ImgProtect } from '@/components/shell/ImgProtect';
+import { MouseFx } from '@/components/shell/MouseFx';
 import { SetupGate } from '@/components/shell/SetupGate';
 import { DocTitle } from '@/components/shell/DocTitle';
 import { DocIcon } from '@/components/shell/DocIcon';
@@ -105,6 +106,7 @@ if(navigator.userAgent.indexOf('Whale/')>-1){document.documentElement.style.colo
                   <CursorLayer />
                   {/* 이미지 저장 방지 — 메뉴 관리 > 권한에서 영역별 지정 (v1.9) */}
                   <ImgProtect />
+                  <MouseFx />
                   {/* 브라우저 탭 제목 — 디자인 탭에서 지정 (v1.9) */}
                   <DocTitle />
                   <DocIcon />
