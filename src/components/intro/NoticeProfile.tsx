@@ -12,6 +12,8 @@ import { isValidColor, normalizeColor } from '@/lib/color';
 import type { IntroProfile } from '@/lib/introStore';
 
 export const clean = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
+/** 줄바꿈·빈 줄은 그대로 두고, 맨 앞뒤의 빈 줄만 뺀다 (한 줄 소개와 같은 방식) */
+export const keepLines = (a: string[]) => a.map(s => s.replace(/\s+$/, '')).join('\n').replace(/^\n+|\n+$/g, '');
 const num = (i: number) => String(i + 1).padStart(2, '0');
 
 /** 가운데 큰 이미지 — 메인 「슬라이드 배너」와 같은 출력(크로스페이드 · 캡션 · 점 · 링크 · 같은 비율) */
@@ -178,7 +180,7 @@ export function NoticeProfile({ p }: { p: IntroProfile }) {
           {notes.map((n, ni) => (
             <div className="np-cell" key={ni}>
               {n.title.trim() && <div className="np-lab">{n.title}</div>}
-              {clean(n.items).map((t, i) => <p key={i}>{t}</p>)}
+              <p>{keepLines(n.items)}</p>
             </div>
           ))}
         </div>

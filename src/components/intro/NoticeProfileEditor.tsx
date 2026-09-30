@@ -13,6 +13,7 @@ import { useConfirmDelete } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { putBlob, useBlobUrl } from '@/lib/blobStore';
 import { normalizeInternalLink } from '@/lib/link';
+import { keepLines } from '@/components/intro/NoticeProfile';
 import type { HeroSlide, IntroProfile, ListBlock } from '@/lib/introStore';
 
 const cleanArr = (a: string[]) => a.map(s => s.trim()).filter(Boolean);
@@ -27,7 +28,7 @@ export function cleanProfile(p: IntroProfile): IntroProfile {
     kwQuotes: cleanArr(p.kwQuotes), kwTags: cleanArr(p.kwTags), palette: cleanArr(p.palette),
     stats: p.stats.filter(s => s.value.trim() || s.label.trim()),
     cols: p.cols.map(c => ({ ...c, items: cleanArr(c.items) })).filter(c => c.title.trim() || c.items.length),
-    notes: p.notes.map(c => ({ ...c, items: cleanArr(c.items) })).filter(c => c.title.trim() || c.items.length),
+    notes: p.notes.map(c => ({ ...c, items: keepLines(c.items) ? keepLines(c.items).split('\n') : [] })).filter(c => c.title.trim() || c.items.length),
   };
 }
 

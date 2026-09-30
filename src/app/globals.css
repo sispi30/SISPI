@@ -2333,6 +2333,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .np-pal span{display:block;margin-top:10px;font-family:var(--np-mono);font-size:11px;color:var(--np-sub)}
 .np-notes{display:grid;grid-template-columns:1fr;gap:clamp(20px,4vw,48px);padding-top:30px}
 .np-notes .np-cell{border-top:1px solid var(--np-line);padding-top:26px}
+/* 바로 위 섹션(.np-mid / .np-row2)이 이미 밑줄을 갖고 있으면 NOTES 첫 칸의 윗줄은 빼서 구분선이 1개만 나오게 */
+:is(.np-mid,.np-row2)+.np-notes{padding-top:0}
+:is(.np-mid,.np-row2)+.np-notes .np-cell:first-child{border-top:0}
 .np-notes .np-lab{letter-spacing:.2em}
 .np-notes p{font-size:15px;line-height:1.8;margin:0 0 14px;white-space:pre-wrap}
 @media (max-width:760px){
