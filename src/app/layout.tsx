@@ -12,6 +12,7 @@ import { TipLayer } from '@/components/ui/TipLayer';
 import { CursorLayer } from '@/components/shell/CursorLayer';
 import { ImgProtect } from '@/components/shell/ImgProtect';
 import { MouseFx } from '@/components/shell/MouseFx';
+import { CometLayer } from '@/components/shell/CometLayer';
 import { SetupGate } from '@/components/shell/SetupGate';
 import { DocTitle } from '@/components/shell/DocTitle';
 import { DocIcon } from '@/components/shell/DocIcon';
@@ -107,6 +108,8 @@ if(navigator.userAgent.indexOf('Whale/')>-1){document.documentElement.style.colo
                   {/* 이미지 저장 방지 — 메뉴 관리 > 권한에서 영역별 지정 (v1.9) */}
                   <ImgProtect />
                   <MouseFx />
+                  {/* 배경 혜성 파티클 — 환경설정 > 디자인 > 배경에서 켜고 끔 */}
+                  <CometLayer />
                   {/* 브라우저 탭 제목 — 디자인 탭에서 지정 (v1.9) */}
                   <DocTitle />
                   <DocIcon />

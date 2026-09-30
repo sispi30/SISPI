@@ -16,6 +16,7 @@ export interface ThemeVars {
   bgAngle?: number;          // 그라데이션 각도 (deg, 기본 180)
   bgImageId?: string;        // 배경 이미지 파일 id (IndexedDB)
   bgBlur?: number;           // 배경 이미지 블러 px (0 = 없음)
+  bgComet?: boolean;         // 배경 혜성 파티클 켜기 (기본 꺼짐)
   // 카드(패널·게시판 리스트·필터 등) 배경/글씨 (v1.9) — 보조 글씨색은 글씨색에서 자동 파생
   cardBg?: string; cardFg?: string;
   // 상단메뉴: 배경 · 글씨 · 호버 글씨(v1.9 분리) · 로고 글씨

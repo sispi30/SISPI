@@ -302,6 +302,12 @@ function DesignPane() {
         </div>
       </div>
 
+      {/* 배경 혜성 파티클 (사용자 요청) — 배경 위를 혜성이 지나가고 별이 반짝임 */}
+      <div className="set-row">
+        <div className="l"><b>배경 혜성 파티클</b><small>배경 위로 혜성이 지나가고 별이 반짝입니다 — 콘텐츠 뒤에서만 움직입니다</small></div>
+        <KToggle checked={!!state.vars.bgComet} onChange={v => setVar('bgComet', v)} />
+      </div>
+
       {/* 카드 색 — 패널·게시판 리스트·필터 등 공통 (v1.9) */}
       <div className="set-row">
         <div className="l"><b>카드</b><small>패널·게시판 리스트·필터 카드의 배경과 글씨색 — 보조 글씨색은 자동 파생</small></div>
