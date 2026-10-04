@@ -151,6 +151,18 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // 화면 전환: 메인 폼 / 탭 전용 편집 화면
   const [view, setView] = useState<'main' | string>('main');
 
+  // 상세 배경 이미지 (v5.8 사용자 요청) — 자관의 배경 이미지·환경설정의 배경 변경과 같은 방식(업로드 + 블러)
+  const initBgId = initial?.bgImgId;
+  const [bgFile, setBgFile] = useState<File | null>(null);
+  const [bgUrl, setBgUrl] = useState('');
+  const [bgRemoved, setBgRemoved] = useState(false);
+  const [bgBlur, setBgBlur] = useState(initial?.bgBlur ?? 16);
+  const pickBg = (f: File | undefined) => {
+    if (!f || !f.type.startsWith('image/')) return;
+    setBgFile(f); setBgUrl(URL.createObjectURL(f)); setBgRemoved(false);
+  };
+  const hasBg = !!bgUrl || (!bgRemoved && !!initBgId);
+
   const addArts = (list: FileList | null) => {
     if (!list || list.length === 0) return;
     const items = Array.from(list).map(f => ({ id: newId(), url: URL.createObjectURL(f), file: f }));
@@ -201,6 +213,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       thumbId: artIds[0],       // 썸네일 = 첫 아트 + 크롭
       thumbCrop,
       artId: artIds[0],
+      bgImgId: bgFile ? await putBlob(bgFile) : (bgRemoved ? undefined : initBgId),
+      bgBlur: (bgFile || (!bgRemoved && initBgId)) ? bgBlur : undefined,
       own: initial?.own ?? true,
       grants: grants.length ? grants : undefined,
     });
@@ -502,6 +516,39 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
                 value: f.id,
                 label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span>,
               }))} />
+
+            {/* 배경 이미지 (v5.8 사용자 요청) — 자관 배경 이미지·환경설정의 배경 변경과 같은 방식.
+                업로드 + 블러 슬라이더, 상세 페이지 전체 배경으로 고정·cover로 깔림 (선택) */}
+            <label className="k-label" style={{ margin: '6px 0 0' }}>
+              배경 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 환경설정의 배경 변경과 같은 방식(업로드·블러). 상세 페이지 전체 배경으로 깔림 (선택)</span>
+            </label>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ width: 200, aspectRatio: '3/1', borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1.5px dashed var(--line)', cursor: 'var(--cur-pointer,pointer)' }}
+                onClick={() => document.getElementById('charBgF')?.click()}
+                {...fileDrop(fl => pickBg(fl[0]))}>
+                {bgUrl ? (
+                  <div style={{ position: 'absolute', inset: 0, filter: 'blur(2px)' }}>
+                    <CropImg src={bgUrl} />
+                  </div>
+                ) : (!bgRemoved && initBgId) ? (
+                  <BgPreview refId={initBgId} />
+                ) : (
+                  <div className="ph" style={{ width: '100%', height: '100%' }}><span style={{ fontSize: 10 }}>BACKGROUND</span></div>
+                )}
+              </div>
+              <input id="charBgF" type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={e => { pickBg(e.target.files?.[0]); e.target.value = ''; }} />
+              <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+                onClick={() => document.getElementById('charBgF')?.click()}>
+                {hasBg ? 'CHANGE' : 'UPLOAD'}
+              </button>
+              {hasBg && (
+                <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+                  onClick={() => { setBgFile(null); setBgUrl(''); setBgRemoved(true); }}>REMOVE</button>
+              )}
+              <span className="cp-lb">블러</span>
+              <KStep value={bgBlur} min={0} max={30} step={2} suffix="px" onChange={setBgBlur} />
+            </div>
           </div>
         </div>
         <div className="form-actions">
@@ -742,3 +789,13 @@ function FirstArtCrop({ open, item, crop, onClose, onApply }: {
   return <CropEditor open={open} src={src} aspect="3:4" initial={crop} onClose={onClose} onApply={onApply} />;
 }
 
+/** 저장된 배경 이미지 미리보기 (v5.8) — 자관 폼의 HeaderPreview와 같은 모습 */
+function BgPreview({ refId }: { refId: string }) {
+  const url = useBlobUrl(refId);
+  if (!url) return <div className="ph" style={{ width: '100%', height: '100%' }} />;
+  return (
+    <div style={{ position: 'absolute', inset: 0, filter: 'blur(2px)' }}>
+      <CropImg src={url} />
+    </div>
+  );
+}

@@ -175,7 +175,7 @@ function CharDetailInner() {
   // (chars/[id]/layout.tsx)이 계속 맡고 있어, 여기서는 AU가 기본과 다른 색을 쓸 때만
   // "얹어서" 덮어쓴다. 벗어날 때도 null이 아니라 레이아웃의 기본색으로 돌려줘야
   // 상세↔갤러리 이동 때 배경이 깜빡이던 문제가 재발하지 않는다 (v2.7)
-  const { setPageTheme } = useTheme();
+  const { setPageTheme, setPageBgImage } = useTheme();
   const baseColor = ch?.themeMode === 'custom' ? ch.color : null;
   const auColor = auRegistered && eff?.themeMode === 'custom' ? eff.color : null;
   useEffect(() => {
@@ -183,6 +183,17 @@ function CharDetailInner() {
     setPageTheme(auColor);
     return () => setPageTheme(baseColor);
   }, [auColor, baseColor, setPageTheme]);
+
+  // 배경 이미지 (v5.8 사용자 요청) — 자관 배경·환경설정 배경 변경과 똑같이 페이지 전체에 고정·cover로
+  // 깔고 블러만 조절한다. AU는 자기 배경만(원본 것을 물려받지 않음 — charWithAu). 이미지가 없으면
+  // 아무것도 하지 않아 사이트 배경이 그대로 보인다. 벗어나면 풀려서 사이트 배경으로 되돌아간다
+  const bgUrl = useBlobUrl(auRegistered ? eff?.bgImgId : undefined);
+  const bgBlur = eff?.bgBlur ?? 16;
+  useEffect(() => {
+    if (!bgUrl) return;
+    setPageBgImage(bgUrl, bgBlur);
+    return () => setPageBgImage(null);
+  }, [bgUrl, bgBlur, setPageBgImage]);
 
   const curTab = eff?.tabs.find(t => t.id === tab);
   const tabHtml = useMemo(

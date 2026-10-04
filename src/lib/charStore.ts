@@ -73,6 +73,10 @@ export interface Character {
    *  같은 크롭을 쓰면 원하는 부분이 안 나온다. 따로 잡으면 상세에서는 이 값을 쓴다. */
   artCrop?: import("@/components/ui/CropEditor").CropValue;
   arts?: string[];       // 아트 목록 (IndexedDB — 첫 장이 대표 풀 아트이자 썸네일 원본)
+  /** 상세 페이지 배경 이미지 (v5.8 사용자 요청) — 자관 배경·환경설정 배경 변경과 같은 방식:
+   *  페이지 전체에 고정·cover로 깔리고 블러(px)만 조절한다. 지정하지 않으면 지금처럼 사이트 배경 그대로 */
+  bgImgId?: string;
+  bgBlur?: number;
   artId?: string;        // (구) 단일 풀 아트
   artUrl?: string;       // (구) 풀 아트 URL
   fontId?: string;       // 전용 폰트 — 이름·타이틀 (5.1)
@@ -109,6 +113,8 @@ export interface AuCharProfile {
   tabs?: CharTab[];
   thumbId?: string;
   thumbCrop?: import("@/components/ui/CropEditor").CropValue;
+  bgImgId?: string;      // 상세 배경 이미지 (v5.8) — AU는 자기 배경만, 원본 것을 물려받지 않음
+  bgBlur?: number;
   artCrop?: import("@/components/ui/CropEditor").CropValue;   // 상세 중앙 아트 위치 (v2.0)
   fontId?: string;
   nameSize?: number;     // 상세 큰 이름 크기 px (v2.0)
@@ -141,6 +147,9 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     artId: p.arts?.[0],
     thumbId: p.thumbId,
     thumbCrop: p.thumbCrop,
+    // 배경 이미지도 그림이라 물려받지 않는다 (v5.8) — 자관 배경이 AU별로 완전 분리된 것과 같은 규칙
+    bgImgId: p.bgImgId,
+    bgBlur: p.bgBlur,
     ...(p.fontId !== undefined ? { fontId: p.fontId } : {}),
     ...(p.bodyFontId !== undefined ? { bodyFontId: p.bodyFontId } : {}),
     // nameSize는 여태 병합에 빠져 있었다 — AU에 저장은 되는데 표시가 base 크기를 따랐다 (v2.0 수정)

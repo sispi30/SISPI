@@ -53,6 +53,7 @@ function CharEditInner() {
         ...ch, name: '', sub: '', basicHtml: '', tabs: [], colors: [], colorTipMode: 'hex' as const,
         specs: [{ label: '성별', value: '' }, { label: '키', value: '' }],
         arts: [], artId: undefined, thumbId: undefined, thumbCrop: undefined,
+        bgImgId: undefined, bgBlur: undefined,
       })
     : ch;
 
@@ -81,6 +82,7 @@ function CharEditInner() {
                   colors: c.colors, colorTipMode: c.colorTipMode,
                   specs: c.specs, rule: c.rule, sheetUrl: c.sheetUrl, tabs: c.tabs, basicHtml: c.basicHtml,
                   arts: c.arts, thumbId: c.thumbId, thumbCrop: c.thumbCrop,
+                  bgImgId: c.bgImgId, bgBlur: c.bgBlur,
                   fontId: c.fontId, nameSize: c.nameSize, nameBold: c.nameBold, bodyFontId: c.bodyFontId,
                 },
               },
