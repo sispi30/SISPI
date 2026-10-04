@@ -3,7 +3,8 @@
 // 아트 다중 등록(첫 장 = 대표 · 리스트 썸네일 4:3 크롭) · 등록 시 내 캐릭터 연동
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Character, Relation, Visibility, RelCpTag, RelMember, auMember, auStyle, fullShadow } from '@/lib/charStore';
+import { Character, Relation, Visibility, RelCpTag, RelMember, auMember, auStyle, fullShadow,
+  HeroLayout, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID } from '@/lib/charStore';
 import { ColorField } from '@/components/ui/ColorField';
 import { isValidSlug, slugify } from '@/lib/link';
 import { CP_LABEL } from '@/lib/relqStore';
@@ -62,7 +63,8 @@ export interface RelFormValue {
   badgeAligns?: Record<string, 'top' | 'mid' | 'bottom'>;       // PC 상세 전신 위 이름·배지 묶음 세로 위치
   titleSize?: number;                                           // 자관 이름(제목) 크기 px (안 정하면 기본)
   quoteColors?: Record<string, { fg?: string; mark?: string }>; // 히어로 대사 글씨/따옴표색 (페어, v1.9)
-  fullFront?: string;                          // 앞에 보일 캐릭터 id
+  fullFront?: string;                          // 앞에 보일 캐릭터 id (레이어 순서에서 맨 위 전신 — 예전 화면 호환용)
+  heroLayout?: HeroLayout;                     // 레이어 순서·스티커·제목/이름 배치 (v5.6)
   auName?: string;           // AU별 자관명 (v2.0 사용자 요청 — AU 편집일 때만)
   qaHide?: boolean;          // 문답 답변 숨기기 (v2.0 사용자 요청)
   linkBoard?: 'log' | 'session'; // 상세 하단에 보일 연동 리스트 — 로그 백업 / 세션 게시판 (자관 전체 설정)
@@ -96,8 +98,9 @@ function useHeroAspect() {
 /** 전신 미리보기 한 장 (v1.9 조작 개편 — 사용자 확정)
  *  · 드래그 = 위치 이동 (가로·세로)  · 휠 = 크기 (비율 유지)  · 우클릭 = 앞으로/뒤로 메뉴
  *  배치는 상세 FullImg와 동일(부모 fb 박스 기준 하단 중앙 + 오프셋) — 미리보기 = 실제 */
-function FullPrevImg({ draft, scale, offX, offY, name, shadow, onScale, onOffset, onLayer }: {
+function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelect, onScale, onOffset, onLayer }: {
   draft?: FullDraft; scale: number; offX: number; offY: number; name: string; shadow?: string;
+  selected?: boolean; onSelect?: () => void;
   onScale: (v: number) => void;
   onOffset: (x: number, y: number) => void;
   onLayer: (front: boolean) => void;
@@ -138,12 +141,15 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, onScale, onOffset
           position: 'absolute', bottom: `${offY}%`, left: `calc(50% + ${offX}%)`, transform: 'translateX(-50%)',
           height: `${scale}%`, maxWidth: 'none', cursor: 'var(--cur-grab,grab)',
           userSelect: 'none', touchAction: 'none',
-          filter: shadow,
+          filter: shadow, outline: selected ? '1.5px dashed var(--accent,#c96a73)' : undefined,
+          pointerEvents: 'auto',
         }}
         draggable={false}
         onPointerDown={e => {
           if (e.button !== 0) return;
           e.preventDefault();
+          e.stopPropagation();
+          onSelect?.();
           (e.target as HTMLElement).setPointerCapture(e.pointerId);
           const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
           drag.current = { x: e.clientX, y: e.clientY, ox: offX, oy: offY, bw: box.width, bh: box.height };
@@ -171,6 +177,111 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, onScale, onOffset
         document.body,
       )}
     </>
+  );
+}
+
+/** 지금 창 크기 — 미리보기의 글자 크기·제목 자리를 실제 상세 화면과 같은 비로 맞추려고 (v5.6) */
+function useViewport() {
+  const [vp, setVp] = useState({ w: 1440, h: 900 });
+  useEffect(() => {
+    const calc = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
+  return vp;
+}
+
+const clampN = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const round1 = (v: number) => Math.round(v * 10) / 10;
+
+/** 미리보기 위에서 끌 수 있는 한 덩어리 (제목·이름·스티커 공용, v5.6).
+ *  끈 거리는 미리보기 상자 대비 %로 바뀌어 (x, y) 값에 더해진다 — 상세 화면과 같은 단위.
+ *  onWheel을 주면 휠로도 조절한다(스티커 크기). 휠은 네이티브 리스너로 달아 페이지가 같이 스크롤되지 않게 한다 */
+function PrevDrag({ rootRef, x, y, min = -100, max = 100, selected, onSelect, onChange, onWheel, style, children }: {
+  rootRef: React.RefObject<HTMLDivElement | null>;
+  x: number; y: number; min?: number; max?: number; selected?: boolean;
+  onSelect?: () => void;
+  onChange: (x: number, y: number) => void;
+  onWheel?: (dir: number) => void;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const elRef = React.useRef<HTMLDivElement>(null);
+  const drag = React.useRef<{ px: number; py: number; ox: number; oy: number; w: number; h: number } | null>(null);
+  const wheelFn = React.useRef(onWheel);
+  wheelFn.current = onWheel;
+  const hasWheel = !!onWheel;
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el || !hasWheel) return;
+    const fn = (e: WheelEvent) => { e.preventDefault(); wheelFn.current?.(Math.sign(e.deltaY)); };
+    el.addEventListener('wheel', fn, { passive: false });
+    return () => el.removeEventListener('wheel', fn);
+  }, [hasWheel]);
+  return (
+    <div ref={elRef}
+      style={{
+        position: 'absolute', cursor: 'var(--cur-grab,grab)', touchAction: 'none', userSelect: 'none',
+        pointerEvents: 'auto', outline: selected ? '1.5px dashed var(--accent,#c96a73)' : '1px dashed rgba(255,255,255,.28)',
+        outlineOffset: 3, ...style,
+      }}
+      onPointerDown={e => {
+        if (e.button !== 0) return;
+        e.preventDefault(); e.stopPropagation();
+        onSelect?.();
+        const box = rootRef.current?.getBoundingClientRect();
+        if (!box) return;
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        drag.current = { px: e.clientX, py: e.clientY, ox: x, oy: y, w: box.width, h: box.height };
+      }}
+      onPointerMove={e => {
+        const d = drag.current;
+        if (!d) return;
+        onChange(
+          clampN(round1(d.ox + ((e.clientX - d.px) / d.w) * 100), min, max),
+          clampN(round1(d.oy + ((e.clientY - d.py) / d.h) * 100), min, max),
+        );
+      }}
+      onPointerUp={() => { drag.current = null; }}>
+      {children}
+    </div>
+  );
+}
+
+/** 스티커 초안 — 새로 올린 건 file/url, 저장돼 있던 건 ref */
+interface StickerDraft { id: string; ref?: string; file?: File; url?: string; x: number; y: number; w: number }
+
+function StickerPrev({ s, z, rootRef, selected, onSelect, onChange }: {
+  s: StickerDraft; z: number; rootRef: React.RefObject<HTMLDivElement | null>;
+  selected: boolean; onSelect: () => void; onChange: (p: Partial<StickerDraft>) => void;
+}) {
+  const loaded = useBlobUrl(s.ref);
+  const src = s.url ?? loaded;
+  if (!src) return null;
+  return (
+    <PrevDrag rootRef={rootRef} x={s.x} y={s.y} min={-20} max={120} selected={selected} onSelect={onSelect}
+      onChange={(x, y) => onChange({ x, y })}
+      onWheel={dir => onChange({ w: clampN(s.w - dir * 2, 3, 90) })}
+      style={{ left: `${s.x}%`, top: `${s.y}%`, width: `${s.w}%`, transform: 'translate(-50%,-50%)', zIndex: z, outlineOffset: 0 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" draggable={false} style={{ width: '100%', display: 'block', pointerEvents: 'none' }} />
+    </PrevDrag>
+  );
+}
+
+/** 레이어 목록 행의 작은 그림 — 이미지가 있으면 그것, 없으면 글자 */
+function LayerThumb({ refId, url, text }: { refId?: string; url?: string; text?: string }) {
+  const loaded = useBlobUrl(refId);
+  const src = url ?? loaded;
+  return (
+    <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0, display: 'grid', placeItems: 'center',
+      background: 'rgba(127,127,127,.14)', fontSize: 13, fontWeight: 700, color: 'var(--sub)' }}>
+      {src
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={src} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        : (text ?? '')}
+    </div>
   );
 }
 
@@ -323,8 +434,45 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   // 문답 답변 가리기 (v2.0 사용자 요청) — 질문은 그대로 두고 답변 내용만
   const [qaHide, setQaHide] = useState(!!initial?.qaHide);
   const [linkBoard, setLinkBoard] = useState<'log' | 'session'>(initial?.linkBoard ?? 'log');
-  // 전신 앞뒤도 AU별 (v2.0) — AU에서 바꾼 앞뒤가 원본·다른 AU를 건드리지 않게
-  const [fullFront, setFullFront] = useState<string | undefined>(auObj?.fullFront ?? initial?.fullFront);
+  // 전신 앞뒤도 AU별 (v2.0) — AU에서 바꾼 앞뒤가 원본·다른 AU를 건드리지 않게.
+  // v5.6부터 앞뒤는 아래 레이어 순서가 정하고, 이 값은 레이어 순서가 아직 없는 예전 자관의 시작점으로만 쓴다
+  const initFullFront = auObj?.fullFront ?? initial?.fullFront;
+  // 히어로 레이어·스티커·제목/이름 배치 (v5.6 사용자 요청 — 「메인 이미지 · 레이어」). AU 편집이면 그 AU 것
+  const initLayout = auObj ? auObj.heroLayout : initial?.heroLayout;
+  const vp = useViewport();
+  const previewRef = React.useRef<HTMLDivElement>(null);
+  const [stickers, setStickers] = useState<StickerDraft[]>(() => (initLayout?.stickers ?? []).map(s => ({ ...s })));
+  const [layerOrder, setLayerOrder] = useState<string[]>(
+    () => heroOrder(initLayout, pairMembers.map(m => m.charId), initFullFront));
+  const [uiTitle, setUiTitle] = useState<{ x: number; y: number }>(initLayout?.title ?? { x: 0, y: 0 });
+  const [uiNames, setUiNames] = useState<Record<string, { x: number; y: number }>>(initLayout?.names ?? {});
+  const [selLayer, setSelLayer] = useState<string | null>(null);
+  // 전신 앞으로/뒤로(우클릭 메뉴) — 다른 전신 바로 위/아래로 옮긴다
+  const moveFull = (cid: string, front: boolean) => setLayerOrder(o => {
+    const other = pairMembers.find(x => x.charId !== cid)?.charId;
+    if (!other) return o;
+    const rest = o.filter(x => x !== heroFullId(cid));
+    const at = rest.indexOf(heroFullId(other));
+    rest.splice(front ? at + 1 : at, 0, heroFullId(cid));
+    return rest;
+  });
+  const patchSticker = (id: string, p: Partial<StickerDraft>) =>
+    setStickers(list => list.map(s => (s.id === id ? { ...s, ...p } : s)));
+  const addStickers = (list: FileList | File[] | null) => {
+    const files = Array.from(list ?? []).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) return;
+    const items: StickerDraft[] = files.map((f, i) => ({
+      id: newId(), file: f, url: URL.createObjectURL(f), x: 50 + i * 4, y: 50 + i * 4, w: 18,
+    }));
+    setStickers(prev => [...prev, ...items]);
+    setLayerOrder(o => [...o, ...items.map(it => heroStickerId(it.id))]);
+    setSelLayer(heroStickerId(items[0].id));
+  };
+  const removeSticker = (id: string) => {
+    setStickers(list => list.filter(s => s.id !== id));
+    setLayerOrder(o => o.filter(x => x !== heroStickerId(id)));
+    setSelLayer(cur => (cur === heroStickerId(id) ? null : cur));
+  };
 
   // 내 캐릭터 연동 목록 — 선택된 캐릭터는 항상 표시, 나머지는 검색 필터 후 총 6명까지
   const q = charQuery.trim().toLowerCase();
@@ -364,6 +512,13 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       if (existingIds?.includes(slug)) { toast('이미 사용 중인 주소입니다 — 다른 주소를 입력해 주세요'); return; }
     }
     const artIds = await Promise.all(arts.map(a => (a.file ? putBlob(a.file) : Promise.resolve(a.ref!))));
+    // 스티커 이미지 저장 + 레이어 순서 정리 (v5.6)
+    const stickerSaved = await Promise.all(stickers.map(async s => ({
+      id: s.id, ref: s.file ? await putBlob(s.file) : s.ref!, x: s.x, y: s.y, w: s.w,
+    })));
+    const orderSaved = heroOrder({ order: layerOrder, stickers: stickerSaved }, pairMembers.map(m => m.charId), initFullFront);
+    // 맨 위 전신 = 예전 화면(모바일 등)이 읽는 「앞 캐릭터」
+    const topFull = [...orderSaved].reverse().find(id => id.startsWith('full:'))?.slice(5);
     onSave({
       // 수정에서 정한 주소는 별명으로 (v2.0) — 신규는 rels/new가 이 값을 id로 쓴다
       slug: slug.trim() || undefined,
@@ -414,7 +569,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       badgeAligns: pairMembers.length ? badgeAligns : undefined,
       titleSize,
       quoteColors: pairMembers.length ? quoteColors : undefined,
-      fullFront,
+      fullFront: topFull ?? initFullFront,
+      heroLayout: pairMembers.length
+        ? { order: orderSaved, stickers: stickerSaved, title: uiTitle, names: uiNames } : undefined,
       pickedCharIds: picked,
     });
   };
@@ -545,43 +702,196 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 );
               })}
             </div>
-            {Object.keys(fulls).length > 0 && (
-              /* 실제 상세 화면(.rel-center-full)과 같은 가로:세로 비·같은 배치(.fb 좌우 박스:
-                 폭 44%, 높이 100%, 바닥 정렬) — 여기서 잡은 위치·크기가 상세 그대로 (v5.2).
-                 너무 커지지 않게 높이는 화면의 70%까지만 */
-              <div style={{
+            {Object.keys(fulls).length > 0 && (() => {
+              /* 실제 상세 화면(.rel-center-full)과 같은 가로:세로 비·같은 배치 — 여기서 잡은 위치·크기가
+                 상세 그대로 (v5.2). v5.6: 전신뿐 아니라 제목·이름·배지·스티커도 이 위에서 끌어 배치하고,
+                 앞뒤는 아래 「메인 이미지 · 레이어」 목록의 순서가 정한다. 값은 모두 상자 대비 %.
+                 글자 크기·제목 자리는 지금 창 크기(vp) 기준 px를 상자 폭 비율(cqw)로 바꿔 상세와 같게 맞춘다 */
+              const heroH = Math.max(1, vp.h - 58);
+              const titleTop = ((heroH - 290) / heroH) * 100;          // 상세 .pair-name: 히어로 높이 − 290px
+              const cq = (px: number) => `${(px / vp.w) * 100}cqw`;
+              const uiZ = heroZ(layerOrder, HERO_UI_ID);
+              const uiSel = selLayer === HERO_UI_ID;
+              const shadowCss = '0 3px 12px rgba(0,0,0,.5)';
+              const pillCss = (px: number): React.CSSProperties => ({
+                fontSize: cq(px), padding: `${cq(px * 0.25)} ${cq(px * 0.8)}`, borderRadius: 999,
+                background: 'rgba(255,255,255,.16)', color: '#fff', fontWeight: 600, lineHeight: 1.3, whiteSpace: 'nowrap',
+              });
+              return (
+              <div ref={previewRef} onPointerDown={() => setSelLayer(null)} style={{
                 position: 'relative', width: `min(100%, calc(70vh * ${heroRatio}))`, margin: '0 auto', aspectRatio: `${heroRatio}`, borderRadius: 10,
                 overflow: 'hidden', background: 'linear-gradient(180deg,#262b33,#181b20)', border: '1px solid var(--line)',
-              }}>
+                containerType: 'inline-size',
+              } as React.CSSProperties}>
                 {pairMembers.map((m, i) => (
                   <div key={m.charId} style={{
-                    position: 'absolute', width: '44%', height: '100%', bottom: 0,
+                    position: 'absolute', width: '44%', height: '100%', bottom: 0, pointerEvents: 'none',
                     ...(i === 0 ? { left: 0 } : { right: 0 }),
-                    zIndex: (fullFront ?? pairMembers[1]?.charId) === m.charId ? 3 : 2,
+                    zIndex: heroZ(layerOrder, heroFullId(m.charId)),
                   }}>
                     <FullPrevImg draft={fulls[m.charId]}
-                      scale={fullScales[m.charId] ?? 90}
-                      offX={fullOffsets[m.charId]?.x ?? 0}
-                      offY={fullOffsets[m.charId]?.y ?? 0}
-                      name={memberNames?.[m.charId] ?? m.charId}
-                      shadow={fullShadow(shadowCustom ? nameShadowColor : undefined,
-                        shadowCustom ? nameShadow : undefined, '0 6px 14px')}
-                      onScale={v => setFullScales(s => ({ ...s, [m.charId]: v }))}
-                      onOffset={(x, y) => setFullOffsets(s => ({ ...s, [m.charId]: { x, y } }))}
-                      onLayer={front => {
-                        const other = pairMembers.find(x => x.charId !== m.charId)?.charId;
-                        setFullFront(front ? m.charId : (other ?? m.charId));
-                      }} />
+                        scale={fullScales[m.charId] ?? 90}
+                        offX={fullOffsets[m.charId]?.x ?? 0}
+                        offY={fullOffsets[m.charId]?.y ?? 0}
+                        name={memberNames?.[m.charId] ?? m.charId}
+                        shadow={fullShadow(shadowCustom ? nameShadowColor : undefined,
+                          shadowCustom ? nameShadow : undefined, '0 6px 14px')}
+                        selected={selLayer === heroFullId(m.charId)}
+                        onSelect={() => setSelLayer(heroFullId(m.charId))}
+                        onScale={v => setFullScales(sc => ({ ...sc, [m.charId]: v }))}
+                        onOffset={(x, y) => setFullOffsets(sc => ({ ...sc, [m.charId]: { x, y } }))}
+                        onLayer={front => moveFull(m.charId, front)} />
                   </div>
                 ))}
-                {fullFront && (
-                  <span className="pill" style={{ position: 'absolute', left: 10, top: 10, zIndex: 5 }}>
-                    앞: {memberNames?.[fullFront] ?? fullFront}
-                  </span>
-                )}
+
+                {stickers.map(st2 => (
+                  <StickerPrev key={st2.id} s={st2} rootRef={previewRef}
+                    z={heroZ(layerOrder, heroStickerId(st2.id))}
+                    selected={selLayer === heroStickerId(st2.id)}
+                    onSelect={() => setSelLayer(heroStickerId(st2.id))}
+                    onChange={p => patchSticker(st2.id, p)} />
+                ))}
+
+                {/* 글자 묶음(제목 · 이름 · 배지) — 레이어 목록의 「UI」 한 칸. 끌어서 기본 자리에서 옮긴다 */}
+                <div style={{ position: 'absolute', inset: 0, zIndex: uiZ, pointerEvents: 'none' }}>
+                  <PrevDrag rootRef={previewRef} x={uiTitle.x} y={uiTitle.y} selected={uiSel}
+                    onSelect={() => setSelLayer(HERO_UI_ID)} onChange={(x, y) => setUiTitle({ x, y })}
+                    style={{
+                      left: `${50 + uiTitle.x}%`, top: `${titleTop + uiTitle.y}%`, transform: 'translateX(-50%)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(6),
+                      color: '#fff', fontWeight: 800, textShadow: shadowCss, whiteSpace: 'nowrap',
+                      fontFamily: familyOf(fontId),
+                      fontSize: cq(titleSize ?? clampN(vp.w * 0.02, 16, 22)),
+                    }}>
+                    {cp && <span style={pillCss(10)}>{CP_LABEL[cp]}</span>}
+                    <div>{(auObj ? auName.trim() : '') || name.trim().toUpperCase() || 'TITLE'}</div>
+                  </PrevDrag>
+
+                  {pairMembers.map((m, i) => {
+                    if (!fulls[m.charId]) return null;
+                    const o = uiNames[m.charId] ?? { x: 0, y: 0 };
+                    const al = badgeAligns[m.charId] ?? 'top';
+                    const left = i === 0;
+                    const fs = heroNameSizes[m.charId] ?? clampN(vp.w * 0.034, 20, 40);
+                    return (
+                      <PrevDrag key={m.charId} rootRef={previewRef} x={o.x} y={o.y} selected={uiSel}
+                        onSelect={() => setSelLayer(HERO_UI_ID)}
+                        onChange={(x, y) => setUiNames(sc => ({ ...sc, [m.charId]: { x, y } }))}
+                        style={{
+                          // 상세와 같은 기본 자리: 전신 칸(폭 44%) 안쪽 6% → 상자 기준 2.64%, 세로는 위 4% / 중앙 / 아래 4%
+                          ...(left ? { left: `${2.64 + o.x}%` } : { right: `${2.64 - o.x}%` }),
+                          ...(al === 'bottom' ? { bottom: `${4 - o.y}%` } : { top: `${(al === 'mid' ? 50 : 4) + o.y}%` }),
+                          transform: al === 'mid' ? 'translateY(-50%)' : undefined,
+                          display: 'flex', flexDirection: 'column', gap: 2, color: '#fff', textShadow: shadowCss,
+                          alignItems: left ? 'flex-start' : 'flex-end', textAlign: left ? 'left' : 'right',
+                        }}>
+                        <b style={{ fontSize: cq(fs), lineHeight: 1.05, fontWeight: (nameBolds[m.charId] ?? true) ? 800 : 400 }}>
+                          {memberNames?.[m.charId] ?? m.charId}
+                        </b>
+                        {m.keywords.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: cq(6), marginTop: cq(8), alignItems: left ? 'flex-start' : 'flex-end' }}>
+                            {m.keywords.map(k => <span key={k} style={pillCss(12)}>{k}</span>)}
+                          </div>
+                        )}
+                      </PrevDrag>
+                    );
+                  })}
+                </div>
+              </div>
+              );
+            })()}
+            <p className="hint" style={{ margin: '4px 0 0' }}>전신: 드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 / 제목·이름·스티커: 드래그 = 위치 (스티커는 휠 = 크기) — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
+
+            {/* 메인 이미지 · 레이어 (v5.6 사용자 요청) — 손잡이를 끌어 앞뒤 순서를 바꾼다.
+                목록의 위쪽이 화면 앞쪽. 「UI」(제목·이름·배지 글자)를 전신보다 위에 두면 글자가 앞에, 아래에 두면 뒤에 그려진다 */}
+            {Object.keys(fulls).length > 0 && (
+              <div style={{ border: '1px solid var(--line)', borderRadius: 12, padding: 14, display: 'grid', gap: 10 }}>
+                <label className="k-label" style={{ margin: 0 }}>
+                  메인 이미지 · 레이어 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 손잡이를 끌어 앞뒤 순서를 바꿉니다 (위 = 앞)</span>
+                </label>
+                <p className="hint" style={{ margin: 0 }}>
+                  UI(제목·이름·배지 글자)보다 위에 두면 글자 앞에, 아래에 두면 글자 뒤에 그려집니다. 스티커 위치와 크기는 위 미리보기에서 직접 끌어 조절합니다.
+                </p>
+                <DragList items={[...layerOrder].reverse().filter(id =>
+                    id === HERO_UI_ID || (id.startsWith('full:') && fulls[id.slice(5)]) || id.startsWith('st:'))}
+                  keyOf={id => id}
+                  onReorder={shown => {
+                    // 화면에서 안 보이는 항목(지운 전신)은 제자리를 유지한 채 보이는 항목만 재배열
+                    const hidden = layerOrder.filter(id => id.startsWith('full:') && !fulls[id.slice(5)]);
+                    setLayerOrder([...hidden, ...[...shown].reverse()]);
+                  }}
+                  render={id => {
+                    const isSel = selLayer === id;
+                    const stId = id.startsWith('st:') ? id.slice(3) : null;
+                    const st2 = stId ? stickers.find(x => x.id === stId) : undefined;
+                    const cid = id.startsWith('full:') ? id.slice(5) : null;
+                    const mi = cid ? pairMembers.findIndex(m => m.charId === cid) : -1;
+                    const label = id === HERO_UI_ID ? '이름 · 제목 · 배지 글자'
+                      : cid ? (memberNames?.[cid] ?? cid) : `스티커 ${stickers.findIndex(x => x.id === stId) + 1}`;
+                    const cap = id === HERO_UI_ID ? 'UI' : cid ? `전신 · ${mi === 0 ? '왼쪽' : '오른쪽'}` : 'STICKER';
+                    return (
+                      <div onClick={() => setSelLayer(id)} style={{
+                        display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '7px 10px', borderRadius: 10,
+                        border: `1px solid ${isSel ? 'var(--accent)' : 'var(--line)'}`,
+                        background: isSel ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
+                      }}>
+                        <span className="drag-h">⠿</span>
+                        {id === HERO_UI_ID ? <LayerThumb text="Aa" />
+                          : cid ? <LayerThumb refId={fulls[cid]?.ref} url={fulls[cid]?.url} />
+                          : <LayerThumb refId={st2?.ref} url={st2?.url} />}
+                        <div style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>
+                          <div style={{ fontSize: 9.5, letterSpacing: '.08em', color: 'var(--faint)' }}>{cap}</div>
+                          <b style={{ fontSize: 12.5 }}>{label}</b>
+                        </div>
+                        {st2 && (
+                          <>
+                            <label className="btn btn-ghost" style={{ padding: '3px 9px', fontSize: 10.5, cursor: 'var(--cur-pointer,pointer)' }}
+                              onClick={e => e.stopPropagation()}>
+                              교체
+                              <input type="file" accept="image/*" style={{ display: 'none' }}
+                                onChange={e => {
+                                  const f = e.target.files?.[0]; e.target.value = '';
+                                  if (f) patchSticker(st2.id, { file: f, url: URL.createObjectURL(f), ref: undefined });
+                                }} />
+                            </label>
+                            <span className="fx" onClick={e => {
+                              e.stopPropagation();
+                              del.ask('이 스티커를 삭제하시겠습니까?', () => removeSticker(st2.id));
+                            }}>✕</span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  }} />
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11, cursor: 'var(--cur-pointer,pointer)' }}
+                    {...fileDrop(fl => addStickers(fl))}>
+                    ＋ 스티커 추가
+                    <input type="file" accept="image/*" multiple style={{ display: 'none' }}
+                      onChange={e => { addStickers(e.target.files); e.target.value = ''; }} />
+                  </label>
+                  {(() => {
+                    const cur = selLayer?.startsWith('st:') ? stickers.find(x => x.id === selLayer.slice(3)) : undefined;
+                    if (cur) {
+                      return (
+                        <>
+                          <span className="cp-lb">스티커 크기</span>
+                          <KStep value={Math.round(cur.w)} min={3} max={90} step={1} suffix="%"
+                            onChange={(v: number) => patchSticker(cur.id, { w: v })} />
+                        </>
+                      );
+                    }
+                    if (selLayer === HERO_UI_ID) {
+                      return (
+                        <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+                          onClick={() => { setUiTitle({ x: 0, y: 0 }); setUiNames({}); }}>글자 위치 처음대로</button>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               </div>
             )}
-            <p className="hint" style={{ margin: '4px 0 0' }}>드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
 
             {/* 좌/우 한마디 문구 (v2.0 사용자 발견 — 색만 있고 문구 칸이 없었다) */}
             <label className="k-label" style={{ margin: '10px 0 0' }}>한마디 — 상단 좌/우 대사</label>

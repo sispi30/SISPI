@@ -14,6 +14,7 @@ import {
   RelAu, RelCpTag, charWithAu, charGrant,
   QaAnswerRow, QA_KEY, QA_SEED, MergedAnswer, answersFor,
   findByKey, charPath,
+  HeroSticker, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID,
 } from '@/lib/charStore';
 import { isPlainSpec } from '@/lib/charRuleConfig';
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
@@ -45,6 +46,18 @@ function FullImg({ refId, scale, offX = 0, offY = 0, shadow }: { refId: string; 
       height: `${scale}%`, maxWidth: 'none',
       filter: shadow,
     }} />
+  );
+}
+
+/** 히어로 스티커 (v5.6) — 자관 수정 미리보기에서 놓은 자리·크기 그대로.
+ *  좌표는 히어로 영역 대비 %, 중심 기준. 클릭은 아래로 통과시킨다 */
+function HeroStickerImg({ s, z }: { s: HeroSticker; z: number }) {
+  const url = useBlobUrl(s.ref);
+  if (!url) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className="hero-sticker" src={url} alt="" draggable={false}
+      style={{ left: `${s.x}%`, top: `${s.y}%`, width: `${s.w}%`, zIndex: z }} />
   );
 }
 
@@ -823,6 +836,17 @@ export default function RelDetailPage() {
       : [asAu(rel.members[0] ?? null), asAu(rel.members[1] ?? null)])
     : [];
 
+  /* 히어로 레이어·배치 (v5.6) — AU는 자기 것만(자관 것을 물려받지 않음). 레이어 순서가 없으면
+     예전처럼 앞 캐릭터가 위, 글자가 맨 위 */
+  const heroLayout = isBaseAu ? rel.heroLayout : au?.heroLayout;
+  const layerOrder = heroOrder(heroLayout,
+    pairSlots.map(sl => sl?.charId).filter((c): c is string => !!c), auFullFront);
+  const uiZ = heroZ(layerOrder, HERO_UI_ID);
+  /* 글자 묶음을 기본 자리에서 옮긴 거리 — 값은 히어로 영역 대비 %. 히어로는 폭 100vw × 높이 100vh−58px.
+     transform과 겹치지 않게 독립 속성 translate로 준다 */
+  const shiftOf = (o?: { x: number; y: number }): React.CSSProperties | undefined =>
+    o && (o.x || o.y) ? { translate: `${o.x}vw calc((100vh - 58px) * ${o.y / 100})` } : undefined;
+
   /** 이 멤버를 반대쪽 자리로 (좌 ↔ 우).
    *  오른쪽을 왼쪽으로 옮길 때는 **반대쪽 캐릭터를 오른쪽으로 지정**한다 (v2.0 사용자 제보) —
    *  예전에는 지정을 지우기만 해서, 등록 순서상 원래 오른쪽이던 캐릭터(보통 두 번째로 넣은
@@ -867,21 +891,6 @@ export default function RelDetailPage() {
           </div>
         );
       })()}
-
-      {/* 페어명 — 전신 히어로일 때만, AU 배지 줄 바로 위에 작게 (v4.4 사용자 요청,
-          참고 사진의 "PairName" 자리). CP/NCP 뱃지도 같이 옮겨 왔다 (v4.5 — 위쪽 큰 제목과
-          중복으로 두 번 보이던 걸 화살표로 여기로 옮기라고 표시해 줌). AU가 하나뿐이라
-          배지 줄이 안 보여도 페어명은 그대로 둔다 */}
-      {heroDuo && (
-        <div className="pair-name">
-          {auCpTag && (
-            <span className="pill" style={{ marginBottom: 6, ...(auSt.cpTagBg || auSt.cpTagFg
-              ? { background: auSt.cpTagBg, color: auSt.cpTagFg, borderColor: auSt.cpTagBg }
-              : {}) }}>{CP_LABEL[auCpTag]}</span>
-          )}
-          <div style={{ fontFamily: familyOf(rel.fontId), fontSize: titleFs }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</div>
-        </div>
-      )}
 
       {(rel.aus.length > 1 || isAdmin) && (
         <div className={`au-list ${heroDuo ? 'au-list-hero' : ''}`}>
@@ -1006,12 +1015,34 @@ export default function RelDetailPage() {
             // AU는 자기 전신만 — base 전신을 물려받지 않음 (v1.9 사용자 확정)
             const fullRef = isBaseAu ? m?.fullImgId : au?.fulls?.[cid];
             if (!fullRef) return null;   // 등록 안 된 전신은 자리도 만들지 않는다
-            const front = (rel.fullFront ?? pairSlots[1]?.charId) === cid;
             return (
               <div key={i} className={`fb fb-${i === 0 ? 'l' : 'r'}`}
-                style={{ background: 'transparent', zIndex: front ? 3 : 2 }}>
+                style={{ background: 'transparent', zIndex: heroZ(layerOrder, heroFullId(cid)) }}>
                 <FullImg refId={fullRef} scale={m?.fullScale ?? 90} offX={m?.fullOffX ?? 0} offY={m?.fullOffY ?? 0}
                   shadow={fullShadow(auSt.nameShadowColor, auSt.nameShadow)} />
+              </div>
+            );
+          })}
+          {/* 글자 묶음(제목 · 이름 · 배지) — 레이어 목록의 「UI」 한 칸 (v5.6). 예전엔 이름이 전신 칸 안에
+              들어 있어 앞뒤를 따로 못 바꿨다 — 전신 칸과 같은 자리(.fb-ui)로 빼서 한 레이어로 묶는다 */}
+          <div className="hero-ui-layer" style={{ zIndex: uiZ }}>
+            {heroDuo && (
+              <div className="pair-name" style={shiftOf(heroLayout?.title)}>
+                {auCpTag && (
+                  <span className="pill" style={{ marginBottom: 6, ...(auSt.cpTagBg || auSt.cpTagFg
+                    ? { background: auSt.cpTagBg, color: auSt.cpTagFg, borderColor: auSt.cpTagBg }
+                    : {}) }}>{CP_LABEL[auCpTag]}</span>
+                )}
+                <div style={{ fontFamily: familyOf(rel.fontId), fontSize: titleFs }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</div>
+              </div>
+            )}
+            {pairSlots.map((sl, i) => {
+              const cid = sl?.charId ?? '';
+              const m = sl ?? rel.members.find(x => x.charId === cid);
+              const fullRef = isBaseAu ? m?.fullImgId : au?.fulls?.[cid];
+              if (!fullRef) return null;
+              return (
+              <div key={i} className={`fb-ui fb-ui-${i === 0 ? 'l' : 'r'}`}>
                 {/* 전신 위 캐릭터 이름·부제·키워드 (v4.1 사용자 요청 — 참고 사이트의 이름 밑
                     「예시」 태그 3개 자리에 이 캐릭터의 키워드를 놓고, 우하단 흰 정보 카드는
                     없앴다). 이름을 누르면 예전 카드처럼 캐릭터 페이지로 이동한다.
@@ -1022,7 +1053,7 @@ export default function RelDetailPage() {
                   if (!nc) return null;
                   return (
                     <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}${m?.badgeAlign === 'mid' ? ' fb-name-mid' : m?.badgeAlign === 'bottom' ? ' fb-name-bottom' : ''}`}
-                      style={{ fontFamily: familyOf(nc.fontId), cursor: 'var(--cur-pointer,pointer)' }}
+                      style={{ fontFamily: familyOf(nc.fontId), cursor: 'var(--cur-pointer,pointer)', ...shiftOf(heroLayout?.names?.[cid]) }}
                       onClick={() => router.push(charHref(cid))}
                       onContextMenu={e => {
                         if (!isAdmin) return;
@@ -1048,8 +1079,13 @@ export default function RelDetailPage() {
                   );
                 })()}
               </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          {/* 스티커 (v5.6) — 자관 수정 미리보기에서 놓은 자리 그대로. 앞뒤는 레이어 순서 */}
+          {(heroLayout?.stickers ?? []).map(st => (
+            <HeroStickerImg key={st.id} s={st} z={heroZ(layerOrder, heroStickerId(st.id))} />
+          ))}
           <div className="single" ref={artBoxRef} style={{ cursor: auArts.length > 1 ? 'pointer' : undefined }}
             onClick={() => { const n = auArts.length; if (n > 1) setArtIdx(i => (i + 1) % n); }}
             onContextMenu={e => {

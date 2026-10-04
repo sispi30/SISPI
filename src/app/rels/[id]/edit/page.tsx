@@ -59,7 +59,8 @@ function RelEditInner() {
                 headerBgG1: v.headerBgG1, headerBgG2: v.headerBgG2, headerBgAngle: v.headerBgAngle,
                 pageBgG1: v.pageBgG1, pageBgG2: v.pageBgG2, pageBgAngle: v.pageBgAngle }),
             // CP/문답 숨김은 자관 전체 설정(AU 폼에는 없음) · 전신 앞뒤는 AU면 그 AU에만 (v2.0)
-            ...(auObj ? {} : { cp: v.cp, qaHide: v.qaHide, linkBoard: v.linkBoard, fullFront: v.fullFront ?? r.fullFront }),
+            ...(auObj ? {} : { cp: v.cp, qaHide: v.qaHide, linkBoard: v.linkBoard, fullFront: v.fullFront ?? r.fullFront,
+                heroLayout: v.heroLayout ?? r.heroLayout }),
             illustMode: v.kind === 'pair' ? r.illustMode : 'one',
             // 전신 크기·위치·한마디·대사 색 — **AU를 편집 중이면 자관 공통을 건드리지 않는다**
             // (v2.0 사용자 발견: AU에서 고치면 다른 AU 페이지까지 같이 바뀌던 것.
@@ -89,6 +90,8 @@ function RelEditInner() {
                   name: v.auName?.trim() ? v.auName.trim() : undefined,
                   // AU별 폰트·전신 앞뒤 (v2.0 사용자 제보) — 원본이 아니라 이 AU에 담는다
                   fontId: v.fontId, bodyFontId: v.bodyFontId, titleSize: v.titleSize, fullFront: v.fullFront,
+                  // AU별 히어로 레이어·스티커·제목/이름 배치 (v5.6) — 원본·다른 AU는 건드리지 않는다
+                  heroLayout: v.heroLayout ?? a.heroLayout,
                   // AU별 색·배경 (v2.0 사용자 요청) — 「직접 지정」을 끄면 undefined가 되어
                   // 자관 값으로 되돌아간다(auStyle이 묶음 단위로 판정한다)
                   style: {

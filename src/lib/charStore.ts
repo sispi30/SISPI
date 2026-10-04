@@ -352,6 +352,56 @@ export function fullShadow(color?: string, strength?: number, geom = '0 8px 18px
   return `drop-shadow(${geom} rgba(${r},${g},${b},${a}))`;
 }
 
+/**
+ * 2인 전신 히어로의 레이어·배치 (v5.6 사용자 요청 — 「메인 이미지 · 레이어」).
+ *
+ * 설정의 레이어 목록에서 손잡이로 끌어 앞뒤를 바꾸고, 미리보기에서 제목·이름·배지·스티커를
+ * 직접 끌어 배치한다. 값은 모두 **히어로 영역 대비 %** — 상세 화면과 미리보기가 같은 비라서
+ * 어느 창 크기에서도 같은 자리에 놓인다.
+ *
+ * 레이어 id: 'ui'(제목·이름·배지 같은 글자 묶음) · `full:${charId}`(전신) · `st:${stickerId}`(스티커)
+ * order 는 **아래 → 위** 순서. 없으면 예전 방식(fullFront)대로 — 앞 캐릭터가 위, 글자는 맨 위.
+ */
+export interface HeroSticker {
+  id: string;
+  ref: string;   // 이미지 blob id
+  x: number;     // 중심 가로 위치 (히어로 폭 대비 %)
+  y: number;     // 중심 세로 위치 (히어로 높이 대비 %)
+  w: number;     // 폭 (히어로 폭 대비 %)
+}
+export interface HeroLayout {
+  order?: string[];
+  stickers?: HeroSticker[];
+  /** 제목(CP 뱃지 + 자관명) 묶음의 기본 자리에서 옮긴 거리 — 히어로 폭/높이 대비 % */
+  title?: { x: number; y: number };
+  /** 멤버별 이름·배지 묶음의 기본 자리에서 옮긴 거리 — 히어로 폭/높이 대비 % */
+  names?: Record<string, { x: number; y: number }>;
+}
+
+export const HERO_UI_ID = 'ui';
+export const heroFullId = (charId: string) => `full:${charId}`;
+export const heroStickerId = (id: string) => `st:${id}`;
+
+/** 레이어 순서(아래 → 위)를 지금 있는 항목에 맞게 정리한다 — 저장된 순서를 우선하고,
+ *  없어진 항목은 빼고, 새로 생긴 항목은 알맞은 자리에 채운다. */
+export function heroOrder(layout: HeroLayout | undefined, charIds: string[], fullFront?: string): string[] {
+  const stickers = (layout?.stickers ?? []).map(s => heroStickerId(s.id));
+  // 기본: 뒤 캐릭터 → 앞 캐릭터 → 글자 (앞 캐릭터는 fullFront, 없으면 오른쪽)
+  const front = fullFront && charIds.includes(fullFront) ? fullFront : charIds[charIds.length - 1];
+  const fullsDefault = [...charIds.filter(c => c !== front), ...(front ? [front] : [])].map(heroFullId);
+  const valid = new Set([HERO_UI_ID, ...charIds.map(heroFullId), ...stickers]);
+  const saved = (layout?.order ?? []).filter(id => valid.has(id));
+  const missing = [...fullsDefault, ...stickers, HERO_UI_ID].filter(id => !saved.includes(id));
+  // 저장된 순서 뒤에 이어 붙인다 — 새로 생긴 항목(방금 올린 스티커 등)은 맨 위에 놓여 가려지지 않는다
+  return [...saved, ...missing];
+}
+
+/** 레이어 순서에서 이 항목의 z-index (히어로 안에서 쓰는 값 — 10부터) */
+export function heroZ(order: string[], id: string): number {
+  const i = order.indexOf(id);
+  return 10 + (i < 0 ? 0 : i);
+}
+
 export interface RelAu {
   id: string;
   label: string;
@@ -366,6 +416,8 @@ export interface RelAu {
   titleSize?: number;
   /** AU별 전신 앞뒤 (v2.0) — AU 편집의 앞으로/뒤로가 원본 배치를 바꾸지 않게. 미지정: 자관 기본 */
   fullFront?: string;
+  /** AU별 히어로 레이어·배치 (v5.6) — AU는 자기 전신·스티커만 쓰므로 자관 것을 물려받지 않는다 */
+  heroLayout?: HeroLayout;
   /** AU별 색·배경 — 없으면 자관 기본 (위 RelAuStyle 설명 참조) */
   style?: RelAuStyle;
   /** AU별 멤버 표시값 — 없으면 자관 기본 (위 RelAuMember 설명 참조) */
@@ -433,6 +485,7 @@ export interface Relation {
   illustMode: 'duo' | 'one';     // 2인: 전신 2장 / 일러 1장 (v1.8)
   aus: RelAu[];                  // AU 리스트 (첫 항목 = 원본 base)
   cp?: RelCpTag;                 // 자관 기본 CP/NCP (등록 시 선택, v1.9)
+  heroLayout?: HeroLayout;       // 2인 전신 히어로 레이어·스티커·글자 배치 (v5.6)
   fullFront?: string;            // 전신 모드에서 앞에 보일 캐릭터 id (v1.9 — 미리보기에서 클릭 선택)
   pairRight?: string;            // 페어에서 오른쪽 자리에 둘 캐릭터 id (v2.0 — 없으면 등록 순서대로)
   /** 상세 중앙 일러가 어디를 보여 줄지 (v2.0 사용자 요청) — 리스트 썸네일(thumbCrop)과 별개.

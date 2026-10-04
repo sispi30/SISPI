@@ -1171,6 +1171,24 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .rel-center-full .fb{top:auto;bottom:0;height:100%;width:44%;border-radius:0;filter:drop-shadow(0 14px 30px rgba(0,0,0,.45))}
 .rel-center-full .fb-l{left:0}
 .rel-center-full .fb-r{right:0}
+/* 글자 묶음 레이어 (v5.6) — 제목·이름·배지를 전신 칸과 따로 앞뒤 정렬하려고 전신(.fb)에서 빼냈다.
+   .fb-ui는 .fb와 같은 칸(폭 44%·높이 100%·바닥 정렬)이라 이름 기본 자리는 예전과 똑같다.
+   레이어 자체는 클릭을 통과시키고, 이름만 눌린다 */
+.rel-center-full .hero-ui-layer{position:absolute;inset:0;pointer-events:none}
+.rel-center-full .fb-ui{position:absolute;bottom:0;height:100%;width:44%;pointer-events:none}
+.rel-center-full .fb-ui-l{left:0}
+.rel-center-full .fb-ui-r{right:0}
+.rel-center-full .fb-ui .fb-name{pointer-events:auto}
+/* 제목 — 예전 .page-rel-detail > .pair-name 과 같은 자리(히어로 높이 − 290px). 이제 히어로 안에 있다 */
+.rel-center-full .hero-ui-layer .pair-name{
+  position:absolute;top:calc(100% - 290px);left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  color:#fff;font-weight:800;font-size:clamp(16px,2vw,22px);
+  text-shadow:0 3px 12px rgba(0,0,0,.5);white-space:nowrap;
+}
+/* 스티커 — 중심 기준, 클릭은 아래로 통과 */
+.rel-center-full .hero-sticker{position:absolute;transform:translate(-50%,-50%);height:auto;max-width:none;pointer-events:none;user-select:none}
+.rel-center.one-mode .fb-ui,.rel-center.one-mode .hero-sticker{display:none}
 .rel-center-full .single{border-radius:0}
 /* 카드는 없앴다(v4.1) — 이름 밑에 그 캐릭터의 키워드만 나란히 (참고 사이트의 "예시" 자리) */
 .fb-kw-row{display:flex;flex-direction:column;align-items:inherit;gap:6px;margin-top:8px}
@@ -1207,7 +1225,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 2인 전신 히어로 — 전신/일러스트 스위치를 AU 버튼 바로 아래로 (v5.3 사용자 요청: 둘 사이 간격이
    너무 떨어져 있었다). AU 줄(.au-list-hero)과 같은 기준(top:100vh-58px-190px, 높이 48px)에서
    14px만 띄워 붙인다 — 히어로 높이가 화면 폭에 따라 달라도(86vh) AU 줄과 같이 움직인다 */
-.rel-center-full .illu-toggle{top:calc(100vh - 58px - 190px + 48px + 14px);bottom:auto}
+.rel-center-full .illu-toggle{top:calc(100vh - 58px - 190px + 48px + 14px);bottom:auto;z-index:60}
 /* AU 리스트 (우상단, v1.8) — 자식 일괄 relative 규칙보다 뒤에서 absolute로 재고정 */
 .au-list{display:flex;gap:8px;align-items:flex-start}
 .page-rel-detail > .au-list{position:absolute;top:20px;right:28px;left:auto;z-index:6}
