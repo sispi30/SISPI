@@ -11,7 +11,8 @@ import { CP_LABEL } from '@/lib/relqStore';
 import { newId } from '@/lib/postStore';
 import { useFonts, deVarFamily } from '@/lib/fontStore';
 import { putBlob, getBlob, useBlobUrl } from '@/lib/blobStore';
-import { KInput, KSelect, KCheck, KStep } from '@/components/ui/Kit';
+import { KInput, KSelect, KCheck, KStep, KToggle } from '@/components/ui/Kit';
+import { isPlainSpec } from '@/lib/charRuleConfig';
 import { CropEditor, CropValue, CropImg } from '@/components/ui/CropEditor';
 import { DragList } from '@/components/ui/DragList';
 import { Lightbox } from '@/components/ui/Lightbox';
@@ -98,9 +99,13 @@ function useHeroAspect() {
 /** 전신 미리보기 한 장 (v1.9 조작 개편 — 사용자 확정)
  *  · 드래그 = 위치 이동 (가로·세로)  · 휠 = 크기 (비율 유지)  · 우클릭 = 앞으로/뒤로 메뉴
  *  배치는 상세 FullImg와 동일(부모 fb 박스 기준 하단 중앙 + 오프셋) — 미리보기 = 실제 */
-function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelect, onScale, onOffset, onLayer }: {
+function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelect, snap, scaleStep, onScale, onOffset, onLayer }: {
   draft?: FullDraft; scale: number; offX: number; offY: number; name: string; shadow?: string;
   selected?: boolean; onSelect?: () => void;
+  /** 그리드가 켜져 있을 때만 — 드래그 중인 위치(오프셋 %)를 격자에 맞춘 값으로 바꿔 준다 (v5.7) */
+  snap?: (p: { x: number; y: number }) => { x: number; y: number };
+  /** 그리드가 켜져 있을 때만 — 휠 크기를 이 간격(%)의 배수로 (v5.7) */
+  scaleStep?: number;
   onScale: (v: number) => void;
   onOffset: (x: number, y: number) => void;
   onLayer: (front: boolean) => void;
@@ -118,14 +123,19 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelec
   // 휠 = 크기 — React onWheel은 passive라 preventDefault가 무시되어 페이지가 같이 스크롤됨 (v1.9 수정)
   // → 네이티브 리스너를 {passive:false}로 등록해 이미지 위에서는 기본 휠 차단
   const imgRef = React.useRef<HTMLImageElement>(null);
-  const wheelState = React.useRef({ scale, onScale });
-  wheelState.current = { scale, onScale };
+  const wheelState = React.useRef({ scale, onScale, scaleStep });
+  wheelState.current = { scale, onScale, scaleStep };
   useEffect(() => {
     const el = imgRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const { scale: s, onScale: fn } = wheelState.current;
+      const { scale: s, onScale: fn, scaleStep: st } = wheelState.current;
+      if (st) {
+        const v = Math.round((s - Math.sign(e.deltaY) * st) / st) * st;
+        fn(Math.max(40, Math.min(160, Math.round(v * 100) / 100)));
+        return;
+      }
       fn(Math.max(40, Math.min(160, Math.round(s - Math.sign(e.deltaY) * 4))));
     };
     el.addEventListener('wheel', onWheel, { passive: false });
@@ -159,6 +169,11 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelec
           if (!d) return;
           const nx = d.ox + ((e.clientX - d.x) / d.bw) * 100;
           const ny = d.oy - ((e.clientY - d.y) / d.bh) * 100;
+          if (snap) {
+            const q = snap({ x: nx, y: ny });
+            onOffset(Math.max(-80, Math.min(80, q.x)), Math.max(-60, Math.min(80, q.y)));
+            return;
+          }
           onOffset(Math.max(-80, Math.min(80, Math.round(nx))), Math.max(-60, Math.min(80, Math.round(ny))));
         }}
         onPointerUp={() => { drag.current = null; }}
@@ -198,9 +213,12 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 /** 미리보기 위에서 끌 수 있는 한 덩어리 (제목·이름·스티커 공용, v5.6).
  *  끈 거리는 미리보기 상자 대비 %로 바뀌어 (x, y) 값에 더해진다 — 상세 화면과 같은 단위.
  *  onWheel을 주면 휠로도 조절한다(스티커 크기). 휠은 네이티브 리스너로 달아 페이지가 같이 스크롤되지 않게 한다 */
-function PrevDrag({ rootRef, x, y, min = -100, max = 100, selected, onSelect, onChange, onWheel, style, children }: {
+function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSelect, onChange, onWheel, style, children }: {
   rootRef: React.RefObject<HTMLDivElement | null>;
   x: number; y: number; min?: number; max?: number; selected?: boolean;
+  /** 그리드 스냅 (v5.7) — ax·ay = 오프셋 0일 때 기준점의 위치(상자 대비 %), cx·cy = 격자 한 칸(%).
+   *  기준점의 "실제 위치"가 격자에 맞도록 오프셋을 보정한다 — 메인 편집모드의 10px 스냅과 같은 방식 */
+  grid?: { ax: number; ay: number; cx: number; cy: number };
   onSelect?: () => void;
   onChange: (x: number, y: number) => void;
   onWheel?: (dir: number) => void;
@@ -238,10 +256,14 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, selected, onSelect, on
       onPointerMove={e => {
         const d = drag.current;
         if (!d) return;
-        onChange(
-          clampN(round1(d.ox + ((e.clientX - d.px) / d.w) * 100), min, max),
-          clampN(round1(d.oy + ((e.clientY - d.py) / d.h) * 100), min, max),
-        );
+        let nx = d.ox + ((e.clientX - d.px) / d.w) * 100;
+        let ny = d.oy + ((e.clientY - d.py) / d.h) * 100;
+        if (grid) {
+          nx = Math.round((grid.ax + nx) / grid.cx) * grid.cx - grid.ax;
+          ny = Math.round((grid.ay + ny) / grid.cy) * grid.cy - grid.ay;
+        }
+        const r = grid ? (v: number) => Math.round(v * 100) / 100 : round1;
+        onChange(clampN(r(nx), min, max), clampN(r(ny), min, max));
       }}
       onPointerUp={() => { drag.current = null; }}>
       {children}
@@ -252,8 +274,9 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, selected, onSelect, on
 /** 스티커 초안 — 새로 올린 건 file/url, 저장돼 있던 건 ref */
 interface StickerDraft { id: string; ref?: string; file?: File; url?: string; x: number; y: number; w: number }
 
-function StickerPrev({ s, z, rootRef, selected, onSelect, onChange }: {
+function StickerPrev({ s, z, rootRef, grid, selected, onSelect, onChange }: {
   s: StickerDraft; z: number; rootRef: React.RefObject<HTMLDivElement | null>;
+  grid?: { cx: number; cy: number };
   selected: boolean; onSelect: () => void; onChange: (p: Partial<StickerDraft>) => void;
 }) {
   const loaded = useBlobUrl(s.ref);
@@ -261,8 +284,13 @@ function StickerPrev({ s, z, rootRef, selected, onSelect, onChange }: {
   if (!src) return null;
   return (
     <PrevDrag rootRef={rootRef} x={s.x} y={s.y} min={-20} max={120} selected={selected} onSelect={onSelect}
+      grid={grid ? { ax: 0, ay: 0, cx: grid.cx, cy: grid.cy } : undefined}
       onChange={(x, y) => onChange({ x, y })}
-      onWheel={dir => onChange({ w: clampN(s.w - dir * 2, 3, 90) })}
+      onWheel={dir => onChange({
+        // 그리드가 켜져 있으면 가로 폭이 격자 한 칸(10px)의 배수로 (v5.7)
+        w: grid ? clampN(Math.round(((s.w - dir * grid.cx) / grid.cx)) * grid.cx, grid.cx, 90)
+          : clampN(s.w - dir * 2, 3, 90),
+      })}
       style={{ left: `${s.x}%`, top: `${s.y}%`, width: `${s.w}%`, transform: 'translate(-50%,-50%)', zIndex: z, outlineOffset: 0 }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" draggable={false} style={{ width: '100%', display: 'block', pointerEvents: 'none' }} />
@@ -447,6 +475,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [uiTitle, setUiTitle] = useState<{ x: number; y: number }>(initLayout?.title ?? { x: 0, y: 0 });
   const [uiNames, setUiNames] = useState<Record<string, { x: number; y: number }>>(initLayout?.names ?? {});
   const [selLayer, setSelLayer] = useState<string | null>(null);
+  // 그리드 on/off (v5.7 사용자 요청) — 메인 편집모드와 같은 10px 격자. 편집을 열 때마다 꺼진 상태로 시작
+  const [gridOn, setGridOn] = useState(false);
   // 전신 앞으로/뒤로(우클릭 메뉴) — 다른 전신 바로 위/아래로 옮긴다
   const moveFull = (cid: string, front: boolean) => setLayerOrder(o => {
     const other = pairMembers.find(x => x.charId !== cid)?.charId;
@@ -708,6 +738,16 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                  앞뒤는 아래 「메인 이미지 · 레이어」 목록의 순서가 정한다. 값은 모두 상자 대비 %.
                  글자 크기·제목 자리는 지금 창 크기(vp) 기준 px를 상자 폭 비율(cqw)로 바꿔 상세와 같게 맞춘다 */
               const heroH = Math.max(1, vp.h - 58);
+              // 격자 한 칸 = 실제 상세 화면의 10px (상자 대비 %). 가로는 히어로 폭, 세로는 히어로 높이 기준
+              const gcx = (10 / vp.w) * 100;
+              const gcy = (10 / heroH) * 100;
+              const g2 = (v: number) => Math.round(v * 100) / 100;
+              // 전신 한 칸은 히어로 폭의 44%(왼쪽은 0~44%, 오른쪽은 56~100%) — 이미지 가운데 x와 바닥 y를 격자에 맞춘다
+              const fullSnap = (i: number) => (q: { x: number; y: number }) => {
+                const base = i === 0 ? 22 : 78;
+                const abs = Math.round((base + 0.44 * q.x) / gcx) * gcx;
+                return { x: g2((abs - base) / 0.44), y: g2(100 - Math.round((100 - q.y) / gcy) * gcy) };
+              };
               const titleTop = ((heroH - 290) / heroH) * 100;          // 상세 .pair-name: 히어로 높이 − 290px
               const cq = (px: number) => `${(px / vp.w) * 100}cqw`;
               const uiZ = heroZ(layerOrder, HERO_UI_ID);
@@ -718,6 +758,11 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 background: 'rgba(255,255,255,.16)', color: '#fff', fontWeight: 600, lineHeight: 1.3, whiteSpace: 'nowrap',
               });
               return (
+              <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                <KToggle label="그리드" checked={gridOn} onChange={setGridOn} />
+                <span className="hint" style={{ margin: 0 }}>{gridOn ? '10px 격자에 맞춰 배치됩니다' : '꺼짐 — 자유 배치'}</span>
+              </div>
               <div ref={previewRef} onPointerDown={() => setSelLayer(null)} style={{
                 position: 'relative', width: `min(100%, calc(70vh * ${heroRatio}))`, margin: '0 auto', aspectRatio: `${heroRatio}`, borderRadius: 10,
                 overflow: 'hidden', background: 'linear-gradient(180deg,#262b33,#181b20)', border: '1px solid var(--line)',
@@ -738,6 +783,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                           shadowCustom ? nameShadow : undefined, '0 6px 14px')}
                         selected={selLayer === heroFullId(m.charId)}
                         onSelect={() => setSelLayer(heroFullId(m.charId))}
+                        snap={gridOn ? fullSnap(i) : undefined}
+                        scaleStep={gridOn ? g2(gcy) : undefined}
                         onScale={v => setFullScales(sc => ({ ...sc, [m.charId]: v }))}
                         onOffset={(x, y) => setFullOffsets(sc => ({ ...sc, [m.charId]: { x, y } }))}
                         onLayer={front => moveFull(m.charId, front)} />
@@ -747,6 +794,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 {stickers.map(st2 => (
                   <StickerPrev key={st2.id} s={st2} rootRef={previewRef}
                     z={heroZ(layerOrder, heroStickerId(st2.id))}
+                    grid={gridOn ? { cx: gcx, cy: gcy } : undefined}
                     selected={selLayer === heroStickerId(st2.id)}
                     onSelect={() => setSelLayer(heroStickerId(st2.id))}
                     onChange={p => patchSticker(st2.id, p)} />
@@ -755,6 +803,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 {/* 글자 묶음(제목 · 이름 · 배지) — 레이어 목록의 「UI」 한 칸. 끌어서 기본 자리에서 옮긴다 */}
                 <div style={{ position: 'absolute', inset: 0, zIndex: uiZ, pointerEvents: 'none' }}>
                   <PrevDrag rootRef={previewRef} x={uiTitle.x} y={uiTitle.y} selected={uiSel}
+                    grid={gridOn ? { ax: 50, ay: titleTop, cx: gcx, cy: gcy } : undefined}
                     onSelect={() => setSelLayer(HERO_UI_ID)} onChange={(x, y) => setUiTitle({ x, y })}
                     style={{
                       left: `${50 + uiTitle.x}%`, top: `${titleTop + uiTitle.y}%`, transform: 'translateX(-50%)',
@@ -763,7 +812,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                       fontFamily: familyOf(fontId),
                       fontSize: cq(titleSize ?? clampN(vp.w * 0.02, 16, 22)),
                     }}>
-                    {cp && <span style={pillCss(10)}>{CP_LABEL[cp]}</span>}
+                    {cp && <span style={{ ...pillCss(10), ...(tagCustom ? { background: cpTagBg, color: cpTagFg } : {}) }}>{CP_LABEL[cp]}</span>}
                     <div>{(auObj ? auName.trim() : '') || name.trim().toUpperCase() || 'TITLE'}</div>
                   </PrevDrag>
 
@@ -773,8 +822,17 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     const al = badgeAligns[m.charId] ?? 'top';
                     const left = i === 0;
                     const fs = heroNameSizes[m.charId] ?? clampN(vp.w * 0.034, 20, 40);
+                    const ch = myChars.find(c => c.id === m.charId);
+                    const specPills = (ch?.specs ?? []).filter(isPlainSpec);
+                    const gems = ch?.colors ?? m.palette ?? [];
                     return (
                       <PrevDrag key={m.charId} rootRef={previewRef} x={o.x} y={o.y} selected={uiSel}
+                        grid={gridOn ? {
+                          // 기준점 = 왼쪽 이름은 왼쪽 가장자리, 오른쪽 이름은 오른쪽 가장자리 / 위·가운데·아래 정렬에 따라 y
+                          ax: left ? 2.64 : 97.36,
+                          ay: al === 'bottom' ? 96 : al === 'mid' ? 50 : 4,
+                          cx: gcx, cy: gcy,
+                        } : undefined}
                         onSelect={() => setSelLayer(HERO_UI_ID)}
                         onChange={(x, y) => setUiNames(sc => ({ ...sc, [m.charId]: { x, y } }))}
                         style={{
@@ -788,19 +846,38 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         <b style={{ fontSize: cq(fs), lineHeight: 1.05, fontWeight: (nameBolds[m.charId] ?? true) ? 800 : 400 }}>
                           {memberNames?.[m.charId] ?? m.charId}
                         </b>
-                        {m.keywords.length > 0 && (
+                        {ch?.sub && <small style={{ fontSize: cq(12.5), opacity: .85, letterSpacing: '.04em', fontWeight: 400 }}>{ch.sub}</small>}
+                        {/* 이름 밑 배지 줄 — 상세 화면(.fb-kw-row)과 같은 구성: 키워드 · 스펙 · 컬러 팔레트 */}
+                        {(m.keywords.length > 0 || specPills.length > 0 || gems.length > 0) && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: cq(6), marginTop: cq(8), alignItems: left ? 'flex-start' : 'flex-end' }}>
                             {m.keywords.map(k => <span key={k} style={pillCss(12)}>{k}</span>)}
+                            {specPills.map(sp => <span key={sp.label} style={pillCss(12)}>{sp.label} {sp.value}</span>)}
+                            {gems.map(gm => (
+                              <span key={gm.hex + gm.label} title={gm.label} style={{
+                                display: 'inline-block', width: cq(14), height: cq(14), borderRadius: '50%', background: gm.hex,
+                                boxShadow: `0 0 0 ${cq(2)} rgba(255,255,255,.5)`,
+                              }} />
+                            ))}
                           </div>
                         )}
                       </PrevDrag>
                     );
                   })}
                 </div>
+
+                {/* 그리드 선 (v5.7) — 메인 편집모드와 같은 10px 격자(상세 화면 기준). 클릭은 통과시킨다 */}
+                {gridOn && (
+                  <div aria-hidden style={{
+                    position: 'absolute', inset: 0, zIndex: 500, pointerEvents: 'none',
+                    backgroundImage: 'linear-gradient(to right, rgba(255,255,255,.16) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.16) 1px, transparent 1px)',
+                    backgroundSize: `${gcx}% 100%, 100% ${gcy}%`,
+                  }} />
+                )}
               </div>
+              </>
               );
             })()}
-            <p className="hint" style={{ margin: '4px 0 0' }}>전신: 드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 / 제목·이름·스티커: 드래그 = 위치 (스티커는 휠 = 크기) — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
+            <p className="hint" style={{ margin: '4px 0 0' }}>전신: 드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 / 제목·이름·배지·스티커: 드래그 = 위치 (스티커는 휠 = 크기) / 그리드를 켜면 10px 격자에 맞춰집니다 — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
 
             {/* 메인 이미지 · 레이어 (v5.6 사용자 요청) — 손잡이를 끌어 앞뒤 순서를 바꾼다.
                 목록의 위쪽이 화면 앞쪽. 「UI」(제목·이름·배지 글자)를 전신보다 위에 두면 글자가 앞에, 아래에 두면 뒤에 그려진다 */}
