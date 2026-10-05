@@ -814,6 +814,28 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     }}>
                     {cp && <span style={{ ...pillCss(10), ...(tagCustom ? { background: cpTagBg, color: cpTagFg } : {}) }}>{CP_LABEL[cp]}</span>}
                     <div>{(auObj ? auName.trim() : '') || name.trim().toUpperCase() || 'TITLE'}</div>
+                    {/* AU 줄 (v5.9) — 상세 화면처럼 제목 묶음에 붙어 있다: 제목을 끌면 같이 움직인다.
+                        기본 자리는 제목 위에서 100px 아래(상세와 같은 값) */}
+                    <div style={{
+                      position: 'absolute', top: cq(100), left: '50%', transform: 'translateX(-50%)',
+                      display: 'flex', gap: cq(8), alignItems: 'flex-start',
+                    }}>
+                      {(initial?.aus?.length ? initial.aus : [{ id: 'base', label: 'BASE' }]).map((a, i) => (
+                        <div key={a.id} style={{
+                          width: cq(48), aspectRatio: '1', borderRadius: cq(11), position: 'relative', overflow: 'hidden',
+                          border: `${cq(2)} solid ${(auObj ? auObj.id === a.id : i === 0) ? '#fff' : 'rgba(255,255,255,.25)'}`,
+                          background: 'rgba(255,255,255,.12)',
+                        }}>
+                          <small style={{ position: 'absolute', left: 0, right: 0, bottom: cq(2), textAlign: 'center',
+                            fontSize: cq(8), letterSpacing: '.08em', fontWeight: 400 }}>{a.label}</small>
+                        </div>
+                      ))}
+                      <div style={{
+                        width: cq(48), aspectRatio: '1', borderRadius: cq(11), display: 'grid', placeItems: 'center',
+                        border: `${cq(2)} dashed rgba(255,255,255,.25)`, background: 'rgba(255,255,255,.06)',
+                        fontSize: cq(16), fontWeight: 400, color: 'rgba(255,255,255,.75)',
+                      }}>＋</div>
+                    </div>
                   </PrevDrag>
 
                   {pairMembers.map((m, i) => {
@@ -877,7 +899,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               </>
               );
             })()}
-            <p className="hint" style={{ margin: '4px 0 0' }}>전신: 드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 / 제목·이름·배지·스티커: 드래그 = 위치 (스티커는 휠 = 크기) / 그리드를 켜면 10px 격자에 맞춰집니다 — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
+            <p className="hint" style={{ margin: '4px 0 0' }}>전신: 드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 / 제목(AU 줄 포함)·이름·배지·스티커: 드래그 = 위치 (스티커는 휠 = 크기) / 그리드를 켜면 10px 격자에 맞춰집니다 — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
 
             {/* 메인 이미지 · 레이어 (v5.6 사용자 요청) — 손잡이를 끌어 앞뒤 순서를 바꾼다.
                 목록의 위쪽이 화면 앞쪽. 「UI」(제목·이름·배지 글자)를 전신보다 위에 두면 글자가 앞에, 아래에 두면 뒤에 그려진다 */}

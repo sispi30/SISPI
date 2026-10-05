@@ -847,6 +847,31 @@ export default function RelDetailPage() {
   const shiftOf = (o?: { x: number; y: number }): React.CSSProperties | undefined =>
     o && (o.x || o.y) ? { translate: `${o.x}vw calc((100vh - 58px) * ${o.y / 100})` } : undefined;
 
+  /* AU 리스트 (v5.9 사용자 요청) — 2인 전신 히어로에서는 제목(.pair-name) 안에 넣어, 제목을 끌어 옮기면
+     AU 줄도 같이 따라간다. 예전엔 제목과 따로 화면 아래에 고정이라 제목만 움직이면 서로 멀어졌다.
+     그 외(모바일·다인)는 예전 자리 그대로. AU 네모에 대표 이미지를 넣는다 (v2.0): 원본은 자관 썸네일(잡아 둔
+     크롭 그대로), 그 외 AU는 그 AU의 첫 아트 = 대표 이미지. 이미지가 없으면 색 플레이스홀더 */
+  const showAuList = rel.aus.length > 1 || isAdmin;
+  const auListEl = (inHero: boolean) => (
+    <div className={`au-list ${inHero ? 'au-list-in-title' : heroDuo ? 'au-list-hero' : ''}`}>
+          {rel.aus.map((a, i) => {
+            const isBase = a.id === 'base';
+            const thumb = isBase ? (rel.thumbId ?? rel.arts?.[0]) : a.arts?.[0];
+            return (
+              <div key={a.id} className={`au-item ${auId === a.id ? 'on' : ''}`}
+                onClick={() => { setAuId(a.id); setArtIdx(0); setQaNo(null); }}>
+                <CroppedBlobImg fileRef={thumb} crop={isBase ? rel.thumbCrop : undefined}
+                  ph={['cool', 'pale', 'red'][i % 3]} />
+                <small>{a.label}</small>
+              </div>
+            );
+          })}
+          {isAdmin && (
+            <div className="au-item add" data-tip="AU 추가/관리" onClick={() => setAuOpen(true)}>＋</div>
+          )}
+    </div>
+  );
+
   /** 이 멤버를 반대쪽 자리로 (좌 ↔ 우).
    *  오른쪽을 왼쪽으로 옮길 때는 **반대쪽 캐릭터를 오른쪽으로 지정**한다 (v2.0 사용자 제보) —
    *  예전에는 지정을 지우기만 해서, 등록 순서상 원래 오른쪽이던 캐릭터(보통 두 번째로 넣은
@@ -892,29 +917,7 @@ export default function RelDetailPage() {
         );
       })()}
 
-      {(rel.aus.length > 1 || isAdmin) && (
-        <div className={`au-list ${heroDuo ? 'au-list-hero' : ''}`}>
-          {/* AU 네모에 대표 이미지를 넣는다 (v2.0 사용자 요청 — 색만 들어가 있어 밋밋했다).
-              원본은 자관 썸네일(잡아 둔 크롭 그대로), 그 외 AU는 그 AU의 첫 아트 = 대표 이미지.
-              등록된 이미지가 없으면 예전처럼 색 플레이스홀더가 그대로 나온다.
-              2인 자관은 전신 히어로 중앙 하단으로(v4.3 사용자 요청 — 참고 사진의 PairName 자리) */}
-          {rel.aus.map((a, i) => {
-            const isBase = a.id === 'base';
-            const thumb = isBase ? (rel.thumbId ?? rel.arts?.[0]) : a.arts?.[0];
-            return (
-              <div key={a.id} className={`au-item ${auId === a.id ? 'on' : ''}`}
-                onClick={() => { setAuId(a.id); setArtIdx(0); setQaNo(null); }}>
-                <CroppedBlobImg fileRef={thumb} crop={isBase ? rel.thumbCrop : undefined}
-                  ph={['cool', 'pale', 'red'][i % 3]} />
-                <small>{a.label}</small>
-              </div>
-            );
-          })}
-          {isAdmin && (
-            <div className="au-item add" data-tip="AU 추가/관리" onClick={() => setAuOpen(true)}>＋</div>
-          )}
-        </div>
-      )}
+      {showAuList && !heroDuo && auListEl(false)}
 
       {/* 관리자 액션 — 기본은 좌상단, 2인 전신 히어로에서는 BGM 플레이어 위 우하단으로 (v4.6 사용자 요청) */}
       {isAdmin && (
@@ -1034,6 +1037,7 @@ export default function RelDetailPage() {
                     : {}) }}>{CP_LABEL[auCpTag]}</span>
                 )}
                 <div style={{ fontFamily: familyOf(rel.fontId), fontSize: titleFs }}>{(!isBaseAu && au?.name?.trim()) || rel.name}</div>
+                {showAuList && auListEl(true)}
               </div>
             )}
             {pairSlots.map((sl, i) => {

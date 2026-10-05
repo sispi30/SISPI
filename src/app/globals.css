@@ -1186,6 +1186,12 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   color:#fff;font-weight:800;font-size:clamp(16px,2vw,22px);
   text-shadow:0 3px 12px rgba(0,0,0,.5);white-space:nowrap;
 }
+/* AU 줄 (v5.9) — 제목 묶음 안에 둔다. 기본 자리는 예전과 같게(제목 위에서 100px 아래 = 히어로 높이−190px)
+   절대배치라 제목 크기를 바꿔도 안 밀리고, 제목을 끌어 옮기면 같이 움직인다. 이 묶음은 클릭을 통과시키지만
+   AU 네모는 눌려야 한다 */
+.rel-center-full .hero-ui-layer .pair-name .au-list-in-title{
+  position:absolute;top:100px;left:50%;transform:translateX(-50%);pointer-events:auto;
+}
 /* 스티커 — 중심 기준, 클릭은 아래로 통과 */
 .rel-center-full .hero-sticker{position:absolute;transform:translate(-50%,-50%);height:auto;max-width:none;pointer-events:none;user-select:none}
 .rel-center.one-mode .fb-ui,.rel-center.one-mode .hero-sticker{display:none}
