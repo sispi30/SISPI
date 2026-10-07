@@ -25,7 +25,9 @@ export interface CharTab {
   arts?: string[];
 }
 
-export interface GalleryImg { ref: string; artist?: string }
+/** 캐릭터 갤러리 사진 한 장 — 갤러리 게시판 글쓰기와 같은 첨부 방식(v3.3):
+ *  crop = ✂ 썸네일 영역(카드 4:3), original = 원본/최적화 선택(기본 원본) */
+export interface GalleryImg { ref: string; artist?: string; crop?: import("@/components/ui/CropEditor").CropValue; original?: boolean }
 
 export interface Character {
   id: string;

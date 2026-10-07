@@ -19,6 +19,8 @@ import { CroppedBlobImg, CropEditor, type CropValue } from '@/components/ui/Crop
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useSectionTitle } from '@/lib/sectionStore';
 import { ConfirmModal } from '@/components/ui/Modal';
+import { GalleryViewer } from '@/components/gallery/GalleryViewer';
+import type { BackupPost } from '@/lib/galleryStore';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
 
 /** 우측 정보 패널에서 「기본 정보」·탭 다음으로 쓰는 세 번째 특수 탭 값 — TRPG 버튼(EDIT·DELETE·
@@ -34,6 +36,11 @@ function GalleryPanel({ images, ph }: { images: GalleryImg[]; ph: string }) {
   if (images.length === 0) {
     return <p className="hint">아직 등록된 사진이 없습니다</p>;
   }
+  // 뷰어는 글(BackupPost) 단위로 동작하므로 사진 한 장을 글 하나로 감싸 넘긴다
+  const vposts: BackupPost[] = images.map((g, i) => ({
+    id: `cg${i}`, title: g.artist || `${i + 1}번째 그림`, type: 'single', images: [g.ref], phList: [],
+    desc: '', category: '', date: '', author: '', authorId: '', visibility: 'public', fold: null,
+  }));
   return (
     <>
       {/* 홈페이지 갤러리 게시판(/gallery)과 같은 카드 — 4:3 썸네일 + 제목 + 보조 줄, 3열 (v3.2 사용자 요청) */}
@@ -42,7 +49,7 @@ function GalleryPanel({ images, ph }: { images: GalleryImg[]; ph: string }) {
           <div key={g.ref + i} className="panel g-item" onClick={() => setLb(i)}>
             <div className="thumb">
               <div style={{ position: 'absolute', inset: 0 }}>
-                <CroppedBlobImg fileRef={g.ref} ph={ph} />
+                <CroppedBlobImg fileRef={g.ref} crop={g.crop} ph={ph} />
               </div>
             </div>
             <div className="info">
@@ -52,9 +59,12 @@ function GalleryPanel({ images, ph }: { images: GalleryImg[]; ph: string }) {
           </div>
         ))}
       </div>
-      {lb != null && (
-        <Lightbox srcs={images.map(g => g.ref)} index={lb} onClose={() => setLb(null)}
-          captions={images.map(g => g.artist)} />
+      {/* 갤러리 게시판 '단일' 글과 같은 전체화면 뷰어 (v3.3) — 사진 한 장이 글 하나처럼 동작:
+          좌우 화살표 = 이전/다음 그림, 그림을 누르면 하단 정보 숨김 */}
+      {lb != null && vposts[lb] && (
+        <GalleryViewer posts={vposts} postId={vposts[lb].id}
+          onClose={() => setLb(null)}
+          onChangePost={id => setLb(Math.max(0, vposts.findIndex(x => x.id === id)))} />
       )}
     </>
   );

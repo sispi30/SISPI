@@ -575,41 +575,82 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
 }
 
 /* ---------- 탭 전용 편집 화면 — 큰 에디터 + 실시간 미리보기 ---------- */
-/** 갤러리 아트 편집 — TabArtEditor와 같은 방식(선택 즉시 업로드)이지만, 이미지마다
- *  작가 표기(artist)를 함께 입력할 수 있다 (라이트박스에 "Artist : ..."로 표시) */
+/** 갤러리 사진 첨부 — 갤러리 게시판 글쓰기(BackupForm)와 같은 방식 (v3.3 사용자 요청):
+ *  끌어다 놓기/클릭 업로드 영역 · 여러 장 · ⠿ 드래그 순서 · 원본/최적화 · ✂ 썸네일(4:3) · ✕ 제거(확인).
+ *  이 화면은 선택 즉시 IndexedDB에 저장하고(putBlob), 프로필 [SAVE] 때 목록만 함께 저장된다.
+ *  작가 표기(artist)는 사진마다 입력 — 카드 제목과 뷰어 하단에 표시된다 */
+function GalleryCropModal({ g, onClose, onApply }: { g: GalleryImg; onClose: () => void; onApply: (c: CropValue) => void }) {
+  const src = useBlobUrl(g.ref);
+  if (!src) return null;
+  return <CropEditor open src={src} aspect="4:3" initial={g.crop} onClose={onClose} onApply={onApply} />;
+}
+
+function GalleryRowPreview({ fileRef }: { fileRef: string }) {
+  const src = useBlobUrl(fileRef);
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" />;
+}
+
 function GalleryArtEditor({ images, onChange }: { images: GalleryImg[]; onChange: (images: GalleryImg[]) => void }) {
-  const [lb, setLb] = useState<number | null>(null);
+  const [cropFor, setCropFor] = useState<number | null>(null);
+  const del = useConfirmDelete();
+  const toast = useToast();
   const add = async (list: FileList | null) => {
     if (!list || list.length === 0) return;
     const refs = await Promise.all(Array.from(list).map(f => putBlob(f)));
-    onChange([...images, ...refs.map(ref => ({ ref }))]);
+    onChange([...images, ...refs.map(ref => ({ ref, original: true }))]);
   };
   return (
-    <div style={{ display: 'grid', gap: 8 }}>
+    <div>
+      <div className="upzone" onClick={() => document.getElementById('galleryArtsF')?.click()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); add(e.dataTransfer.files); }}>
+        <b style={{ display: 'block', marginBottom: 3 }}>
+          {images.length === 0 ? '이미지를 끌어다 놓거나 클릭해서 선택' : '＋ ADD IMAGE'}
+        </b>
+        여러 장 선택 가능 · ⠿ 드래그로 순서 조정
+      </div>
+      <input id="galleryArtsF" type="file" accept="image/*" multiple style={{ display: 'none' }}
+        onChange={e => { add(e.target.files); e.target.value = ''; }} />
+      {images.length > 0 && <div className="upfile-count">✓ {images.length}장 — 아래 순서대로 게시됩니다</div>}
       {images.length > 0 && (
-        <DragList items={images.map((g, i) => ({ ...g, _k: i }))} keyOf={a => a.ref + a._k} onReorder={list => onChange(list.map(({ _k, ...g }) => g))}
+        <DragList items={images.map((g, i) => ({ ...g, _k: i }))} keyOf={a => a.ref + a._k}
+          onReorder={list => onChange(list.map(({ _k, ...g }) => g))}
           render={(a, i) => (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '3px 0' }}>
+            <div className="upfile-row" style={{ width: '100%' }}>
               <span className="drag-h">⠿</span>
-              <div data-tip="클릭하면 원본 보기" onClick={() => setLb(i)}
-                style={{ width: 56, aspectRatio: '3/4', borderRadius: 7, overflow: 'hidden', position: 'relative', flexShrink: 0, cursor: 'zoom-in' }}>
-                <TabArtThumb fileRef={a.ref} />
+              <span className="mw-no">{i + 1}</span>
+              <div className="pv"><GalleryRowPreview fileRef={a.ref} /></div>
+              <div className="nm">
+                <b>이미지 {i + 1}</b>
+                <small>저장된 이미지{a.crop ? ' · 썸네일 지정됨' : ''}</small>
+                <KInput placeholder="작가 표기 (선택) — 예: 장아 / @jyjyaa_" value={a.artist ?? ''}
+                  style={{ fontSize: 12, padding: '5px 9px', marginTop: 4 }}
+                  onChange={e => onChange(images.map((g, idx) => (idx === i ? { ...g, artist: e.target.value } : g)))} />
               </div>
-              <KInput placeholder="작가 표기 (선택) — 예: 장아 / @jyjyaa_" value={a.artist ?? ''} style={{ fontSize: 12, padding: '6px 9px' }}
-                onChange={e => onChange(images.map((g, idx) => (idx === i ? { ...g, artist: e.target.value } : g)))} />
-              <span className="fx" onClick={() => onChange(images.filter((_, idx) => idx !== i))}>✕</span>
+              <div className="mini-seg">
+                <button className={a.original !== false ? 'on' : ''}
+                  onClick={() => onChange(images.map((g, idx) => (idx === i ? { ...g, original: true } : g)))}>원본</button>
+                <button className={a.original === false ? 'on' : ''}
+                  onClick={() => onChange(images.map((g, idx) => (idx === i ? { ...g, original: false } : g)))}>최적화</button>
+              </div>
+              <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 10, whiteSpace: 'nowrap' }}
+                onClick={() => setCropFor(i)}>✂ 썸네일</button>
+              <span className="fx" data-tip="제거"
+                onClick={() => del.ask('이 이미지를 목록에서 빼시겠습니까?',
+                  () => onChange(images.filter((_, idx) => idx !== i)), `이미지 ${i + 1}`)}>✕</span>
             </div>
           )} />
       )}
-      <input id="galleryArtsF" type="file" accept="image/*" multiple style={{ display: 'none' }}
-        onChange={e => { add(e.target.files); e.target.value = ''; }} />
-      <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11, justifySelf: 'start' }}
-        onClick={() => document.getElementById('galleryArtsF')?.click()}
-        {...fileDrop(fl => add(fl))}>
-        ＋ ADD PHOTO
-      </button>
-      {lb != null && images[lb] != null && (
-        <Lightbox srcs={images.map(g => g.ref)} index={lb} onClose={() => setLb(null)} />
+      {del.element}
+      {cropFor != null && images[cropFor] != null && (
+        <GalleryCropModal g={images[cropFor]} onClose={() => setCropFor(null)}
+          onApply={c => {
+            onChange(images.map((g, idx) => (idx === cropFor ? { ...g, crop: c } : g)));
+            setCropFor(null);
+            toast('썸네일 영역이 저장되었습니다 (원본 유지)');
+          }} />
       )}
     </div>
   );
@@ -719,7 +760,7 @@ function GalleryEditView({ images, onChange, onDelete, onBack }: {
         <button className="btn btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }} onClick={onDelete}>갤러리 삭제</button>
       </div>
       <label className="k-label" style={{ margin: 0 }}>
-        사진 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 순서 변경 · 상세 화면 GALLERY 버튼으로 이동하는 화면에 그리드로 보여줍니다</span>
+        이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 화면 GALLERY 버튼으로 이동하는 화면에 갤러리 게시판과 같은 카드로 보여줍니다</span>
       </label>
       <GalleryArtEditor images={images} onChange={onChange} />
       <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={onBack}>완료 — 목록으로</button>
