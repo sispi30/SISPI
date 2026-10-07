@@ -627,7 +627,7 @@ function GalleryArtEditor({ images, onChange }: { images: GalleryImg[]; onChange
               <div className="nm">
                 <b>이미지 {i + 1}</b>
                 <small>저장된 이미지{a.crop ? ' · 썸네일 지정됨' : ''}</small>
-                <KInput placeholder="작가 표기 (선택) — 예: 장아 / @jyjyaa_" value={a.artist ?? ''}
+                <KInput placeholder="작가 표기 (선택)" value={a.artist ?? ''}
                   style={{ fontSize: 12, padding: '5px 9px', marginTop: 4 }}
                   onChange={e => onChange(images.map((g, idx) => (idx === i ? { ...g, artist: e.target.value } : g)))} />
               </div>
