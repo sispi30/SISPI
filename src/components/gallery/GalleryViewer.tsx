@@ -1,10 +1,9 @@
 'use client';
 // 갤러리 단일형 전체화면 뷰어 — 그누보드 gallery.php 라이트박스 방식을 그대로 옮겼다.
-//  · 그림을 화면 가득 띄운다
-//  · 좌상단 "1 / 2 · 전체 보기" (첨부 사진 전체를 한눈에), 우상단 ✕
-//  · 좌우 화살표 = 이전 글 / 다음 글 (화살표 밑에 라벨)
-//  · 첨부 사진이 여러 장이면 하단에 썸네일 스트립 (누르면 그 사진으로), 그 밑에 제목·말머리·날짜
-//  · 키보드: ← → 글 넘김 · ↑ ↓ 사진 넘김 · Esc 닫기(전체 보기 중이면 그것부터)
+//  · 사진 1장: 그림만 크게 · 좌우 화살표 = 이전/다음 글 (라벨 없음) · 하단에 제목·태그·날짜
+//  · 사진 여러 장: 좌상단 "1 / N · 전체 보기", 하단 썸네일 스트립,
+//      좌우 화살표 = 사진 넘김, 화살표 밑 "이전 글 / 다음 글" 버튼을 눌러야 실제 글 이동
+//  · 키보드: ← → (여러 장이면 사진, 1장이면 글) · ↑ ↓ (여러 장일 때 글) · Esc 닫기(전체 보기 중이면 그것부터)
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useBlobUrl } from '@/lib/blobStore';
@@ -54,18 +53,21 @@ export function GalleryViewer({ posts, postId, startIndex = 0, onClose, onChange
     onChangePost(posts[(pi + d + posts.length) % posts.length].id);
   }, [posts, pi, onChangePost]);
   const step = useCallback((d: number) => { if (n > 1) setI(x => (x + d + n) % n); }, [n]);
+  const multi = n > 1;
+  // 화살표: 여러 장이면 사진 넘김, 1장이면 글 이동
+  const arrow = useCallback((d: number) => { if (multi) step(d); else go(d); }, [multi, step, go]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { if (grid) setGrid(false); else onClose(); }
-      else if (e.key === 'ArrowLeft') go(-1);
-      else if (e.key === 'ArrowRight') go(1);
-      else if (e.key === 'ArrowUp') step(-1);
-      else if (e.key === 'ArrowDown') step(1);
+      else if (e.key === 'ArrowLeft') arrow(-1);
+      else if (e.key === 'ArrowRight') arrow(1);
+      else if (e.key === 'ArrowUp' && multi) go(-1);
+      else if (e.key === 'ArrowDown' && multi) go(1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [grid, go, step, onClose]);
+  }, [grid, arrow, go, multi, onClose]);
 
   // 뷰어가 떠 있는 동안 뒤 페이지 스크롤 잠금
   useEffect(() => {
@@ -102,9 +104,10 @@ export function GalleryViewer({ posts, postId, startIndex = 0, onClose, onChange
       )}
 
       {/* 좌상단: 순번 + 전체 보기 */}
+      {multi && (
       <div className="gv-top" onClick={e => e.stopPropagation()}>
         <span className="gv-count">{cur + 1} / {n}</span>
-        {n > 1 && (
+        {(
           <button type="button" className="gv-all" onClick={() => setGrid(g => !g)}>
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <rect x="4" y="4" width="6.5" height="6.5" rx="1" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1" />
@@ -114,20 +117,21 @@ export function GalleryViewer({ posts, postId, startIndex = 0, onClose, onChange
           </button>
         )}
       </div>
+      )}
 
       {/* 우상단 닫기 */}
       <button type="button" className="gv-x" aria-label="닫기" onClick={e => { e.stopPropagation(); onClose(); }}>✕</button>
 
-      {/* 좌우 화살표 = 이전 글 / 다음 글 */}
-      {many && (
+      {/* 좌우 화살표 — 여러 장: 사진 넘김 + 밑의 '이전 글/다음 글' 버튼으로 글 이동 · 1장: 화살표가 곧 글 이동 */}
+      {(multi || posts.length > 1) && !grid && (
         <>
           <div className="gv-nv l" onClick={e => e.stopPropagation()}>
-            <button type="button" aria-label="이전 글" onClick={() => go(-1)}>❮</button>
-            <span>이전 글</span>
+            <button type="button" aria-label={multi ? '이전 사진' : '이전 글'} onClick={() => arrow(-1)}>❮</button>
+            {multi && posts.length > 1 && <button type="button" className="gv-pill" onClick={() => go(-1)}>이전 글</button>}
           </div>
           <div className="gv-nv r" onClick={e => e.stopPropagation()}>
-            <button type="button" aria-label="다음 글" onClick={() => go(1)}>❯</button>
-            <span>다음 글</span>
+            <button type="button" aria-label={multi ? '다음 사진' : '다음 글'} onClick={() => arrow(1)}>❯</button>
+            {multi && posts.length > 1 && <button type="button" className="gv-pill" onClick={() => go(1)}>다음 글</button>}
           </div>
         </>
       )}
@@ -148,6 +152,9 @@ export function GalleryViewer({ posts, postId, startIndex = 0, onClose, onChange
           <b>{p.title}</b>
           {p.category && <i>{p.category}</i>}
         </div>
+        {(p.tags ?? []).length > 0 && (
+          <div className="gv-tags">{(p.tags ?? []).map(t => <span key={t}>#{t}</span>)}</div>
+        )}
         <div className="gv-date">
           {ymd(p)}
           {(detailHref || onOpenDetail) && (

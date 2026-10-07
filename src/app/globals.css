@@ -2384,7 +2384,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .gv-nv.l{left:8px}.gv-nv.r{right:8px}
 .gv-nv button{width:46px;height:62px;border-radius:12px;background:rgba(18,19,22,.82);color:#fff;font-size:17px;display:grid;place-items:center;transition:.15s}
 .gv-nv button:hover{background:rgba(70,72,80,.92)}
-.gv-nv span{padding:3px 9px;border-radius:999px;background:rgba(18,19,22,.82);font-size:11px;font-weight:600;white-space:nowrap}
+.gv-nv .gv-pill{width:auto;height:auto;padding:4px 10px;border-radius:999px;background:rgba(18,19,22,.82);color:#fff;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;transition:.15s}
+.gv-nv .gv-pill:hover{background:#fff;color:#111}
+.gv-tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.gv-tags span{padding:4px 11px;border-radius:999px;background:rgba(10,10,12,.78);border:1px solid rgba(255,255,255,.28);font-size:12px;font-weight:700}
 .gv-bottom{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;padding:56px 90px 18px;background:linear-gradient(transparent,rgba(0,0,0,.72));pointer-events:none}
 .gv-bottom>*{pointer-events:auto}
 .gv-thumbs{display:flex;gap:8px;max-width:100%;overflow-x:auto;padding:4px}
@@ -2406,7 +2409,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .gv-grid-in img{width:100%;height:100%;object-fit:cover;display:block}
 @media (max-width:640px){
   .gv-nv button{width:36px;height:50px;font-size:14px}
-  .gv-nv span{font-size:10px;padding:2px 7px}
+  .gv-nv .gv-pill{font-size:10px;padding:3px 8px}
   .gv-nv.l{left:4px}.gv-nv.r{right:4px}
   .gv-bottom{padding:48px 52px 14px}
   .gv-cap b{font-size:15px}
