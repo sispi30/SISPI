@@ -3,6 +3,7 @@
 //  · 사진 1장: 그림만 크게 · 좌우 화살표 = 이전/다음 글 (라벨 없음) · 하단에 제목·태그·날짜
 //  · 사진 여러 장: 좌상단 "1 / N · 전체 보기", 하단 썸네일 스트립,
 //      좌우 화살표 = 사진 넘김, 화살표 밑 "이전 글 / 다음 글" 버튼을 눌러야 실제 글 이동
+//  · 그림을 누르면 하단 상세정보(썸네일·제목·날짜)가 사라지고 이미지만 보인다 (다시 누르면 복귀)
 //  · 키보드: ← → (여러 장이면 사진, 1장이면 글) · ↑ ↓ (여러 장일 때 글) · Esc 닫기(전체 보기 중이면 그것부터)
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -42,6 +43,7 @@ export function GalleryViewer({ posts, postId, startIndex = 0, onClose, onChange
   const first = useRef({ id: postId, idx: startIndex });
   const [i, setI] = useState(startIndex);
   const [grid, setGrid] = useState(false);
+  const [bare, setBare] = useState(false);   // 그림을 누르면 하단 상세정보를 숨기고 이미지만 본다 (다시 누르면 복귀)
   const many = posts.length > 1;
   const n = p?.images.length ?? 0;
 
@@ -81,10 +83,10 @@ export function GalleryViewer({ posts, postId, startIndex = 0, onClose, onChange
 
   return createPortal(
     <div className="gv" role="dialog" aria-modal="true" aria-label={p.title} onClick={onClose}>
-      {/* 큰 그림 — 화면 가득. 여러 장이면 그림을 눌러 다음 사진으로 */}
+      {/* 큰 그림 — 화면 가득. 여러 장이면 그림을 누르면 상세정보 숨김/표시 */}
       {!grid && (
-        <div className="gv-stage" onClick={e => { e.stopPropagation(); if (n > 1) step(1); else onClose(); }}
-          style={{ cursor: n > 1 ? 'pointer' : 'zoom-out' }}>
+        <div className="gv-stage" onClick={e => { e.stopPropagation(); setBare(b => !b); }}
+          style={{ cursor: 'pointer' }}>
           <Pic key={p.id + ':' + cur} src={p.images[cur]} className="gv-img" />
         </div>
       )}
@@ -137,7 +139,7 @@ export function GalleryViewer({ posts, postId, startIndex = 0, onClose, onChange
       )}
 
       {/* 하단: 썸네일 스트립 + 제목 · 말머리 · 날짜 */}
-      <div className="gv-bottom" onClick={e => e.stopPropagation()}>
+      <div className={'gv-bottom' + (bare && !grid ? ' off' : '')} onClick={e => e.stopPropagation()}>
         {n > 1 && !grid && (
           <div className="gv-thumbs">
             {p.images.map((src, k) => (
