@@ -7,7 +7,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryImg} from '@/lib/charStore';
+import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, galleryPostsOf, hasGallery} from '@/lib/charStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -31,43 +31,101 @@ const GALLERY_TAB = '__gallery__';
 
 /** 갤러리 탭 내용 — TRPG 탭과 같은 방식으로 우측 패널만 교체해 보여준다 (v3.1).
  *  좌측 아이콘 탭·아트·상단 버튼은 그대로 PROFILE 화면과 같은 자리에 있다 */
-function GalleryPanel({ images, ph }: { images: GalleryImg[]; ph: string }) {
-  const [lb, setLb] = useState<number | null>(null);
-  if (images.length === 0) {
+function GalleryPanel({ posts, ph, canSeePrivate, loggedIn }: {
+  posts: GalleryPost[]; ph: string; canSeePrivate: boolean; loggedIn: boolean;
+}) {
+  const [viewId, setViewId] = useState<string | null>(null);     // 단일 유형 — 전체화면 뷰어
+  const [openId, setOpenId] = useState<string | null>(null);     // 로그/단일(세로) 유형 — 패널 안 상세
+  const [unveiled, setUnveiled] = useState<Record<string, boolean>>({});
+
+  // 공개범위 — 전체공개 / 멤버공개(로그인) / 나만보기(관리자·편집 권한자)
+  const shown = posts.filter(p => p.visibility === 'public' || (p.visibility === 'member' && loggedIn) || canSeePrivate);
+  if (shown.length === 0) {
     return <p className="hint">아직 등록된 사진이 없습니다</p>;
   }
-  // 뷰어는 글(BackupPost) 단위로 동작하므로 사진 한 장을 글 하나로 감싸 넘긴다
-  const vposts: BackupPost[] = images.map((g, i) => ({
-    id: `cg${i}`, title: g.artist || `${i + 1}번째 그림`, type: 'single', images: [g.ref], phList: [],
-    desc: '', category: '', date: '', author: '', authorId: '', visibility: 'public', fold: null,
-  }));
+  const opened = shown.find(p => p.id === openId);
+  const dateOf = (p: GalleryPost) => {
+    const d = new Date(p.madeDate ? p.madeDate + 'T00:00:00' : p.date);
+    return isNaN(d.getTime()) ? '' : `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const foldLabel = (p: GalleryPost) =>
+    p.fold ? (p.fold.type === 'custom' ? (p.fold.label || '접힘') : p.fold.type === 'adult' ? '수위 주의' : '스포일러') : '';
+
+  // 뷰어에서 이전/다음 글로 넘길 수 있는 묶음 — 같은 방식(단일 유형), 접힘이 풀린 것만
+  const viewable: BackupPost[] = shown
+    .filter(p => p.type === 'single' && p.images.length > 0 && (!p.fold || unveiled[p.id]))
+    .map(p => ({
+      id: p.id, title: p.title, type: 'single', images: p.images.map(g => g.ref), phList: [],
+      desc: p.desc, category: '', tags: p.tags, madeDate: p.madeDate, date: p.date,
+      author: '', authorId: '', visibility: 'public', fold: null,
+    }));
+
+  // 로그/단일(세로) 상세 — 패널 안에서 사진을 세로로 나열 (로그는 이어 붙이고, 세로는 갭을 둔다)
+  if (opened) {
+    return (
+      <div>
+        <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} onClick={() => setOpenId(null)}>‹ 목록</button>
+        <h3 className="tab-tt" style={{ marginTop: 12 }}>{opened.title}</h3>
+        <div className="sub">
+          {dateOf(opened)}{(opened.tags ?? []).map(t => <i key={t} className="tag-in">#{t}</i>)}
+        </div>
+        {opened.desc && <div className="prose" style={{ marginBottom: 16 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(opened.desc) }} />}
+        <div style={{ display: 'grid', gap: opened.type === 'vlist' ? 14 : 0 }}>
+          {opened.images.map((g, i) => <StackImg key={g.ref + i} fileRef={g.ref} />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* 홈페이지 갤러리 게시판(/gallery)과 같은 카드 — 4:3 썸네일 + 제목 + 보조 줄, 3열 (v3.2 사용자 요청) */}
+      {/* 홈페이지 갤러리 게시판(/gallery)과 같은 카드 — 4:3 썸네일 + 제목 + 'N장 · 날짜', 3열 */}
       <div className="g3">
-        {images.map((g, i) => (
-          <div key={g.ref + i} className="panel g-item" onClick={() => setLb(i)}>
-            <div className="thumb">
-              <div style={{ position: 'absolute', inset: 0 }}>
-                <CroppedBlobImg fileRef={g.ref} crop={g.crop} ph={ph} />
+        {shown.map(p => {
+          const folded = !!p.fold && !unveiled[p.id];
+          return (
+            <div key={p.id} className="panel g-item"
+              onClick={() => {
+                if (folded) return;
+                if (p.type === 'single' && p.images.length > 0) setViewId(p.id);
+                else setOpenId(p.id);
+              }}>
+              <div className={`thumb ${folded ? 'veil' : ''}`}>
+                <div style={{ position: 'absolute', inset: 0 }}>
+                  {p.images[0] && <CroppedBlobImg fileRef={p.images[0].ref} crop={p.images[0].crop} ph={ph} />}
+                </div>
+                {folded && (
+                  <div className="cover" onClick={e => { e.stopPropagation(); setUnveiled(u => ({ ...u, [p.id]: true })); }}>
+                    <div><b>{foldLabel(p)}</b><br /><span>클릭하여 표시</span></div>
+                  </div>
+                )}
+              </div>
+              <div className="info">
+                <b>{p.title}</b>
+                <small>
+                  {p.images.length}장{dateOf(p) ? ` · ${dateOf(p)}` : ''}
+                  {p.visibility !== 'public' && <> · {p.visibility === 'member' ? '멤버공개' : '나만보기'}</>}
+                  {(p.tags ?? []).map(t => <i key={t} className="tag-in">#{t}</i>)}
+                </small>
               </div>
             </div>
-            <div className="info">
-              <b>{g.artist || `${i + 1}번째 그림`}</b>
-              <small>{i + 1} / {images.length}</small>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      {/* 갤러리 게시판 '단일' 글과 같은 전체화면 뷰어 (v3.3) — 사진 한 장이 글 하나처럼 동작:
-          좌우 화살표 = 이전/다음 그림, 그림을 누르면 하단 정보 숨김 */}
-      {lb != null && vposts[lb] && (
-        <GalleryViewer posts={vposts} postId={vposts[lb].id}
-          onClose={() => setLb(null)}
-          onChangePost={id => setLb(Math.max(0, vposts.findIndex(x => x.id === id)))} />
+      {/* 갤러리 게시판 '단일' 글과 같은 전체화면 뷰어 */}
+      {viewId && viewable.some(v => v.id === viewId) && (
+        <GalleryViewer posts={viewable} postId={viewId}
+          onClose={() => setViewId(null)} onChangePost={setViewId} />
       )}
     </>
   );
+}
+
+function StackImg({ fileRef }: { fileRef: string }) {
+  const url = useBlobUrl(fileRef);
+  if (!url) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt="" style={{ display: 'block', width: '100%', height: 'auto' }} />;
 }
 
 /** TRPG 탭 내용 — 플레이기록 게시판에서 이 캐릭터가 참여자로 등록된 기록만 모아 보여준다.
@@ -267,7 +325,7 @@ function CharDetailInner() {
           {/* 캐릭터당 갤러리 하나 — TRPG와 같은 방식으로, 새 페이지로 가지 않고
               우측 패널만 갤러리 그리드로 교체한다 (v3.1 사용자 요청 — 좌측 아이콘 탭·아트와
               상단 버튼 위치를 PROFILE 화면과 통일) */}
-          {ch.gallery !== undefined && (
+          {hasGallery(ch) && (
             <button className="btn btn-dark" onClick={() => setTab(GALLERY_TAB)}>GALLERY</button>
           )}
           {/* TRPG 참여 세션 — 새 페이지로 가지 않고 새 탭 전환과 같은 방식으로 우측 패널만 교체 (v2.8) */}
@@ -427,7 +485,8 @@ function CharDetailInner() {
           ) : tab === GALLERY_TAB ? (
             <>
               <h3 className="tab-tt">Gallery</h3>
-              <GalleryPanel images={ch.gallery ?? []} ph={ch.thumbClass} />
+              <GalleryPanel posts={galleryPostsOf(ch)} ph={ch.thumbClass} loggedIn={!!user}
+                canSeePrivate={isAdmin || charGrant(ch, user?.id) === 'edit'} />
             </>
           ) : (
             <>

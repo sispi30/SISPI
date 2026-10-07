@@ -29,6 +29,34 @@ export interface CharTab {
  *  crop = ✂ 썸네일 영역(카드 4:3), original = 원본/최적화 선택(기본 원본) */
 export interface GalleryImg { ref: string; artist?: string; crop?: import("@/components/ui/CropEditor").CropValue; original?: boolean }
 
+/** 캐릭터 갤러리의 사진 묶음 하나 (v3.4) — 갤러리 게시판 글과 같은 항목:
+ *  제목·유형(로그/단일/단일(세로))·사진들·설명·태그·제작일·공개범위·접기 */
+export interface GalleryPost {
+  id: string;
+  title: string;
+  type: 'log' | 'single' | 'vlist';
+  images: GalleryImg[];
+  desc: string;
+  tags?: string[];
+  madeDate?: string;
+  date: string;
+  visibility: Visibility;
+  fold?: { type: 'spoiler' | 'adult' | 'custom'; label?: string } | null;
+}
+
+/** 캐릭터의 갤러리 묶음 목록 — 새 방식(galleryPosts)이 있으면 그대로,
+ *  예전에 사진만 쌓아 둔 갤러리(gallery)는 사진 한 장 = 단일 묶음 하나로 바꿔 보여준다 */
+export function galleryPostsOf(c: { gallery?: GalleryImg[]; galleryPosts?: GalleryPost[] }): GalleryPost[] {
+  if (c.galleryPosts) return c.galleryPosts;
+  return (c.gallery ?? []).map((g, i) => ({
+    id: `lg${i}`, title: g.artist || `${i + 1}번째 그림`, type: 'single' as const,
+    images: [g], desc: '', date: '', visibility: 'public' as Visibility, fold: null,
+  }));
+}
+/** 갤러리 기능이 켜져 있는가 (빈 갤러리 포함) */
+export const hasGallery = (c: { gallery?: GalleryImg[]; galleryPosts?: GalleryPost[] }) =>
+  c.galleryPosts !== undefined || c.gallery !== undefined;
+
 export interface Character {
   id: string;
   name: string;          // 대표 이름 (전용 폰트 적용 대상)
@@ -51,7 +79,9 @@ export interface Character {
   /** 캐릭터 갤러리 (v2.5) — 미지정이면 갤러리 기능 자체를 안 쓰는 캐릭터.
    *  빈 배열이어도 "갤러리 켜짐" 상태이며, /chars/{id}/gallery 에서 그리드+라이트박스로 보여준다.
    *  AU별로 따로 두지 않고 캐릭터(원본) 하나에만 있다. */
-  gallery?: GalleryImg[];
+  gallery?: GalleryImg[];            // (구) 사진만 쌓던 갤러리 — galleryPosts가 생기면 그쪽이 우선
+  /** 사진 묶음 목록 (v3.4) — 있으면 갤러리 기능 켜짐 (빈 배열 포함) */
+  galleryPosts?: GalleryPost[];
   /** TRPG 참여 세션 탭 (v2.8) — 켜져 있으면 상세 화면에 TRPG 버튼이 보인다.
    *  실제 세션 목록은 여기 저장하지 않고, 플레이기록 게시판(PlayRecord.charIds)에서
    *  이 캐릭터 id를 참조하는 기록을 찾아 그때그때 보여준다(단일 출처로 양쪽 자동 반영). */

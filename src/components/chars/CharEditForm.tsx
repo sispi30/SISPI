@@ -4,15 +4,15 @@
 // 아트는 여러 장 — 첫 장이 대표 풀 아트이자 리스트 썸네일(3:4 크롭) 원본 (6.1)
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, CHAR_SEED } from '@/lib/charStore';
+import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, GalleryPost, galleryPostsOf, hasGallery, CHAR_SEED } from '@/lib/charStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import { RuleSelect, RuleSpecsEditor } from '@/components/chars/RuleSpecsEditor';
 import { Spec } from '@/lib/charRuleConfig';
-import { newId, useLocalList } from '@/lib/postStore';
+import { newId, useLocalList, FoldType } from '@/lib/postStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { putBlob, getBlob, useBlobUrl } from '@/lib/blobStore';
 import { useFonts, deVarFamily } from '@/lib/fontStore';
-import { KInput, KSelect, KStep, KCheck } from '@/components/ui/Kit';
+import { KInput, KSelect, KStep, KCheck, KRadio, KDate } from '@/components/ui/Kit';
 import { RichEditor } from '@/components/ui/RichEditor';
 import { ColorField } from '@/components/ui/ColorField';
 import { CropEditor, CropValue, CropImg } from '@/components/ui/CropEditor';
@@ -131,7 +131,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [basicHtml, setBasicHtml] = useState(initial?.basicHtml ?? '');
   const [tabs, setTabs] = useState<CharTab[]>(initial?.tabs ?? []);
   // 캐릭터 갤러리 (v2.5) — undefined면 갤러리 기능 자체를 안 씀, 배열이면(빈 배열 포함) 켜진 상태
-  const [gallery, setGallery] = useState<GalleryImg[] | undefined>(initial?.gallery);
+  // 사진 묶음(v3.4) — 예전에 사진만 쌓아 둔 갤러리는 사진 한 장 = 묶음 하나로 바꿔 불러온다
+  const [gallery, setGallery] = useState<GalleryPost[] | undefined>(initial && hasGallery(initial) ? galleryPostsOf(initial) : undefined);
   // TRPG 참여 세션 탭 (v2.8) — 신규(아직 저장 전) 캐릭터는 안정된 id가 없어 플레이기록과
   // 연동할 수 없으므로, 기존 캐릭터를 수정할 때만 켤 수 있다
   const [trpgEnabled, setTrpgEnabled] = useState<boolean>(!!initial?.trpgEnabled);
@@ -199,7 +200,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       rule: rule || undefined,
       sheetUrl: sheetUrl.trim() || undefined,
       tabs,   // 제목이 비어도 유지 — 필터로 사라지던 버그 수정 (v1.9 사용자 지적)
-      gallery,
+      gallery: undefined,       // (구) 필드 — 묶음(galleryPosts)으로 옮겨 저장
+      galleryPosts: gallery,
       trpgEnabled: trpgEnabled || undefined,
       trpgOrder: trpgOrder.length ? trpgOrder : undefined,
       basicHtml,
@@ -249,9 +251,9 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   /* ---------- 갤러리 전용 편집 화면 (v2.5) ---------- */
   if (view === GALLERY_VIEW && gallery !== undefined) {
     return <>
-      <GalleryEditView images={gallery} onChange={setGallery}
+      <GalleryEditView posts={gallery} onChange={setGallery}
         onDelete={() => del.ask('갤러리를 삭제하시겠습니까?', () => { setGallery(undefined); setView('main'); },
-          '등록한 사진이 모두 함께 사라집니다. 저장(SAVE) 전까지는 CANCEL로 폼을 벗어나면 되돌릴 수 있습니다.')}
+          '등록한 사진 묶음이 모두 함께 사라집니다. 저장(SAVE) 전까지는 CANCEL로 폼을 벗어나면 되돌릴 수 있습니다.')}
         onBack={() => setView('main')} />
       {del.element}
     </>;
@@ -401,7 +403,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
             <span style={{ width: 28, height: 28, borderRadius: 8, background: '#eef0f2', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>🖼</span>
             <b style={{ fontSize: 13 }}>갤러리</b>
-            <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{gallery.length > 0 ? `사진 ${gallery.length}장` : '비어 있음'}</small>
+            <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{gallery.length > 0 ? `묶음 ${gallery.length}개 · 사진 ${gallery.reduce((n, g) => n + g.images.length, 0)}장` : '비어 있음'}</small>
             <button className="btn btn-dark" style={{ marginLeft: 'auto', height: 27, padding: '0 12px', fontSize: 11 }}
               onClick={() => setView(GALLERY_VIEW)}>편집 ›</button>
           </div>
@@ -745,12 +747,101 @@ function TrpgLinkEditView({ charId, order, onOrderChange, onBack }: {
   );
 }
 
-function GalleryEditView({ images, onChange, onDelete, onBack }: {
-  images: GalleryImg[];
-  onChange: (images: GalleryImg[]) => void;
+function GalleryEditView({ posts, onChange, onDelete, onBack }: {
+  posts: GalleryPost[];
+  onChange: (posts: GalleryPost[]) => void;
   onDelete: () => void;
   onBack: () => void;
 }) {
+  const [editId, setEditId] = useState<string | null>(null);
+  const del = useConfirmDelete();
+  const patch = (id: string, p: Partial<GalleryPost>) => onChange(posts.map(x => (x.id === id ? { ...x, ...p } : x)));
+  const cur = posts.find(x => x.id === editId);
+  const TYPE_LABEL = { log: '로그', single: '단일', vlist: '단일(세로)' } as const;
+  const VIS_LABEL = { public: '전체공개', member: '멤버공개', private: '나만보기' } as const;
+
+  /* ---------- 묶음 하나 편집 — 갤러리 게시판 글쓰기와 같은 항목 ---------- */
+  if (cur) {
+    const tagsText = (cur.tags ?? []).join(', ');
+    const foldType: FoldType | 'none' = cur.fold?.type ?? 'none';
+    return (
+      <div>
+        <div className="write-grid">
+          <div className="panel" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+              <button className="btn btn-ghost" onClick={() => setEditId(null)}>‹ 묶음 목록</button>
+              <b style={{ fontSize: 14 }}>사진 묶음 편집</b>
+              <span className="hint" style={{ margin: 0 }}>프로필 [SAVE] 시 함께 저장됩니다</span>
+            </div>
+            <div className="form-row">
+              <label className="k-label" style={{ width: 60 }}>제목</label>
+              <KInput value={cur.title} onChange={e => patch(cur.id, { title: e.target.value })} style={{ flex: 1 }} />
+            </div>
+            <div className="form-row">
+              <label className="k-label" style={{ width: 60 }}>유형</label>
+              <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+                <KRadio name="gtype" value="log" current={cur.type} onChange={v => patch(cur.id, { type: v as GalleryPost['type'] })}
+                  label={<span>로그 <span className="rd-desc">— 웹툰처럼 세로 스크롤</span></span>} />
+                <KRadio name="gtype" value="single" current={cur.type} onChange={v => patch(cur.id, { type: v as GalleryPost['type'] })}
+                  label={<span>단일 <span className="rd-desc">— 큰 이미지 + 좌우 넘김</span></span>} />
+                <KRadio name="gtype" value="vlist" current={cur.type} onChange={v => patch(cur.id, { type: v as GalleryPost['type'] })}
+                  label={<span>단일(세로) <span className="rd-desc">— 이미지 사이 갭을 두고 세로로 나열</span></span>} />
+              </div>
+            </div>
+            <label className="k-label">이미지</label>
+            <GalleryArtEditor images={cur.images} onChange={images => patch(cur.id, { images })} />
+            <div style={{ marginTop: 14 }}>
+              <label className="k-label">설명</label>
+              <RichEditor value={cur.desc} onChange={desc => patch(cur.id, { desc })} placeholder="작품 설명을 작성하세요 (선택)" />
+            </div>
+          </div>
+
+          <div>
+            <div className="panel widget" style={{ marginBottom: 14 }}>
+              <h4>설정</h4>
+              <div className="form-row">
+                <label className="k-label" style={{ width: 70 }}>태그</label>
+                <KInput value={tagsText} placeholder="쉼표로 구분" style={{ flex: 1 }}
+                  onChange={e => patch(cur.id, { tags: [...new Set(e.target.value.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean))] })} />
+              </div>
+              <div className="form-row">
+                <label className="k-label" style={{ width: 70 }}>제작일 (선택)</label>
+                <KDate value={cur.madeDate ?? ''} onChange={v => patch(cur.id, { madeDate: v || undefined })} style={{ fontSize: 12, flex: 1 }} />
+              </div>
+              <div className="form-row">
+                <label className="k-label" style={{ width: 70 }}>공개범위</label>
+                <KSelect minWidth={120} value={cur.visibility} onChange={v => patch(cur.id, { visibility: v as GalleryPost['visibility'] })}
+                  options={[
+                    { value: 'public', label: '전체공개' },
+                    { value: 'member', label: '멤버공개' },
+                    { value: 'private', label: '나만보기' },
+                  ]} />
+              </div>
+            </div>
+            <div className="panel widget" style={{ marginBottom: 14 }}>
+              <h4>접기</h4>
+              <div style={{ display: 'grid', gap: 9 }}>
+                {(['spoiler', 'adult', 'custom'] as const).map(t => (
+                  <KCheck key={t} label={t === 'spoiler' ? '스포일러 접기' : t === 'adult' ? '수위 주의 접기' : '직접 입력 문구'}
+                    checked={foldType === t}
+                    onChange={v => patch(cur.id, { fold: v ? { type: t, label: t === 'custom' ? cur.fold?.label : undefined } : null })} />
+                ))}
+                {foldType === 'custom' && (
+                  <KInput placeholder="접기 문구" value={cur.fold?.label ?? ''}
+                    onChange={e => patch(cur.id, { fold: { type: 'custom', label: e.target.value } })} />
+                )}
+              </div>
+            </div>
+            <div className="form-actions">
+              <button className="btn btn-accent" onClick={() => setEditId(null)}>완료 — 묶음 목록으로</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------- 묶음 목록 ---------- */
   return (
     <div className="panel" style={{ padding: 24, display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -760,10 +851,33 @@ function GalleryEditView({ images, onChange, onDelete, onBack }: {
         <button className="btn btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }} onClick={onDelete}>갤러리 삭제</button>
       </div>
       <label className="k-label" style={{ margin: 0 }}>
-        이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 화면 GALLERY 버튼으로 이동하는 화면에 갤러리 게시판과 같은 카드로 보여줍니다</span>
+        사진 묶음 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 순서 변경 · 상세 화면 GALLERY 버튼으로 이동하는 화면에 갤러리 게시판과 같은 카드로 보여줍니다</span>
       </label>
-      <GalleryArtEditor images={images} onChange={onChange} />
+      {posts.length === 0 && <p className="hint" style={{ margin: 0 }}>아직 묶음이 없습니다 — 아래 [＋ 새 묶음]으로 추가하세요</p>}
+      {posts.length > 0 && (
+        <DragList items={posts} keyOf={x => x.id} onReorder={onChange}
+          render={x => (
+            <div className="upfile-row" style={{ width: '100%' }}>
+              <span className="drag-h">⠿</span>
+              <div className="pv">{x.images[0] && <GalleryRowPreview fileRef={x.images[0].ref} />}</div>
+              <div className="nm">
+                <b>{x.title || '(제목 없음)'}</b>
+                <small>{TYPE_LABEL[x.type]} · 사진 {x.images.length}장 · {VIS_LABEL[x.visibility]}{x.fold ? ' · 접힘' : ''}</small>
+              </div>
+              <button className="btn btn-dark" style={{ padding: '5px 12px', fontSize: 11 }} onClick={() => setEditId(x.id)}>편집 ›</button>
+              <span className="fx" data-tip="삭제"
+                onClick={() => del.ask('이 사진 묶음을 삭제하시겠습니까?', () => onChange(posts.filter(p => p.id !== x.id)), x.title || '(제목 없음)')}>✕</span>
+            </div>
+          )} />
+      )}
+      <button className="btn btn-ghost" style={{ justifySelf: 'start', padding: '6px 14px', fontSize: 11 }}
+        onClick={() => {
+          const id = newId();
+          onChange([{ id, title: '', type: 'log', images: [], desc: '', date: new Date().toISOString(), visibility: 'public', fold: null }, ...posts]);
+          setEditId(id);
+        }}>＋ 새 묶음</button>
       <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={onBack}>완료 — 목록으로</button>
+      {del.element}
     </div>
   );
 }
