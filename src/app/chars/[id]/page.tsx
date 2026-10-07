@@ -29,16 +29,27 @@ const GALLERY_TAB = '__gallery__';
 
 /** 갤러리 탭 내용 — TRPG 탭과 같은 방식으로 우측 패널만 교체해 보여준다 (v3.1).
  *  좌측 아이콘 탭·아트·상단 버튼은 그대로 PROFILE 화면과 같은 자리에 있다 */
-function GalleryPanel({ images }: { images: GalleryImg[] }) {
+function GalleryPanel({ images, ph }: { images: GalleryImg[]; ph: string }) {
   const [lb, setLb] = useState<number | null>(null);
   if (images.length === 0) {
     return <p className="hint">아직 등록된 사진이 없습니다</p>;
   }
   return (
     <>
-      <div className="char-gallery-grid">
+      {/* 홈페이지 갤러리 게시판(/gallery)과 같은 카드 — 4:3 썸네일 + 제목 + 보조 줄, 3열 (v3.2 사용자 요청) */}
+      <div className="g3">
         {images.map((g, i) => (
-          <GalleryThumb key={g.ref + i} fileRef={g.ref} onClick={() => setLb(i)} />
+          <div key={g.ref + i} className="panel g-item" onClick={() => setLb(i)}>
+            <div className="thumb">
+              <div style={{ position: 'absolute', inset: 0 }}>
+                <CroppedBlobImg fileRef={g.ref} ph={ph} />
+              </div>
+            </div>
+            <div className="info">
+              <b>{g.artist || `${i + 1}번째 그림`}</b>
+              <small>{i + 1} / {images.length}</small>
+            </div>
+          </div>
         ))}
       </div>
       {lb != null && (
@@ -46,17 +57,6 @@ function GalleryPanel({ images }: { images: GalleryImg[] }) {
           captions={images.map(g => g.artist)} />
       )}
     </>
-  );
-}
-
-function GalleryThumb({ fileRef, onClick }: { fileRef: string; onClick: () => void }) {
-  const url = useBlobUrl(fileRef);
-  if (!url) return null;
-  return (
-    <div className="char-gallery-card" onClick={onClick}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" />
-    </div>
   );
 }
 
@@ -332,7 +332,7 @@ function CharDetailInner() {
         {/* 중앙 아트 — 스티키 · 원본 비율 그대로 표시(자르거나 늘이지 않음, v2.3) ·
             추가 아트가 있으면 아래 썸네일 줄로 전환 (TRPG 캐릭터 게시판과 같은 방식) ·
             탭에 전용 아트가 등록돼 있으면 그 탭을 보는 동안은 그 아트로 대체 (v2.4) */}
-        {(() => {
+        {tab !== GALLERY_TAB && (() => {
           const tabArts = curTab?.arts && curTab.arts.length > 0 ? curTab.arts : null;
           const baseArts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
           // 첫 장은 목록용 「대표·썸네일」 전용 — 상세 화면에는 2번째 장부터("추가 아트")만 노출한다.
@@ -369,7 +369,7 @@ function CharDetailInner() {
         })()}
 
         {/* 우측 정보 패널 — 최상단 캐릭터 이름 크게 (v1.6) · AU면 그 AU의 이름·폰트 */}
-        <div className="panel profile-info" ref={infoRef} style={{ fontFamily: familyOf(eff.bodyFontId) }}>
+        <div className={`panel profile-info${tab === GALLERY_TAB ? ' gal-full' : ''}`} ref={infoRef} style={{ fontFamily: familyOf(eff.bodyFontId) }}>
           {/* 크기는 캐릭터마다 직접 정한다 (등록·수정의 「이름 크기」) — 자동으로 줄이면
               이름 길이에 따라 어중간해져서, 정한 크기를 그대로 쓴다 (v2.0 사용자 확정) */}
           <div style={{
@@ -417,7 +417,7 @@ function CharDetailInner() {
           ) : tab === GALLERY_TAB ? (
             <>
               <h3 className="tab-tt">Gallery</h3>
-              <GalleryPanel images={ch.gallery ?? []} />
+              <GalleryPanel images={ch.gallery ?? []} ph={ch.thumbClass} />
             </>
           ) : (
             <>
