@@ -2369,3 +2369,46 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   .np-mid .np-cell+.np-cell{border-left:0;border-top:1px solid var(--np-line);padding-top:26px}
   .np-row2.two .np-cell+.np-cell{border-left:0;padding-left:0;border-top:1px solid var(--np-line);padding-top:26px;margin-top:26px}
 }
+
+/* ---------- 갤러리 단일형 전체화면 뷰어 (GalleryViewer) — gallery.php 라이트박스 방식 ---------- */
+.gv{position:fixed;inset:0;z-index:5000;background:rgba(8,9,11,.93);animation:fade .15s;color:#fff;overflow:hidden}
+.gv-stage{position:absolute;inset:0;display:grid;place-items:center}
+.gv-img{max-width:100vw;max-height:100vh;width:auto;height:auto;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
+.gv-top{position:absolute;top:14px;left:14px;z-index:3;display:flex;align-items:center;gap:6px;padding:5px 6px 5px 14px;border-radius:999px;background:rgba(18,19,22,.82);font-size:12.5px}
+.gv-count{font-weight:700;letter-spacing:.04em}
+.gv-all{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600;transition:.15s}
+.gv-all:hover{background:rgba(255,255,255,.26)}
+.gv-x{position:absolute;top:14px;right:14px;z-index:3;width:44px;height:44px;border-radius:50%;background:rgba(18,19,22,.82);color:#fff;font-size:16px;display:grid;place-items:center;transition:.15s}
+.gv-x:hover{background:rgba(60,62,68,.9)}
+.gv-nv{position:absolute;top:50%;transform:translateY(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px}
+.gv-nv.l{left:8px}.gv-nv.r{right:8px}
+.gv-nv button{width:46px;height:62px;border-radius:12px;background:rgba(18,19,22,.82);color:#fff;font-size:17px;display:grid;place-items:center;transition:.15s}
+.gv-nv button:hover{background:rgba(70,72,80,.92)}
+.gv-nv span{padding:3px 9px;border-radius:999px;background:rgba(18,19,22,.82);font-size:11px;font-weight:600;white-space:nowrap}
+.gv-bottom{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;padding:56px 90px 18px;background:linear-gradient(transparent,rgba(0,0,0,.72));pointer-events:none}
+.gv-bottom>*{pointer-events:auto}
+.gv-thumbs{display:flex;gap:8px;max-width:100%;overflow-x:auto;padding:4px}
+.gv-thumbs button{flex:0 0 auto;width:56px;height:56px;border-radius:8px;overflow:hidden;border:2px solid transparent;opacity:.7;background:#222;transition:.15s}
+.gv-thumbs button.on{border-color:#fff;opacity:1}
+.gv-thumbs button:hover{opacity:1}
+.gv-thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.gv-cap{display:flex;align-items:baseline;gap:9px;max-width:100%;text-shadow:0 1px 8px rgba(0,0,0,.8)}
+.gv-cap b{font-size:18px;font-weight:700}
+.gv-cap i{font-style:normal;font-size:12.5px;color:rgba(255,255,255,.72)}
+.gv-date{display:flex;align-items:center;gap:12px;font-size:11.5px;letter-spacing:.06em;color:rgba(255,255,255,.62);text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.gv-date a{color:rgba(255,255,255,.8);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.3)}
+.gv-date a:hover{color:#fff}
+.gv-grid{position:absolute;inset:0;overflow-y:auto;padding:76px 20px 120px}
+.gv-grid-in{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.gv-grid-in button{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:#1b1c1f;border:2px solid transparent;transition:.15s}
+.gv-grid-in button.on{border-color:#fff}
+.gv-grid-in button:hover{border-color:rgba(255,255,255,.6)}
+.gv-grid-in img{width:100%;height:100%;object-fit:cover;display:block}
+@media (max-width:640px){
+  .gv-nv button{width:36px;height:50px;font-size:14px}
+  .gv-nv span{font-size:10px;padding:2px 7px}
+  .gv-nv.l{left:4px}.gv-nv.r{right:4px}
+  .gv-bottom{padding:48px 52px 14px}
+  .gv-cap b{font-size:15px}
+  .gv-thumbs button{width:46px;height:46px}
+}

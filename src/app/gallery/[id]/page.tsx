@@ -12,6 +12,7 @@ import { useBlobUrl } from '@/lib/blobStore';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { PageTitle } from '@/components/ui/PageText';
 import { Lightbox } from '@/components/ui/Lightbox';
+import { GalleryViewer } from '@/components/gallery/GalleryViewer';
 import { useBoardSettings, boardBadgeStyle } from '@/lib/boardStore';
 
 export default function BackupDetailPage() {
@@ -22,6 +23,7 @@ export default function BackupDetailPage() {
   const [cur, setCur] = useState(0);
   const [delAsk, setDelAsk] = useState(false);
   const [lbOpen, setLbOpen] = useState(false); // 단일형 — 클릭 확대 보기
+  const [vid, setVid] = useState<string | null>(null); // 단일형 전체화면 뷰어에서 지금 보는 글 (이전/다음 글로 넘기면 바뀐다)
   const { st: boardSet } = useBoardSettings(); // 유형 뱃지 색 (환경설정 > 게시판 관리)
 
   const p = posts.find(x => x.id === id);
@@ -47,6 +49,10 @@ export default function BackupDetailPage() {
   /* 글쓴이 확인 (v2.0 발견) — **둘 다 없을 때 같다고 보면 안 된다.**
      예전 글이나 손님이 쓴 글은 authorId가 없는데, 비로그인 방문자도 user?.id가 없어
      `undefined === undefined`로 통과했다 — 아무나 남의 글을 고치고 지울 수 있었다 */
+  /* 뷰어에서 넘겨 볼 글 — 같은 섹션의 열람 가능한 단일형 (목록과 같은 순서) */
+  const viewable = posts.filter(x => x.type === 'single' && x.images.length > 0
+    && (x.secId ?? MAIN_SEC) === (p.secId ?? MAIN_SEC)
+    && (isAdmin || x.visibility === 'public' || (x.visibility === 'member' && !!user)));
   const canManage = isAdmin || (!!p.authorId && p.authorId === user?.id);
 
   // 파일 id/URL 모두 지원 — blobStore에서 로드 (새로고침에도 유지)
@@ -118,7 +124,7 @@ export default function BackupDetailPage() {
                 position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: imgs[cur].url ? 'zoom-in' : undefined,
               }}
-                onClick={() => { if (imgs[cur].url) setLbOpen(true); }}>
+                onClick={() => { if (imgs[cur].url) { setVid(p.id); setLbOpen(true); } }}>
                 <Img im={imgs[cur]} natural />
               </div>
               {imgs.length > 1 && (
@@ -144,8 +150,15 @@ export default function BackupDetailPage() {
       </div>
 
       {/* 단일형·단일(세로) 확대 보기 — 뷰어와 같은 순번에서 시작, ‹ ›로 이어 넘김 */}
-      {lbOpen && (p.type === 'single' || p.type === 'vlist') && p.images.length > 0 && (
+      {lbOpen && p.type === 'vlist' && p.images.length > 0 && (
         <Lightbox srcs={p.images} index={cur} onClose={() => setLbOpen(false)} />
+      )}
+      {/* 단일형 — 전체화면 뷰어 (화살표=이전/다음 글, 하단 썸네일=이 글의 사진들) */}
+      {lbOpen && p.type === 'single' && vid && viewable.some(x => x.id === vid) && (
+        <GalleryViewer posts={viewable} postId={vid} startIndex={cur}
+          onClose={() => { setLbOpen(false); setVid(null); }} onChangePost={setVid}
+          detailHref={x => `/gallery/${x.id}`}
+          onOpenDetail={x => { setLbOpen(false); setVid(null); if (x.id !== p.id) router.push(`/gallery/${x.id}`); }} />
       )}
 
       <ConfirmModal open={delAsk} title="게시물을 삭제하시겠습니까?" body="삭제한 게시물은 복구할 수 없습니다."

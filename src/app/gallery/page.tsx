@@ -15,6 +15,7 @@ import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useMainStore } from '@/lib/mainStore';
 import { useCardSort, mergeOrder } from '@/lib/cardSort';
 import { useMenuSettings, canGalleryWrite } from '@/lib/menuStore';
+import { GalleryViewer } from '@/components/gallery/GalleryViewer';
 
 const FOLD_LABEL = { spoiler: '스포일러', adult: '수위 주의' };
 
@@ -37,6 +38,8 @@ function BackupPageInner() {
   }, [menuLoaded, viewInit, menuSet.backupView]);
   const [q, setQ] = useState('');
   const [unveiled, setUnveiled] = useState<Record<string, boolean>>({});
+  // 단일형 전체화면 뷰어 (v2.6) — 그림을 누르면 상세 페이지로 가지 않고 목록 위에 바로 크게 띄운다
+  const [viewId, setViewId] = useState<string | null>(null);
   /* 우클릭 → 썸네일 수정 (v2.0 사용자 요청) — 리스트에서 바로 대표 이미지 크롭을 고친다.
      수정 화면까지 안 가도 되게. 관리자와 글쓴이만, 이미지가 있는 글만 */
   const [ctx, setCtx] = useState<{ x: number; y: number; post: BackupPost } | null>(null);
@@ -58,6 +61,13 @@ function BackupPageInner() {
     .filter(p => isAdmin || p.visibility === 'public' || (p.visibility === 'member' && user))
     .filter(p => !q || p.title.includes(q) || p.category.includes(q)
       || (p.tags ?? []).some(t => t.toLowerCase().includes(q.toLowerCase())));   // 태그 검색 (v2.0)
+
+  /* 뷰어에서 이전/다음 글로 넘길 수 있는 글 — 목록과 같은 순서의 단일형 중, 접힘이 풀린 것만 */
+  const viewable = visible.filter(p => p.type === 'single' && p.images.length > 0 && (!p.fold || unveiled[p.id]));
+  const openPost = (p: BackupPost) => {
+    if (p.type === 'single' && p.images.length > 0) setViewId(p.id);
+    else router.push(`/gallery/${p.id}`);
+  };
 
   // 편집모드 카드 드래그 정렬 (v1.9 — 갤러리 보기)
   const sort = useCardSort(visible, next => setPosts(mergeOrder(posts, next)), editOn && isAdmin);
@@ -104,7 +114,7 @@ function BackupPageInner() {
             const folded = p.fold && !unveiled[p.id];
             return (
               <div key={p.id} className="panel g-item" {...sort(i)}
-                onClick={() => { if (!folded && !editOn) router.push(`/gallery/${p.id}`); }}
+                onClick={() => { if (!folded && !editOn) openPost(p); }}
                 onContextMenu={e => onCtx(e, p)}>
                 <div className={`thumb ${folded ? 'veil' : ''}`}>
                   <div style={{ position: 'absolute', inset: 0 }}>
@@ -135,7 +145,7 @@ function BackupPageInner() {
       {/* 게시물이 없으면 컨테이너 자체를 숨김 — 빈 패널이 안내문 위에 카드처럼 남던 버그 (v1.9 사용자 발견) */}
       <div className="panel flush" style={{ display: view === 'list' && visible.length > 0 ? undefined : 'none' }}>
           {paged.map(p => (
-            <div key={p.id} className="list-item" onClick={() => router.push(`/gallery/${p.id}`)}
+            <div key={p.id} className="list-item" onClick={() => openPost(p)}
               onContextMenu={e => onCtx(e, p)}>
               <div className="th" style={{ position: 'relative' }}><CroppedBlobImg fileRef={p.images[0]} crop={p.thumbCrop} ph={p.phList[0] ?? 'cool'} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -160,6 +170,14 @@ function BackupPageInner() {
         </div>
       )}
       {visible.length > PER && <Pager page={cur} total={pages} onChange={setPage} />}
+
+      {/* 단일형 전체화면 뷰어 — 화살표는 이전/다음 글, 썸네일은 이 글의 사진들 */}
+      {viewId && viewable.some(p => p.id === viewId) && (
+        <GalleryViewer posts={viewable} postId={viewId}
+          onClose={() => setViewId(null)} onChangePost={setViewId}
+          detailHref={p => `/gallery/${p.id}`}
+          onOpenDetail={p => { setViewId(null); router.push(`/gallery/${p.id}`); }} />
+      )}
 
       {/* 우클릭 메뉴 — 다른 우클릭들과 같은 순서: 메뉴 → 항목 선택 (v2.0) */}
       {ctx && typeof document !== 'undefined' && createPortal(
