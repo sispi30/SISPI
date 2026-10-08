@@ -7,7 +7,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, galleryPostsOf, hasGallery} from '@/lib/charStore';
+import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, charGalleryPosts, galleryPostsOf, hasGallery} from '@/lib/charStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -390,7 +390,8 @@ function CharDetailInner() {
           ) : tab === GALLERY_TAB ? (
             <>
               <h3 className="tab-tt">Gallery</h3>
-              <GalleryPanel posts={galleryPostsOf(ch)} ph={ch.thumbClass} loggedIn={!!user}
+              <GalleryPanel ph={ch.thumbClass} loggedIn={!!user}
+                posts={charGalleryPosts(ch, rels, { isAdmin, canEdit: isAdmin || charGrant(ch, user?.id) === 'edit', loggedIn: !!user })}
                 canSeePrivate={isAdmin || charGrant(ch, user?.id) === 'edit'} />
             </>
           ) : (

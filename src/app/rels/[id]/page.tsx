@@ -15,7 +15,7 @@ import {
   auMember, auStyle, fullShadow, hasRelGrant,
   RelAu, RelCpTag, charWithAu, charGrant,
   QaAnswerRow, QA_KEY, QA_SEED, MergedAnswer, answersFor,
-  findByKey, charPath, galleryPostsOf,
+  findByKey, charPath, relGalleryPosts,
   HeroSticker, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID,
 } from '@/lib/charStore';
 import { isPlainSpec } from '@/lib/charRuleConfig';
@@ -1510,7 +1510,7 @@ export default function RelDetailPage() {
         <div className="panel widget" style={{ margin: 0, ...(au?.hideLog ? { gridColumn: '1/-1' } : null) }}>
           <h4>갤러리 <span className="more" onClick={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}>더보기 ›</span></h4>
           <RelGalleryMini ph={rel.thumbClass} onOpen={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}
-            posts={galleryPostsOf(rel).filter(p => p.visibility === 'public' || (p.visibility === 'member' && !!user) || isAdmin)} />
+            posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} />
         </div>
         )}
         {!au?.hideRp && rel?.leftBoard !== 'gallery' && (

@@ -36,7 +36,7 @@ export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn }: {
     .filter(p => p.type === 'single' && p.images.length > 0 && (!p.fold || unveiled[p.id]))
     .map(p => ({
       id: p.id, title: p.title, type: 'single', images: p.images.map(g => g.ref), phList: [],
-      desc: p.desc, category: '', tags: p.tags, madeDate: p.madeDate, date: p.date,
+      desc: p.desc, category: p.from ?? '', tags: p.tags, madeDate: p.madeDate, date: p.date,
       author: '', authorId: '', visibility: 'public', fold: null,
     }));
 
@@ -83,7 +83,7 @@ export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn }: {
               <div className="info">
                 <b>{p.title}</b>
                 <small>
-                  {p.images.length}장{dateOf(p) ? ` · ${dateOf(p)}` : ''}
+                  {p.images.length}장{dateOf(p) ? ` · ${dateOf(p)}` : ''}{p.from ? ` · ${p.from}` : ''}
                   {p.visibility !== 'public' && <> · {p.visibility === 'member' ? '멤버공개' : '나만보기'}</>}
                   {(p.tags ?? []).map(t => <i key={t} className="tag-in">#{t}</i>)}
                 </small>

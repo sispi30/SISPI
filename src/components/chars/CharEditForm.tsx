@@ -4,7 +4,7 @@
 // 아트는 여러 장 — 첫 장이 대표 풀 아트이자 리스트 썸네일(3:4 크롭) 원본 (6.1)
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, GalleryPost, galleryPostsOf, hasGallery, CHAR_SEED } from '@/lib/charStore';
+import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, GalleryPost, galleryPostsOf, hasGallery, CHAR_SEED, Relation, REL_SEED, relGalleryTagsForChar } from '@/lib/charStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import { RuleSelect, RuleSpecsEditor } from '@/components/chars/RuleSpecsEditor';
 import { Spec } from '@/lib/charRuleConfig';
@@ -18,7 +18,7 @@ import { ColorField } from '@/components/ui/ColorField';
 import { CropEditor, CropValue, CropImg } from '@/components/ui/CropEditor';
 import { DragList } from '@/components/ui/DragList';
 import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
-import { GalleryEditView } from '@/components/gallery/GalleryPostsEditor';
+import { GalleryEditView, GalleryTagLinkPicker } from '@/components/gallery/GalleryPostsEditor';
 import type { PageBgm } from '@/lib/bgmStore';
 import { useConfirmDelete } from '@/components/ui/Modal';
 import { SymbolInput } from '@/components/ui/SymbolInput';
@@ -157,6 +157,10 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [view, setView] = useState<'main' | string>('main');
   // 이 캐릭터 상세 페이지 전용 BGM (v5.9) — 곡이 없으면 저장 시 비운다(홈페이지 BGM 그대로)
   const [bgm, setBgm] = useState<PageBgm | undefined>(initial?.bgm);
+  // 자관 갤러리 연동 태그 (v6.3) — 이 캐릭터가 멤버인 자관 갤러리의 태그 중 이 캐릭터 갤러리에도 보일 것
+  const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
+  const [tagLinks, setTagLinks] = useState<string[]>(initial?.galleryTagLinks ?? []);
+  const tagOptions = relGalleryTagsForChar(initial?.id, rels);
 
   // 상세 배경 이미지 (v5.8 사용자 요청) — 자관의 배경 이미지·환경설정의 배경 변경과 같은 방식(업로드 + 블러)
   const initBgId = initial?.bgImgId;
@@ -227,6 +231,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       grants: grants.length ? grants : undefined,
       // AU 편집은 base 소관이라 건드리지 않는다 · 재생목록이 하나도 없으면 비움
       bgm: auMode ? initial?.bgm : (bgm && bgm.playlists.length ? bgm : undefined),
+      galleryTagLinks: auMode ? initial?.galleryTagLinks : (tagLinks.length ? tagLinks : undefined),
     });
   };
 
@@ -260,6 +265,13 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   if (view === GALLERY_VIEW && gallery !== undefined) {
     return <>
       <GalleryEditView posts={gallery} onChange={setGallery}
+        extra={initial?.id ? (
+          <GalleryTagLinkPicker title="자관 갤러리 연동"
+            hint="이 캐릭터가 멤버인 자관 갤러리에서 보일 태그를 고르세요 (프로필 [SAVE] 시 저장)"
+            emptyHint="이 캐릭터가 멤버인 자관의 갤러리에 태그가 달린 사진 묶음이 아직 없습니다 — 자관 갤러리에서 묶음에 태그를 달면 여기에 나타납니다"
+            options={tagOptions} selected={tagLinks}
+            onToggle={t => setTagLinks(l => (l.includes(t) ? l.filter(x => x !== t) : [...l, t]))} />
+        ) : undefined}
         onDelete={() => del.ask('갤러리를 삭제하시겠습니까?', () => { setGallery(undefined); setView('main'); },
           '등록한 사진 묶음이 모두 함께 사라집니다. 저장(SAVE) 전까지는 CANCEL로 폼을 벗어나면 되돌릴 수 있습니다.')}
         onBack={() => setView('main')} />

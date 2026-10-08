@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Relation, REL_SEED, GalleryPost, galleryPostsOf, findByKey } from '@/lib/charStore';
+import { Relation, REL_SEED, Character, CHAR_SEED, GalleryPost, galleryPostsOf, findByKey, memberGalleryTags, relGalleryPosts } from '@/lib/charStore';
 import { usePageBgm } from '@/lib/bgmStore';
 import { useRelPageStyle } from '@/components/rels/useRelPageStyle';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
@@ -19,6 +19,7 @@ export default function RelGalleryPage() {
   const router = useRouter();
   const { isAdmin, user } = useAuth();
   const [rels, setRels, loaded] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
+  const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   const [editing, setEditing] = useState(false);
 
   const rel = findByKey(rels, id);
@@ -38,9 +39,18 @@ export default function RelGalleryPage() {
     );
   }
 
-  const posts = galleryPostsOf(rel);
+  const posts = galleryPostsOf(rel);                       // 이 자관에 직접 올린 묶음 (편집 대상)
+  const shownPosts = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user });   // + 태그 연동으로 가져온 캐릭터 묶음
+  const linkedCount = shownPosts.filter(p => p.from).length;
   const save = (next: GalleryPost[]) =>
     setRels(rels.map(r => (r.id === rel.id ? { ...r, galleryPosts: next } : r)));
+  // 캐릭터 갤러리 연동 태그 (v6.2) — 이 자관 멤버 캐릭터의 갤러리 묶음에 달린 태그 중 자관에서도 보일 것
+  const tagOptions = memberGalleryTags(rel, chars);
+  const links = rel.galleryTagLinks ?? [];
+  const toggleTag = (t: string) => {
+    const next = links.includes(t) ? links.filter(x => x !== t) : [...links, t];
+    setRels(rels.map(r => (r.id === rel.id ? { ...r, galleryTagLinks: next.length ? next : undefined } : r)));
+  };
   const back = `/rels/${rel.slug ?? rel.id}`;
 
   return (
@@ -54,10 +64,38 @@ export default function RelGalleryPage() {
       </div>
 
       {editing && isAdmin ? (
-        <GalleryEditView posts={posts} onChange={save} backLabel="‹ 갤러리로" onBack={() => setEditing(false)} />
+        <div style={{ display: 'grid', gap: 14 }}>
+          {/* 캐릭터 갤러리 연동 — 같은 사진을 자관에 또 올리지 않아도 되도록, 멤버 캐릭터 갤러리의 태그를 골라 가져온다 */}
+          <div className="panel" style={{ padding: 24, display: 'grid', gap: 10 }}>
+            <label className="k-label" style={{ margin: 0 }}>
+              캐릭터 갤러리 연동 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 이 자관 멤버 캐릭터의 갤러리에서 보일 태그를 고르세요 (바로 적용)</span>
+            </label>
+            {tagOptions.length > 0 || links.length > 0 ? (
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {tagOptions.map(o => (
+                  <button key={o.tag} type="button" className={`btn ${links.includes(o.tag) ? 'btn-dark' : 'btn-ghost'}`}
+                    style={{ padding: '5px 12px', fontSize: 11.5 }} title={o.names.join(', ')} onClick={() => toggleTag(o.tag)}>
+                    {links.includes(o.tag) ? '✓ ' : ''}#{o.tag} <small style={{ opacity: .7 }}>{o.count}</small>
+                  </button>
+                ))}
+                {/* 지금은 어느 멤버 갤러리에도 없는 태그(삭제·변경됨) — 선택만 남아 있으니 해제할 수 있게 */}
+                {links.filter(t => !tagOptions.some(o => o.tag === t)).map(t => (
+                  <button key={t} type="button" className="btn btn-dark" style={{ padding: '5px 12px', fontSize: 11.5, opacity: .6 }}
+                    title="멤버 캐릭터 갤러리에 이 태그가 없습니다" onClick={() => toggleTag(t)}>✓ #{t} ✕</button>
+                ))}
+              </div>
+            ) : (
+              <p className="hint" style={{ margin: 0 }}>
+                멤버 캐릭터의 갤러리에 태그가 달린 사진 묶음이 아직 없습니다 — 캐릭터 편집 → 갤러리 편집에서 묶음에 태그를 달면 여기에 나타납니다
+              </p>
+            )}
+            {linkedCount > 0 && <p className="hint" style={{ margin: 0 }}>연동된 묶음 {linkedCount}개가 갤러리에 함께 보입니다 — 수정은 캐릭터 갤러리에서 합니다</p>}
+          </div>
+          <GalleryEditView posts={posts} onChange={save} backLabel="‹ 갤러리로" onBack={() => setEditing(false)} />
+        </div>
       ) : (
         <div className="panel" style={{ padding: 24 }}>
-          <GalleryPanel posts={posts} ph={rel.thumbClass} loggedIn={!!user} canSeePrivate={isAdmin} />
+          <GalleryPanel posts={shownPosts} ph={rel.thumbClass} loggedIn={!!user} canSeePrivate={isAdmin} />
         </div>
       )}
     </section>

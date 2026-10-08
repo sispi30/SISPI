@@ -93,12 +93,13 @@ function GalleryArtEditor({ images, onChange }: { images: GalleryImg[]; onChange
   );
 }
 
-export function GalleryEditView({ posts, onChange, onDelete, onBack, backLabel = '‹ 돌아가기' }: {
+export function GalleryEditView({ posts, onChange, onDelete, onBack, backLabel = '‹ 돌아가기', extra }: {
   posts: GalleryPost[];
   onChange: (posts: GalleryPost[]) => void;
   onDelete?: () => void;     // 없으면 「갤러리 삭제」 버튼을 두지 않는다 (자관 갤러리는 설정에서 끄는 방식)
   onBack: () => void;
   backLabel?: string;
+  extra?: React.ReactNode;   // 묶음 목록 맨 위에 끼울 것 (예: 태그 연동 선택)
 }) {
   const [editId, setEditId] = useState<string | null>(null);
   const del = useConfirmDelete();
@@ -197,6 +198,7 @@ export function GalleryEditView({ posts, onChange, onDelete, onBack, backLabel =
         <span className="hint" style={{ margin: 0 }}>이 화면의 내용은 프로필 [SAVE] 시 함께 저장됩니다</span>
         {onDelete && <button className="btn btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }} onClick={onDelete}>갤러리 삭제</button>}
       </div>
+      {extra}
       <label className="k-label" style={{ margin: 0 }}>
         사진 묶음 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 순서 변경 · 상세 화면 GALLERY 버튼으로 이동하는 화면에 갤러리 게시판과 같은 카드로 보여줍니다</span>
       </label>
@@ -229,3 +231,38 @@ export function GalleryEditView({ posts, onChange, onDelete, onBack, backLabel =
   );
 }
 
+
+/** 갤러리 태그 연동 선택 — 상대 갤러리(자관↔캐릭터)에 달린 태그를 골라 이쪽 갤러리에서도 보이게 (v6.3) */
+export function GalleryTagLinkPicker({ title, hint, emptyHint, options, selected, onToggle, linkedCount }: {
+  title: string; hint: string; emptyHint: string;
+  options: { tag: string; count: number; names: string[] }[];
+  selected: string[];
+  onToggle: (tag: string) => void;
+  linkedCount?: number;
+}) {
+  return (
+    <div style={{ display: 'grid', gap: 10, padding: '14px 0', borderBottom: '1px dashed var(--line)' }}>
+      <label className="k-label" style={{ margin: 0 }}>
+        {title} <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— {hint}</span>
+      </label>
+      {options.length > 0 || selected.length > 0 ? (
+        <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+          {options.map(o => (
+            <button key={o.tag} type="button" className={`btn ${selected.includes(o.tag) ? 'btn-dark' : 'btn-ghost'}`}
+              style={{ padding: '5px 12px', fontSize: 11.5 }} title={o.names.join(', ')} onClick={() => onToggle(o.tag)}>
+              {selected.includes(o.tag) ? '✓ ' : ''}#{o.tag} <small style={{ opacity: .7 }}>{o.count}</small>
+            </button>
+          ))}
+          {/* 지금은 상대 갤러리에 없는 태그(삭제·변경됨) — 선택만 남아 있으니 해제할 수 있게 */}
+          {selected.filter(t => !options.some(o => o.tag === t)).map(t => (
+            <button key={t} type="button" className="btn btn-dark" style={{ padding: '5px 12px', fontSize: 11.5, opacity: .6 }}
+              title="상대 갤러리에 이 태그가 없습니다" onClick={() => onToggle(t)}>✓ #{t} ✕</button>
+          ))}
+        </div>
+      ) : (
+        <p className="hint" style={{ margin: 0 }}>{emptyHint}</p>
+      )}
+      {!!linkedCount && <p className="hint" style={{ margin: 0 }}>연동된 묶음 {linkedCount}개가 갤러리에 함께 보입니다 — 수정은 원래 갤러리에서 합니다</p>}
+    </div>
+  );
+}

@@ -42,6 +42,8 @@ export interface GalleryPost {
   date: string;
   visibility: Visibility;
   fold?: { type: 'spoiler' | 'adult' | 'custom'; label?: string } | null;
+  /** 표시 전용(저장 안 함) — 자관 갤러리가 태그 연동으로 가져온 묶음이면 원래 캐릭터 이름 */
+  from?: string;
 }
 
 /** 캐릭터의 갤러리 묶음 목록 — 새 방식(galleryPosts)이 있으면 그대로,
@@ -82,6 +84,8 @@ export interface Character {
   gallery?: GalleryImg[];            // (구) 사진만 쌓던 갤러리 — galleryPosts가 생기면 그쪽이 우선
   /** 사진 묶음 목록 (v3.4) — 있으면 갤러리 기능 켜짐 (빈 배열 포함) */
   galleryPosts?: GalleryPost[];
+  /** 캐릭터 갤러리에 연동해 보일 자관 갤러리 태그 (v6.3) — 이 캐릭터가 멤버인 자관의 갤러리 묶음 중 이 태그가 달린 것이 함께 보인다 */
+  galleryTagLinks?: string[];
   /** 이 캐릭터 상세 페이지에서만 나오는 BGM (v5.9) — 환경설정 BGM과 같은 구조, 페이지를 나가면 홈페이지 BGM으로 복귀 */
   bgm?: import('./bgmStore').PageBgm;
   /** TRPG 참여 세션 탭 (v2.8) — 켜져 있으면 상세 화면에 TRPG 버튼이 보인다.
@@ -490,6 +494,8 @@ export interface Relation {
   bgm?: import('./bgmStore').PageBgm;
   /** 상세 하단 좌측 칸 — 역극 목록(기본) / 갤러리 (v6.0). 갤러리면 작은 썸네일로 보이고 더보기에서 보기·편집 */
   leftBoard?: 'rp' | 'gallery';
+  /** 자관 갤러리에 연동해 보일 캐릭터 갤러리 태그 (v6.2) — 이 자관 멤버 캐릭터의 갤러리 묶음 중 이 태그가 달린 것이 함께 보인다 */
+  galleryTagLinks?: string[];
   /** 자관 갤러리 사진 묶음 (v6.0) — 캐릭터 갤러리와 같은 구조 */
   galleryPosts?: GalleryPost[];
   /** 페이지 주소 별명 (v2.0 사용자 요청) — /rels/{별명}. 나중에 수정 화면에서 바꿀 수 있다.
@@ -568,3 +574,89 @@ export const findByKey = <T extends { id: string; slug?: string }>(list: T[], ke
 export const charPath = (c: { id: string; slug?: string }) => `/chars/${c.slug?.trim() || c.id}`;
 /** 이 자관의 주소 — 별명을 정했으면 그것, 아니면 id */
 export const relPath = (r: { id: string; slug?: string }) => `/rels/${r.slug?.trim() || r.id}`;
+
+
+/* ---------- 자관 갤러리 ↔ 캐릭터 갤러리 태그 연동 (v6.2) ---------- */
+
+/** 이 자관 멤버 캐릭터들의 갤러리 묶음에 달린 태그 모음 — 연동 태그 고르기용 (많이 쓴 순) */
+export function memberGalleryTags(rel: Relation, chars: Character[]): { tag: string; count: number; names: string[] }[] {
+  const map = new Map<string, { count: number; names: Set<string> }>();
+  for (const m of rel.members) {
+    const c = chars.find(x => x.id === m.charId);
+    if (!c) continue;
+    for (const p of galleryPostsOf(c)) {
+      for (const t of p.tags ?? []) {
+        const e = map.get(t) ?? { count: 0, names: new Set<string>() };
+        e.count += 1; e.names.add(c.name);
+        map.set(t, e);
+      }
+    }
+  }
+  return [...map.entries()]
+    .map(([tag, e]) => ({ tag, count: e.count, names: [...e.names] }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+}
+
+/** 자관 갤러리에 같이 보일 묶음 = 자기 묶음 + 연동 태그가 달린 멤버 캐릭터 묶음.
+ *  연동분은 복사하지 않고 캐릭터 쪽 데이터를 그대로 가리킨다(캐릭터에서 고치면 자관에도 반영) —
+ *  id는 `캐릭터id:묶음id`, from에 캐릭터 이름. 열람 권한(캐릭터·묶음 공개범위)은 여기서 거른다 */
+export function relGalleryPosts(rel: Relation, chars: Character[], viewer: { isAdmin: boolean; loggedIn: boolean }): GalleryPost[] {
+  const ok = (v: Visibility) => v === 'public' || (v === 'member' && viewer.loggedIn) || viewer.isAdmin;
+  const own = galleryPostsOf(rel).filter(p => ok(p.visibility));
+  const tags = rel.galleryTagLinks ?? [];
+  if (tags.length === 0) return own;
+  const linked: GalleryPost[] = [];
+  for (const m of rel.members) {
+    const c = chars.find(x => x.id === m.charId);
+    if (!c || !ok(c.visibility)) continue;
+    for (const p of galleryPostsOf(c)) {
+      if (!ok(p.visibility)) continue;
+      if (!(p.tags ?? []).some(t => tags.includes(t))) continue;
+      linked.push({ ...p, id: `${c.id}:${p.id}`, from: c.name });
+    }
+  }
+  return [...own, ...linked];
+}
+
+
+/* ---------- 캐릭터 갤러리 ← 자관 갤러리 태그 연동 (v6.3) — 위 자관→캐릭터 연동의 반대 방향 ----------
+   연동으로 가져오는 건 상대 쪽이 직접 올린 묶음(galleryPostsOf)뿐이라, 서로 연동해도 되돌아 꼬리를 물지 않는다 */
+
+/** 이 캐릭터가 멤버인 자관들의 갤러리 묶음에 달린 태그 모음 — 연동 태그 고르기용 */
+export function relGalleryTagsForChar(charId: string | undefined, rels: Relation[]): { tag: string; count: number; names: string[] }[] {
+  if (!charId) return [];
+  const map = new Map<string, { count: number; names: Set<string> }>();
+  for (const r of rels) {
+    if (!r.members.some(m => m.charId === charId)) continue;
+    for (const p of galleryPostsOf(r)) {
+      for (const t of p.tags ?? []) {
+        const e = map.get(t) ?? { count: 0, names: new Set<string>() };
+        e.count += 1; e.names.add(r.name);
+        map.set(t, e);
+      }
+    }
+  }
+  return [...map.entries()]
+    .map(([tag, e]) => ({ tag, count: e.count, names: [...e.names] }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+}
+
+/** 캐릭터 갤러리에 같이 보일 묶음 = 자기 묶음 + 연동 태그가 달린 자관 묶음. id는 `rel~자관id:묶음id`, from에 자관 이름.
+ *  canEdit = 이 캐릭터를 편집할 수 있는 사람(관리자·편집 권한) — 나만보기 묶음까지 봄 */
+export function charGalleryPosts(c: Character, rels: Relation[], viewer: { isAdmin: boolean; canEdit: boolean; loggedIn: boolean }): GalleryPost[] {
+  const okOwn = (v: Visibility) => v === 'public' || (v === 'member' && viewer.loggedIn) || viewer.canEdit;
+  const okRel = (v: Visibility) => v === 'public' || (v === 'member' && viewer.loggedIn) || viewer.isAdmin;
+  const own = galleryPostsOf(c).filter(p => okOwn(p.visibility));
+  const tags = c.galleryTagLinks ?? [];
+  if (tags.length === 0) return own;
+  const linked: GalleryPost[] = [];
+  for (const r of rels) {
+    if (!r.members.some(m => m.charId === c.id) || !okRel(r.visibility)) continue;
+    for (const p of galleryPostsOf(r)) {
+      if (!okRel(p.visibility)) continue;
+      if (!(p.tags ?? []).some(t => tags.includes(t))) continue;
+      linked.push({ ...p, id: `rel~${r.id}:${p.id}`, from: r.name });
+    }
+  }
+  return [...own, ...linked];
+}
