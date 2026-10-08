@@ -1270,9 +1270,6 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 @media (max-width:960px){.multi-body{grid-template-columns:1fr}}
 .mrow{display:flex;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);cursor:var(--cur-pointer,pointer);transition:.13s;--cc:93,99,109}
 .mrow:last-child{border:none}
-/* 다인 자관 멤버 순서 드래그(v6.6) — DragList가 행을 .dl-row로 감싸 :last-child 규칙이 모든 행에 걸리므로 구분선을 되살린다 */
-.dl-row .mrow{border-bottom:1px solid var(--line)}
-.mrow .drag-h{margin:0 -4px 0 -4px;flex-shrink:0}
 .mrow:hover{background:rgba(127,127,127,.07)}
 .mrow .face{width:46px;height:46px;border-radius:10px;flex-shrink:0;border-left:3px solid rgb(var(--cc));position:relative;overflow:hidden}
 .mrow .nm{min-width:0}

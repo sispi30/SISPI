@@ -24,6 +24,7 @@ import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
 import type { PageBgm } from '@/lib/bgmStore';
 
 export interface RelFormValue {
+  memberOrder?: string[];         // 다인관 멤버 순서(charId 순) — 상세 페이지에 이 순서로 보인다 (v6.7)
   leftBoard?: 'rp' | 'gallery';   // 상세 하단 좌측 칸 — 역극(기본) / 갤러리 (v6.0)
   bgm?: PageBgm;             // 이 자관 페이지 전용 BGM (v5.9) — 없으면 홈페이지 BGM
   slug?: string;             // 페이지 주소 /rels/{slug} (v1.9 — 신규 등록 시, 비우면 자동 id)
@@ -344,6 +345,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
 
   const [kind, setKind] = useState<'pair' | 'multi'>(initial?.kind ?? 'pair');
   const [bgm, setBgm] = useState<PageBgm | undefined>(initial?.bgm);
+  // 다인관 멤버 순서 (v6.7) — 설정 화면에서 드래그로 바꾼다. 상세 페이지에서는 직접 옮기지 않는다
+  const isMultiRel = kind === 'multi' || (!!initial && !initial.kind && initial.members.length > 2);   // kind가 없는 옛 자관은 인원수로 판단
+  const [memberOrder, setMemberOrder] = useState<string[]>(() => (initial?.members ?? []).map(m => m.charId));
   const [leftBoard, setLeftBoard] = useState<'rp' | 'gallery'>(initial?.leftBoard === 'gallery' ? 'gallery' : 'rp');
   const [name, setName] = useState(initial?.name ?? '');
   // 페이지 주소 /rels/{slug} — 신규는 비우면 자동(id). 수정에서도 바꿀 수 있다 (v2.0 사용자 요청)
@@ -594,6 +598,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       linkBoard: linkBoard === 'session' ? 'session' : undefined,
       bgm: bgm && bgm.playlists.length ? bgm : undefined,
       leftBoard: leftBoard === 'gallery' ? 'gallery' : undefined,
+      memberOrder: !isNew && !auId && isMultiRel ? memberOrder : undefined,
       fulls: pairMembers.length
         ? Object.fromEntries(await Promise.all(pairMembers.map(async m => {
           const d = fulls[m.charId];
@@ -1144,6 +1149,24 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
 
         {/* 상세 하단 연동 리스트 선택 + 연동 항목 검색 — 로그 백업 / 세션 게시판.
             자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
+        {/* 다인관 멤버 순서 (v6.7) — 상세 페이지의 멤버 목록 순서. ⠿ 핸들을 잡고 끌어서 바꾼다.
+            자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
+        {!isNew && !auId && isMultiRel && memberOrder.length > 1 && (
+          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+            <label className="k-label" style={{ margin: 0 }}>
+              멤버 순서 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 을 잡고 끌어서 상세 페이지에 보이는 캐릭터 순서를 바꿉니다</span>
+            </label>
+            <DragList items={memberOrder} keyOf={id => id} onReorder={setMemberOrder}
+              render={(id, i) => (
+                <div className="upfile-row" style={{ width: '100%' }}>
+                  <span className="drag-h">⠿</span>
+                  <span className="mw-no">{i + 1}</span>
+                  <div className="nm"><b>{memberNames?.[id] ?? id}</b></div>
+                </div>
+              )} />
+          </div>
+        )}
+
         {/* 상세 하단 좌측 칸 (v6.0) — 역극 목록 대신 갤러리를 보일 수 있다. 자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
         {!auObj && (
           <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>

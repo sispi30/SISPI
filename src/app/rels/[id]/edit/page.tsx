@@ -46,7 +46,13 @@ function RelEditInner() {
         onCancel={() => router.push(`/rels/${rel.id}`)}
         existingIds={rels.filter(r => r.id !== rel.id).flatMap(r => [r.id, ...(r.slug ? [r.slug] : [])])}
         onSave={v => {
-          setRels(rels.map(r => (r.id === rel.id ? {
+          // 다인관 멤버 순서 (v6.7) — 자관 공통 멤버 목록을 설정에서 정한 순서로. AU 편집에서는 건드리지 않는다
+          const applyOrder = (x: Relation): Relation => {
+            if (auObj || !v.memberOrder) return x;
+            const pos = new Map(v.memberOrder.map((id, i) => [id, i]));
+            return { ...x, members: [...x.members].sort((a, b) => (pos.get(a.charId) ?? 999) - (pos.get(b.charId) ?? 999)) };
+          };
+          setRels(rels.map(r => (r.id === rel.id ? applyOrder({
             ...r,
             name: v.name, kind: v.kind, visibility: v.visibility,
             // 폰트는 AU 편집이면 그 AU에만 (v2.0 사용자 제보 — 여태 원본에 저장돼 전체가 같이 바뀌었다)
@@ -150,7 +156,7 @@ function RelEditInner() {
                   }
                   : {}),
               }),
-          } : r)));
+          }) : r)));
           toast('저장되었습니다');
           router.push(`/rels/${rel.id}`);
         }}
