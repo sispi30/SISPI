@@ -1062,7 +1062,7 @@ export default function RelDetailPage() {
                   const nc = charOf(cid);
                   if (!nc) return null;
                   return (
-                    <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}${m?.badgeAlign === 'mid' ? ' fb-name-mid' : m?.badgeAlign === 'bottom' ? ' fb-name-bottom' : ''}`}
+                    <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}${m?.badgeAlign === 'mid' ? ' fb-name-mid' : m?.badgeAlign === 'bottom' ? ' fb-name-bottom' : ''}${m?.badgeTextAlign ? ` fb-ta-${m.badgeTextAlign[0]}` : ''}`}
                       style={{ fontFamily: familyOf(nc.fontId), cursor: 'var(--cur-pointer,pointer)', ...shiftOf(heroLayout?.names?.[cid]) }}
                       onClick={() => router.push(charHref(cid))}
                       onContextMenu={e => {
@@ -1507,7 +1507,7 @@ export default function RelDetailPage() {
       {!(au?.hideRp && au?.hideLog) && (
       <div className="g2" style={{ marginTop: 16 }}>
         {!au?.hideRp && rel?.leftBoard === 'gallery' && (
-        <div className="panel widget" style={{ margin: 0, ...(au?.hideLog ? { gridColumn: '1/-1' } : null) }}>
+        <div className="panel widget" style={{ margin: 0, display: 'flex', flexDirection: 'column', ...(au?.hideLog ? { gridColumn: '1/-1' } : null) }}>
           <h4>갤러리 <span className="more" onClick={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}>더보기 ›</span></h4>
           <RelGalleryMini ph={rel.thumbClass} onOpen={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}
             posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} />

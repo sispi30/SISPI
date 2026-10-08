@@ -36,7 +36,7 @@ function Marquee({ text, active, className }: { text: string; active: boolean; c
 
 /* 최소한의 YT IFrame API 타입 */
 interface YTPlayer {
-  loadVideoById: (id: string) => void;
+  loadVideoById: (id: string | { videoId: string; startSeconds?: number }) => void;
   playVideo: () => void;
   pauseVideo: () => void;
   setVolume: (v: number) => void;
@@ -231,17 +231,18 @@ export function BgmPlayer() {
   }
 
   /* ---------- 재생 ---------- */
-  const playAt = (plId: string | null, i: number, opts?: { follow?: boolean }) => {
+  const playAt = (plId: string | null, i: number, opts?: { follow?: boolean; startSeconds?: number }) => {
     const pl = plsRef.current.find(p => p.id === plId);
     const t = pl?.tracks[i];
     if (!pl || !t || !t.videoId) return;
     setPlaylistId(pl.id);
     setIdx(i);
     startedRef.current = true;
-    setProgress({ cur: 0, total: parseDurationText(t.duration) });
+    setProgress({ cur: opts?.startSeconds ?? 0, total: parseDurationText(t.duration) });
     if (opts?.follow !== false) { setViewPlaylistId(pl.id); setView('tracks'); }
     if (playerRef.current) {
-      playerRef.current.loadVideoById(t.videoId);
+      if (opts?.startSeconds && opts.startSeconds > 1) playerRef.current.loadVideoById({ videoId: t.videoId, startSeconds: opts.startSeconds });
+      else playerRef.current.loadVideoById(t.videoId);
       playerRef.current.setVolume(volumeRef.current);
       playerRef.current.playVideo();
       setPlaying(true);
@@ -386,21 +387,34 @@ export function BgmPlayer() {
      재생 중이었다면 새 BGM의 첫 곡(홈으로 돌아올 때는 떠나기 전 곡)부터 이어서 재생하고,
      멈춰 있었다면 재생하지 않고 재생 화면만 새 BGM으로 바꾼다 (첫 상호작용 자동 재생 대기는 그대로 유지) */
   const sourceRef = useRef(source);
-  const homeMemoRef = useRef<{ plId: string | null; idx: number } | null>(null);
+  // BGM(홈페이지/각 페이지)마다 마지막에 듣던 곡과 재생 위치를 기억해 둔다 — 같은 BGM으로 돌아오면 거기서 이어간다
+  const memoRef = useRef<Record<string, { plId: string; idx: number; time: number }>>({});
   useEffect(() => {
     if (sourceRef.current === source) return;
     const prevSource = sourceRef.current;
     sourceRef.current = source;
     const wasPlaying = playingRef.current;
-    if (prevSource === 'home') homeMemoRef.current = { plId: playlistIdRef.current, idx: idxRef.current };
 
+    // 떠나는 BGM의 곡·위치 기억 (멈추기 전에 현재 시간을 읽는다)
+    let time = 0;
+    try { time = playerRef.current?.getCurrentTime() || 0; } catch { /* 플레이어 준비 전 */ }
+    if (playlistIdRef.current && idxRef.current > -1) {
+      memoRef.current[prevSource] = { plId: playlistIdRef.current, idx: idxRef.current, time };
+    }
+
+    // 들어가는 BGM에서 시작할 곡 — 기억해 둔 곡이 아직 있으면 그 곡, 없으면 첫 곡
     const list = plsRef.current;
     let startPl = list.find(p => p.tracks.some(t => t.videoId));
     let startIdx = startPl ? startPl.tracks.findIndex(t => t.videoId) : -1;
-    if (source === 'home' && homeMemoRef.current) {
-      const m = homeMemoRef.current;
+    let startSeconds = 0;
+    const m = memoRef.current[source];
+    if (m) {
       const pl = list.find(p => p.id === m.plId);
-      if (pl && pl.tracks[m.idx]?.videoId) { startPl = pl; startIdx = m.idx; }
+      if (pl && pl.tracks[m.idx]?.videoId) {
+        startPl = pl; startIdx = m.idx;
+        // 환경설정 「BGM이 바뀔 때」 — 이어서면 듣던 구간부터, 처음부터면 0초
+        if (settings.switchMode !== 'restart') startSeconds = m.time;
+      }
     }
 
     // 이전 BGM 정리
@@ -414,7 +428,7 @@ export function BgmPlayer() {
     if (startPl) { setViewPlaylistId(startPl.id); setView('tracks'); }
     else { setViewPlaylistId(null); setView('browse'); }
 
-    if (wasPlaying && startPl && startIdx > -1) playAtRef.current(startPl.id, startIdx);
+    if (wasPlaying && startPl && startIdx > -1) playAtRef.current(startPl.id, startIdx, { startSeconds });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
 

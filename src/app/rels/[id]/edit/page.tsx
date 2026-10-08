@@ -77,6 +77,7 @@ function RelEditInner() {
                 nameBold: v.nameBolds?.[m.charId] ?? m.nameBold,
                 heroNameSize: v.heroNameSizes?.[m.charId] ?? m.heroNameSize,
                 badgeAlign: v.badgeAligns?.[m.charId] ?? m.badgeAlign,
+                badgeTextAlign: v.badgeTextAligns?.[m.charId] ?? m.badgeTextAlign,
                 quoteColor: v.quoteColors?.[m.charId]?.fg ?? m.quoteColor,
                 quoteMarkColor: v.quoteColors?.[m.charId]?.mark ?? m.quoteMarkColor,
               }))
@@ -113,6 +114,7 @@ function RelEditInner() {
                     nameBold: v.nameBolds?.[m.charId],
                     heroNameSize: v.heroNameSizes?.[m.charId],
                     badgeAlign: v.badgeAligns?.[m.charId],
+                    badgeTextAlign: v.badgeTextAligns?.[m.charId],
                     quoteColor: v.quoteColors?.[m.charId]?.fg,
                     quoteMarkColor: v.quoteColors?.[m.charId]?.mark,
                   }])),
@@ -141,6 +143,7 @@ function RelEditInner() {
                       nameBold: v.nameBolds?.[m.charId] ?? m.nameBold,
                 heroNameSize: v.heroNameSizes?.[m.charId] ?? m.heroNameSize,
                 badgeAlign: v.badgeAligns?.[m.charId] ?? m.badgeAlign,
+                badgeTextAlign: v.badgeTextAligns?.[m.charId] ?? m.badgeTextAlign,
                       quoteColor: v.quoteColors?.[m.charId]?.fg ?? m.quoteColor,
                       quoteMarkColor: v.quoteColors?.[m.charId]?.mark ?? m.quoteMarkColor,
                     })),

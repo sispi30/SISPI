@@ -65,7 +65,8 @@ export interface RelFormValue {
   nameSizes?: Record<string, number>;                           // 멤버 카드 이름 크기 px (v2.0)
   nameBolds?: Record<string, boolean>;                          // 멤버 카드 이름 볼드 (v2.0 — 기본 켜짐)
   heroNameSizes?: Record<string, number>;                       // PC 상세 전신 위 캐릭터 이름 크기 px (안 정하면 자동)
-  badgeAligns?: Record<string, 'top' | 'mid' | 'bottom'>;       // PC 상세 전신 위 이름·배지 묶음 세로 위치
+  badgeAligns?: Record<string, 'top' | 'mid' | 'bottom'>;       // (구) 이름·배지 묶음 세로 위치 — 화면에서는 없앴고 저장된 값만 보존
+  badgeTextAligns?: Record<string, 'left' | 'center' | 'right'>; // 이름·부제·배지 묶음 가로 정렬 (이름 기준)
   titleSize?: number;                                           // 자관 이름(제목) 크기 px (안 정하면 기본)
   quoteColors?: Record<string, { fg?: string; mark?: string }>; // 히어로 대사 글씨/따옴표색 (페어, v1.9)
   fullFront?: string;                          // 앞에 보일 캐릭터 id (레이어 순서에서 맨 위 전신 — 예전 화면 호환용)
@@ -438,6 +439,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   // 이름·배지 묶음 세로 위치 — 위(기본)/중앙/아래
   const [badgeAligns, setBadgeAligns] = useState<Record<string, 'top' | 'mid' | 'bottom'>>(
     () => Object.fromEntries(pairMembers.map(m => [m.charId, mOf(m).badgeAlign ?? 'top'])));
+  const [badgeTextAligns, setBadgeTextAligns] = useState<Record<string, 'left' | 'center' | 'right' | undefined>>(
+    () => Object.fromEntries(pairMembers.map(m => [m.charId, mOf(m).badgeTextAlign])));
   // 자관 이름(제목) 크기 — AU 편집이면 그 AU에 정해 둔 값부터, 없으면 자관 값
   const [titleSize, setTitleSize] = useState<number | undefined>(auObj?.titleSize ?? initial?.titleSize);
   // 자관 이름(제목) 크기 조절 — 2인 전신 히어로는 작은 제목(22px), 그 외는 큰 제목(64px)이 기본
@@ -605,6 +608,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       heroNameSizes: pairMembers.length
         ? Object.fromEntries(Object.entries(heroNameSizes).filter(([, n]) => n !== undefined) as [string, number][]) : undefined,
       badgeAligns: pairMembers.length ? badgeAligns : undefined,
+      badgeTextAligns: pairMembers.length ? (badgeTextAligns as Record<string, 'left' | 'center' | 'right'>) : undefined,
       titleSize,
       quoteColors: pairMembers.length ? quoteColors : undefined,
       fullFront: topFull ?? initFullFront,
@@ -851,6 +855,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     const o = uiNames[m.charId] ?? { x: 0, y: 0 };
                     const al = badgeAligns[m.charId] ?? 'top';
                     const left = i === 0;
+                    const ta = badgeTextAligns[m.charId] ?? (left ? 'left' : 'right');
                     const fs = heroNameSizes[m.charId] ?? clampN(vp.w * 0.034, 20, 40);
                     const ch = myChars.find(c => c.id === m.charId);
                     const specPills = (ch?.specs ?? []).filter(isPlainSpec);
@@ -871,7 +876,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                           ...(al === 'bottom' ? { bottom: `${4 - o.y}%` } : { top: `${(al === 'mid' ? 50 : 4) + o.y}%` }),
                           transform: al === 'mid' ? 'translateY(-50%)' : undefined,
                           display: 'flex', flexDirection: 'column', gap: 2, color: '#fff', textShadow: shadowCss,
-                          alignItems: left ? 'flex-start' : 'flex-end', textAlign: left ? 'left' : 'right',
+                          alignItems: ta === 'center' ? 'center' : ta === 'left' ? 'flex-start' : 'flex-end', textAlign: ta,
                         }}>
                         <b style={{ fontSize: cq(fs), lineHeight: 1.05, fontWeight: (nameBolds[m.charId] ?? true) ? 800 : 400 }}>
                           {memberNames?.[m.charId] ?? m.charId}
@@ -1035,23 +1040,26 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               </div>
             ))}
 
-            {/* 배지 위치 — 위/중앙/아래. 기준은 위 미리보기와 같은 영역(브라우저 창 기준 상세 화면).
-                여기 없으면 아직 자관 정보 수정 화면에 해당 코드가 반영·배포되지 않은 것이다 —
+            {/* 배치 정렬 — 이름·부제·배지 묶음을 캐릭터 이름 기준으로 좌측/가운데/우측 정렬 (v6.4).
+                세로 위치(위/중앙/아래)는 전신 드래그 배치로 자유롭게 옮길 수 있어서 없앴다.
                 이 블록은 pairMembers.length > 0(=페어 자관)일 때만 나타난다 */}
             <label className="k-label" style={{ margin: '10px 0 0' }}>
-              배지 위치 (위 / 중앙 / 아래) <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 화면 전신 위 이름·정보 배지 묶음을 세로로 어디에 둘지</span>
+              배치 정렬 (좌측 / 가운데 / 우측) <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상세 화면 전신 위 이름·부제·정보 배지를 캐릭터 이름 기준으로 어느 쪽에 맞출지</span>
             </label>
-            {pairMembers.map((m, i) => (
-              <div key={m.charId} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <b style={{ fontSize: 12, width: 92, flexShrink: 0 }}>{i === 0 ? '왼쪽' : '오른쪽'} · {memberNames?.[m.charId] ?? m.charId}</b>
-                <div className="mini-seg">
-                  {([['top', '위'], ['mid', '중앙'], ['bottom', '아래']] as const).map(([k, lb2]) => (
-                    <button key={k} className={(badgeAligns[m.charId] ?? 'top') === k ? 'on' : ''}
-                      onClick={() => setBadgeAligns(s => ({ ...s, [m.charId]: k }))}>{lb2}</button>
-                  ))}
+            {pairMembers.map((m, i) => {
+              const cur = badgeTextAligns[m.charId] ?? (i === 0 ? 'left' : 'right');   // 안 정했으면 왼쪽 캐릭터=좌측, 오른쪽 캐릭터=우측
+              return (
+                <div key={m.charId} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <b style={{ fontSize: 12, width: 92, flexShrink: 0 }}>{i === 0 ? '왼쪽' : '오른쪽'} · {memberNames?.[m.charId] ?? m.charId}</b>
+                  <div className="mini-seg">
+                    {([['left', '좌측'], ['center', '가운데'], ['right', '우측']] as const).map(([k, lb2]) => (
+                      <button key={k} className={cur === k ? 'on' : ''}
+                        onClick={() => setBadgeTextAligns(sc => ({ ...sc, [m.charId]: k }))}>{lb2}</button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* 히어로 대사 색 (페어, v1.9 사용자 요청) — 좌/우 캐릭터 대사 글씨색·따옴표색 */}
             <label className="k-label" style={{ margin: '10px 0 0' }}>대사 색 — 상단 좌/우 한마디</label>

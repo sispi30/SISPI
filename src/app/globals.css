@@ -1219,6 +1219,13 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .fb-name.fb-name-bottom{top:auto;bottom:4%}
 .fb-name-l{left:6%;align-items:flex-start;text-align:left}
 .fb-name-r{right:6%;align-items:flex-end;text-align:right}
+/* 배치 정렬(v6.4) — 이름·부제·배지 묶음을 이름 기준으로 좌측/가운데/우측. 지정 안 하면 위의 기본(왼쪽 캐릭터=좌, 오른쪽 캐릭터=우) */
+.fb-name.fb-ta-l{align-items:flex-start;text-align:left}
+.fb-name.fb-ta-c{align-items:center;text-align:center}
+.fb-name.fb-ta-r{align-items:flex-end;text-align:right}
+.fb-name.fb-ta-c .fb-kw-row{align-items:center}
+.fb-name.fb-ta-l .fb-kw-row{align-items:flex-start}
+.fb-name.fb-ta-r .fb-kw-row{align-items:flex-end}
 .rel-center .single{position:absolute;inset:0;display:none}
 .rel-center.one-mode .single{display:grid}
 .illu-toggle{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;opacity:0;pointer-events:none;transition:opacity .2s}

@@ -233,8 +233,10 @@ export interface RelMember {
   nameSize?: number;
   /** PC 상세 전신 히어로의 캐릭터 이름 크기 px — 미지정이면 창 폭에 맞춰 자동(clamp). 위 nameSize(멤버 카드)와 별개 */
   heroNameSize?: number;
-  /** PC 상세 전신 히어로의 이름·배지 묶음 세로 위치 — 위(기본)/중앙/아래 */
+  /** (구) 이름·배지 묶음 세로 위치 — 설정 화면에서는 없앴다(전신 드래그로 자유 배치). 예전에 저장된 값만 그대로 따른다 */
   badgeAlign?: 'top' | 'mid' | 'bottom';
+  /** 전신 위 이름·부제·배지 묶음의 가로 정렬(v6.4) — 이름 기준 좌측/가운데/우측. 없으면 왼쪽 캐릭터는 좌측, 오른쪽 캐릭터는 우측 */
+  badgeTextAlign?: 'left' | 'center' | 'right';
   quoteColor?: string;           // 히어로 대사 글씨색 (페어, v1.9 — 기본 #d7dae0)
   quoteMarkColor?: string;       // 히어로 대사 따옴표색 (기본 포인트 소프트)
 }
@@ -311,6 +313,8 @@ export interface RelAuMember {
   nameBold?: boolean;
   heroNameSize?: number;
   badgeAlign?: 'top' | 'mid' | 'bottom';
+  /** 전신 위 이름·부제·배지 묶음의 가로 정렬(v6.4) — 이름 기준 좌측/가운데/우측. 없으면 왼쪽 캐릭터는 좌측, 오른쪽 캐릭터는 우측 */
+  badgeTextAlign?: 'left' | 'center' | 'right';
   quoteColor?: string;
   quoteMarkColor?: string;
   /** 멤버 카드 얼굴칸 위치 — AU마다 따로 (v2.0 사용자 제보 — 원본에서 바꾸면 AU도 같이 바뀌었다).
