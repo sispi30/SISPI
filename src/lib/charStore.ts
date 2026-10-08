@@ -82,6 +82,8 @@ export interface Character {
   gallery?: GalleryImg[];            // (구) 사진만 쌓던 갤러리 — galleryPosts가 생기면 그쪽이 우선
   /** 사진 묶음 목록 (v3.4) — 있으면 갤러리 기능 켜짐 (빈 배열 포함) */
   galleryPosts?: GalleryPost[];
+  /** 이 캐릭터 상세 페이지에서만 나오는 BGM (v5.9) — 환경설정 BGM과 같은 구조, 페이지를 나가면 홈페이지 BGM으로 복귀 */
+  bgm?: import('./bgmStore').PageBgm;
   /** TRPG 참여 세션 탭 (v2.8) — 켜져 있으면 상세 화면에 TRPG 버튼이 보인다.
    *  실제 세션 목록은 여기 저장하지 않고, 플레이기록 게시판(PlayRecord.charIds)에서
    *  이 캐릭터 id를 참조하는 기록을 찾아 그때그때 보여준다(단일 출처로 양쪽 자동 반영). */
@@ -484,6 +486,8 @@ export interface RelAu {
 
 export interface Relation {
   id: string;
+  /** 이 자관 페이지에서만 나오는 BGM (v5.9) — 캐릭터와 같은 방식 */
+  bgm?: import('./bgmStore').PageBgm;
   /** 페이지 주소 별명 (v2.0 사용자 요청) — /rels/{별명}. 나중에 수정 화면에서 바꿀 수 있다.
    *  참조(AU 프로필 키·로그 연동 등)는 언제나 id로 저장되므로 바꿔도 끊어지지 않는다. */
   slug?: string;

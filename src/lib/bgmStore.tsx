@@ -2,7 +2,7 @@
 // BGM 저장소 (5.3) — 재생목록(무드 카드) 구조 · localStorage(→ Supabase 이전 예정)
 // v1: 플랫 곡 목록 하나 → v2: 여러 재생목록(무드 카드), 각 재생목록에 곡 여러 개.
 // 구버전 데이터('tracks' 배열만 있던 시절)는 최초 로드 시 "BGM"이라는 재생목록 하나로 자동 이관한다.
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { newId } from './postStore';
 import { getRawSetting, setSetting } from './settingStore';
 
@@ -33,6 +33,16 @@ export interface BgmSettings {
   repeat: 'off' | 'all' | 'one';
   enabled: boolean;              // 플레이어 표시 여부
   autoplay: boolean;             // 입장 후 첫 상호작용 시 자동 재생
+}
+
+/** 페이지별 BGM (자관·캐릭터 상세) — 재생목록은 환경설정 BGM과 같은 구조이고,
+ *  재생 방식 4가지는 정하면 이 페이지에서만 홈페이지 기본값 대신 쓴다 (비우면 홈페이지 값 그대로) */
+export interface PageBgm {
+  playlists: BgmPlaylist[];
+  volume?: number;
+  shuffle?: boolean;
+  crossPlaylist?: boolean;
+  repeat?: 'off' | 'all' | 'one';
 }
 
 interface BgmState { playlists: BgmPlaylist[]; settings: BgmSettings }
@@ -109,7 +119,12 @@ function migrate(raw: unknown): BgmState {
 }
 
 interface BgmCtx {
+  /** 플레이어가 읽는 값 — 페이지별 BGM이 켜져 있으면 그 재생목록(+재생 방식), 아니면 홈페이지 BGM */
   state: BgmState;
+  /** 어느 BGM이 지금 나가는지 — 'home' 또는 'page:{키}'. 바뀌면 플레이어가 곡을 갈아 끼운다 */
+  source: string;
+  /** 페이지 상세가 들어올 때 걸고 나갈 때 null로 푼다 (usePageBgm 사용) */
+  setPageBgm: (v: { key: string; bgm: PageBgm } | null) => void;
   setPlaylists: (p: BgmPlaylist[]) => void;
   addPlaylist: (title: string, cover?: string) => string;
   updatePlaylist: (id: string, patch: Partial<Pick<BgmPlaylist, 'title' | 'cover' | 'coverColor'>>) => void;
@@ -184,6 +199,29 @@ export function extractDominantColorFromUrl(url: string): Promise<string | null>
 
 export function BgmStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<BgmState>(DEFAULT_STATE);
+  // 지금 보고 있는 페이지의 개별 BGM (저장하지 않는 임시 덮어쓰기)
+  const [pageBgm, setPageBgm] = useState<{ key: string; bgm: PageBgm } | null>(null);
+
+  // 플레이어가 읽는 값 — 곡이 하나도 없는 페이지 BGM은 없는 셈 치고 홈페이지 BGM을 그대로 쓴다
+  const { effective, source } = useMemo(() => {
+    if (pageBgm && pageBgm.bgm.playlists.some(p => p.tracks.some(t => t.videoId))) {
+      const b = pageBgm.bgm;
+      return {
+        source: `page:${pageBgm.key}`,
+        effective: {
+          playlists: b.playlists,
+          settings: {
+            ...state.settings,
+            volume: b.volume ?? state.settings.volume,
+            shuffle: b.shuffle ?? state.settings.shuffle,
+            crossPlaylist: b.crossPlaylist ?? state.settings.crossPlaylist,
+            repeat: b.repeat ?? state.settings.repeat,
+          },
+        } as BgmState,
+      };
+    }
+    return { source: 'home', effective: state };
+  }, [pageBgm, state]);
 
   useEffect(() => {
     try {
@@ -270,7 +308,7 @@ export function BgmStoreProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <Ctx.Provider value={{
-      state, setPlaylists, addPlaylist, updatePlaylist, removePlaylist,
+      state: effective, source, setPageBgm, setPlaylists, addPlaylist, updatePlaylist, removePlaylist,
       setTracks, addTrack, updateTrack, removeTrack, setSettings,
     }}>
       {children}
@@ -282,4 +320,22 @@ export function useBgm(): BgmCtx {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useBgm must be used within BgmStoreProvider');
   return ctx;
+}
+
+/**
+ * 이 페이지에서만 쓰는 BGM을 건다 (자관·캐릭터 상세) — 들어오면 플레이어가 이 BGM으로 바뀌고,
+ * 페이지를 나가면(언마운트) 풀려서 홈페이지 BGM으로 돌아간다.
+ * bgm이 없거나 곡이 없으면 아무것도 하지 않는다(홈페이지 BGM 그대로).
+ * 내용만 바뀌고 key는 같을 때(저장 후 갱신 등)는 곡을 갈아 끼우지 않고 목록만 갱신된다.
+ */
+export function usePageBgm(key: string | undefined, bgm: PageBgm | undefined) {
+  const { setPageBgm } = useBgm();
+  // 내용이 같으면 효과를 다시 돌리지 않도록 직렬화해 비교
+  const sig = bgm ? JSON.stringify(bgm) : '';
+  useEffect(() => {
+    if (!key || !bgm) return;
+    setPageBgm({ key, bgm });
+    return () => setPageBgm(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, sig, setPageBgm]);
 }

@@ -19,6 +19,7 @@ import { CroppedBlobImg, CropEditor, type CropValue } from '@/components/ui/Crop
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useSectionTitle } from '@/lib/sectionStore';
 import { ConfirmModal } from '@/components/ui/Modal';
+import { usePageBgm } from '@/lib/bgmStore';
 import { GalleryViewer } from '@/components/gallery/GalleryViewer';
 import type { BackupPost } from '@/lib/galleryStore';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
@@ -243,6 +244,9 @@ function CharDetailInner() {
   // (chars/[id]/layout.tsx)이 계속 맡고 있어, 여기서는 AU가 기본과 다른 색을 쓸 때만
   // "얹어서" 덮어쓴다. 벗어날 때도 null이 아니라 레이아웃의 기본색으로 돌려줘야
   // 상세↔갤러리 이동 때 배경이 깜빡이던 문제가 재발하지 않는다 (v2.7)
+  // 이 캐릭터 전용 BGM — 들어오면 플레이어가 이 BGM으로, 나가면 홈페이지 BGM으로 (열람 권한이 없으면 걸지 않는다)
+  const bgmAllowed = !!ch && !(ch.visibility === 'private' && !isAdmin) && !(ch.visibility === 'member' && !user);
+  usePageBgm(bgmAllowed ? `char:${ch!.id}` : undefined, bgmAllowed ? ch!.bgm : undefined);
   const { setPageTheme, setPageBgImage } = useTheme();
   const baseColor = ch?.themeMode === 'custom' ? ch.color : null;
   const auColor = auRegistered && eff?.themeMode === 'custom' ? eff.color : null;

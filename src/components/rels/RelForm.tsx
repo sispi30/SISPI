@@ -20,8 +20,11 @@ import { useConfirmDelete } from '@/components/ui/Modal';
 import { fileDrop } from '@/lib/dnd';
 import { useToast } from '@/components/ui/Toast';
 import { RelLinkBoard } from '@/components/rels/RelLinkBoard';
+import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
+import type { PageBgm } from '@/lib/bgmStore';
 
 export interface RelFormValue {
+  bgm?: PageBgm;             // 이 자관 페이지 전용 BGM (v5.9) — 없으면 홈페이지 BGM
   slug?: string;             // 페이지 주소 /rels/{slug} (v1.9 — 신규 등록 시, 비우면 자동 id)
   name: string;
   catchphrase: string;
@@ -338,6 +341,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const auObj = auId ? initial?.aus.find(a => a.id === auId) : undefined;
 
   const [kind, setKind] = useState<'pair' | 'multi'>(initial?.kind ?? 'pair');
+  const [bgm, setBgm] = useState<PageBgm | undefined>(initial?.bgm);
   const [name, setName] = useState(initial?.name ?? '');
   // 페이지 주소 /rels/{slug} — 신규는 비우면 자동(id). 수정에서도 바꿀 수 있다 (v2.0 사용자 요청)
   const [slug, setSlug] = useState(initial?.slug ?? '');
@@ -583,6 +587,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       auName: auObj ? auName.trim() : undefined,
       qaHide: qaHide || undefined,
       linkBoard: linkBoard === 'session' ? 'session' : undefined,
+      bgm: bgm && bgm.playlists.length ? bgm : undefined,
       fulls: pairMembers.length
         ? Object.fromEntries(await Promise.all(pairMembers.map(async m => {
           const d = fulls[m.charId];
@@ -1129,6 +1134,14 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
         {/* 상세 하단 연동 리스트 선택 + 연동 항목 검색 — 로그 백업 / 세션 게시판.
             자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
         {!auObj && <RelLinkBoard relId={initial?.id} mode={linkBoard} onMode={setLinkBoard} />}
+
+        {/* 이 자관 페이지 전용 BGM (v5.9) — 환경설정 BGM과 같은 편집 화면. 자관 전체 설정이라 AU 편집에서는 두지 않는다.
+            들어오면 플레이어가 이 BGM으로 바뀌고, 나가면 홈페이지 BGM으로 돌아간다 */}
+        {!auObj && (
+          <div style={{ marginTop: 22 }}>
+            <PageBgmEditor value={bgm} onChange={setBgm} />
+          </div>
+        )}
       </div>
 
       {/* 우: 기본 정보 + 저장 */}

@@ -3,6 +3,7 @@
 // 하단: TIMELINE / QUESTIONS 탭 (v1.8) + 역극·로그 연동 리스트 · 다인(3인+): 멤버 리스트형
 // 관리자: 멤버 추가(내/상대 캐릭터) · 타임라인 항목 추가 · 질문 추가
 import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { usePageBgm } from '@/lib/bgmStore';
 import { createPortal } from 'react-dom';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
@@ -403,6 +404,10 @@ export default function RelDetailPage() {
 
   // 별명 주소로도 열린다 (v2.0 사용자 요청 — 주소를 나중에 바꿔도 옛 주소가 살아 있게)
   const rel = findByKey(rels, id);
+
+  // 이 자관 전용 BGM — 들어오면 플레이어가 이 BGM으로, 나가면 홈페이지 BGM으로 (열람 권한이 없으면 걸지 않는다)
+  const bgmAllowed = !!rel && !(rel.visibility === 'private' && !isAdmin) && !(rel.visibility === 'member' && !user);
+  usePageBgm(bgmAllowed ? `rel:${rel!.id}` : undefined, bgmAllowed ? rel!.bgm : undefined);
 
   // 자관별 페이지 테마 (4.18 방식) — 별도 테마컬러면 홈 전체 팔레트를 임시 전환, 벗어나면 원복.
   // AU별 (v1.9): AU에 테마를 지정했으면 그것, 미지정이면 base(원본) 테마 따라가기

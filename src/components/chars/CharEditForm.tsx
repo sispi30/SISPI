@@ -17,6 +17,8 @@ import { RichEditor } from '@/components/ui/RichEditor';
 import { ColorField } from '@/components/ui/ColorField';
 import { CropEditor, CropValue, CropImg } from '@/components/ui/CropEditor';
 import { DragList } from '@/components/ui/DragList';
+import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
+import type { PageBgm } from '@/lib/bgmStore';
 import { useConfirmDelete } from '@/components/ui/Modal';
 import { SymbolInput } from '@/components/ui/SymbolInput';
 import { fileDrop } from '@/lib/dnd';
@@ -30,6 +32,7 @@ interface ArtItem { id: string; ref?: string; url?: string; file?: File }
 
 /** 탭 목록 아래 "갤러리" 항목 전용 화면으로 쓰는 view 값 (탭 id와 겹치지 않는 고정 문자열) */
 const GALLERY_VIEW = '__gallery__';
+const BGM_VIEW = '__bgm__';
 /** 탭 목록 아래 "TRPG 기록" 항목 전용 화면으로 쓰는 view 값 */
 const TRPG_VIEW = '__trpg__';
 
@@ -151,6 +154,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [lb, setLb] = useState<number | null>(null);   // 아트 썸네일 클릭 → 원본 보기
   // 화면 전환: 메인 폼 / 탭 전용 편집 화면
   const [view, setView] = useState<'main' | string>('main');
+  // 이 캐릭터 상세 페이지 전용 BGM (v5.9) — 곡이 없으면 저장 시 비운다(홈페이지 BGM 그대로)
+  const [bgm, setBgm] = useState<PageBgm | undefined>(initial?.bgm);
 
   // 상세 배경 이미지 (v5.8 사용자 요청) — 자관의 배경 이미지·환경설정의 배경 변경과 같은 방식(업로드 + 블러)
   const initBgId = initial?.bgImgId;
@@ -219,6 +224,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       bgBlur: (bgFile || (!bgRemoved && initBgId)) ? bgBlur : undefined,
       own: initial?.own ?? true,
       grants: grants.length ? grants : undefined,
+      // AU 편집은 base 소관이라 건드리지 않는다 · 재생목록이 하나도 없으면 비움
+      bgm: auMode ? initial?.bgm : (bgm && bgm.playlists.length ? bgm : undefined),
     });
   };
 
@@ -257,6 +264,21 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         onBack={() => setView('main')} />
       {del.element}
     </>;
+  }
+
+  /* ---------- 페이지 BGM 전용 편집 화면 (v5.9) ---------- */
+  if (view === BGM_VIEW && !auMode) {
+    return (
+      <div className="panel" style={{ padding: 24, display: 'grid', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button className="btn btn-ghost" onClick={() => setView('main')}>‹ 돌아가기</button>
+          <b style={{ fontSize: 14 }}>BGM 편집</b>
+          <span className="hint" style={{ margin: 0 }}>이 화면의 내용은 프로필 [SAVE] 시 함께 저장됩니다</span>
+        </div>
+        <PageBgmEditor value={bgm} onChange={setBgm} />
+        <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={() => setView('main')}>완료 — 돌아가기</button>
+      </div>
+    );
   }
 
   /* ---------- TRPG 기록 연동 화면 (v2.8) — 플레이기록 게시판과 즉시 연동(저장 대기 없음) ---------- */
@@ -439,6 +461,21 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
               ＋ ADD TRPG
             </button>
           )
+        )}
+
+        {/* 이 캐릭터 페이지 전용 BGM (v5.9) — 환경설정 BGM과 같은 편집 화면. 들어오면 이 BGM, 나가면 홈페이지 BGM */}
+        {!auMode && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#eef0f2', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>♪</span>
+            <b style={{ fontSize: 13 }}>BGM</b>
+            <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>
+              {bgm && bgm.playlists.length
+                ? `재생목록 ${bgm.playlists.length}개 · ${bgm.playlists.reduce((n, p) => n + p.tracks.length, 0)}곡`
+                : '없음 — 홈페이지 BGM 사용'}
+            </small>
+            <button className="btn btn-dark" style={{ marginLeft: 'auto', height: 27, padding: '0 12px', fontSize: 11 }}
+              onClick={() => setView(BGM_VIEW)}>편집 ›</button>
+          </div>
         )}
 
         {/* 회원 권한 — 역극 플레이 / 편집까지 (3차 회원-캐릭터 연결, v1.9) — AU 편집에선 base 소관.

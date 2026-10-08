@@ -108,7 +108,7 @@ function MoodCard({ pl, onOpen }: { pl: BgmPlaylist; onOpen: () => void }) {
 }
 
 export function BgmPlayer() {
-  const { state } = useBgm();
+  const { state, source } = useBgm();
   const { playlists, settings } = state;
 
   // 실제로 "재생 중"인 재생목록/곡
@@ -381,6 +381,42 @@ export function BgmPlayer() {
     return remove;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.autoplay, settings.enabled, hasAnyTrack]);
+
+  /* ---------- 페이지별 BGM 전환 — 자관·캐릭터 상세에 들어가면 그 페이지 BGM으로, 나가면 홈페이지 BGM으로 ----------
+     재생 중이었다면 새 BGM의 첫 곡(홈으로 돌아올 때는 떠나기 전 곡)부터 이어서 재생하고,
+     멈춰 있었다면 재생하지 않고 재생 화면만 새 BGM으로 바꾼다 (첫 상호작용 자동 재생 대기는 그대로 유지) */
+  const sourceRef = useRef(source);
+  const homeMemoRef = useRef<{ plId: string | null; idx: number } | null>(null);
+  useEffect(() => {
+    if (sourceRef.current === source) return;
+    const prevSource = sourceRef.current;
+    sourceRef.current = source;
+    const wasPlaying = playingRef.current;
+    if (prevSource === 'home') homeMemoRef.current = { plId: playlistIdRef.current, idx: idxRef.current };
+
+    const list = plsRef.current;
+    let startPl = list.find(p => p.tracks.some(t => t.videoId));
+    let startIdx = startPl ? startPl.tracks.findIndex(t => t.videoId) : -1;
+    if (source === 'home' && homeMemoRef.current) {
+      const m = homeMemoRef.current;
+      const pl = list.find(p => p.id === m.plId);
+      if (pl && pl.tracks[m.idx]?.videoId) { startPl = pl; startIdx = m.idx; }
+    }
+
+    // 이전 BGM 정리
+    stopTick();
+    try { playerRef.current?.pauseVideo(); } catch { /* 플레이어 준비 전 */ }
+    setPlaying(false);
+    startedRef.current = false;
+    setProgress({ cur: 0, total: 0 });
+    setPlaylistId(null);
+    setIdx(-1);
+    if (startPl) { setViewPlaylistId(startPl.id); setView('tracks'); }
+    else { setViewPlaylistId(null); setView('browse'); }
+
+    if (wasPlaying && startPl && startIdx > -1) playAtRef.current(startPl.id, startIdx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
 
   const onVolDrag = (e: React.PointerEvent) => {
     e.preventDefault();
