@@ -2,7 +2,7 @@
 // BGM 저장소 (5.3) — 재생목록(무드 카드) 구조 · localStorage(→ Supabase 이전 예정)
 // v1: 플랫 곡 목록 하나 → v2: 여러 재생목록(무드 카드), 각 재생목록에 곡 여러 개.
 // 구버전 데이터('tracks' 배열만 있던 시절)는 최초 로드 시 "BGM"이라는 재생목록 하나로 자동 이관한다.
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { newId } from './postStore';
 import { getRawSetting, setSetting } from './settingStore';
 
@@ -200,7 +200,15 @@ export function extractDominantColorFromUrl(url: string): Promise<string | null>
 export function BgmStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<BgmState>(DEFAULT_STATE);
   // 지금 보고 있는 페이지의 개별 BGM (저장하지 않는 임시 덮어쓰기)
-  const [pageBgm, setPageBgm] = useState<{ key: string; bgm: PageBgm } | null>(null);
+  const [pageBgm, setPageBgmState] = useState<{ key: string; bgm: PageBgm } | null>(null);
+  // 페이지에서 페이지로 넘어갈 때(자관 상세 → 자관 갤러리 등) 이전 페이지가 풀리고 다음 페이지가 거는 사이에
+  // 아주 짧게 비는 순간이 있을 수 있다 — 풀 때는 잠깐 미뤄서, 그 사이에 다시 걸리면 BGM이 끊기지 않게 한다.
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setPageBgm = useCallback((v: { key: string; bgm: PageBgm } | null) => {
+    if (clearTimer.current) { clearTimeout(clearTimer.current); clearTimer.current = null; }
+    if (v) setPageBgmState(v);
+    else clearTimer.current = setTimeout(() => { clearTimer.current = null; setPageBgmState(null); }, 700);
+  }, []);
 
   // 플레이어가 읽는 값 — 곡이 하나도 없는 페이지 BGM은 없는 셈 치고 홈페이지 BGM을 그대로 쓴다
   const { effective, source } = useMemo(() => {

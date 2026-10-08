@@ -1,6 +1,7 @@
 'use client';
 // 자관 갤러리 (v6.0) — 상세 하단 좌측 칸을 갤러리로 바꿨을 때 「더보기」로 오는 페이지.
 // 홈페이지 갤러리 게시판처럼 묶음 카드를 보고(단일=전체화면 뷰어, 로그/세로=상세), 관리자는 여기서 바로 편집한다.
+// 자관 상세의 배경(테마색·그라데이션·배경 이미지)과 BGM을 그대로 가져온다.
 // 편집 방식은 캐릭터 갤러리와 같다(GalleryEditView) — 다만 변경 즉시 저장된다(별도 SAVE 없음).
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -8,6 +9,7 @@ import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
 import { Relation, REL_SEED, GalleryPost, galleryPostsOf, findByKey } from '@/lib/charStore';
 import { usePageBgm } from '@/lib/bgmStore';
+import { useRelPageStyle } from '@/components/rels/useRelPageStyle';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
 import { GalleryEditView } from '@/components/gallery/GalleryPostsEditor';
 import { PageTitle } from '@/components/ui/PageText';
@@ -23,6 +25,9 @@ export default function RelGalleryPage() {
   const allowed = !!rel && !(rel.visibility === 'private' && !isAdmin) && !(rel.visibility === 'member' && !user);
   // 자관 상세와 같은 BGM을 이어서 — 상세에서 이 페이지로 와도 음악이 끊기지 않는다
   usePageBgm(allowed ? `rel:${rel!.id}` : undefined, allowed ? rel!.bgm : undefined);
+
+  // 자관 상세와 같은 테마색·페이지 배경·배경 이미지(블러) — 설정을 그대로 따라간다
+  useRelPageStyle(rel, allowed);
 
   if (!loaded) return <section className="page" />;
   if (!rel || !allowed) {
