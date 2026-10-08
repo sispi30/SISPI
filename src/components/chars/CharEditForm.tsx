@@ -33,6 +33,7 @@ interface ArtItem { id: string; ref?: string; url?: string; file?: File }
 
 /** 탭 목록 아래 "갤러리" 항목 전용 화면으로 쓰는 view 값 (탭 id와 겹치지 않는 고정 문자열) */
 const GALLERY_VIEW = '__gallery__';
+const REL_VIEW = '__rel__';
 const BGM_VIEW = '__bgm__';
 /** 탭 목록 아래 "TRPG 기록" 항목 전용 화면으로 쓰는 view 값 */
 const TRPG_VIEW = '__trpg__';
@@ -157,6 +158,10 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [view, setView] = useState<'main' | string>('main');
   // 이 캐릭터 상세 페이지 전용 BGM (v5.9) — 곡이 없으면 저장 시 비운다(홈페이지 BGM 그대로)
   const [bgm, setBgm] = useState<PageBgm | undefined>(initial?.bgm);
+  // REL(관계) 탭 (v6.8) — 켜면 상세 화면에 REL 버튼. 직접 지정한 관계만 여기서 정하고, 자관 관계는 자동으로 모인다
+  const [relOn, setRelOn] = useState<boolean>(!!initial?.relEnabled);
+  const [relLinks, setRelLinks] = useState<{ charId: string; label?: string }[]>(initial?.relLinks ?? []);
+  const [allChars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   // 자관 갤러리 연동 태그 (v6.3) — 이 캐릭터가 멤버인 자관 갤러리의 태그 중 이 캐릭터 갤러리에도 보일 것
   const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
   const [tagLinks, setTagLinks] = useState<string[]>(initial?.galleryTagLinks ?? []);
@@ -232,6 +237,9 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       // AU 편집은 base 소관이라 건드리지 않는다 · 재생목록이 하나도 없으면 비움
       bgm: auMode ? initial?.bgm : (bgm && bgm.playlists.length ? bgm : undefined),
       galleryTagLinks: auMode ? initial?.galleryTagLinks : (tagLinks.length ? tagLinks : undefined),
+      // REL 탭 — AU 편집은 base 소관이라 건드리지 않는다
+      relEnabled: auMode ? initial?.relEnabled : (relOn || undefined),
+      relLinks: auMode ? initial?.relLinks : (relOn && relLinks.some(l => l.charId) ? relLinks.filter(l => l.charId) : undefined),
     });
   };
 
@@ -259,6 +267,51 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         onBack={() => setView('main')} />
       {del.element}
     </>;
+  }
+
+  /* ---------- REL(관계) 탭 전용 편집 화면 (v6.8) ---------- */
+  if (view === REL_VIEW && relOn && !auMode) {
+    const others = allChars.filter(c => c.id !== initial?.id);
+    const patchLink = (i: number, p: Partial<{ charId: string; label?: string }>) => setRelLinks(l => l.map((x, k) => (k === i ? { ...x, ...p } : x)));
+    return (
+      <div className="panel" style={{ padding: 24, display: 'grid', gap: 16 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button className="btn btn-ghost" onClick={() => setView('main')}>‹ 돌아가기</button>
+          <b style={{ fontSize: 14 }}>RELATIONS 편집</b>
+          <span className="hint" style={{ margin: 0 }}>이 화면의 내용은 프로필 [SAVE] 시 함께 저장됩니다</span>
+          <button className="btn btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }}
+            onClick={() => { setRelOn(false); setView('main'); }}>RELATIONS 삭제</button>
+        </div>
+        <p className="hint" style={{ margin: 0 }}>
+          상세 화면 <b>RELATIONS</b> 버튼에서 관계 카드가 보입니다. 이 캐릭터가 멤버인 <b>자관(페어는 Pair · 다인관은 Group)</b>은 자동으로 모이고,
+          아래에서 <b>직접 지정하는 관계</b>를 더할 수 있습니다.
+        </p>
+
+        <div style={{ display: 'grid', gap: 8 }}>
+          <label className="k-label" style={{ margin: 0 }}>
+            직접 지정한 관계 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상대 캐릭터와 꼬리표(카드 왼쪽 위에 표시, 예: 라이벌)</span>
+          </label>
+          {relLinks.length > 0 && (
+            <DragList items={relLinks.map((l, i) => ({ ...l, _k: i }))} keyOf={l => `${l.charId}:${l._k}`}
+              onReorder={list => setRelLinks(list.map(({ _k, ...l }) => l))}
+              render={(l, i) => (
+                <div className="upfile-row" style={{ width: '100%' }}>
+                  <span className="drag-h">⠿</span>
+                  <KSelect minWidth={170} placeholder="상대 캐릭터 선택" value={l.charId}
+                    options={others.map(c => ({ value: c.id, label: c.name }))}
+                    onChange={v => patchLink(i, { charId: v })} />
+                  <KInput placeholder="관계 꼬리표 (선택)" value={l.label ?? ''} style={{ flex: 1, minWidth: 120 }}
+                    onChange={e => patchLink(i, { label: e.target.value })} />
+                  <span className="fx" data-tip="제거" onClick={() => setRelLinks(list => list.filter((_, k) => k !== i))}>✕</span>
+                </div>
+              )} />
+          )}
+          <button className="btn btn-ghost" style={{ justifySelf: 'start', padding: '6px 14px', fontSize: 11 }}
+            onClick={() => setRelLinks(l => [...l, { charId: '' }])}>＋ 관계 추가</button>
+        </div>
+        <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={() => setView('main')}>완료 — 돌아가기</button>
+      </div>
+    );
   }
 
   /* ---------- 갤러리 전용 편집 화면 (v2.5) ---------- */
@@ -447,6 +500,23 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
             ＋ ADD GALLERY
           </button>
         )}
+
+        {/* RELATIONS(관계) 탭 (v6.8) — GALLERY와 같은 방식: 추가하면 상세 화면에 RELATIONS 버튼이 생긴다. 신규 캐릭터도 가능(자관 연동은 저장 후 자동) */}
+        {!auMode && (relOn ? (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#eef0f2', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>♡</span>
+            <b style={{ fontSize: 13 }}>RELATIONS</b>
+            <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>
+              {relLinks.some(l => l.charId) ? `직접 관계 ${relLinks.filter(l => l.charId).length}개` : '자관 관계 자동 표시'}
+            </small>
+            <button className="btn btn-dark" style={{ marginLeft: 'auto', height: 27, padding: '0 12px', fontSize: 11 }}
+              onClick={() => setView(REL_VIEW)}>편집 ›</button>
+          </div>
+        ) : (
+          <button className="btn btn-ghost" style={addBtn} onClick={() => { setRelOn(true); setView(REL_VIEW); }}>
+            ＋ ADD RELATIONS
+          </button>
+        ))}
 
         {/* TRPG 참여 세션 (v2.8) — 상세 화면 TRPG 버튼(EDIT·DELETE·GALLERY와 같은 자리·모양)으로
             보여주는 탭. 신규 캐릭터는 저장 전이라 안정된 id가 없어 연동을 켤 수 없다.

@@ -86,6 +86,11 @@ export interface Character {
   galleryPosts?: GalleryPost[];
   /** 캐릭터 갤러리에 연동해 보일 자관 갤러리 태그 (v6.3) — 이 캐릭터가 멤버인 자관의 갤러리 묶음 중 이 태그가 달린 것이 함께 보인다 */
   galleryTagLinks?: string[];
+  /** REL(관계) 탭 (v6.8) — 켜져 있으면 상세 화면에 REL 버튼이 보인다.
+   *  내용은 따로 저장하지 않고 자관(페어·다인관)에서 이 캐릭터가 멤버인 것 +
+   *  직접 지정한 관계(relLinks)를 그때그때 모아 보여준다 (GALLERY·TRPG 탭과 같은 방식) */
+  relEnabled?: boolean;
+  relLinks?: { charId: string; label?: string }[];   // 직접 지정한 관계 — 상대 캐릭터 + 꼬리표(예: 라이벌)
   /** 이 캐릭터 상세 페이지에서만 나오는 BGM (v5.9) — 환경설정 BGM과 같은 구조, 페이지를 나가면 홈페이지 BGM으로 복귀 */
   bgm?: import('./bgmStore').PageBgm;
   /** TRPG 참여 세션 탭 (v2.8) — 켜져 있으면 상세 화면에 TRPG 버튼이 보인다.
@@ -663,4 +668,51 @@ export function charGalleryPosts(c: Character, rels: Relation[], viewer: { isAdm
     }
   }
   return [...own, ...linked];
+}
+
+
+/* ---------- REL(관계) 탭 (v6.8) — 참고: OC-homepage의 관계 탭(페어 자동 목록) ---------- */
+export interface RelCardInfo {
+  key: string; name: string; sub: string;
+  label?: string;          // 카드 왼쪽 위 꼬리표 (CP·관계명)
+  thumbRef?: string;       // 이미지 (IndexedDB 키)
+  thumbClass?: string;     // 이미지가 없을 때 쓰는 플레이스홀더
+  href: string;
+}
+export interface RelGroupInfo { name: string; cards: RelCardInfo[] }
+
+/** 이 캐릭터의 관계 그룹들 — Pair(페어 자관) · Group(다인관) · 직접 지정 순.
+ *  자관은 이 캐릭터가 멤버인 것, 열람 권한이 없는 자관·캐릭터는 뺀다 */
+export function charRelGroups(ch: Character, chars: Character[], rels: Relation[], viewer: { isAdmin: boolean; loggedIn: boolean }): RelGroupInfo[] {
+  const ok = (v: Visibility) => v === 'public' || (v === 'member' && viewer.loggedIn) || viewer.isAdmin;
+  const charOf = (id: string) => chars.find(c => c.id === id);
+  const charHref = (c: Character) => `/chars/${c.slug ?? c.id}`;
+  const pairs: RelCardInfo[] = [];
+  const groups: RelCardInfo[] = [];
+  for (const r of rels) {
+    if (!r.members.some(m => m.charId === ch.id) || !ok(r.visibility)) continue;
+    const others = r.members.filter(m => m.charId !== ch.id).map(m => charOf(m.charId)).filter((c): c is Character => !!c);
+    const isPair = (r.kind ?? (r.members.length === 2 ? 'pair' : 'multi')) === 'pair';
+    const card: RelCardInfo = {
+      key: `rel:${r.id}`, name: r.name,
+      sub: others.length ? `with ${others.map(o => o.name).join(', ')}` : '',
+      label: r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : undefined,
+      thumbRef: r.thumbId ?? others[0]?.thumbId, thumbClass: others[0]?.thumbClass ?? r.thumbClass,
+      href: `/rels/${r.slug ?? r.id}`,
+    };
+    (isPair ? pairs : groups).push(card);
+  }
+  const out: RelGroupInfo[] = [];
+  if (pairs.length) out.push({ name: 'Pair', cards: pairs });
+  if (groups.length) out.push({ name: 'Group', cards: groups });
+
+  const manual: RelCardInfo[] = [];
+  for (const l of ch.relLinks ?? []) {
+    const c = charOf(l.charId);
+    if (!c || c.id === ch.id || !ok(c.visibility)) continue;
+    manual.push({ key: `link:${c.id}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass, href: charHref(c) });
+  }
+  if (manual.length) out.push({ name: '관계', cards: manual });
+
+  return out;
 }

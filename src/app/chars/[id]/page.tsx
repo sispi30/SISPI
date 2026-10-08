@@ -7,7 +7,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, charGalleryPosts, galleryPostsOf, hasGallery} from '@/lib/charStore';
+import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, charGalleryPosts, charRelGroups, galleryPostsOf, hasGallery} from '@/lib/charStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -21,6 +21,7 @@ import { useSectionTitle } from '@/lib/sectionStore';
 import { ConfirmModal } from '@/components/ui/Modal';
 import { usePageBgm } from '@/lib/bgmStore';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
+import { RelTab } from '@/components/chars/RelTab';
 import type { BackupPost } from '@/lib/galleryStore';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
 
@@ -29,6 +30,7 @@ import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
 const TRPG_TAB = '__trpg__';
 /** 갤러리도 TRPG와 같은 방식 — 새 페이지로 가지 않고 우측 패널만 이 값으로 교체한다 (v3.1) */
 const GALLERY_TAB = '__gallery__';
+const REL_TAB = '__rel__';
 
 /** TRPG 탭 내용 — 플레이기록 게시판에서 이 캐릭터가 참여자로 등록된 기록만 모아 보여준다.
  *  단일 출처(PlayRecord.charIds)라 플레이기록 게시판에서 고치면 여기도 자동으로 반영된다 (v2.8) */
@@ -114,7 +116,7 @@ function CharDetailInner() {
   const params = useSearchParams();
   const [tab, setTab] = useState(() => {
     const t = params.get('tab');
-    return t === 'trpg' ? TRPG_TAB : t === 'gallery' ? GALLERY_TAB : 'basic';
+    return t === 'trpg' ? TRPG_TAB : t === 'gallery' ? GALLERY_TAB : t === 'rel' ? REL_TAB : 'basic';
   });
   const [artIdx, setArtIdx] = useState(0);
   const [delAsk, setDelAsk] = useState(false);   // 캐릭터 삭제 확인
@@ -232,6 +234,10 @@ function CharDetailInner() {
               상단 버튼 위치를 PROFILE 화면과 통일) */}
           {hasGallery(ch) && (
             <button className="btn btn-dark" onClick={() => setTab(GALLERY_TAB)}>GALLERY</button>
+          )}
+          {/* 관계(REL) 탭 (v6.8) — GALLERY와 같은 방식. 자관(페어·다인관)·직접 지정한 관계를 카드로 보여준다 */}
+          {ch.relEnabled && (
+            <button className="btn btn-dark" onClick={() => setTab(REL_TAB)}>RELATIONS</button>
           )}
           {/* TRPG 참여 세션 — 새 페이지로 가지 않고 새 탭 전환과 같은 방식으로 우측 패널만 교체 (v2.8) */}
           {(ch.trpgEnabled || hasTrpgLinks) && (
@@ -386,6 +392,11 @@ function CharDetailInner() {
             <>
               <h3 className="tab-tt">TRPG</h3>
               <TrpgSessionsList charId={ch.id} order={ch.trpgOrder} records={playRecords} chars={chars} />
+            </>
+          ) : tab === REL_TAB ? (
+            <>
+              <h3 className="tab-tt">Relations</h3>
+              <RelTab groups={charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user })} />
             </>
           ) : tab === GALLERY_TAB ? (
             <>
