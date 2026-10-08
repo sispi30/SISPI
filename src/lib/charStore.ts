@@ -488,6 +488,10 @@ export interface Relation {
   id: string;
   /** 이 자관 페이지에서만 나오는 BGM (v5.9) — 캐릭터와 같은 방식 */
   bgm?: import('./bgmStore').PageBgm;
+  /** 상세 하단 좌측 칸 — 역극 목록(기본) / 갤러리 (v6.0). 갤러리면 작은 썸네일로 보이고 더보기에서 보기·편집 */
+  leftBoard?: 'rp' | 'gallery';
+  /** 자관 갤러리 사진 묶음 (v6.0) — 캐릭터 갤러리와 같은 구조 */
+  galleryPosts?: GalleryPost[];
   /** 페이지 주소 별명 (v2.0 사용자 요청) — /rels/{별명}. 나중에 수정 화면에서 바꿀 수 있다.
    *  참조(AU 프로필 키·로그 연동 등)는 언제나 id로 저장되므로 바꿔도 끊어지지 않는다. */
   slug?: string;

@@ -24,6 +24,7 @@ import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
 import type { PageBgm } from '@/lib/bgmStore';
 
 export interface RelFormValue {
+  leftBoard?: 'rp' | 'gallery';   // 상세 하단 좌측 칸 — 역극(기본) / 갤러리 (v6.0)
   bgm?: PageBgm;             // 이 자관 페이지 전용 BGM (v5.9) — 없으면 홈페이지 BGM
   slug?: string;             // 페이지 주소 /rels/{slug} (v1.9 — 신규 등록 시, 비우면 자동 id)
   name: string;
@@ -342,6 +343,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
 
   const [kind, setKind] = useState<'pair' | 'multi'>(initial?.kind ?? 'pair');
   const [bgm, setBgm] = useState<PageBgm | undefined>(initial?.bgm);
+  const [leftBoard, setLeftBoard] = useState<'rp' | 'gallery'>(initial?.leftBoard === 'gallery' ? 'gallery' : 'rp');
   const [name, setName] = useState(initial?.name ?? '');
   // 페이지 주소 /rels/{slug} — 신규는 비우면 자동(id). 수정에서도 바꿀 수 있다 (v2.0 사용자 요청)
   const [slug, setSlug] = useState(initial?.slug ?? '');
@@ -588,6 +590,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       qaHide: qaHide || undefined,
       linkBoard: linkBoard === 'session' ? 'session' : undefined,
       bgm: bgm && bgm.playlists.length ? bgm : undefined,
+      leftBoard: leftBoard === 'gallery' ? 'gallery' : undefined,
       fulls: pairMembers.length
         ? Object.fromEntries(await Promise.all(pairMembers.map(async m => {
           const d = fulls[m.charId];
@@ -1133,6 +1136,22 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
 
         {/* 상세 하단 연동 리스트 선택 + 연동 항목 검색 — 로그 백업 / 세션 게시판.
             자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
+        {/* 상세 하단 좌측 칸 (v6.0) — 역극 목록 대신 갤러리를 보일 수 있다. 자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
+        {!auObj && (
+          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+            <label className="k-label" style={{ margin: 0 }}>상세 페이지 하단 좌측 칸</label>
+            <div className="mini-seg" style={{ justifySelf: 'start' }}>
+              <button type="button" className={leftBoard === 'rp' ? 'on' : ''} onClick={() => setLeftBoard('rp')}>역극</button>
+              <button type="button" className={leftBoard === 'gallery' ? 'on' : ''} onClick={() => setLeftBoard('gallery')}>갤러리</button>
+            </div>
+            <p className="hint" style={{ margin: 0 }}>
+              {leftBoard === 'gallery'
+                ? '갤러리를 고르면 상세에서 작은 썸네일로 보이고, 「더보기」에서 갤러리를 보고 편집(묶음 추가·사진 첨부)할 수 있습니다'
+                : '이 자관 기반으로 진행된 역극 목록이 보입니다'}
+            </p>
+          </div>
+        )}
+
         {!auObj && <RelLinkBoard relId={initial?.id} mode={linkBoard} onMode={setLinkBoard} />}
 
         {/* 이 자관 페이지 전용 BGM (v5.9) — 환경설정 BGM과 같은 편집 화면. 자관 전체 설정이라 AU 편집에서는 두지 않는다.

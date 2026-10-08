@@ -4,6 +4,7 @@
 // 관리자: 멤버 추가(내/상대 캐릭터) · 타임라인 항목 추가 · 질문 추가
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { usePageBgm } from '@/lib/bgmStore';
+import { RelGalleryMini } from '@/components/rels/RelGalleryMini';
 import { createPortal } from 'react-dom';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
@@ -14,7 +15,7 @@ import {
   auMember, auStyle, fullShadow, hasRelGrant,
   RelAu, RelCpTag, charWithAu, charGrant,
   QaAnswerRow, QA_KEY, QA_SEED, MergedAnswer, answersFor,
-  findByKey, charPath,
+  findByKey, charPath, galleryPostsOf,
   HeroSticker, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID,
 } from '@/lib/charStore';
 import { isPlainSpec } from '@/lib/charRuleConfig';
@@ -1505,7 +1506,14 @@ export default function RelDetailPage() {
           AU마다 숨길 수 있다 (v2.0 사용자 요청 — AU 관리의 체크박스). 둘 다 숨기면 칸 자체가 없다 */}
       {!(au?.hideRp && au?.hideLog) && (
       <div className="g2" style={{ marginTop: 16 }}>
-        {!au?.hideRp && (
+        {!au?.hideRp && rel?.leftBoard === 'gallery' && (
+        <div className="panel widget" style={{ margin: 0, ...(au?.hideLog ? { gridColumn: '1/-1' } : null) }}>
+          <h4>갤러리 <span className="more" onClick={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}>더보기 ›</span></h4>
+          <RelGalleryMini ph={rel.thumbClass} onOpen={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}
+            posts={galleryPostsOf(rel).filter(p => p.visibility === 'public' || (p.visibility === 'member' && !!user) || isAdmin)} />
+        </div>
+        )}
+        {!au?.hideRp && rel?.leftBoard !== 'gallery' && (
         <div className="panel widget" style={{ margin: 0, ...(au?.hideLog ? { gridColumn: '1/-1' } : null) }}>
           <h4>역극 <span className="more" onClick={() => router.push('/rp')}>더보기 ›</span></h4>
           {relRooms.length > 0 ? relRooms.map(rm => (
@@ -1706,7 +1714,7 @@ export default function RelDetailPage() {
               </div>
               {/* 상세 하단의 연동 리스트 숨김 (v2.0 사용자 요청) — 이 AU를 보는 동안만 적용 */}
               <div style={{ display: 'flex', gap: 16 }}>
-                <KCheck label={<span style={{ fontSize: 11.5 }}>역극 리스트 숨김</span>} checked={!!a.hideRp}
+                <KCheck label={<span style={{ fontSize: 11.5 }}>{rel.leftBoard === 'gallery' ? '갤러리' : '역극'} 리스트 숨김</span>} checked={!!a.hideRp}
                   onChange={v => updateRel({ aus: rel.aus.map(x => (x.id === a.id ? { ...x, hideRp: v || undefined } : x)) })} />
                 <KCheck label={<span style={{ fontSize: 11.5 }}>{rel.linkBoard === 'session' ? '세션' : '로그'} 리스트 숨김</span>} checked={!!a.hideLog}
                   onChange={v => updateRel({ aus: rel.aus.map(x => (x.id === a.id ? { ...x, hideLog: v || undefined } : x)) })} />

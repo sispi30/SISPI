@@ -55,6 +55,7 @@ export default function RelNewPage() {
             pageBgG1: v.pageBgG1, pageBgG2: v.pageBgG2, pageBgAngle: v.pageBgAngle,
             linkBoard: v.linkBoard,
             bgm: v.bgm,
+            leftBoard: v.leftBoard,
             members, thumbClass: '',
             illustMode: v.kind === 'pair' ? 'duo' : 'one',
             aus: [{ id: 'base', label: '원본', catchphrase: v.catchphrase }],
