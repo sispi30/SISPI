@@ -1226,13 +1226,17 @@ export default function RelDetailPage() {
         /* 다인 자관 — 프로토타입 multi-body: 좌 멤버 리스트(430px) + 우 그룹 일러 */
         <div className="multi-body" style={{ fontFamily: familyOf(auBodyFont) }}>
           <div className="panel flush" style={{ padding: '6px 0' }}>
-            {rel.members.map(m => {
-              const c = charOf(m.charId);
-              if (!c) return null;
+            {/* 멤버 순서 — 관리자는 ⠿ 핸들을 잡고 끌어 순서를 바꾼다 (v6.6). 이 순서가 이 페이지에 보이는 캐릭터 순서이고,
+                캐릭터가 삭제돼 카드가 안 뜨는 유령 멤버는 목록에서 빼고 뒤에 그대로 보존한다 */}
+            <DragList items={rel.members.filter(m => !!charOf(m.charId))} keyOf={m => m.charId} disabled={!isAdmin}
+              onReorder={list => updateRel({ members: [...list, ...rel.members.filter(m => !charOf(m.charId))] })}
+              render={m => {
+              const c = charOf(m.charId)!;
               const unreg = auUnregOf(m.charId);
               return (
                 <div key={m.charId} className="mrow" style={{ ['--cc' as string]: rgbTriple(c.color) }}
                   onClick={() => router.push(charHref(m.charId))}>
+                  {isAdmin && <span className="drag-h" data-tip="끌어서 순서 변경" onClick={e => e.stopPropagation()}>⠿</span>}
                   <div className={`face ph ${c.thumbClass}`}>
                     {!unreg && (c.arts?.[0] ?? c.thumbId) && (
                       <CroppedBlobImg fileRef={c.arts?.[0] ?? c.thumbId} crop={c.thumbCrop} ph={c.thumbClass} />
@@ -1263,7 +1267,7 @@ export default function RelDetailPage() {
                   )}
                 </div>
               );
-            })}
+            }} />
             {isAdmin && rel.members.length < 6 && (
               <div className="mrow add" onClick={() => setMemberOpen(true)}>＋ ADD MEMBER (최대 6인)</div>
             )}
