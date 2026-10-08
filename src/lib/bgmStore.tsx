@@ -35,6 +35,8 @@ export interface BgmSettings {
   autoplay: boolean;             // 입장 후 첫 상호작용 시 자동 재생
   /** 페이지를 넘나들어 BGM이 바뀌었다가 돌아왔을 때 — 처음부터 다시 / 그 BGM에서 재생하던 구간부터 이어서 */
   switchMode: 'restart' | 'resume';
+  /** 곡이 바뀔 때 현재 곡을 서서히 줄이고 다음 곡을 서서히 키운다 (환경설정에서 켜고 끔) */
+  crossfade: boolean;
 }
 
 /** 페이지별 BGM (자관·캐릭터 상세) — 재생목록은 환경설정 BGM과 같은 구조이고,
@@ -51,7 +53,7 @@ interface BgmState { playlists: BgmPlaylist[]; settings: BgmSettings }
 
 const DEFAULT_SETTINGS: BgmSettings = {
   volume: 60, position: 'br', shuffle: false, crossPlaylist: false, repeat: 'all',
-  enabled: true, autoplay: true, switchMode: 'resume',
+  enabled: true, autoplay: true, switchMode: 'resume', crossfade: true,
 };
 
 const DEFAULT_STATE: BgmState = { playlists: [], settings: DEFAULT_SETTINGS };
@@ -90,6 +92,7 @@ function migrate(raw: unknown): BgmState {
         enabled: s.enabled !== false,
         autoplay: s.autoplay !== false,
         switchMode: s.switchMode === 'restart' ? 'restart' : 'resume',
+        crossfade: s.crossfade !== false,
       },
     };
   }
@@ -115,6 +118,7 @@ function migrate(raw: unknown): BgmState {
         enabled: s.enabled !== false,
         autoplay: s.autoplay !== false,
         switchMode: s.switchMode === 'restart' ? 'restart' : 'resume',
+        crossfade: s.crossfade !== false,
       },
     };
   }

@@ -3480,6 +3480,10 @@ function BgmPane() {
         </div>
       </div>
       <div className="set-row">
+        <div className="l"><b>곡 전환 크로스 페이드</b><small>켜면 곡이 바뀔 때(다음/이전 곡, 곡 선택, 페이지 BGM 전환) 듣던 곡이 서서히 작아졌다가 다음 곡이 서서히 커집니다</small></div>
+        <KToggle checked={state.settings.crossfade} onChange={v => setSettings({ crossfade: v })} />
+      </div>
+      <div className="set-row">
         <div className="l"><b>BGM이 바뀔 때</b><small>자관·캐릭터 페이지에 개별 BGM이 있을 때, 페이지를 넘나들어 노래가 바뀌었다가 그 BGM으로 돌아오면 · 이어서: 그 BGM에서 듣던 곡의 재생하던 구간부터 · 처음부터: 곡 처음부터</small></div>
         <div className="mini-seg">
           <button className={state.settings.switchMode !== 'restart' ? 'on' : ''}

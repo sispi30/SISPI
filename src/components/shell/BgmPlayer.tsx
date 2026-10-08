@@ -40,6 +40,7 @@ interface YTPlayer {
   playVideo: () => void;
   pauseVideo: () => void;
   setVolume: (v: number) => void;
+  getPlayerState: () => number;
   getCurrentTime: () => number;
   getDuration: () => number;
   destroy: () => void;
@@ -230,6 +231,26 @@ export function BgmPlayer() {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
   }
 
+  /* ---------- 페이드 (환경설정 「곡 전환 크로스 페이드」) ----------
+     곡이 바뀔 때 듣던 곡을 서서히 줄이고(FADE_OUT_MS) → 다음 곡을 0에서 서서히 키운다(FADE_IN_MS).
+     유튜브 플레이어 하나로 이어 붙이는 방식이라 두 곡이 겹쳐 나오지는 않는다 */
+  const FADE_OUT_MS = 700;
+  const FADE_IN_MS = 900;
+  const fadeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelFade = () => { if (fadeTimerRef.current) { clearInterval(fadeTimerRef.current); fadeTimerRef.current = null; } };
+  /** 볼륨을 현재 값에서 target()까지 ms 동안 올리거나 내린다. target은 매 단계 다시 읽어 슬라이더 변경을 따른다 */
+  const rampVolume = (from: number, target: () => number, ms: number, done?: () => void) => {
+    cancelFade();
+    const p = playerRef.current;
+    if (!p) { done?.(); return; }
+    const t0 = Date.now();
+    fadeTimerRef.current = setInterval(() => {
+      const k = Math.min(1, (Date.now() - t0) / ms);
+      try { p.setVolume(Math.round(from + (target() - from) * k)); } catch { /* 플레이어 정리됨 */ }
+      if (k >= 1) { cancelFade(); done?.(); }
+    }, 50);
+  };
+
   /* ---------- 재생 ---------- */
   const playAt = (plId: string | null, i: number, opts?: { follow?: boolean; startSeconds?: number }) => {
     const pl = plsRef.current.find(p => p.id === plId);
@@ -240,12 +261,31 @@ export function BgmPlayer() {
     startedRef.current = true;
     setProgress({ cur: opts?.startSeconds ?? 0, total: parseDurationText(t.duration) });
     if (opts?.follow !== false) { setViewPlaylistId(pl.id); setView('tracks'); }
-    if (playerRef.current) {
-      if (opts?.startSeconds && opts.startSeconds > 1) playerRef.current.loadVideoById({ videoId: t.videoId, startSeconds: opts.startSeconds });
-      else playerRef.current.loadVideoById(t.videoId);
-      playerRef.current.setVolume(volumeRef.current);
-      playerRef.current.playVideo();
-      setPlaying(true);
+    const p = playerRef.current;
+    if (p) {
+      const fade = settings.crossfade;
+      const load = () => {
+        if (opts?.startSeconds && opts.startSeconds > 1) p.loadVideoById({ videoId: t.videoId, startSeconds: opts.startSeconds });
+        else p.loadVideoById(t.videoId);
+        p.setVolume(fade ? 0 : volumeRef.current);
+        p.playVideo();
+        setPlaying(true);
+        if (fade) rampVolume(0, () => volumeRef.current, FADE_IN_MS);
+      };
+      // 지금 소리가 나고 있으면 먼저 줄인 뒤 바꾼다 (곡이 끝나서 넘어가는 경우는 줄일 소리가 없으니 바로 들어간다)
+      let audible = false;
+      try { audible = fade && p.getPlayerState() === 1; } catch { /* 준비 전 */ }
+      if (audible) {
+        setPlaying(true);
+        rampVolume(volumeRef.current, () => 0, FADE_OUT_MS, () => {
+          // 줄이는 사이에 사용자가 멈췄으면 새 곡을 틀지 않는다
+          if (!playingRef.current) { try { p.pauseVideo(); p.setVolume(volumeRef.current); } catch { /* */ } return; }
+          load();
+        });
+      } else {
+        cancelFade();
+        load();
+      }
     }
   };
   const playAtRef = useRef(playAt); playAtRef.current = playAt;
@@ -352,10 +392,10 @@ export function BgmPlayer() {
       return;
     }
     if (!playerRef.current) return;
-    if (playing) { playerRef.current.pauseVideo(); setPlaying(false); }
+    if (playing) { cancelFade(); playerRef.current.pauseVideo(); playerRef.current.setVolume(volumeRef.current); setPlaying(false); }
     else if (!readyRef.current) { armedRef.current = true; }
     else if (!startedRef.current) { playAt(playlistIdRef.current, idxRef.current); }
-    else { playerRef.current.setVolume(volumeRef.current); playerRef.current.playVideo(); setPlaying(true); }
+    else { cancelFade(); playerRef.current.setVolume(volumeRef.current); playerRef.current.playVideo(); setPlaying(true); }
   };
 
   /* ---------- 입장 자동 재생 (첫 상호작용) ---------- */
@@ -419,8 +459,9 @@ export function BgmPlayer() {
 
     // 이전 BGM 정리
     stopTick();
-    try { playerRef.current?.pauseVideo(); } catch { /* 플레이어 준비 전 */ }
-    setPlaying(false);
+    const willFade = settings.crossfade && wasPlaying && !!startPl && startIdx > -1;
+    if (!willFade) { try { playerRef.current?.pauseVideo(); } catch { /* 플레이어 준비 전 */ } }   // 페이드로 넘어갈 땐 듣던 곡을 playAt이 서서히 줄인다
+    setPlaying(willFade);
     startedRef.current = false;
     setProgress({ cur: 0, total: 0 });
     setPlaylistId(null);
