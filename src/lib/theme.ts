@@ -2,7 +2,7 @@
 // 모드 4종: 라이트 / 다크(기본) / 포인트 자동(다크·라이트 톤) / 완전 커스텀
 // 모든 색은 순수 hex로 저장(환경설정 hex 입력란과 1:1) — 반투명이 필요한 곳은
 // themeToCssVars 에서 고정 알파를 적용해 CSS 변수로 변환한다.
-import { adjust, hexToHsl, hslToHex, withAlpha } from './color';
+import { adjust, hexToHsl, hslToHex, withAlpha, readableOn } from './color';
 
 export type ThemeMode = 'light' | 'dark' | 'point' | 'custom';
 export type PointTone = 'dark' | 'light';
@@ -241,6 +241,8 @@ export function themeToCssVars(t: ThemeVars): Record<string, string> {
     '--ph-desc-m': (t.pageHeadM ?? 'same') === 'none' ? 'none'
       : ((t.pageHead ?? 'both') === 'both' || t.pageHead === 'desc' ? 'block' : 'none'),
     '--bgm-bg': withAlpha(t.bgmBg, 0.9), '--bgm-fg': t.bgmFg, '--bgm-ic': t.bgmIc, '--bgm-vol': t.bgmVol,
+    // 재생/일시정지 버튼 바탕이 --bgm-fg라서, 그 위의 ▶ ❚❚ 아이콘은 바탕 밝기에 따라 검정/흰색 (밝은 바탕에서 흰 아이콘이 안 보이던 문제)
+    '--bgm-pp-ic': readableOn(t.bgmFg),
     '--sb-thumb': t.sbThumb, '--sb-bd': t.sbBd,
     '--search-bg': t.searchBg ?? '#232830', '--search-fg': t.searchFg ?? '#e8eaee',
     '--search-ic': t.searchIc ?? '#8b919b', '--search-bd': t.searchBd ?? '#3a404a',

@@ -122,3 +122,11 @@ export function normalizeColor(v: string): string {
   }
   return `rgba(${r},${g},${b},${+a.toFixed(3)})`;
 }
+
+/** 이 색 위에 올릴 글자·아이콘 색 — 바탕이 밝으면 검정, 어두우면 흰색 (WCAG 상대 휘도 기준) */
+export function readableOn(bg: string): '#111111' | '#ffffff' {
+  const { r, g, b } = toRgba(bg);
+  const lin = (v: number) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return L > 0.4 ? '#111111' : '#ffffff';
+}
