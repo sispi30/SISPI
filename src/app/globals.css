@@ -2439,9 +2439,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .rc-group-title{display:flex;align-items:center;gap:8px;margin:0 0 10px}
 .rc-group-name{padding:4px 13px;border-radius:999px;background:rgba(127,127,127,.16);font-size:calc(12.5px*var(--fs,1));font-weight:700;color:var(--ink)}
 .rc-group-count{font-size:calc(11.5px*var(--fs,1));font-weight:600;color:var(--sub)}
-.rc-row{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 14px;scroll-snap-type:x proximity;scrollbar-width:thin}
-.rc-card{position:relative;flex:none;width:140px;height:230px;border-radius:16px;overflow:hidden;background:rgba(127,127,127,.14);scroll-snap-align:start;cursor:var(--cur-pointer,pointer);box-shadow:0 4px 14px rgba(0,0,0,.12);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
-.rc-card:hover{transform:translateY(-4px);box-shadow:0 14px 26px rgba(0,0,0,.2)}
+.rc-row{display:flex;gap:12px;overflow-x:auto;padding:4px 4px 14px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.rc-card{position:relative;flex:none;width:140px;height:230px;border-radius:16px;overflow:hidden;background:rgba(127,127,127,.14);scroll-snap-align:start;cursor:var(--cur-pointer,pointer);box-shadow:0 1px 2px rgba(0,0,0,.16);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
+/* 그림자 폭 2px — 카드 줄이 overflow로 스크롤되는 박스라 그림자가 더 퍼지면 가장자리에서 잘려 보인다 */
+.rc-card:hover{transform:translateY(-3px);box-shadow:0 2px 2px rgba(0,0,0,.22)}
 .rc-img{position:absolute;inset:0;background:center top / cover no-repeat;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .rc-card:hover .rc-img{transform:scale(1.05)}
 .rc-shade{position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to top,color-mix(in srgb,var(--panel) 96%,transparent) 0%,color-mix(in srgb,var(--panel) 72%,transparent) 40%,color-mix(in srgb,var(--panel) 0%,transparent) 100%)}
