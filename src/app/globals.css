@@ -2575,7 +2575,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-name,.cs-sub,.cs-intro,.cs-link,.cs-left{text-shadow:0 1px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}
 /* 추가 아트 썸네일 — 갤러리 뷰어와 같은 모양: 둥근 정사각 · 고른 것은 흰 테두리 · 그림을 누르면 숨김/표시 */
 .cs-faces{gap:8px;padding:4px;transition:opacity .25s,translate .25s}
-.cs-faces .fc{width:56px;height:56px;border-radius:8px;border:2px solid transparent;opacity:.7;background:#222;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+/* position:relative 필수 — 안쪽 CropImg(absolute·inset:0)가 이 칸 기준으로 채워져야 한다.
+   없으면 썸네일 줄 전체로 퍼져 한 장의 넓은 사각형이 되고 다른 썸네일을 가린다 */
+.cs-faces .fc{position:relative;flex:0 0 auto;width:56px;height:56px;border-radius:8px;overflow:hidden;box-sizing:border-box;border:2px solid transparent;opacity:.7;background:#222;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .cs-faces .fc.on{border-color:#fff;opacity:1}
 .cs-faces .fc:hover{opacity:1}
 .cs-faces.off{opacity:0;pointer-events:none;translate:-50% 10px}
