@@ -2545,3 +2545,26 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   .cs-left,.cs-right{top:auto;bottom:auto;left:auto;right:auto;width:auto}
   .cs-faces{left:50%;translate:-50% 0;bottom:auto}
 }
+
+/* ---------- 스테이지 구도 수정 (v7.2) — 그림을 배경 가득 채우던 방식 → 가운데에 전신 그대로, 배경은 등록한 배경 ----------
+   · 가운데: 등록·추가 첨부한 캐릭터 그림을 자르지 않고(contain) 화면 높이에 맞춰 세운다
+   · 배경: 스테이지 자체는 투명 — 캐릭터 편집에서 등록한 배경 이미지(+블러)·페이지 배경이 그대로 비친다
+   · 글자가 읽히도록 좌우·아래만 살짝 어둡게 눌러 준다 */
+.cs{background:transparent}
+.cs-bg{display:flex;justify-content:center;align-items:flex-end}
+.cs-art{width:auto;height:calc(100% - 86px);max-width:min(620px,44vw);object-fit:contain;object-position:center bottom;
+  filter:drop-shadow(0 14px 30px rgba(0,0,0,.45))}
+.cs-ph{max-width:min(420px,40vw);height:calc(100% - 140px);margin-bottom:86px;border-radius:18px}
+.cs-shade{background:
+  linear-gradient(90deg,rgba(6,8,11,.62) 0%,rgba(6,8,11,.2) 30%,rgba(6,8,11,.2) 66%,rgba(6,8,11,.66) 100%),
+  linear-gradient(0deg,rgba(6,8,11,.55) 0%,rgba(6,8,11,0) 34%),
+  rgba(6,8,11,.28)}
+.cs-faces{left:50%;translate:-50% 0;bottom:92px}
+@media (max-width:960px){
+  .cs{background:#0b0d10}
+  .cs-bg{height:84vw;max-height:620px}
+  .cs-art{height:100%;max-width:100%}
+  .cs-ph{height:100%;margin-bottom:0;max-width:70vw}
+  .cs-shade{height:84vw;max-height:620px}
+  .cs-faces{top:calc(84vw - 62px);bottom:auto}
+}
