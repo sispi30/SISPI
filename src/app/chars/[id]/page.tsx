@@ -341,16 +341,23 @@ function CharDetailInner() {
           </div>
         )}
 
-        {/* 좌측 — 기본 정보 항목 */}
+        {/* 좌측 — 한 줄 소개 → 이름 → 다른 표기(있을 때만) → 기본 정보 항목 (박스 없이 배경 위에 바로) */}
         <div className="cs-left">
-          <SpecsDisplay specs={eff.specs} />
+          {eff.sub && <div className="cs-tag">{eff.sub}</div>}
+          <div className="cs-name" style={{
+            fontFamily: familyOf(eff.fontId) ?? 'var(--serif)', fontSize: Math.round((eff.nameSize ?? 38) * 1.35),
+            fontWeight: (eff.nameBold ?? true) ? 700 : 400, letterSpacing: '.08em',
+          }}>{eff.name}</div>
+          {eff.altName && <div className="cs-alt">{eff.altName}</div>}
+          <div className="cs-specs">
+          <SpecsDisplay specs={eff.specs} stage />
           {eff.sheetUrl && (
-            <PlainSpecRow label="CHARACTER SHEET">
+            <PlainSpecRow label="CHARACTER SHEET" stage>
               <a href={eff.sheetUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>LINK ↗</a>
             </PlainSpecRow>
           )}
           {eff.colors.length > 0 && (
-            <PlainSpecRow label="테마컬러">
+            <PlainSpecRow label="테마컬러" stage>
               <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
                 {eff.colors.map(c => {
                   const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
@@ -361,16 +368,11 @@ function CharDetailInner() {
               </span>
             </PlainSpecRow>
           )}
+          </div>
         </div>
 
-        {/* 우측 — 이름 · 소개 본문 · 항목 바로가기 */}
+        {/* 우측 — 소개 본문 · 항목 바로가기 (이름·한 줄 소개는 좌측으로 이동) */}
         <div className="cs-right" ref={infoRef}>
-          <div className="cs-name" style={{
-            fontFamily: familyOf(eff.fontId) ?? 'var(--serif)', fontSize: Math.round((eff.nameSize ?? 38) * 1.35),
-            fontWeight: (eff.nameBold ?? true) ? 700 : 400, letterSpacing: '.08em',
-          }}>{eff.name}</div>
-          {eff.sub && <div className="cs-sub">{eff.sub}</div>}
-          <div className="cs-rule" />
           <div className="cs-intro prose" dangerouslySetInnerHTML={{ __html: basicHtml }} />
           <div className="cs-links">
             {stageTracks.length > 0 && (
@@ -509,6 +511,7 @@ function CharDetailInner() {
             fontWeight: (eff.nameBold ?? true) ? 600 : 400,
             letterSpacing: '.2em', lineHeight: 1.1,
           }}>{eff.name}</div>
+          {eff.altName && <div className="sub" style={{ marginBottom: 4 }}>{eff.altName}</div>}
           <div className="sub" style={{ marginBottom: 14 }}>{eff.sub}</div>
 
           {tab === 'basic' ? (

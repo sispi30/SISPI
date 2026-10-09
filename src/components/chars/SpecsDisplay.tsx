@@ -4,20 +4,40 @@
 // 라벨을 위에 두고 그 아래 전체 폭으로 내용을 그린다.
 // (기존에는 사이트 공통 .spec 클래스의 고정폭 라벨 칸(76px)을 그대로 썼는데,
 //  룰 라벨이 길어지면서 라벨 자체가 여러 줄로 꺾이고 값이 그 아래로 밀려나 보이는 문제가 있었음)
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Spec, statusTotal } from '@/lib/charRuleConfig';
 
-export function SpecsDisplay({ specs }: { specs: Spec[] }) {
+/** stage: 스테이지(어두운 배경) 좌측용 — 박스 없이 [라벨(포인트색) | 값] 이 왼쪽 정렬되고
+ *  행마다 얇은 구분선이 그어지는 목록 모양. 끄면 기존 좌우 정렬 그대로 */
+export function SpecsDisplay({ specs, stage }: { specs: Spec[]; stage?: boolean }) {
   return (
-    <div style={{ marginBottom: 18, fontSize: 'calc(12.5px*var(--fs,1))' }}>
-      {specs.map((s, i) => <SpecRow key={s.key ?? s.label ?? i} s={s} />)}
+    <div style={{ marginBottom: stage ? 0 : 18, fontSize: 'calc(12.5px*var(--fs,1))' }}>
+      {specs.map((s, i) => <SpecRow key={s.key ?? s.label ?? i} s={s} stage={stage} />)}
     </div>
   );
 }
 
+/** 스테이지 목록 행 공통 — 라벨 고정 칸 + 값, 아래 구분선 */
+const STAGE_ROW: CSSProperties = {
+  display: 'grid', gridTemplateColumns: '84px 1fr', alignItems: 'baseline', gap: 12,
+  padding: '10px 0', borderBottom: '1px solid var(--line)',
+};
+const STAGE_LABEL: CSSProperties = {
+  color: 'var(--cs-accent, var(--faint))', fontSize: '.92em', fontWeight: 700, letterSpacing: '.06em',
+};
+const STAGE_VALUE: CSSProperties = { color: 'var(--ink)', fontWeight: 600, fontSize: '1.08em', textAlign: 'left', minWidth: 0 };
+
 /** 라벨-값이 한 줄에서 좌우로 정렬되는 행 — CHARACTER SHEET 링크·테마컬러처럼
  *  Spec 목록 바깥에서 같은 모양이 필요한 곳에 재사용한다 */
-export function PlainSpecRow({ label, children }: { label: string; children: ReactNode }) {
+export function PlainSpecRow({ label, children, stage }: { label: string; children: ReactNode; stage?: boolean }) {
+  if (stage) {
+    return (
+      <div style={{ ...STAGE_ROW, fontSize: 'calc(12.5px*var(--fs,1))' }}>
+        <span style={STAGE_LABEL}>{label}</span>
+        <span style={STAGE_VALUE}>{children}</span>
+      </div>
+    );
+  }
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '6px 0', fontSize: 'calc(12.5px*var(--fs,1))' }}>
       <span style={{ color: 'var(--faint)', letterSpacing: '.06em', flexShrink: 0 }}>{label}</span>
@@ -26,9 +46,17 @@ export function PlainSpecRow({ label, children }: { label: string; children: Rea
   );
 }
 
-function SpecRow({ s }: { s: Spec }) {
+function SpecRow({ s, stage }: { s: Spec; stage?: boolean }) {
   const simple = !s.type || s.type === 'text' || s.type === 'select';
   if (simple) {
+    if (stage) {
+      return (
+        <div style={STAGE_ROW}>
+          <span style={STAGE_LABEL}>{s.label}</span>
+          <span style={STAGE_VALUE}><SpecValue s={s} /></span>
+        </div>
+      );
+    }
     return (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, padding: '6px 0' }}>
         <span style={{ color: 'var(--faint)', letterSpacing: '.06em', flexShrink: 0 }}>{s.label}</span>
@@ -37,7 +65,7 @@ function SpecRow({ s }: { s: Spec }) {
     );
   }
   return (
-    <div style={{ padding: '8px 0' }}>
+    <div style={{ padding: '8px 0', ...(stage ? { borderBottom: '1px solid var(--line)' } : {}) }}>
       <div style={{ color: 'var(--faint)', letterSpacing: '.06em', marginBottom: 7 }}>{s.label}</div>
       {/* 라벨은 그대로 왼쪽, 내용(게이지·관계표·기능표·STATUS·레이더차트)만 가운데로.
           inline-block로 폭을 특정하지 않으면 게이지 바 등 flex:1 자식의 너비 계산이 깨져서,

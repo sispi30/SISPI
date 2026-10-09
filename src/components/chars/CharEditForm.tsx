@@ -108,6 +108,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // id는 그대로 두고 별명(slug)만 저장하므로 참조가 끊어지지 않고 옛 주소도 계속 열린다
   const [slug, setSlug] = useState(initial?.slug ?? '');
   const [sub, setSub] = useState(initial?.sub ?? '');
+  const [altName, setAltName] = useState(initial?.altName ?? '');   // 이름 다른 표기 (선택)
   const [color, setColor] = useState(initial?.color ?? '#5d636d');
   const [themeMode, setThemeMode] = useState<'default' | 'custom'>(initial?.themeMode ?? 'default');
   const [visibility, setVisibility] = useState<Visibility>(initial?.visibility ?? 'public');
@@ -205,6 +206,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       // 입력한 그대로 저장 — 예전에는 대문자로 바꿔 저장해서 소문자 이름을 쓸 수 없었다
       name: name.trim(),
       sub: sub.trim(),
+      // 비우면 저장하지 않는다 — 상세 화면에서도 표시하지 않음 (AU 저장 쪽은 '' 로 바꿔 원본을 물려받지 않게 한다)
+      altName: altName.trim() || undefined,
       color,
       themeMode,
       colors: colors.filter(x => x.hex).map(({ hex, label }) => ({ hex, label })),
@@ -614,6 +617,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
               </div>
             )}
             <KInput placeholder="한 줄 소개 (선택)" value={sub} onChange={e => setSub(e.target.value)} />
+            <KInput placeholder="캐릭터 이름 (다른 표기) (선택) — 비우면 표시하지 않음" value={altName} onChange={e => setAltName(e.target.value)} />
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <span className="cp-lb">대표 테마색</span>
               <ColorField value={color} onChange={setColor} />

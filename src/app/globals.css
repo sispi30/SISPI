@@ -2472,6 +2472,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* ---------- 캐릭터 상세 스테이지 레이아웃 (v7.0) — 등록한 그림을 배경으로 크게 깔고,
    좌측=기본 정보 항목 · 우측=이름·소개 본문·항목 바로가기(노래/갤러리/관계/TRPG/추가 탭). 항목을 누르면 창이 옆으로 펼쳐지며 열린다 ---------- */
 .cs{--ink:#f3f5f8;--sub:rgba(255,255,255,.74);--faint:rgba(255,255,255,.55);--line:rgba(255,255,255,.2);
+  --cs-accent:color-mix(in srgb,var(--accent,#7fd6d0) 55%,#fff);   /* 어두운 배경에서도 읽히도록 포인트색을 밝게 */
   position:relative;height:calc(100vh - 230px);min-height:600px;max-height:860px;border-radius:22px;overflow:hidden;color:var(--ink);background:#0b0d10;
   box-shadow:0 14px 40px rgba(0,0,0,.28);animation:standWrap .8s cubic-bezier(.2,.7,.2,1) .1s backwards}
 .cs-bg{position:absolute;inset:0}
@@ -2480,7 +2481,12 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-ph{width:100%;height:100%;display:grid;place-items:center;font-size:13px;letter-spacing:.2em;opacity:.7}
 /* 글자가 읽히도록 오른쪽·아래를 어둡게 눌러 준다 */
 .cs-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,8,11,.55) 0%,rgba(6,8,11,.15) 34%,rgba(6,8,11,.55) 62%,rgba(6,8,11,.9) 100%),linear-gradient(0deg,rgba(6,8,11,.7) 0%,rgba(6,8,11,0) 38%)}
-.cs-left{position:absolute;left:34px;top:34px;bottom:70px;width:min(380px,30%);overflow:auto;padding:18px 20px;border-radius:16px;background:rgba(10,12,16,.46);backdrop-filter:blur(10px);scrollbar-width:thin}
+/* 좌측 — 검은 박스 없이 배경 위에 바로: 한 줄 소개 → 이름 → 다른 표기 → 기본 정보 목록 */
+.cs-left{position:absolute;left:34px;top:34px;bottom:70px;width:min(380px,30%);overflow:auto;padding:0;scrollbar-width:none;display:flex;flex-direction:column;align-items:flex-start}
+.cs-left::-webkit-scrollbar{display:none}
+.cs-tag{font-size:calc(14px*var(--fs,1));font-weight:700;letter-spacing:.04em;color:var(--cs-accent,var(--sub));margin-bottom:10px}
+.cs-alt{font-size:calc(17px*var(--fs,1));font-weight:700;color:var(--ink);margin-top:10px}
+.cs-specs{width:100%;margin-top:22px;border-top:1px solid var(--line)}
 .cs-right{position:absolute;right:44px;top:0;bottom:70px;width:min(460px,36%);display:flex;flex-direction:column;justify-content:center;gap:12px}
 .cs-name{line-height:1.05;text-shadow:0 2px 18px rgba(0,0,0,.45);word-break:keep-all}
 .cs-sub{font-size:calc(13.5px*var(--fs,1));color:var(--sub)}
