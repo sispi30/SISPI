@@ -243,7 +243,7 @@ function CharDetailInner() {
   const stageWinTitle = tab === GALLERY_TAB ? 'Gallery' : tab === REL_TAB ? 'Relations' : tab === TRPG_TAB ? 'TRPG' : tab === BGM_TAB ? 'BGM' : (curTab?.title ?? '');
 
   return (
-    <section className="page page-char-detail">
+    <section className={`page page-char-detail${stage && !(auKey && !auRegistered) ? ' is-stage' : ''}`}>
       <div className="page-head">
         {/* 제목 자리는 메뉴 이름 — 클릭 시 목록 복귀. 캐릭터 이름은 우측 프로필 패널에 크게 표시 */}
         <PageTitle href={tt.href}>{tt.title}</PageTitle>

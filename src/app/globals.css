@@ -2523,3 +2523,25 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .sw-x:hover{background:rgba(127,127,127,.3)}
 .sw-body{padding:20px 24px 26px;overflow:auto}
 @media (prefers-reduced-motion:reduce){.cs,.cs-art,.sw-back,.sw-box{animation:none}}
+
+
+/* ---------- 스테이지 전체화면 (v7.1) — 박스 안이 아니라 화면 전체를 그림으로 채운다 ----------
+   · 상단바(z60)·하단 독·BGM 플레이어(z70)는 그대로 위에 떠 있고, 스테이지는 그 뒤 화면 전체(fixed)를 차지한다
+   · 제목줄(CHARACTER · EDIT/DELETE)은 그림 위에 겹쳐 보이도록 스테이지보다 위(z3)에 둔다
+   · .page의 등장 모션(translate)이 fixed의 기준을 바꿔 위치가 튀지 않도록, 이 페이지는 .page 자체 모션을 끈다 */
+.page-char-detail.is-stage{max-width:none;padding:0;animation:none}
+.page-char-detail.is-stage>*{animation:none}
+.page-char-detail.is-stage .page-head,.page-char-detail.is-stage .au-list{position:relative;z-index:3;max-width:1180px;margin-left:auto;margin-right:auto;padding-left:28px;padding-right:28px}
+.page-char-detail.is-stage .page-head{padding-top:16px}
+.page-char-detail.is-stage .page-head h1,.page-char-detail.is-stage .page-head p{text-shadow:0 2px 14px rgba(0,0,0,.55)}
+.cs{position:fixed;inset:0;height:auto;min-height:0;max-height:none;border-radius:0;box-shadow:none;z-index:1}
+.cs-left{left:max(34px,5vw);top:150px;bottom:130px;width:min(400px,28vw)}
+.cs-right{right:max(44px,6vw);top:100px;bottom:130px;width:min(500px,35vw)}
+.cs-faces{left:max(34px,5vw);translate:none;bottom:96px}
+@media (max-width:960px){
+  .page-char-detail.is-stage{padding:16px 14px 80px}
+  .page-char-detail.is-stage .page-head,.page-char-detail.is-stage .au-list{padding-left:0;padding-right:0}
+  .cs{position:relative;inset:auto;z-index:auto;border-radius:18px;box-shadow:0 14px 40px rgba(0,0,0,.28)}
+  .cs-left,.cs-right{top:auto;bottom:auto;left:auto;right:auto;width:auto}
+  .cs-faces{left:50%;translate:-50% 0;bottom:auto}
+}
