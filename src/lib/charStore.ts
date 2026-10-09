@@ -89,6 +89,8 @@ export interface Character {
   /** REL(관계) 탭 (v6.8) — 켜져 있으면 상세 화면에 REL 버튼이 보인다.
    *  내용은 따로 저장하지 않고 자관(페어·다인관)에서 이 캐릭터가 멤버인 것 +
    *  직접 지정한 관계(relLinks)를 그때그때 모아 보여준다 (GALLERY·TRPG 탭과 같은 방식) */
+  /** 상세 화면 레이아웃 (v7.0) — 비우면 스테이지(등록한 그림 배경 + 좌 정보 · 우 소개/항목 창), 'classic'이면 예전 좌 아이콘탭·중앙 아트·우 패널 */
+  detailLayout?: 'stage' | 'classic';
   relEnabled?: boolean;
   relLinks?: { charId: string; label?: string }[];   // 직접 지정한 관계 — 상대 캐릭터 + 꼬리표(예: 라이벌)
   /** 이 캐릭터 상세 페이지에서만 나오는 BGM (v5.9) — 환경설정 BGM과 같은 구조, 페이지를 나가면 홈페이지 BGM으로 복귀 */

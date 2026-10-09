@@ -22,6 +22,7 @@ import { ConfirmModal } from '@/components/ui/Modal';
 import { usePageBgm } from '@/lib/bgmStore';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
 import { RelTab } from '@/components/chars/RelTab';
+import { StageWindow } from '@/components/chars/StageWindow';
 import type { BackupPost } from '@/lib/galleryStore';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
 
@@ -31,6 +32,7 @@ const TRPG_TAB = '__trpg__';
 /** 갤러리도 TRPG와 같은 방식 — 새 페이지로 가지 않고 우측 패널만 이 값으로 교체한다 (v3.1) */
 const GALLERY_TAB = '__gallery__';
 const REL_TAB = '__rel__';
+const BGM_TAB = '__bgm__';
 
 /** TRPG 탭 내용 — 플레이기록 게시판에서 이 캐릭터가 참여자로 등록된 기록만 모아 보여준다.
  *  단일 출처(PlayRecord.charIds)라 플레이기록 게시판에서 고치면 여기도 자동으로 반영된다 (v2.8) */
@@ -100,6 +102,14 @@ function NaturalArt({ fileRef, ph, label }: { fileRef?: string; ph: string; labe
   }
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: '76vh', display: 'block', margin: '0 auto', borderRadius: 'var(--radius)' }} />;
+}
+
+/** 스테이지 배경 그림 — 화면 가득 채우도록 cover (등록한 그림 그대로) */
+function StageArt({ fileRef }: { fileRef?: string }) {
+  const url = useBlobUrl(fileRef);
+  if (!url) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="cs-art" src={url} alt="" draggable={false} />;
 }
 
 function CharDetailInner() {
@@ -216,13 +226,29 @@ function CharDetailInner() {
   // 켜지 않았어도 TRPG 탭이 자동으로 보인다 (v3.0 사용자 요청)
   const hasTrpgLinks = playRecords.some(r => r.charIds?.includes(ch.id));
 
+  /* ---------- 스테이지 레이아웃 데이터 (v7.0) ---------- */
+  // 캐릭터마다 고른다(편집 → 상세 레이아웃). 안 고르면 스테이지, 「클래식」이면 예전 좌 아이콘탭·중앙 아트·우 패널
+  const stage = ch.detailLayout !== 'classic';
+  const stageViewer = { isAdmin, canEdit: isAdmin || charGrant(ch, user?.id) === 'edit', loggedIn: !!user };
+  const stageGallery = hasGallery(ch) ? charGalleryPosts(ch, rels, stageViewer) : [];
+  const stageRel = ch.relEnabled ? charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user }) : [];
+  const stageTrpgCount = playRecords.filter(r => r.charIds?.includes(ch.id)).length;
+  const stageTracks = (ch.bgm?.playlists ?? []).flatMap(pl => pl.tracks.filter(t => t.videoId));
+  const stageTabArts = curTab?.arts && curTab.arts.length > 0 ? curTab.arts : null;
+  const stageBaseArts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
+  // 첫 장은 목록용 대표·썸네일 전용이라 상세에는 2번째 장부터 (클래식과 같은 규칙)
+  const stageArts = stageTabArts ?? (stageBaseArts.length > 1 ? stageBaseArts.slice(1) : stageBaseArts);
+  const stageArtCur = Math.min(artIdx, Math.max(0, stageArts.length - 1));
+  const stageArtRef = stageArts[stageArtCur] ?? (stageTabArts ? undefined : eff.artUrl);
+  const stageWinTitle = tab === GALLERY_TAB ? 'Gallery' : tab === REL_TAB ? 'Relations' : tab === TRPG_TAB ? 'TRPG' : tab === BGM_TAB ? 'BGM' : (curTab?.title ?? '');
+
   return (
     <section className="page page-char-detail">
       <div className="page-head">
         {/* 제목 자리는 메뉴 이름 — 클릭 시 목록 복귀. 캐릭터 이름은 우측 프로필 패널에 크게 표시 */}
         <PageTitle href={tt.href}>{tt.title}</PageTitle>
         {/* 캐릭터별로 별도 저장 — 키에 캐릭터 id 포함 */}
-        <EditableDesc k={`char-detail-desc:${ch.id}`} def="좌측 아이콘 탭 → 우측 정보 전환" />
+        <EditableDesc k={`char-detail-desc:${ch.id}`} def={stage ? '우측 항목을 누르면 창이 열립니다' : '좌측 아이콘 탭 → 우측 정보 전환'} />
         <div className="head-actions">
           {/* 관리자 또는 「편집까지」 권한 회원 (3차 회원-캐릭터 연결, v1.9)
               — AU 선택 상태의 EDIT은 그 AU 전용 프로필 편집으로 진입 */}
@@ -232,15 +258,15 @@ function CharDetailInner() {
           {/* 캐릭터당 갤러리 하나 — TRPG와 같은 방식으로, 새 페이지로 가지 않고
               우측 패널만 갤러리 그리드로 교체한다 (v3.1 사용자 요청 — 좌측 아이콘 탭·아트와
               상단 버튼 위치를 PROFILE 화면과 통일) */}
-          {hasGallery(ch) && (
+          {!stage && hasGallery(ch) && (
             <button className="btn btn-dark" onClick={() => setTab(GALLERY_TAB)}>GALLERY</button>
           )}
           {/* 관계(REL) 탭 (v6.8) — GALLERY와 같은 방식. 자관(페어·다인관)·직접 지정한 관계를 카드로 보여준다 */}
-          {ch.relEnabled && (
+          {!stage && ch.relEnabled && (
             <button className="btn btn-dark" onClick={() => setTab(REL_TAB)}>RELATIONS</button>
           )}
           {/* TRPG 참여 세션 — 새 페이지로 가지 않고 새 탭 전환과 같은 방식으로 우측 패널만 교체 (v2.8) */}
-          {(ch.trpgEnabled || hasTrpgLinks) && (
+          {!stage && (ch.trpgEnabled || hasTrpgLinks) && (
             <button className="btn btn-dark" onClick={() => setTab(TRPG_TAB)}>TRPG</button>
           )}
           {isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}
@@ -294,6 +320,131 @@ function CharDetailInner() {
             <button className="btn btn-dark" onClick={() => router.push(editHref)}>＋ AU 캐릭터 등록</button>
           )}
         </div>
+      ) : (
+      stage ? (
+      <div className="cs" style={{ fontFamily: familyOf(eff.bodyFontId) }}>
+        {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
+        <div className="cs-bg">
+          {stageArtRef
+            ? <StageArt key={stageArtRef} fileRef={stageArtRef} />
+            : <div className={`cs-ph ph ${ch.thumbClass}`}><span>CHARACTER FULL ART</span></div>}
+        </div>
+        <div className="cs-shade" />
+        {stageArts.length > 1 && (
+          <div className="cs-faces">
+            {stageArts.map((a, i) => (
+              <div key={i} className={`fc ${i === stageArtCur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
+                <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 좌측 — 기본 정보 항목 */}
+        <div className="cs-left">
+          <SpecsDisplay specs={eff.specs} />
+          {eff.sheetUrl && (
+            <PlainSpecRow label="CHARACTER SHEET">
+              <a href={eff.sheetUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>LINK ↗</a>
+            </PlainSpecRow>
+          )}
+          {eff.colors.length > 0 && (
+            <PlainSpecRow label="테마컬러">
+              <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
+                {eff.colors.map(c => {
+                  const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
+                    : eff.colorTipMode === 'both' ? (c.label ? `${c.label} · ${c.hex.toUpperCase()}` : c.hex.toUpperCase())
+                    : c.hex.toUpperCase();
+                  return <span key={c.hex + c.label} className="sw-static" data-hex={tip} style={{ background: c.hex, boxShadow: chipBorder(eff.colorBd) }} />;
+                })}
+              </span>
+            </PlainSpecRow>
+          )}
+        </div>
+
+        {/* 우측 — 이름 · 소개 본문 · 항목 바로가기 */}
+        <div className="cs-right" ref={infoRef}>
+          <div className="cs-name" style={{
+            fontFamily: familyOf(eff.fontId) ?? 'var(--serif)', fontSize: Math.round((eff.nameSize ?? 38) * 1.35),
+            fontWeight: (eff.nameBold ?? true) ? 700 : 400, letterSpacing: '.08em',
+          }}>{eff.name}</div>
+          {eff.sub && <div className="cs-sub">{eff.sub}</div>}
+          <div className="cs-rule" />
+          <div className="cs-intro prose" dangerouslySetInnerHTML={{ __html: basicHtml }} />
+          <div className="cs-links">
+            {stageTracks.length > 0 && (
+              <button className="cs-link" onClick={() => setTab(BGM_TAB)}>
+                <span className="cs-link-k">BGM</span>
+                <span className="cs-link-s">♪ {stageTracks[0].title}{stageTracks.length > 1 ? ` 외 ${stageTracks.length - 1}곡` : ''}</span>
+                <span className="cs-link-a">→</span>
+              </button>
+            )}
+            {hasGallery(ch) && (
+              <button className="cs-link" onClick={() => setTab(GALLERY_TAB)}>
+                <span className="cs-link-k">Gallery</span>
+                <span className="cs-link-s">{stageGallery.length ? `사진 묶음 ${stageGallery.length}개` : '아직 없음'}</span>
+                <span className="cs-link-a">→</span>
+              </button>
+            )}
+            {ch.relEnabled && (
+              <button className="cs-link" onClick={() => setTab(REL_TAB)}>
+                <span className="cs-link-k">Relations</span>
+                <span className="cs-link-s">{stageRel.length ? stageRel.map(g => `${g.name} ${g.cards.length}`).join(' · ') : '아직 없음'}</span>
+                <span className="cs-link-a">→</span>
+              </button>
+            )}
+            {(ch.trpgEnabled || hasTrpgLinks) && (
+              <button className="cs-link" onClick={() => setTab(TRPG_TAB)}>
+                <span className="cs-link-k">TRPG</span>
+                <span className="cs-link-s">{stageTrpgCount ? `참여 세션 ${stageTrpgCount}개` : '아직 없음'}</span>
+                <span className="cs-link-a">→</span>
+              </button>
+            )}
+            {eff.tabs.map(t => (
+              <button key={t.id} className="cs-link" onClick={() => setTab(t.id)}>
+                <span className="cs-link-k">{t.title}</span>
+                <span className="cs-link-s">{t.subtitle ?? ''}</span>
+                <span className="cs-link-a">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 항목 창 — 옆으로 펼쳐지며 열린다 */}
+        {tab !== 'basic' && (
+          <StageWindow title={stageWinTitle} onClose={() => setTab('basic')}>
+            {tab === BGM_TAB ? (
+              <div style={{ display: 'grid', gap: 18 }}>
+                {(ch.bgm?.playlists ?? []).filter(pl => pl.tracks.length > 0).map(pl => (
+                  <div key={pl.id}>
+                    <b style={{ fontSize: 13, letterSpacing: '.08em' }}>{pl.title}</b>
+                    <div style={{ marginTop: 6 }}>
+                      {pl.tracks.map((t, i) => (
+                        <div key={t.id} className="set-row" style={{ padding: '8px 2px' }}>
+                          <div className="l"><b>{i + 1}. {t.title}</b><small>{t.artist}{t.duration ? ` · ${t.duration}` : ''}</small></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="hint" style={{ margin: 0 }}>이 페이지에 들어오면 플레이어에서 이 BGM이 재생됩니다</p>
+              </div>
+            ) : tab === TRPG_TAB ? (
+              <TrpgSessionsList charId={ch.id} order={ch.trpgOrder} records={playRecords} chars={chars} />
+            ) : tab === REL_TAB ? (
+              <RelTab groups={stageRel} />
+            ) : tab === GALLERY_TAB ? (
+              <GalleryPanel ph={ch.thumbClass} loggedIn={!!user} posts={stageGallery} canSeePrivate={stageViewer.canEdit} />
+            ) : (
+              <>
+                {curTab?.subtitle && <div className="sub">{curTab.subtitle}</div>}
+                {curTab?.rule && curTab.specs?.length ? <SpecsDisplay specs={curTab.specs} /> : null}
+                <div className="prose" dangerouslySetInnerHTML={{ __html: tabHtml }} />
+              </>
+            )}
+          </StageWindow>
+        )}
+      </div>
       ) : (
       <div className="profile-wrap">
         {/* 좌측 아이콘 탭 — AU면 그 AU의 탭 구성 */}
@@ -416,7 +567,7 @@ function CharDetailInner() {
           )}
         </div>
       </div>
-      )}
+      ))}
 
       {/* 대표 아트 위치 조정 기능은 사진을 잘라 채우던 방식(cover)일 때만 의미가 있었는데,
           이제 원본 비율 그대로 보여주는 방식으로 바뀌어 더 이상 필요하지 않아 제거함 (v2.3) */}

@@ -159,6 +159,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // 이 캐릭터 상세 페이지 전용 BGM (v5.9) — 곡이 없으면 저장 시 비운다(홈페이지 BGM 그대로)
   const [bgm, setBgm] = useState<PageBgm | undefined>(initial?.bgm);
   // REL(관계) 탭 (v6.8) — 켜면 상세 화면에 REL 버튼. 직접 지정한 관계만 여기서 정하고, 자관 관계는 자동으로 모인다
+  // 상세 화면 레이아웃 (v7.0) — 스테이지(기본) / 클래식
+  const [detailLayout, setDetailLayout] = useState<'stage' | 'classic'>(initial?.detailLayout === 'classic' ? 'classic' : 'stage');
   const [relOn, setRelOn] = useState<boolean>(!!initial?.relEnabled);
   const [relLinks, setRelLinks] = useState<{ charId: string; label?: string }[]>(initial?.relLinks ?? []);
   const [allChars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
@@ -237,6 +239,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       // AU 편집은 base 소관이라 건드리지 않는다 · 재생목록이 하나도 없으면 비움
       bgm: auMode ? initial?.bgm : (bgm && bgm.playlists.length ? bgm : undefined),
       galleryTagLinks: auMode ? initial?.galleryTagLinks : (tagLinks.length ? tagLinks : undefined),
+      detailLayout: auMode ? initial?.detailLayout : (detailLayout === 'classic' ? 'classic' : undefined),
       // REL 탭 — AU 편집은 base 소관이라 건드리지 않는다
       relEnabled: auMode ? initial?.relEnabled : (relOn || undefined),
       relLinks: auMode ? initial?.relLinks : (relOn && relLinks.some(l => l.charId) ? relLinks.filter(l => l.charId) : undefined),
@@ -544,6 +547,17 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
               ＋ ADD TRPG
             </button>
           )
+        )}
+
+        {/* 상세 화면 레이아웃 (v7.0) — 스테이지: 등록한 그림을 배경으로 크게 + 좌 기본 정보 · 우 소개/항목 바로가기(누르면 창) / 클래식: 예전 구성 */}
+        {!auMode && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
+            <b style={{ fontSize: 13 }}>상세 레이아웃</b>
+            <div className="mini-seg" style={{ marginLeft: 'auto' }}>
+              <button type="button" className={detailLayout === 'stage' ? 'on' : ''} onClick={() => setDetailLayout('stage')}>스테이지</button>
+              <button type="button" className={detailLayout === 'classic' ? 'on' : ''} onClick={() => setDetailLayout('classic')}>클래식</button>
+            </div>
+          </div>
         )}
 
         {/* 이 캐릭터 페이지 전용 BGM (v5.9) — 환경설정 BGM과 같은 편집 화면. 들어오면 이 BGM, 나가면 홈페이지 BGM */}
