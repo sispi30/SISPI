@@ -19,7 +19,8 @@ export function SpecsDisplay({ specs, stage }: { specs: Spec[]; stage?: boolean 
 
 /** 스테이지 목록 행 공통 — 라벨 고정 칸 + 값, 아래 구분선 */
 const STAGE_ROW: CSSProperties = {
-  display: 'grid', gridTemplateColumns: '84px 1fr', alignItems: 'baseline', gap: 12,
+  // 라벨 칸을 목록 폭의 약 40%로 — 라벨과 값 사이를 넉넉히 띄운다 (긴 라벨도 덜 꺾임)
+  display: 'grid', gridTemplateColumns: '40% minmax(0, 1fr)', alignItems: 'baseline', gap: 14,
   padding: '10px 0', borderBottom: '1px solid var(--line)',
 };
 const STAGE_LABEL: CSSProperties = {

@@ -2482,8 +2482,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 글자가 읽히도록 오른쪽·아래를 어둡게 눌러 준다 */
 .cs-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,8,11,.55) 0%,rgba(6,8,11,.15) 34%,rgba(6,8,11,.55) 62%,rgba(6,8,11,.9) 100%),linear-gradient(0deg,rgba(6,8,11,.7) 0%,rgba(6,8,11,0) 38%)}
 /* 좌측 — 검은 박스 없이 배경 위에 바로: 한 줄 소개 → 이름 → 다른 표기 → 기본 정보 목록 */
-.cs-left{position:absolute;left:34px;top:34px;bottom:70px;width:min(380px,30%);overflow:auto;padding:0;scrollbar-width:none;display:flex;flex-direction:column;align-items:flex-start}
-.cs-left::-webkit-scrollbar{display:none}
+.cs-left{position:absolute;left:34px;top:34px;bottom:70px;width:min(380px,30%);overflow:visible;padding:0;display:flex;flex-direction:column;align-items:flex-start}
 .cs-tag{font-size:calc(14px*var(--fs,1));font-weight:700;letter-spacing:.04em;color:var(--cs-accent,var(--sub));margin-bottom:10px}
 .cs-alt{font-size:calc(17px*var(--fs,1));font-weight:700;color:var(--ink);margin-top:10px}
 .cs-specs{width:100%;margin-top:22px;border-top:1px solid var(--line)}
@@ -2588,3 +2587,33 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-faces .fc:hover{opacity:1}
 .cs-faces.off{opacity:0;pointer-events:none;translate:-50% 10px}
 @media (max-width:960px){.cs-faces.off{translate:-50% 0}}
+
+/* ---------- 스테이지 수정 (v7.4) — 좌측 내부 스크롤 제거 · 추가 탭 이동 버튼 ----------
+   · 데스크톱: 스테이지를 화면 고정 상자가 아니라 일반 흐름으로 두어, 좌측 내용이 길어지면 상자 안이 아니라
+     페이지 전체가 스크롤된다. 그림(cs-bg)·썸네일 줄(cs-faces)만 화면에 고정 · 우측은 따라 내려오게(sticky)
+   · 모바일(≤960px)은 원래 세로로 쌓여 페이지가 스크롤되므로 그대로 */
+@media (min-width:961px){
+  .cs{position:relative;inset:auto;z-index:1;height:auto;min-height:0;max-height:none;overflow:visible;
+    display:grid;grid-template-columns:min(400px,28vw) minmax(0,1fr) min(500px,35vw);column-gap:24px;align-items:start;
+    padding:64px max(44px,6vw) 160px max(34px,5vw);box-sizing:border-box}
+  .cs-bg{position:fixed;inset:0;z-index:0}
+  .cs-faces{position:fixed;left:50%;bottom:92px;translate:-50% 0}
+  .cs-left{position:relative;z-index:1;grid-column:1;left:auto;top:auto;bottom:auto;width:auto;overflow:visible}
+  .cs-right{position:sticky;z-index:1;grid-column:3;top:96px;right:auto;bottom:auto;width:auto;align-self:start;margin-top:clamp(0px,8vh,100px)}
+}
+
+/* 추가 탭 이동 버튼 줄 — 기본 정보 목록 아래. 작은 라벨 + 제목 + › , 열려 있는 탭은 포인트색 밑줄 */
+.cs-tabs{width:100%;display:flex;flex-wrap:wrap;gap:10px 24px;margin-top:18px}
+.cs-tabs button{display:inline-flex;align-items:baseline;gap:8px;padding:4px 0;color:var(--ink);text-align:left;cursor:var(--cur-pointer,pointer);border-bottom:1px solid transparent;transition:border-color .2s,color .2s}
+.cs-tabs .k{font-size:calc(10.5px*var(--fs,1));letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.cs-tabs b{font-size:calc(13.5px*var(--fs,1));font-weight:700}
+.cs-tabs i{font-style:normal;opacity:.7;transition:translate .2s}
+.cs-tabs button:hover i{translate:3px 0;opacity:1}
+.cs-tabs button.on{border-bottom-color:var(--cs-accent,var(--ink))}
+.cs-tabs button.on b{color:var(--cs-accent,var(--ink))}
+/* 탭을 열었을 때 우측 본문 머리 + 본문은 길어도 충분히 보이게 */
+.cs-tabhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cs-tabhead b{font-size:calc(18px*var(--fs,1));letter-spacing:.06em}
+.cs-tabhead span{font-size:calc(12px*var(--fs,1));color:var(--sub)}
+.cs-intro.tab{max-height:58vh}
+@media (max-width:960px){.cs-intro.tab{max-height:none}}

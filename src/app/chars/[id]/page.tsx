@@ -242,7 +242,9 @@ function CharDetailInner() {
   const stageArts = stageTabArts ?? (stageBaseArts.length > 1 ? stageBaseArts.slice(1) : stageBaseArts);
   const stageArtCur = Math.min(artIdx, Math.max(0, stageArts.length - 1));
   const stageArtRef = stageArts[stageArtCur] ?? (stageTabArts ? undefined : eff.artUrl);
-  const stageWinTitle = tab === GALLERY_TAB ? 'Gallery' : tab === REL_TAB ? 'Relations' : tab === TRPG_TAB ? 'TRPG' : tab === BGM_TAB ? 'BGM' : (curTab?.title ?? '');
+  const stageWinTitle = tab === GALLERY_TAB ? 'Gallery' : tab === REL_TAB ? 'Relations' : tab === TRPG_TAB ? 'TRPG' : tab === BGM_TAB ? 'BGM' : '';
+  // 추가 탭을 열었을 때 좌측에 띄울 항목 — 클래식과 같은 조건 (룰을 고르고 항목이 있을 때만)
+  const stageTabSpecs = curTab?.rule && curTab.specs?.length ? curTab.specs : null;
 
   return (
     <section className={`page page-char-detail${stage && !(auKey && !auRegistered) ? ' is-stage' : ''}`}>
@@ -349,31 +351,54 @@ function CharDetailInner() {
             fontWeight: (eff.nameBold ?? true) ? 700 : 400, letterSpacing: '.08em',
           }}>{eff.name}</div>
           {eff.altName && <div className="cs-alt">{eff.altName}</div>}
-          <div className="cs-specs">
-          <SpecsDisplay specs={eff.specs} stage />
-          {eff.sheetUrl && (
-            <PlainSpecRow label="CHARACTER SHEET" stage>
-              <a href={eff.sheetUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>LINK ↗</a>
-            </PlainSpecRow>
+          {/* 추가 탭을 열었으면 그 탭의 항목(룰별 정보란)으로, 아니면 기본 정보 항목 */}
+          {(!curTab || stageTabSpecs) && (
+            <div className="cs-specs">
+              {curTab ? <SpecsDisplay specs={stageTabSpecs!} stage /> : (
+                <>
+                  <SpecsDisplay specs={eff.specs} stage />
+                  {eff.sheetUrl && (
+                    <PlainSpecRow label="CHARACTER SHEET" stage>
+                      <a href={eff.sheetUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 700 }}>LINK ↗</a>
+                    </PlainSpecRow>
+                  )}
+                  {eff.colors.length > 0 && (
+                    <PlainSpecRow label="테마컬러" stage>
+                      <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
+                        {eff.colors.map(c => {
+                          const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
+                            : eff.colorTipMode === 'both' ? (c.label ? `${c.label} · ${c.hex.toUpperCase()}` : c.hex.toUpperCase())
+                            : c.hex.toUpperCase();
+                          return <span key={c.hex + c.label} className="sw-static" data-hex={tip} style={{ background: c.hex, boxShadow: chipBorder(eff.colorBd) }} />;
+                        })}
+                      </span>
+                    </PlainSpecRow>
+                  )}
+                </>
+              )}
+            </div>
           )}
-          {eff.colors.length > 0 && (
-            <PlainSpecRow label="테마컬러" stage>
-              <span style={{ display: 'inline-flex', gap: 7, alignItems: 'center' }}>
-                {eff.colors.map(c => {
-                  const tip = eff.colorTipMode === 'label' ? (c.label || c.hex.toUpperCase())
-                    : eff.colorTipMode === 'both' ? (c.label ? `${c.label} · ${c.hex.toUpperCase()}` : c.hex.toUpperCase())
-                    : c.hex.toUpperCase();
-                  return <span key={c.hex + c.label} className="sw-static" data-hex={tip} style={{ background: c.hex, boxShadow: chipBorder(eff.colorBd) }} />;
-                })}
-              </span>
-            </PlainSpecRow>
+          {/* 추가 탭(ADD TAB) 이동 버튼 — 누르면 이 페이지의 내용이 그 탭의 항목·본문·그림으로 바뀐다 */}
+          {eff.tabs.length > 0 && (
+            <div className="cs-tabs">
+              <button className={!curTab ? 'on' : ''} onClick={() => setTab('basic')}>
+                <span className="k">Basic</span><b>기본 정보</b>
+              </button>
+              {eff.tabs.map(t => (
+                <button key={t.id} className={curTab?.id === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
+                  <span className="k">{t.subtitle || 'Tab'}</span><b>{t.title}</b><i>›</i>
+                </button>
+              ))}
+            </div>
           )}
-          </div>
         </div>
 
-        {/* 우측 — 소개 본문 · 항목 바로가기 (이름·한 줄 소개는 좌측으로 이동) */}
+        {/* 우측 — 소개 본문(탭을 열었으면 그 탭의 본문) · 항목 바로가기 (이름·한 줄 소개는 좌측으로 이동) */}
         <div className="cs-right" ref={infoRef}>
-          <div className="cs-intro prose" dangerouslySetInnerHTML={{ __html: basicHtml }} />
+          {curTab && (
+            <div className="cs-tabhead"><b>{curTab.title}</b>{curTab.subtitle && <span>{curTab.subtitle}</span>}</div>
+          )}
+          <div className={`cs-intro prose${curTab ? ' tab' : ''}`} dangerouslySetInnerHTML={{ __html: curTab ? tabHtml : basicHtml }} />
           <div className="cs-links">
             {stageTracks.length > 0 && (
               <button className="cs-link" onClick={() => setTab(BGM_TAB)}>
@@ -403,18 +428,11 @@ function CharDetailInner() {
                 <span className="cs-link-a">→</span>
               </button>
             )}
-            {eff.tabs.map(t => (
-              <button key={t.id} className="cs-link" onClick={() => setTab(t.id)}>
-                <span className="cs-link-k">{t.title}</span>
-                <span className="cs-link-s">{t.subtitle ?? ''}</span>
-                <span className="cs-link-a">→</span>
-              </button>
-            ))}
           </div>
         </div>
 
-        {/* 항목 창 — 옆으로 펼쳐지며 열린다 */}
-        {tab !== 'basic' && (
+        {/* 항목 창 — 옆으로 펼쳐지며 열린다 (BGM·갤러리·관계·TRPG. 추가 탭은 창 없이 페이지 내용이 바뀐다) */}
+        {tab !== 'basic' && !curTab && (
           <StageWindow title={stageWinTitle} onClose={() => setTab('basic')}>
             {tab === BGM_TAB ? (
               <div style={{ display: 'grid', gap: 18 }}>
@@ -436,14 +454,8 @@ function CharDetailInner() {
               <TrpgSessionsList charId={ch.id} order={ch.trpgOrder} records={playRecords} chars={chars} />
             ) : tab === REL_TAB ? (
               <RelTab groups={stageRel} />
-            ) : tab === GALLERY_TAB ? (
-              <GalleryPanel ph={ch.thumbClass} loggedIn={!!user} posts={stageGallery} canSeePrivate={stageViewer.canEdit} />
             ) : (
-              <>
-                {curTab?.subtitle && <div className="sub">{curTab.subtitle}</div>}
-                {curTab?.rule && curTab.specs?.length ? <SpecsDisplay specs={curTab.specs} /> : null}
-                <div className="prose" dangerouslySetInnerHTML={{ __html: tabHtml }} />
-              </>
+              <GalleryPanel ph={ch.thumbClass} loggedIn={!!user} posts={stageGallery} canSeePrivate={stageViewer.canEdit} />
             )}
           </StageWindow>
         )}
