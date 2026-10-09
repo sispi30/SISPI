@@ -105,11 +105,11 @@ function NaturalArt({ fileRef, ph, label }: { fileRef?: string; ph: string; labe
 }
 
 /** 스테이지 배경 그림 — 화면 가득 채우도록 cover (등록한 그림 그대로) */
-function StageArt({ fileRef }: { fileRef?: string }) {
+function StageArt({ fileRef, onClick }: { fileRef?: string; onClick?: () => void }) {
   const url = useBlobUrl(fileRef);
   if (!url) return null;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className="cs-art" src={url} alt="" draggable={false} />;
+  return <img className="cs-art" src={url} alt="" draggable={false} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined} />;
 }
 
 function CharDetailInner() {
@@ -124,6 +124,8 @@ function CharDetailInner() {
   // 큰 글씨 — 추가 섹션(창고캐 등)이면 그 이름, 눌렀을 때도 그 목록으로 (v2.0 사용자 제보)
   const tt = useSectionTitle('chars', findByKey(chars, id)?.secId, 'CHARACTERS');
   const params = useSearchParams();
+  // 스테이지 — 그림을 누르면 아래 썸네일 줄을 숨긴다 (갤러리 뷰어와 같은 방식, 다시 누르면 복귀)
+  const [facesOff, setFacesOff] = useState(false);
   const [tab, setTab] = useState(() => {
     const t = params.get('tab');
     return t === 'trpg' ? TRPG_TAB : t === 'gallery' ? GALLERY_TAB : t === 'rel' ? REL_TAB : 'basic';
@@ -326,12 +328,11 @@ function CharDetailInner() {
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">
           {stageArtRef
-            ? <StageArt key={stageArtRef} fileRef={stageArtRef} />
+            ? <StageArt key={stageArtRef} fileRef={stageArtRef} onClick={stageArts.length > 1 ? () => setFacesOff(v => !v) : undefined} />
             : <div className={`cs-ph ph ${ch.thumbClass}`}><span>CHARACTER FULL ART</span></div>}
         </div>
-        <div className="cs-shade" />
         {stageArts.length > 1 && (
-          <div className="cs-faces">
+          <div className={`cs-faces${facesOff ? ' off' : ''}`}>
             {stageArts.map((a, i) => (
               <div key={i} className={`fc ${i === stageArtCur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
                 <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
