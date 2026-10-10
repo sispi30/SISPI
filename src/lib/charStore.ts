@@ -69,6 +69,8 @@ export interface Character {
    *  'light'/'dark'는 밝은/어두운 글자로 고정, 'custom'이면 bodyInkColor 그대로 */
   bodyInk?: 'auto' | 'light' | 'dark' | 'custom';
   bodyInkColor?: string;
+  /** 상세(스테이지) 아트 그림자 — 비우거나 'auto'면 배경이 밝을 때 밝은 그림자·어두울 때 어두운 그림자, 'dark'/'light'는 고정, 'none'은 그림자 없음 */
+  artShadow?: 'auto' | 'dark' | 'light' | 'none';
   color: string;         // 대표 테마색 (말풍선·리스트 점)
   // 상세 페이지 테마 (v1.9 사용자 확정) — custom이면 대표 테마색으로 홈 팔레트 임시 전환 (4.18 방식)
   themeMode?: 'default' | 'custom';
@@ -159,6 +161,7 @@ export interface AuCharProfile {
   altName?: string;      // 이름 다른 표기 — AU에서 비웠다면 '' 로 저장해 원본 값을 물려받지 않게 한다
   bodyInk?: 'auto' | 'light' | 'dark' | 'custom';   // 소개 본문 글자색 — AU에서 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
   bodyInkColor?: string;
+  artShadow?: 'auto' | 'dark' | 'light' | 'none';   // AU도 자기 값을 따로 — 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
   color?: string;
   themeMode?: 'default' | 'custom';
   themeTone?: 'site' | 'auto' | 'dark' | 'light';   // AU도 자기 톤을 따로 — 원본 값을 물려받지 않게 'site'로 저장
@@ -202,6 +205,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.sub !== undefined ? { sub: p.sub } : {}),
     ...(p.altName !== undefined ? { altName: p.altName } : {}),
     ...(p.bodyInk !== undefined ? { bodyInk: p.bodyInk, bodyInkColor: p.bodyInkColor } : {}),
+    ...(p.artShadow !== undefined ? { artShadow: p.artShadow } : {}),
     ...(p.color !== undefined ? { color: p.color } : {}),
     ...(p.themeMode !== undefined ? { themeMode: p.themeMode } : {}),
     ...(p.themeTone !== undefined ? { themeTone: p.themeTone } : {}),
@@ -708,6 +712,8 @@ export interface RelCardInfo {
   thumbRef?: string;       // 이미지 (IndexedDB 키)
   thumbClass?: string;     // 이미지가 없을 때 쓰는 플레이스홀더
   href: string;
+  /** 'char' = 직접 지정한 관계(캐릭터) — 캐릭터 목록 썸네일과 같은 3:4 비율로 보인다. 페어·그룹(자관)은 기존 세로로 긴 카드 */
+  shape?: 'char';
 }
 export interface RelGroupInfo { name: string; cards: RelCardInfo[] }
 
@@ -740,7 +746,7 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
   for (const l of ch.relLinks ?? []) {
     const c = charOf(l.charId);
     if (!c || c.id === ch.id || !ok(c.visibility)) continue;
-    manual.push({ key: `link:${c.id}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass, href: charHref(c) });
+    manual.push({ key: `link:${c.id}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass, href: charHref(c), shape: 'char' });
   }
   if (manual.length) out.push({ name: '관계', cards: manual });
 

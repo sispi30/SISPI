@@ -154,13 +154,13 @@ function SpecValue({ s, stage }: { s: Spec; stage?: boolean }) {
     const gradeMap = s.gradeMap;
     if (!labels.length) return <span style={{ color: 'var(--faint)' }}>—</span>;
     return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: stage ? '14px 40px' : 16, alignItems: 'center', justifyContent: 'center' }}>
         <RadarChart labels={labels} values={values} max={max} stage={stage} />
         <div style={{ display: 'grid', gap: 3, fontSize: 12 }}>
           {labels.map((lb, i) => {
             const v = values[i] ?? 0;
             const graded = gradeMap?.[lb]?.[v];
-            return <div key={lb}><b style={{ color: 'var(--faint)', fontWeight: 600 }}>{lb}</b> {graded ? `${v} · ${graded}` : v}</div>;
+            return <div key={lb}><b style={{ color: stage ? 'var(--cs-accent, var(--faint))' : 'var(--faint)', fontWeight: 600 }}>{lb}</b> {graded ? `${v} · ${graded}` : v}</div>;
           })}
         </div>
       </div>
@@ -176,7 +176,7 @@ function SpecValue({ s, stage }: { s: Spec; stage?: boolean }) {
 function RadarChart({ labels, values, max, stage }: { labels: string[]; values: number[]; max: number; stage?: boolean }) {
   const gridStroke = stage ? 'var(--line)' : '#eee';
   const axisStroke = stage ? 'var(--line)' : '#e2e8f0';
-  const labelFill = stage ? 'var(--faint)' : '#888';
+  const labelFill = stage ? 'var(--cs-accent, var(--faint))' : '#888';
   const size = 180;
   const center = size / 2;
   const radius = size / 2 - 26;

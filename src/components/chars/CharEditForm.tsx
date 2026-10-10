@@ -119,6 +119,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [bodyFontId, setBodyFontId] = useState(initial?.bodyFontId ?? 'default');
   // 상세 소개 본문 글자색 — 기본은 자동(배경 밝기를 보고 밝은/어두운 글자를 고른다)
   const [bodyInk, setBodyInk] = useState<'auto' | 'light' | 'dark' | 'custom'>(initial?.bodyInk ?? 'auto');
+  const [artShadow, setArtShadow] = useState<'auto' | 'dark' | 'light' | 'none'>(initial?.artShadow ?? 'auto');
   const [bodyInkColor, setBodyInkColor] = useState(initial?.bodyInkColor ?? '#ffffff');
   const [specs, setSpecs] = useState<SpecRow[]>(
     (initial?.specs ?? [{ label: '성별', value: '' }, { label: '키', value: '' }]).map(s => ({ ...s, id: s.key ?? newId() })));
@@ -236,6 +237,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       nameBold,
       bodyFontId,
       // 자동이면 저장하지 않는다(기본) — AU 저장은 edit/page.tsx가 'auto'로 명시해 원본 지정을 물려받지 않게 한다
+      artShadow: artShadow === 'auto' ? undefined : artShadow,
       bodyInk: bodyInk === 'auto' ? undefined : bodyInk,
       bodyInkColor: bodyInk === 'custom' ? bodyInkColor : undefined,
       thumbClass: initial?.thumbClass ?? '',
@@ -691,6 +693,16 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
                 <button className={bodyInk === 'custom' ? 'on' : ''} onClick={() => setBodyInk('custom')}>직접 지정</button>
               </div>
               {bodyInk === 'custom' && <ColorField value={bodyInkColor} onChange={setBodyInkColor} />}
+            </div>
+            {/* 아트 그림자 — 상세 화면의 캐릭터 그림 둘레 그림자 색. 기본은 자동 */}
+            <p className="hint" style={{ margin: '2px 0 0' }}>
+              아트 그림자 — 「자동」은 배경이 밝으면 밝은 그림자, 어두우면 어두운 그림자로 알아서 맞춥니다
+            </p>
+            <div className="mini-seg">
+              <button className={artShadow === 'auto' ? 'on' : ''} onClick={() => setArtShadow('auto')}>자동 (기본)</button>
+              <button className={artShadow === 'light' ? 'on' : ''} onClick={() => setArtShadow('light')}>밝은 그림자</button>
+              <button className={artShadow === 'dark' ? 'on' : ''} onClick={() => setArtShadow('dark')}>어두운 그림자</button>
+              <button className={artShadow === 'none' ? 'on' : ''} onClick={() => setArtShadow('none')}>없음</button>
             </div>
 
             {/* 배경 이미지 (v5.8 사용자 요청) — 자관 배경 이미지·환경설정의 배경 변경과 같은 방식.

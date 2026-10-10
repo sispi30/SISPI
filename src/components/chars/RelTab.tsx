@@ -14,7 +14,7 @@ function CardImg({ fileRef, ph }: { fileRef?: string; ph?: string }) {
 function Card({ c }: { c: RelCardInfo }) {
   const router = useRouter();
   return (
-    <div className="rc-card" role="link" tabIndex={0} onClick={() => router.push(c.href)}
+    <div className={`rc-card${c.shape === 'char' ? ' rc-char' : ''}`} role="link" tabIndex={0} onClick={() => router.push(c.href)}
       onKeyDown={e => { if (e.key === 'Enter') router.push(c.href); }}>
       <CardImg fileRef={c.thumbRef} ph={c.thumbClass} />
       <span className="rc-shade" />

@@ -2440,9 +2440,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .rc-group-name{padding:4px 13px;border-radius:999px;background:rgba(127,127,127,.16);font-size:calc(12.5px*var(--fs,1));font-weight:700;color:var(--ink)}
 .rc-group-count{font-size:calc(11.5px*var(--fs,1));font-weight:600;color:var(--sub)}
 .rc-row{display:flex;gap:12px;overflow-x:auto;padding:4px 4px 14px;scroll-snap-type:x proximity;scrollbar-width:thin}
-.rc-card{position:relative;flex:none;width:210px;aspect-ratio:4/3;height:auto;border-radius:16px;overflow:hidden;background:rgba(127,127,127,.14);scroll-snap-align:start;cursor:var(--cur-pointer,pointer);box-shadow:0 1px 2px rgba(0,0,0,.16);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
+.rc-card{position:relative;flex:none;width:140px;height:230px;border-radius:16px;overflow:hidden;background:rgba(127,127,127,.14);scroll-snap-align:start;cursor:var(--cur-pointer,pointer);box-shadow:0 1px 2px rgba(0,0,0,.16);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
 /* 그림자 폭 2px — 카드 줄이 overflow로 스크롤되는 박스라 그림자가 더 퍼지면 가장자리에서 잘려 보인다 */
 .rc-card:hover{transform:translateY(-3px);box-shadow:0 2px 2px rgba(0,0,0,.22)}
+.rc-card.rc-char{width:172px;height:auto;aspect-ratio:3/4}
 .rc-img{position:absolute;inset:0;background:center top / cover no-repeat;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .rc-card:hover .rc-img{transform:scale(1.05)}
 .rc-shade{position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(to top,color-mix(in srgb,var(--rc-bg,var(--panel)) 96%,transparent) 0%,color-mix(in srgb,var(--rc-bg,var(--panel)) 72%,transparent) 40%,color-mix(in srgb,var(--rc-bg,var(--panel)) 0%,transparent) 100%)}
@@ -2603,7 +2604,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs{background:transparent}
 .cs-bg{display:flex;justify-content:center;align-items:flex-end}
 .cs-art{width:auto;height:calc(100% - 86px);max-width:min(620px,44vw);object-fit:contain;object-position:center bottom;
-  filter:drop-shadow(0 14px 30px rgba(0,0,0,.45))}
+  filter:drop-shadow(var(--cs-art-sh,0 14px 30px rgba(0,0,0,.45)))}
 .cs-ph{max-width:min(420px,40vw);height:calc(100% - 140px);margin-bottom:86px;border-radius:18px}
 .cs-shade{background:
   linear-gradient(90deg,rgba(6,8,11,.62) 0%,rgba(6,8,11,.2) 30%,rgba(6,8,11,.2) 66%,rgba(6,8,11,.66) 100%),
@@ -2659,6 +2660,11 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
     /* 좌·우 내용 칸(더 넓은 우측 기준 대칭) 사이를 넘지 않게 — 넘치는 만큼은 스크롤·화살표로 */
     max-width:calc(100vw - 2*(var(--cs-px) + min(520px,28vw)) - 32px)}
 }
+
+/* 아트 그림자 색 — 밝은 배경에서는 어두운 그림자가 더러워 보이므로 밝게(자동은 배경 밝기를 따라감). 모바일은 어두운 판 위라 자동이면 늘 어둡게 */
+.cs[data-art-sh="light"],.cs[data-art-sh="auto-light"]{--cs-art-sh:0 14px 30px rgba(255,255,255,.7)}
+.cs[data-art-sh="none"]{--cs-art-sh:0 0 0 transparent}
+@media (max-width:960px){.cs[data-art-sh="auto-light"]{--cs-art-sh:0 14px 30px rgba(0,0,0,.45)}}
 
 /* BACK — 우측 상단 (EDIT/DELETE와 같은 작은 글씨). PC는 우측 칸 오른쪽 끝, 모바일은 화면 오른쪽 위 */
 .cs .cs-back{position:absolute;z-index:5;width:auto;margin:0;right:14px;top:10px}

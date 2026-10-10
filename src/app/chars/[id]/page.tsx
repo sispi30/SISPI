@@ -428,7 +428,7 @@ function CharDetailInner() {
         </div>
       ) : (
       stage ? (
-      <div className="cs" data-ink={stageInk}
+      <div className="cs" data-ink={stageInk} data-art-sh={(eff.artShadow ?? 'auto') === 'auto' ? (bgInk === 'dark' ? 'auto-light' : 'auto-dark') : eff.artShadow}
         style={{ fontFamily: familyOf(eff.bodyFontId), ...(customInk ? { '--cs-body': customInk } as React.CSSProperties : {}) }}>
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">
