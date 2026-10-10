@@ -509,9 +509,12 @@ function CharDetailInner() {
 
         {/* 우측 — 소개 본문(탭을 열었으면 그 탭의 본문) · 항목 바로가기 (이름·한 줄 소개는 좌측으로 이동) */}
         <div className="cs-right" ref={infoRef}>
-          {curTab && (
-            <div className="cs-tabhead"><b>{curTab.title}</b>{curTab.subtitle && <span>{curTab.subtitle}</span>}</div>
-          )}
+          {/* 제목 + 부제 — 추가 탭은 그 탭의 제목·부제, 기본 정보는 「기본 정보 / BASIC」 */}
+          <div className="cs-tabhead">
+            {curTab
+              ? <><b>{curTab.title}</b>{curTab.subtitle && <span>{curTab.subtitle}</span>}</>
+              : <><b>기본 정보</b><span>BASIC</span></>}
+          </div>
           <div className={`cs-intro prose${curTab ? ' tab' : ''}`} dangerouslySetInnerHTML={{ __html: curTab ? tabHtml : basicHtml }} />
           <div className="cs-links">
             {/* BGM 바로가기는 표시하지 않는다 (사용자 요청) — 이 캐릭터 BGM은 페이지에 들어오면 플레이어에서 그대로 재생된다 */}

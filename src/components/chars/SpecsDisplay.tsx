@@ -154,7 +154,7 @@ function SpecValue({ s, stage }: { s: Spec; stage?: boolean }) {
     const gradeMap = s.gradeMap;
     if (!labels.length) return <span style={{ color: 'var(--faint)' }}>—</span>;
     return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: stage ? '14px 40px' : 16, alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'center' }}>
         <RadarChart labels={labels} values={values} max={max} stage={stage} />
         <div style={{ display: 'grid', gap: 3, fontSize: 12 }}>
           {labels.map((lb, i) => {
@@ -177,31 +177,39 @@ function RadarChart({ labels, values, max, stage }: { labels: string[]; values: 
   const gridStroke = stage ? 'var(--line)' : '#eee';
   const axisStroke = stage ? 'var(--line)' : '#e2e8f0';
   const labelFill = stage ? 'var(--cs-accent, var(--faint))' : '#888';
-  const size = 180;
-  const center = size / 2;
-  const radius = size / 2 - 26;
+  // 축 이름이 격자 꼭짓점에 붙지 않도록 가로로 넉넉한 캔버스 — 이름은 꼭짓점에서 바깥으로 14px 떨어진 자리에 놓는다
+  const W = 260, H = 200;
+  const cx = W / 2, cy = H / 2;
+  const radius = 64;
+  const GAP = 14;   // 축 이름 ↔ 격자 꼭짓점 간격
   const n = labels.length;
   const angleFor = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
   const pointFor = (i: number, v: number): [number, number] => {
     const r = (Math.max(0, Math.min(v, max)) / (max || 1)) * radius;
     const a = angleFor(i);
-    return [center + r * Math.cos(a), center + r * Math.sin(a)];
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
   };
   const poly = labels.map((_, i) => pointFor(i, values[i] ?? 0).join(',')).join(' ');
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} style={{ flexShrink: 0 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ flexShrink: 0, maxWidth: '100%' }}>
       {[0.25, 0.5, 0.75, 1].map(f => (
         <polygon key={f} points={labels.map((_, i) => pointFor(i, max * f).join(',')).join(' ')}
           fill="none" style={{ stroke: gridStroke }} strokeWidth={1} />
       ))}
       {labels.map((_, i) => {
         const [x, y] = pointFor(i, max);
-        return <line key={i} x1={center} y1={center} x2={x} y2={y} style={{ stroke: axisStroke }} strokeWidth={1} />;
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} style={{ stroke: axisStroke }} strokeWidth={1} />;
       })}
       <polygon points={poly} fill="var(--accent, #344abd)" fillOpacity={0.25} stroke="var(--accent, #344abd)" strokeWidth={1.5} />
       {labels.map((lb, i) => {
-        const [x, y] = pointFor(i, max * 1.16);
-        return <text key={lb} x={x} y={y} fontSize={10} textAnchor="middle" dominantBaseline="middle" style={{ fill: labelFill }}>{lb}</text>;
+        // 꼭짓점에서 바깥 방향으로 GAP만큼 — 좌우 축은 글자 끝을 꼭짓점 쪽에 맞추고, 위아래 축은 위·아래로 띄운다
+        const a = angleFor(i);
+        const cs = Math.cos(a), sn = Math.sin(a);
+        const [vx, vy] = pointFor(i, max);
+        const x = vx + cs * GAP, y = vy + sn * GAP;
+        const anchor = cs > 0.3 ? 'start' : cs < -0.3 ? 'end' : 'middle';
+        const base = Math.abs(cs) > 0.3 ? 'middle' : sn < 0 ? 'auto' : 'hanging';
+        return <text key={lb} x={x} y={y} fontSize={11} textAnchor={anchor} dominantBaseline={base} style={{ fill: labelFill }}>{lb}</text>;
       })}
     </svg>
   );

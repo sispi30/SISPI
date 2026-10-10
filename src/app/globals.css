@@ -2689,8 +2689,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-admin button:hover b{color:var(--ink)}
 /* 탭을 열었을 때 우측 본문 머리 + 본문은 길어도 충분히 보이게 */
 .cs-tabhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.cs-tabhead b{font-size:calc(18px*var(--fs,1));letter-spacing:.06em}
-.cs-tabhead span{font-size:calc(12px*var(--fs,1));color:var(--sub)}
+.cs-tabhead{margin-bottom:6px}
+.cs-tabhead b{font-size:calc(26px*var(--fs,1));letter-spacing:.05em;line-height:1.2}
+.cs-tabhead span{font-size:calc(14px*var(--fs,1));letter-spacing:.1em;color:var(--sub)}
 
 /* 스테이지 글자색 (v7.5·v7.6) — 캐릭터마다 배경이 달라 하나로 정할 수 없다.
    편집 > 본문 글자색(자동/밝은 글자/어두운 글자/직접 지정)이 정한 --cs-body 한 가지 색에서
