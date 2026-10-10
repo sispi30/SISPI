@@ -21,7 +21,8 @@ export function SpecsDisplay({ specs, stage }: { specs: Spec[]; stage?: boolean 
 const STAGE_ROW: CSSProperties = {
   // 라벨 칸을 목록 폭의 약 40%로 — 라벨과 값 사이를 넉넉히 띄운다 (긴 라벨도 덜 꺾임)
   display: 'grid', gridTemplateColumns: '40% minmax(0, 1fr)', alignItems: 'baseline', gap: 14,
-  padding: '10px 0', borderBottom: '1px solid var(--line)',
+  // 위아래 간격은 화면 높이에 따라 줄어든다(--cs-rowpad, 스테이지가 정함) — 낮은 화면에서도 스크롤 없이 들어가게
+  padding: 'var(--cs-rowpad, 10px) 0', borderBottom: '1px solid var(--line)',
 };
 const STAGE_LABEL: CSSProperties = {
   color: 'var(--cs-accent, var(--faint))', fontSize: '.92em', fontWeight: 700, letterSpacing: '.06em',

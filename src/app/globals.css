@@ -2482,7 +2482,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 글자가 읽히도록 오른쪽·아래를 어둡게 눌러 준다 */
 .cs-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,8,11,.55) 0%,rgba(6,8,11,.15) 34%,rgba(6,8,11,.55) 62%,rgba(6,8,11,.9) 100%),linear-gradient(0deg,rgba(6,8,11,.7) 0%,rgba(6,8,11,0) 38%)}
 /* 좌측 — 검은 박스 없이 배경 위에 바로: 한 줄 소개 → 이름 → 다른 표기 → 기본 정보 목록 */
-.cs-left{position:absolute;left:34px;top:34px;bottom:70px;width:min(380px,30%);overflow:visible;padding:0;display:flex;flex-direction:column;align-items:flex-start}
+.cs-left{position:absolute;left:34px;top:34px;bottom:70px;width:min(380px,30%);overflow:visible;padding:0}
+.cs-left-in{display:flex;flex-direction:column;align-items:flex-start;width:100%}
 .cs-tag{font-size:calc(14px*var(--fs,1));font-weight:700;letter-spacing:.04em;color:var(--cs-accent,var(--sub));margin-bottom:10px}
 .cs-alt{font-size:calc(17px*var(--fs,1));font-weight:700;color:var(--ink);margin-top:10px}
 .cs-specs{width:100%;margin-top:22px;border-top:1px solid var(--line)}
@@ -2588,18 +2589,24 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-faces.off{opacity:0;pointer-events:none;translate:-50% 10px}
 @media (max-width:960px){.cs-faces.off{translate:-50% 0}}
 
-/* ---------- 스테이지 수정 (v7.4) — 좌측 내부 스크롤 제거 · 추가 탭 이동 버튼 ----------
-   · 데스크톱: 스테이지를 화면 고정 상자가 아니라 일반 흐름으로 두어, 좌측 내용이 길어지면 상자 안이 아니라
-     페이지 전체가 스크롤된다. 그림(cs-bg)·썸네일 줄(cs-faces)만 화면에 고정 · 우측은 따라 내려오게(sticky)
-   · 모바일(≤960px)은 원래 세로로 쌓여 페이지가 스크롤되므로 그대로 */
+/* ---------- 스테이지 수정 (v7.5) — PC는 화면 한 장에 전부 (스크롤 없음) · 1920x1080 기준 여백 ----------
+   · 스테이지는 화면 전체 고정(.cs fixed) — 페이지 자체는 스크롤되지 않는다
+   · 좌우·상하 여백과 칸 폭은 화면 크기(vw·vh)에 따라 줄고 늘며, 1920x1080에서 아래 값이 된다:
+       좌우 여백 77px · 위 135px(제목줄 아래) · 아래 119px(하단 독·BGM 위) · 좌측 460px · 우측 520px
+   · 좌측 항목이 그래도 넘치면 StageLeft가 비율로 줄여 맞춘다 (스크롤 없이 전부 보이게)
+   · 우측 소개 본문은 남는 높이를 쓰고, 정말 길 때만 그 안에서 스크롤 */
 @media (min-width:961px){
-  .cs{position:relative;inset:auto;z-index:1;height:auto;min-height:0;max-height:none;overflow:visible;
-    display:grid;grid-template-columns:min(400px,28vw) minmax(0,1fr) min(500px,35vw);column-gap:24px;align-items:start;
-    padding:64px max(44px,6vw) 160px max(34px,5vw);box-sizing:border-box}
-  .cs-bg{position:fixed;inset:0;z-index:0}
-  .cs-faces{position:fixed;left:50%;bottom:92px;translate:-50% 0}
-  .cs-left{position:relative;z-index:1;grid-column:1;left:auto;top:auto;bottom:auto;width:auto;overflow:visible}
-  .cs-right{position:sticky;z-index:1;grid-column:3;top:96px;right:auto;bottom:auto;width:auto;align-self:start;margin-top:clamp(0px,8vh,100px)}
+  .cs{--cs-px:clamp(32px,4vw,96px);--cs-top:clamp(128px,12.5vh,150px);--cs-bottom:clamp(84px,11vh,130px);
+    --cs-rowpad:clamp(5px,.9vh,10px);
+    position:fixed;inset:0;z-index:1;height:auto;min-height:0;max-height:none;overflow:hidden;display:block;padding:0}
+  .cs-bg{position:absolute;inset:0}
+  .cs-art{max-width:min(620px,36vw)}
+  .cs-left{left:var(--cs-px);top:var(--cs-top);bottom:var(--cs-bottom);width:min(460px,26vw)}
+  .cs-left-in{transform:scale(var(--fit,1));transform-origin:0 0}
+  .cs-right{right:var(--cs-px);top:var(--cs-top);bottom:var(--cs-bottom);width:min(520px,28vw)}
+  .cs-intro{flex:0 1 auto;min-height:0;max-height:none}
+  .cs-links,.cs-tabhead{flex:none}
+  .cs-faces{position:absolute;left:50%;translate:-50% 0;bottom:92px}
 }
 
 /* 추가 탭 이동 버튼 줄 — 기본 정보 목록 아래. 작은 라벨 + 제목 + › , 열려 있는 탭은 포인트색 밑줄 */
@@ -2615,5 +2622,15 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-tabhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .cs-tabhead b{font-size:calc(18px*var(--fs,1));letter-spacing:.06em}
 .cs-tabhead span{font-size:calc(12px*var(--fs,1));color:var(--sub)}
-.cs-intro.tab{max-height:58vh}
-@media (max-width:960px){.cs-intro.tab{max-height:none}}
+
+/* 소개 본문 글자색 (v7.5) — 캐릭터마다 배경이 달라 하나로 정할 수 없다.
+   useBgInk가 지금 깔린 배경의 밝기를 재서 .cs의 data-ink 를 정한다:
+   어두운 배경 → 밝은 글자(기본) · 밝은 배경(data-ink="dark") → 어두운 글자 + 밝은 그림자.
+   모바일(≤960px)은 소개가 배경이 아니라 어두운 판(#0b0d10) 위에 놓이므로 늘 밝은 글자 */
+.cs{--cs-body:#f3f5f8;--cs-body-sh:0 1px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}
+.cs[data-ink="dark"]{--cs-body:#12161d;--cs-body-sh:0 0 12px rgba(255,255,255,.55),0 0 2px rgba(255,255,255,.4)}
+.cs .cs-intro,.cs .cs-tabhead b,.cs .cs-tabhead span{color:var(--cs-body);text-shadow:var(--cs-body-sh);transition:color .25s}
+.cs .cs-tabhead span{opacity:.72}
+@media (max-width:960px){
+  .cs,.cs[data-ink="dark"]{--cs-body:#f3f5f8;--cs-body-sh:0 1px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}
+}

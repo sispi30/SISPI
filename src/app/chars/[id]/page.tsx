@@ -25,6 +25,7 @@ import { RelTab } from '@/components/chars/RelTab';
 import { StageWindow } from '@/components/chars/StageWindow';
 import type { BackupPost } from '@/lib/galleryStore';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
+import { useBgInk } from '@/lib/useBgInk';
 
 /** 우측 정보 패널에서 「기본 정보」·탭 다음으로 쓰는 세 번째 특수 탭 값 — TRPG 버튼(EDIT·DELETE·
  *  GALLERY와 같은 자리)을 누르면 새 탭 전환과 같은 방식으로 이 값으로 바뀐다 (v2.8) */
@@ -104,6 +105,35 @@ function NaturalArt({ fileRef, ph, label }: { fileRef?: string; ph: string; labe
   return <img src={url} alt="" style={{ maxWidth: '100%', maxHeight: '76vh', display: 'block', margin: '0 auto', borderRadius: 'var(--radius)' }} />;
 }
 
+/** 스테이지 좌측 — 항목이 많아도 화면 안에서 스크롤 없이 전부 보이도록(PC),
+ *  내용 높이가 상자(위·아래 여백으로 정해진 높이)보다 크면 그만큼 비율로 줄여서 보여준다.
+ *  내용 높이는 확대·축소(transform)의 영향을 받지 않아 줄였다 늘였다 하는 되먹임이 없다. 모바일(≤960px)은 그대로 쌓인다 */
+function StageLeft({ children }: { children: React.ReactNode }) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const inRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
+  useEffect(() => {
+    const box = boxRef.current, inner = inRef.current;
+    if (!box || !inner) return;
+    const mq = window.matchMedia('(min-width:961px)');
+    const calc = () => {
+      const avail = box.clientHeight, need = inner.offsetHeight;
+      const next = mq.matches && avail > 0 && need > avail ? Math.max(0.5, avail / need) : 1;
+      setFit(prev => (Math.abs(prev - next) < 0.005 ? prev : next));
+    };
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(box); ro.observe(inner);
+    mq.addEventListener('change', calc);
+    return () => { ro.disconnect(); mq.removeEventListener('change', calc); };
+  }, []);
+  return (
+    <div className="cs-left" ref={boxRef}>
+      <div className="cs-left-in" ref={inRef} style={{ '--fit': fit } as React.CSSProperties}>{children}</div>
+    </div>
+  );
+}
+
 /** 스테이지 배경 그림 — 화면 가득 채우도록 cover (등록한 그림 그대로) */
 function StageArt({ fileRef, onClick }: { fileRef?: string; onClick?: () => void }) {
   const url = useBlobUrl(fileRef);
@@ -131,6 +161,8 @@ function CharDetailInner() {
     return t === 'trpg' ? TRPG_TAB : t === 'gallery' ? GALLERY_TAB : t === 'rel' ? REL_TAB : 'basic';
   });
   const [artIdx, setArtIdx] = useState(0);
+  // 스테이지 소개 본문 글자색 — 캐릭터마다 배경이 다르므로 지금 깔린 배경의 밝기를 재서 자동으로 (밝은 배경 → 어두운 글자)
+  const bgInk = useBgInk();
   const [delAsk, setDelAsk] = useState(false);   // 캐릭터 삭제 확인
   const infoRef = useRef<HTMLDivElement>(null);
 
@@ -326,7 +358,7 @@ function CharDetailInner() {
         </div>
       ) : (
       stage ? (
-      <div className="cs" style={{ fontFamily: familyOf(eff.bodyFontId) }}>
+      <div className="cs" data-ink={bgInk === 'dark' ? 'dark' : 'light'} style={{ fontFamily: familyOf(eff.bodyFontId) }}>
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">
           {stageArtRef
@@ -344,7 +376,7 @@ function CharDetailInner() {
         )}
 
         {/* 좌측 — 한 줄 소개 → 이름 → 다른 표기(있을 때만) → 기본 정보 항목 (박스 없이 배경 위에 바로) */}
-        <div className="cs-left">
+        <StageLeft>
           {eff.sub && <div className="cs-tag">{eff.sub}</div>}
           <div className="cs-name" style={{
             fontFamily: familyOf(eff.fontId) ?? 'var(--serif)', fontSize: Math.round((eff.nameSize ?? 38) * 1.35),
@@ -391,7 +423,7 @@ function CharDetailInner() {
               ))}
             </div>
           )}
-        </div>
+        </StageLeft>
 
         {/* 우측 — 소개 본문(탭을 열었으면 그 탭의 본문) · 항목 바로가기 (이름·한 줄 소개는 좌측으로 이동) */}
         <div className="cs-right" ref={infoRef}>
