@@ -263,11 +263,19 @@ function CharDetailInner() {
   /* ---------- 스테이지 레이아웃 데이터 (v7.0) ---------- */
   // 캐릭터마다 고른다(편집 → 상세 레이아웃). 안 고르면 스테이지, 「클래식」이면 예전 좌 아이콘탭·중앙 아트·우 패널
   const stage = ch.detailLayout !== 'classic';
+  // 스테이지가 실제로 그려지는 상태 (AU 미등록 안내 화면은 제외)
+  const stageShown = stage && !(auKey && !auRegistered);
+  const canEditChar = isAdmin || charGrant(ch, user?.id) === 'edit';
+  // 소개 본문 글자색 — 옵션(편집 > 본문 글자색): 자동(기본)이면 배경 밝기를 보고, 밝게/어둡게는 고정, 직접 지정은 그 색 그대로.
+  // 'light'=밝은 글자 · 'dark'=어두운 글자 (그림자 색도 이에 맞춘다).
+  // 직접 지정한 색은 글자색 자체는 그대로 쓰고, 글자를 받치는 그림자만 배경 밝기(bgInk)에 맞춘다
+  const inkMode = eff.bodyInk ?? 'auto';
+  const customInk = inkMode === 'custom' && /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(eff.bodyInkColor ?? '') ? eff.bodyInkColor! : null;
+  const stageInk: 'light' | 'dark' = inkMode === 'light' ? 'light' : inkMode === 'dark' ? 'dark' : bgInk;
   const stageViewer = { isAdmin, canEdit: isAdmin || charGrant(ch, user?.id) === 'edit', loggedIn: !!user };
   const stageGallery = hasGallery(ch) ? charGalleryPosts(ch, rels, stageViewer) : [];
   const stageRel = ch.relEnabled ? charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user }) : [];
   const stageTrpgCount = playRecords.filter(r => r.charIds?.includes(ch.id)).length;
-  const stageTracks = (ch.bgm?.playlists ?? []).flatMap(pl => pl.tracks.filter(t => t.videoId));
   const stageTabArts = curTab?.arts && curTab.arts.length > 0 ? curTab.arts : null;
   const stageBaseArts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
   // 첫 장은 목록용 대표·썸네일 전용이라 상세에는 2번째 장부터 (클래식과 같은 규칙)
@@ -279,7 +287,7 @@ function CharDetailInner() {
   const stageTabSpecs = curTab?.rule && curTab.specs?.length ? curTab.specs : null;
 
   return (
-    <section className={`page page-char-detail${stage && !(auKey && !auRegistered) ? ' is-stage' : ''}`}>
+    <section className={`page page-char-detail${stageShown ? ' is-stage' : ''}`}>
       <div className="page-head">
         {/* 제목 자리는 메뉴 이름 — 클릭 시 목록 복귀. 캐릭터 이름은 우측 프로필 패널에 크게 표시 */}
         <PageTitle href={tt.href}>{tt.title}</PageTitle>
@@ -288,7 +296,8 @@ function CharDetailInner() {
         <div className="head-actions">
           {/* 관리자 또는 「편집까지」 권한 회원 (3차 회원-캐릭터 연결, v1.9)
               — AU 선택 상태의 EDIT은 그 AU 전용 프로필 편집으로 진입 */}
-          {(isAdmin || charGrant(ch, user?.id) === 'edit') && (
+          {/* 스테이지에서는 EDIT·DELETE가 좌측 항목 아래(탭 버튼 옆 작은 글씨)로 옮겨 가서 여기엔 안 나온다 */}
+          {!stageShown && canEditChar && (
             <button className="btn btn-dark" onClick={() => router.push(editHref)}>EDIT</button>
           )}
           {/* 캐릭터당 갤러리 하나 — TRPG와 같은 방식으로, 새 페이지로 가지 않고
@@ -305,7 +314,7 @@ function CharDetailInner() {
           {!stage && (ch.trpgEnabled || hasTrpgLinks) && (
             <button className="btn btn-dark" onClick={() => setTab(TRPG_TAB)}>TRPG</button>
           )}
-          {isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}
+          {!stageShown && isAdmin && <button className="btn btn-dark" onClick={() => setDelAsk(true)}>DELETE</button>}
         </div>
 
         <ConfirmModal open={delAsk} title="캐릭터를 삭제하시겠습니까?"
@@ -358,7 +367,8 @@ function CharDetailInner() {
         </div>
       ) : (
       stage ? (
-      <div className="cs" data-ink={bgInk === 'dark' ? 'dark' : 'light'} style={{ fontFamily: familyOf(eff.bodyFontId) }}>
+      <div className="cs" data-ink={stageInk}
+        style={{ fontFamily: familyOf(eff.bodyFontId), ...(customInk ? { '--cs-body': customInk } as React.CSSProperties : {}) }}>
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">
           {stageArtRef
@@ -377,7 +387,19 @@ function CharDetailInner() {
 
         {/* 좌측 — 한 줄 소개 → 이름 → 다른 표기(있을 때만) → 기본 정보 항목 (박스 없이 배경 위에 바로) */}
         <StageLeft>
-          {eff.sub && <div className="cs-tag">{eff.sub}</div>}
+          {/* 맨 윗줄 — 한 줄 소개 옆에 관리 버튼(상단 EDIT/DELETE를 옮겨 온 것). 탭 버튼과 같은 작은 글씨 모양
+              (EDIT은 편집 권한자, DELETE는 관리자만 — 권한 조건은 예전 상단 버튼과 같다). 소개가 길면 버튼이 다음 줄로 내려간다 */}
+          {(eff.sub || canEditChar || isAdmin) && (
+            <div className="cs-top">
+              {eff.sub && <div className="cs-tag">{eff.sub}</div>}
+              {(canEditChar || isAdmin) && (
+                <div className="cs-tabs cs-admin">
+                  {canEditChar && <button onClick={() => router.push(editHref)}><b>EDIT</b></button>}
+                  {isAdmin && <button onClick={() => setDelAsk(true)}><b>DELETE</b></button>}
+                </div>
+              )}
+            </div>
+          )}
           <div className="cs-name" style={{
             fontFamily: familyOf(eff.fontId) ?? 'var(--serif)', fontSize: Math.round((eff.nameSize ?? 38) * 1.35),
             fontWeight: (eff.nameBold ?? true) ? 700 : 400, letterSpacing: '.08em',
@@ -432,13 +454,7 @@ function CharDetailInner() {
           )}
           <div className={`cs-intro prose${curTab ? ' tab' : ''}`} dangerouslySetInnerHTML={{ __html: curTab ? tabHtml : basicHtml }} />
           <div className="cs-links">
-            {stageTracks.length > 0 && (
-              <button className="cs-link" onClick={() => setTab(BGM_TAB)}>
-                <span className="cs-link-k">BGM</span>
-                <span className="cs-link-s">♪ {stageTracks[0].title}{stageTracks.length > 1 ? ` 외 ${stageTracks.length - 1}곡` : ''}</span>
-                <span className="cs-link-a">→</span>
-              </button>
-            )}
+            {/* BGM 바로가기는 표시하지 않는다 (사용자 요청) — 이 캐릭터 BGM은 페이지에 들어오면 플레이어에서 그대로 재생된다 */}
             {hasGallery(ch) && (
               <button className="cs-link" onClick={() => setTab(GALLERY_TAB)}>
                 <span className="cs-link-k">Gallery</span>

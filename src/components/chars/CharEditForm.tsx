@@ -116,6 +116,9 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [nameSize, setNameSize] = useState(initial?.nameSize ?? 38);   // 상세 큰 이름 크기 (v2.0)
   const [nameBold, setNameBold] = useState(initial?.nameBold ?? true); // 상세 이름 볼드 (v2.0 — 기본 켜짐)
   const [bodyFontId, setBodyFontId] = useState(initial?.bodyFontId ?? 'default');
+  // 상세 소개 본문 글자색 — 기본은 자동(배경 밝기를 보고 밝은/어두운 글자를 고른다)
+  const [bodyInk, setBodyInk] = useState<'auto' | 'light' | 'dark' | 'custom'>(initial?.bodyInk ?? 'auto');
+  const [bodyInkColor, setBodyInkColor] = useState(initial?.bodyInkColor ?? '#ffffff');
   const [specs, setSpecs] = useState<SpecRow[]>(
     (initial?.specs ?? [{ label: '성별', value: '' }, { label: '키', value: '' }]).map(s => ({ ...s, id: s.key ?? newId() })));
   // TRPG 룰 이름 (v2.1 — 자놀 캐릭터 기본 정보 항목 룰별 정보란). 미선택이면 기존처럼 자유 항목(specs) 그대로.
@@ -230,6 +233,9 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       nameSize,
       nameBold,
       bodyFontId,
+      // 자동이면 저장하지 않는다(기본) — AU 저장은 edit/page.tsx가 'auto'로 명시해 원본 지정을 물려받지 않게 한다
+      bodyInk: bodyInk === 'auto' ? undefined : bodyInk,
+      bodyInkColor: bodyInk === 'custom' ? bodyInkColor : undefined,
       thumbClass: initial?.thumbClass ?? '',
       arts: artIds,
       thumbId: artIds[0],       // 썸네일 = 첫 아트 + 크롭
@@ -656,6 +662,20 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
                 value: f.id,
                 label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span>,
               }))} />
+            {/* 소개 본문 글자색 — 캐릭터마다 배경이 달라서 하나로 정할 수 없다. 기본은 자동 */}
+            <p className="hint" style={{ margin: '2px 0 0' }}>
+              본문 글자색 — 상세 화면의 소개 본문에 적용. 「자동」은 배경 밝기를 보고 밝은/어두운 글자를 알아서 고릅니다
+              (직접 지정한 색은 모바일에도 그대로 적용)
+            </p>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div className="mini-seg">
+                <button className={bodyInk === 'auto' ? 'on' : ''} onClick={() => setBodyInk('auto')}>자동 (기본)</button>
+                <button className={bodyInk === 'light' ? 'on' : ''} onClick={() => setBodyInk('light')}>밝은 글자</button>
+                <button className={bodyInk === 'dark' ? 'on' : ''} onClick={() => setBodyInk('dark')}>어두운 글자</button>
+                <button className={bodyInk === 'custom' ? 'on' : ''} onClick={() => setBodyInk('custom')}>직접 지정</button>
+              </div>
+              {bodyInk === 'custom' && <ColorField value={bodyInkColor} onChange={setBodyInkColor} />}
+            </div>
 
             {/* 배경 이미지 (v5.8 사용자 요청) — 자관 배경 이미지·환경설정의 배경 변경과 같은 방식.
                 업로드 + 블러 슬라이더, 상세 페이지 전체 배경으로 고정·cover로 깔림 (선택) */}

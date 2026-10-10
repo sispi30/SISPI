@@ -65,6 +65,10 @@ export interface Character {
   sub: string;           // 한글명 · 소속 한 줄
   /** 캐릭터 이름의 다른 표기 (선택) — 상세 화면 이름 아래에 작게 표시. 비우면 표시하지 않는다 */
   altName?: string;
+  /** 상세(스테이지) 소개 본문 글자색 — 비우거나 'auto'면 배경 밝기를 보고 자동(기본),
+   *  'light'/'dark'는 밝은/어두운 글자로 고정, 'custom'이면 bodyInkColor 그대로 */
+  bodyInk?: 'auto' | 'light' | 'dark' | 'custom';
+  bodyInkColor?: string;
   color: string;         // 대표 테마색 (말풍선·리스트 점)
   // 상세 페이지 테마 (v1.9 사용자 확정) — custom이면 대표 테마색으로 홈 팔레트 임시 전환 (4.18 방식)
   themeMode?: 'default' | 'custom';
@@ -151,6 +155,8 @@ export interface AuCharProfile {
   name?: string;
   sub?: string;
   altName?: string;      // 이름 다른 표기 — AU에서 비웠다면 '' 로 저장해 원본 값을 물려받지 않게 한다
+  bodyInk?: 'auto' | 'light' | 'dark' | 'custom';   // 소개 본문 글자색 — AU에서 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
+  bodyInkColor?: string;
   color?: string;
   themeMode?: 'default' | 'custom';
   colors?: ColorChip[];
@@ -179,6 +185,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.name !== undefined ? { name: p.name } : {}),
     ...(p.sub !== undefined ? { sub: p.sub } : {}),
     ...(p.altName !== undefined ? { altName: p.altName } : {}),
+    ...(p.bodyInk !== undefined ? { bodyInk: p.bodyInk, bodyInkColor: p.bodyInkColor } : {}),
     ...(p.color !== undefined ? { color: p.color } : {}),
     ...(p.themeMode !== undefined ? { themeMode: p.themeMode } : {}),
     ...(p.colors !== undefined ? { colors: p.colors } : {}),

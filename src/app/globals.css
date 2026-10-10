@@ -2618,6 +2618,14 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-tabs button:hover i{translate:3px 0;opacity:1}
 .cs-tabs button.on{border-bottom-color:var(--cs-accent,var(--ink))}
 .cs-tabs button.on b{color:var(--cs-accent,var(--ink))}
+/* 관리 버튼(EDIT·DELETE) — 탭 버튼과 같은 모양, 글씨만 한 단계 작게 */
+/* 맨 윗줄: 한 줄 소개 + 관리 버튼(EDIT·DELETE) — 소개 바로 옆에 붙고, 길면 버튼이 다음 줄로 */
+.cs-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 18px;margin-bottom:10px}
+.cs-top .cs-tag{margin-bottom:0}
+.cs-top .cs-tabs{width:auto;margin-top:0}
+.cs-admin{gap:0 14px}
+.cs-admin b{font-size:calc(11px*var(--fs,1));letter-spacing:.14em;color:var(--sub)}
+.cs-admin button:hover b{color:var(--ink)}
 /* 탭을 열었을 때 우측 본문 머리 + 본문은 길어도 충분히 보이게 */
 .cs-tabhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .cs-tabhead b{font-size:calc(18px*var(--fs,1));letter-spacing:.06em}

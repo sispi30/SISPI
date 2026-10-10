@@ -50,7 +50,7 @@ function CharEditInner() {
     ? (auProf
       ? charWithAu(ch, auKey)
       : {
-        ...ch, name: '', sub: '', altName: undefined, basicHtml: '', tabs: [], colors: [], colorTipMode: 'hex' as const,
+        ...ch, name: '', sub: '', altName: undefined, bodyInk: undefined, bodyInkColor: undefined, basicHtml: '', tabs: [], colors: [], colorTipMode: 'hex' as const,
         specs: [{ label: '성별', value: '' }, { label: '키', value: '' }],
         arts: [], artId: undefined, thumbId: undefined, thumbCrop: undefined,
         bgImgId: undefined, bgBlur: undefined,
@@ -78,7 +78,8 @@ function CharEditInner() {
                 [auKey]: {
                   // 폼 밖에서 정한 값(상세 아트 위치 등)은 그대로 두고 폼 값만 덮어쓴다 (v2.0)
                   ...x.auProfiles?.[auKey],
-                  name: c.name, sub: c.sub, altName: c.altName ?? '', color: c.color, themeMode: c.themeMode,
+                  name: c.name, sub: c.sub, altName: c.altName ?? '',
+                  bodyInk: c.bodyInk ?? 'auto', bodyInkColor: c.bodyInkColor, color: c.color, themeMode: c.themeMode,
                   colors: c.colors, colorTipMode: c.colorTipMode,
                   specs: c.specs, rule: c.rule, sheetUrl: c.sheetUrl, tabs: c.tabs, basicHtml: c.basicHtml,
                   arts: c.arts, thumbId: c.thumbId, thumbCrop: c.thumbCrop,
