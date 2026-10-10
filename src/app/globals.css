@@ -2586,6 +2586,11 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-faces .fc{position:relative;flex:0 0 auto;width:56px;height:56px;border-radius:8px;overflow:hidden;box-sizing:border-box;border:2px solid transparent;opacity:.7;background:#222;box-shadow:0 2px 10px rgba(0,0,0,.3)}
 .cs-faces .fc.on{border-color:#fff;opacity:1}
 .cs-faces .fc:hover{opacity:1}
+.cs-faces{align-items:center;gap:6px;max-width:calc(100vw - 32px)}
+.cs-faces-track{position:relative;display:flex;gap:8px;min-width:0;padding:4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.cs-faces-track::-webkit-scrollbar{display:none}
+.cs-faces-arr{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:18px;line-height:1;display:grid;place-items:center;cursor:var(--cur-pointer,pointer);transition:opacity .2s}
+.cs-faces-arr:disabled{opacity:.3;cursor:default}
 .cs-faces.off{opacity:0;pointer-events:none;translate:-50% 10px}
 @media (max-width:960px){.cs-faces.off{translate:-50% 0}}
 
@@ -2606,7 +2611,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   .cs-right{right:var(--cs-px);top:var(--cs-top);bottom:var(--cs-bottom);width:min(520px,28vw)}
   .cs-intro{flex:0 1 auto;min-height:0;max-height:none}
   .cs-links,.cs-tabhead{flex:none}
-  .cs-faces{position:absolute;left:50%;translate:-50% 0;bottom:92px}
+  .cs-faces{position:absolute;left:50%;translate:-50% 0;bottom:92px;
+    /* 좌·우 내용 칸(더 넓은 우측 기준 대칭) 사이를 넘지 않게 — 넘치는 만큼은 스크롤·화살표로 */
+    max-width:calc(100vw - 2*(var(--cs-px) + min(520px,28vw)) - 32px)}
 }
 
 /* 추가 탭 이동 버튼 줄 — 기본 정보 목록 아래. 작은 라벨 + 제목 + › , 열려 있는 탭은 포인트색 밑줄 */

@@ -142,6 +142,53 @@ function StageArt({ fileRef, onClick }: { fileRef?: string; onClick?: () => void
   return <img className="cs-art" src={url} alt="" draggable={false} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined} />;
 }
 
+/** 스테이지 하단 추가 이미지 줄 — 가운데 칸(좌·우 내용 사이)을 넘지 않는 폭까지만 보이고,
+ *  더 많으면 마우스 휠·터치 스크롤이나 양옆 화살표로 넘긴다. 고른 썸네일은 항상 보이는 자리로 따라온다 */
+function StageFaces({ arts, cur, off, ph, onPick }: { arts: string[]; cur: number; off: boolean; ph: string; onPick: (i: number) => void }) {
+  const track = useRef<HTMLDivElement>(null);
+  const [more, setMore] = useState(false);
+  const [edge, setEdge] = useState({ l: true, r: false });
+  const measure = () => {
+    const t = track.current; if (!t) return;
+    setMore(t.scrollWidth > t.clientWidth + 1);
+    setEdge({ l: t.scrollLeft <= 1, r: t.scrollLeft + t.clientWidth >= t.scrollWidth - 1 });
+  };
+  useEffect(() => {
+    const t = track.current; if (!t) return;
+    measure();
+    const ro = new ResizeObserver(measure); ro.observe(t);
+    // 세로 휠을 가로 이동으로 — 넘칠 때만
+    const wheel = (e: WheelEvent) => {
+      if (t.scrollWidth <= t.clientWidth + 1) return;
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!d) return;
+      e.preventDefault(); t.scrollLeft += d;
+    };
+    t.addEventListener('wheel', wheel, { passive: false });
+    return () => { ro.disconnect(); t.removeEventListener('wheel', wheel); };
+  }, [arts.length]);
+  // 고른 썸네일이 가운데 오도록
+  useEffect(() => {
+    const t = track.current; const el = t?.children[cur] as HTMLElement | undefined;
+    if (!t || !el) return;
+    t.scrollTo({ left: el.offsetLeft - t.clientWidth / 2 + el.offsetWidth / 2, behavior: 'smooth' });
+  }, [cur, arts.length]);
+  const page = (dir: -1 | 1) => track.current?.scrollBy({ left: dir * Math.max(64, (track.current.clientWidth - 64)), behavior: 'smooth' });
+  return (
+    <div className={`cs-faces${off ? ' off' : ''}`}>
+      {more && <button type="button" className="cs-faces-arr" aria-label="이전 이미지" disabled={edge.l} onClick={() => page(-1)}>‹</button>}
+      <div className="cs-faces-track" ref={track} onScroll={measure}>
+        {arts.map((a, i) => (
+          <div key={i} className={`fc ${i === cur ? 'on' : ''}`} onClick={() => onPick(i)}>
+            <CroppedBlobImg fileRef={a} ph={ph} />
+          </div>
+        ))}
+      </div>
+      {more && <button type="button" className="cs-faces-arr" aria-label="다음 이미지" disabled={edge.r} onClick={() => page(1)}>›</button>}
+    </div>
+  );
+}
+
 function CharDetailInner() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -381,13 +428,7 @@ function CharDetailInner() {
             : <div className={`cs-ph ph ${ch.thumbClass}`}><span>CHARACTER FULL ART</span></div>}
         </div>
         {stageArts.length > 1 && (
-          <div className={`cs-faces${facesOff ? ' off' : ''}`}>
-            {stageArts.map((a, i) => (
-              <div key={i} className={`fc ${i === stageArtCur ? 'on' : ''}`} onClick={() => setArtIdx(i)}>
-                <CroppedBlobImg fileRef={a} ph={ch.thumbClass} />
-              </div>
-            ))}
-          </div>
+          <StageFaces arts={stageArts} cur={stageArtCur} off={facesOff} ph={ch.thumbClass} onPick={setArtIdx} />
         )}
 
         {/* 좌측 — 한 줄 소개 → 이름 → 다른 표기(있을 때만) → 기본 정보 항목 (박스 없이 배경 위에 바로) */}
