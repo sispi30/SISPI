@@ -55,7 +55,7 @@ function SpecRow({ s, stage }: { s: Spec; stage?: boolean }) {
       return (
         <div style={STAGE_ROW}>
           <span style={STAGE_LABEL}>{s.label}</span>
-          <span style={STAGE_VALUE}><SpecValue s={s} /></span>
+          <span style={STAGE_VALUE}><SpecValue s={s} stage /></span>
         </div>
       );
     }
@@ -73,13 +73,13 @@ function SpecRow({ s, stage }: { s: Spec; stage?: boolean }) {
           inline-block로 폭을 특정하지 않으면 게이지 바 등 flex:1 자식의 너비 계산이 깨져서,
           고정 상한폭(520px, 좁으면 100%)을 주고 margin:auto로 가운데 정렬한다 */}
       <div style={{ width: 'min(520px, 100%)', margin: '0 auto' }}>
-        <SpecValue s={s} />
+        <SpecValue s={s} stage={stage} />
       </div>
     </div>
   );
 }
 
-function SpecValue({ s }: { s: Spec }) {
+function SpecValue({ s, stage }: { s: Spec; stage?: boolean }) {
   if (s.type === 'gauge' && s.gauges?.length) {
     return (
       <div style={{ display: 'grid', gap: 5 }}>
@@ -91,7 +91,7 @@ function SpecValue({ s }: { s: Spec }) {
             <div key={g.key} style={{ display: 'grid', gridTemplateColumns: '46px 1fr', alignItems: 'center', gap: 8, fontSize: 12 }}>
               <span style={{ fontWeight: 700 }}>{g.key}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ height: 8, flex: 1, background: '#eee', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: 8, flex: 1, background: stage ? 'var(--line)' : '#eee', borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{
                     height: '100%', width: `${pct}%`, borderRadius: 4, background: 'var(--accent, #344abd)',
                     ...(g.noMax ? { backgroundImage: 'repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 6px, rgba(255,255,255,0) 6px 12px)' } : {}),
@@ -155,7 +155,7 @@ function SpecValue({ s }: { s: Spec }) {
     if (!labels.length) return <span style={{ color: 'var(--faint)' }}>—</span>;
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'center' }}>
-        <RadarChart labels={labels} values={values} max={max} />
+        <RadarChart labels={labels} values={values} max={max} stage={stage} />
         <div style={{ display: 'grid', gap: 3, fontSize: 12 }}>
           {labels.map((lb, i) => {
             const v = values[i] ?? 0;
@@ -171,7 +171,12 @@ function SpecValue({ s }: { s: Spec }) {
 }
 
 /** 룰별 특성치 레이더 차트 — 그누보드 스킨의 radar-chart(.radar-chart-container)를 SVG로 재현 */
-function RadarChart({ labels, values, max }: { labels: string[]; values: number[]; max: number }) {
+/** stage: 스테이지(글자색 설정을 따르는 화면)에서는 격자·축·이름을 고정 회색이 아니라 스테이지 글자색(--line·--faint)으로 —
+ *  밝은 배경 + 어두운 글자일 때도 격자가 보이도록 */
+function RadarChart({ labels, values, max, stage }: { labels: string[]; values: number[]; max: number; stage?: boolean }) {
+  const gridStroke = stage ? 'var(--line)' : '#eee';
+  const axisStroke = stage ? 'var(--line)' : '#e2e8f0';
+  const labelFill = stage ? 'var(--faint)' : '#888';
   const size = 180;
   const center = size / 2;
   const radius = size / 2 - 26;
@@ -187,16 +192,16 @@ function RadarChart({ labels, values, max }: { labels: string[]; values: number[
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} style={{ flexShrink: 0 }}>
       {[0.25, 0.5, 0.75, 1].map(f => (
         <polygon key={f} points={labels.map((_, i) => pointFor(i, max * f).join(',')).join(' ')}
-          fill="none" stroke="#eee" strokeWidth={1} />
+          fill="none" style={{ stroke: gridStroke }} strokeWidth={1} />
       ))}
       {labels.map((_, i) => {
         const [x, y] = pointFor(i, max);
-        return <line key={i} x1={center} y1={center} x2={x} y2={y} stroke="#e2e8f0" strokeWidth={1} />;
+        return <line key={i} x1={center} y1={center} x2={x} y2={y} style={{ stroke: axisStroke }} strokeWidth={1} />;
       })}
       <polygon points={poly} fill="var(--accent, #344abd)" fillOpacity={0.25} stroke="var(--accent, #344abd)" strokeWidth={1.5} />
       {labels.map((lb, i) => {
         const [x, y] = pointFor(i, max * 1.16);
-        return <text key={lb} x={x} y={y} fontSize={10} textAnchor="middle" dominantBaseline="middle" fill="#888">{lb}</text>;
+        return <text key={lb} x={x} y={y} fontSize={10} textAnchor="middle" dominantBaseline="middle" style={{ fill: labelFill }}>{lb}</text>;
       })}
     </svg>
   );
