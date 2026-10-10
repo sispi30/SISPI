@@ -488,11 +488,11 @@ function CharDetailInner() {
           {eff.tabs.length > 0 && (
             <div className="cs-tabs">
               <button className={!curTab ? 'on' : ''} onClick={() => { setTab('basic'); setWin(null); }}>
-                <span className="k">Basic</span><b>기본 정보</b>
+                <b>기본 정보</b><span className="k">Basic</span>
               </button>
               {eff.tabs.map(t => (
                 <button key={t.id} className={curTab?.id === t.id ? 'on' : ''} onClick={() => { setTab(t.id); setWin(null); }}>
-                  <span className="k">{t.subtitle || 'Tab'}</span><b>{t.title}</b><i>›</i>
+                  <b>{t.title}</b><span className="k">{t.subtitle || 'Tab'}</span><i>›</i>
                 </button>
               ))}
             </div>

@@ -5,6 +5,7 @@
 // 오른쪽에서 옆으로 펼쳐지듯 열리고, 닫을 때는 반대로 접힌다.
 import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useBgTone } from '@/lib/useBgTone';
 
 export type StageWindowItem = { key: string; title: string; sub: string };
 
@@ -13,6 +14,16 @@ export function StageWindow({ title, name, items, current, onSelect, onClose, ch
   onSelect: (key: string) => void; onClose: () => void; children: React.ReactNode;
 }) {
   const [closing, setClosing] = useState(false);
+  // 서랍 색 — 지금 깔린 배경(이미지·테마)의 평균 색에 맞춘다. 밝은 배경이면 밝은 서랍 + 어두운 글자, 어두우면 어두운 서랍 + 밝은 글자
+  // (기준은 글자색 자동 판정과 같은 휘도 0.24). 포인트색은 그대로
+  const tone = useBgTone();
+  const light = !!tone && tone.lum > 0.24;
+  const mix = (t: number, to: number) => tone
+    ? `${Math.round(tone.r + (to - tone.r) * t)},${Math.round(tone.g + (to - tone.g) * t)},${Math.round(tone.b + (to - tone.b) * t)}`
+    : null;
+  // 배경 색을 살리되 글자가 잘 읽히게 밝은 쪽은 흰색 쪽으로, 어두운 쪽은 검정 쪽으로 당긴다
+  const rgb = tone ? (light ? mix(0.8, 255) : mix(0.78, 0)) : null;
+  const toneStyle = rgb ? ({ '--sw-bg': `rgba(${rgb},.95)`, '--sw-solid': `rgb(${rgb})` } as React.CSSProperties) : undefined;
   const close = useCallback(() => {
     setClosing(true);
     window.setTimeout(onClose, 320);      // 접히는 모션(.32s)이 끝난 뒤 실제로 닫는다
@@ -39,7 +50,7 @@ export function StageWindow({ title, name, items, current, onSelect, onClose, ch
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div className={`sw-back${closing ? ' out' : ''}`} onClick={close}>
-      <div className="sw-box" role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
+      <div className="sw-box" data-tone={light ? 'light' : 'dark'} style={toneStyle} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
         <nav className="sw-nav">
           <div className="sw-nav-head">
             <small>ARCHIVE FILE</small>
