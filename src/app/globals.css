@@ -2658,6 +2658,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
     max-width:calc(100vw - 2*(var(--cs-px) + min(520px,28vw)) - 32px)}
 }
 
+/* BACK — 우측 상단 (EDIT/DELETE와 같은 작은 글씨). PC는 우측 칸 오른쪽 끝, 모바일은 화면 오른쪽 위 */
+.cs .cs-back{position:absolute;z-index:5;width:auto;margin:0;right:14px;top:10px}
+@media (min-width:961px){.cs .cs-back{right:var(--cs-px);top:calc(var(--cs-top) - 34px)}}
+
 /* 추가 탭 이동 버튼 줄 — 기본 정보 목록 아래. 작은 라벨 + 제목 + › , 열려 있는 탭은 포인트색 밑줄 */
 .cs-tabs{width:100%;display:flex;flex-wrap:wrap;gap:10px 24px;margin-top:18px}
 .cs-tabs button{display:inline-flex;align-items:baseline;gap:8px;padding:4px 0;color:var(--ink);text-align:left;cursor:var(--cur-pointer,pointer);border-bottom:1px solid transparent;transition:border-color .2s,color .2s}

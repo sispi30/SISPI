@@ -72,6 +72,8 @@ export interface Character {
   color: string;         // 대표 테마색 (말풍선·리스트 점)
   // 상세 페이지 테마 (v1.9 사용자 확정) — custom이면 대표 테마색으로 홈 팔레트 임시 전환 (4.18 방식)
   themeMode?: 'default' | 'custom';
+  /** 캐릭터 테마색일 때 만들 팔레트 — 'site'(기본)는 홈페이지 지금 톤 그대로, 'auto'는 대표 테마색 밝기를 보고 밝은/어두운 테마 중 알맞은 쪽, 'dark'/'light'는 고정 */
+  themeTone?: 'site' | 'auto' | 'dark' | 'light';
   colors: ColorChip[];   // 테마 컬러 나열
   /** 테마컬러 점 테두리 (v2.0 사용자 요청) — 'none' = 없음 · hex = 그 색으로 1px.
    *  미지정이면 지금까지와 같은 옅은 테두리(안 정한 홈은 모습이 안 바뀐다) */
@@ -159,6 +161,7 @@ export interface AuCharProfile {
   bodyInkColor?: string;
   color?: string;
   themeMode?: 'default' | 'custom';
+  themeTone?: 'site' | 'auto' | 'dark' | 'light';   // AU도 자기 톤을 따로 — 원본 값을 물려받지 않게 'site'로 저장
   colors?: ColorChip[];
   colorTipMode?: 'hex' | 'both' | 'label';
   specs?: import('./charRuleConfig').Spec[];
@@ -176,6 +179,19 @@ export interface AuCharProfile {
   bodyFontId?: string;
 }
 
+/** 캐릭터 테마색으로 만들 페이지 팔레트의 톤 — 'site'/미지정이면 undefined(홈페이지 현재 톤 유지).
+ *  'auto'는 대표 테마색이 밝으면 밝은 테마, 어두우면 어두운 테마를 만든다 (상대 휘도 0.4 기준 — 파스텔·노랑 계열은 밝은 쪽) */
+export function resolveThemeTone(tone: Character['themeTone'], color: string | undefined): 'dark' | 'light' | undefined {
+  if (tone === 'dark' || tone === 'light') return tone;
+  if (tone !== 'auto') return undefined;
+  const m = /^#?([0-9a-f]{6})$/i.exec((color ?? '').trim()) ?? /^#?([0-9a-f]{3})$/i.exec((color ?? '').trim());
+  if (!m) return undefined;
+  const h = m[1].length === 3 ? m[1].split('').map(x => x + x).join('') : m[1];
+  const lin = (v: number) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const lum = 0.2126 * lin(parseInt(h.slice(0, 2), 16)) + 0.7152 * lin(parseInt(h.slice(2, 4), 16)) + 0.0722 * lin(parseInt(h.slice(4, 6), 16));
+  return lum > 0.4 ? 'light' : 'dark';
+}
+
 /** AU 프로필을 합성한 표시용 캐릭터 — AU에서 지정한 필드만 대체 (상세·편집 프리필 공용) */
 export function charWithAu(c: Character, auKey?: string | null): Character {
   const p = auKey ? c.auProfiles?.[auKey] : undefined;
@@ -188,6 +204,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.bodyInk !== undefined ? { bodyInk: p.bodyInk, bodyInkColor: p.bodyInkColor } : {}),
     ...(p.color !== undefined ? { color: p.color } : {}),
     ...(p.themeMode !== undefined ? { themeMode: p.themeMode } : {}),
+    ...(p.themeTone !== undefined ? { themeTone: p.themeTone } : {}),
     ...(p.colors !== undefined ? { colors: p.colors } : {}),
     ...(p.colorTipMode !== undefined ? { colorTipMode: p.colorTipMode } : {}),
     ...(p.specs !== undefined ? { specs: p.specs } : {}),

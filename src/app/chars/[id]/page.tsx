@@ -7,7 +7,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, charGalleryPosts, charRelGroups, galleryPostsOf, hasGallery} from '@/lib/charStore';
+import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, charGalleryPosts, charRelGroups, galleryPostsOf, hasGallery, resolveThemeTone } from '@/lib/charStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -249,11 +249,13 @@ function CharDetailInner() {
   const { setPageTheme, setPageBgImage } = useTheme();
   const baseColor = ch?.themeMode === 'custom' ? ch.color : null;
   const auColor = auRegistered && eff?.themeMode === 'custom' ? eff.color : null;
+  const baseTone = baseColor ? resolveThemeTone(ch?.themeTone, ch?.color) : undefined;
+  const auTone = auColor ? resolveThemeTone(eff?.themeTone, eff?.color) : undefined;
   useEffect(() => {
-    if (!auColor || auColor === baseColor) return; // 기본과 같으면 레이아웃이 이미 칠해 둔 색 그대로 둔다
-    setPageTheme(auColor);
-    return () => setPageTheme(baseColor);
-  }, [auColor, baseColor, setPageTheme]);
+    if (!auColor || (auColor === baseColor && auTone === baseTone)) return; // 기본과 같으면 레이아웃이 이미 칠해 둔 색 그대로 둔다
+    setPageTheme(auColor, auTone);
+    return () => setPageTheme(baseColor, baseTone);
+  }, [auColor, auTone, baseColor, baseTone, setPageTheme]);
 
   // 배경 이미지 (v5.8 사용자 요청) — 자관 배경·환경설정 배경 변경과 똑같이 페이지 전체에 고정·cover로
   // 깔고 블러만 조절한다. AU는 자기 배경만(원본 것을 물려받지 않음 — charWithAu). 이미지가 없으면
@@ -348,9 +350,10 @@ function CharDetailInner() {
     <section className={`page page-char-detail${stageShown ? ' is-stage' : ''}`}>
       <div className="page-head">
         {/* 제목 자리는 메뉴 이름 — 클릭 시 목록 복귀. 캐릭터 이름은 우측 프로필 패널에 크게 표시 */}
-        <PageTitle href={tt.href}>{tt.title}</PageTitle>
+        {/* 스테이지에서는 이 제목·설명을 없애고, 같은 기능(목록으로)을 BACK 버튼으로 우측 상단에 둔다 */}
+        {!stageShown && <PageTitle href={tt.href}>{tt.title}</PageTitle>}
         {/* 캐릭터별로 별도 저장 — 키에 캐릭터 id 포함 */}
-        <EditableDesc k={`char-detail-desc:${ch.id}`} def={stage ? '우측 항목을 누르면 창이 열립니다' : '좌측 아이콘 탭 → 우측 정보 전환'} />
+        {!stageShown && <EditableDesc k={`char-detail-desc:${ch.id}`} def={stage ? '우측 항목을 누르면 창이 열립니다' : '좌측 아이콘 탭 → 우측 정보 전환'} />}
         <div className="head-actions">
           {/* 관리자 또는 「편집까지」 권한 회원 (3차 회원-캐릭터 연결, v1.9)
               — AU 선택 상태의 EDIT은 그 AU 전용 프로필 편집으로 진입 */}
@@ -436,6 +439,11 @@ function CharDetailInner() {
         {stageArts.length > 1 && (
           <StageFaces arts={stageArts} cur={stageArtCur} off={facesOff} ph={ch.thumbClass} onPick={setArtIdx} />
         )}
+
+        {/* BACK — 제목(CHARACTERS)을 누르면 목록으로 돌아가던 것과 같은 기능. EDIT/DELETE와 같은 작은 글씨 버튼으로 우측 상단에 */}
+        <div className="cs-tabs cs-admin cs-back">
+          <button onClick={() => router.push(tt.href)}><b>BACK</b></button>
+        </div>
 
         {/* 좌측 — 한 줄 소개 → 이름 → 다른 표기(있을 때만) → 기본 정보 항목 (박스 없이 배경 위에 바로) */}
         <StageLeft>

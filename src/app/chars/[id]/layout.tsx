@@ -11,7 +11,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, findByKey } from '@/lib/charStore';
+import { Character, CHAR_SEED, findByKey, resolveThemeTone } from '@/lib/charStore';
 import { useTheme } from '@/lib/ThemeProvider';
 
 export default function CharIdLayout({ children }: { children: React.ReactNode }) {
@@ -20,11 +20,12 @@ export default function CharIdLayout({ children }: { children: React.ReactNode }
   const ch = findByKey(chars, id);
   const { setPageTheme } = useTheme();
   const baseColor = ch?.themeMode === 'custom' ? ch.color : null;
+  const baseTone = baseColor ? resolveThemeTone(ch?.themeTone, ch?.color) : undefined;
 
   useEffect(() => {
-    setPageTheme(baseColor);
+    setPageTheme(baseColor, baseTone);
     return () => setPageTheme(null);
-  }, [baseColor, setPageTheme]);
+  }, [baseColor, baseTone, setPageTheme]);
 
   return children;
 }

@@ -111,6 +111,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [altName, setAltName] = useState(initial?.altName ?? '');   // 이름 다른 표기 (선택)
   const [color, setColor] = useState(initial?.color ?? '#5d636d');
   const [themeMode, setThemeMode] = useState<'default' | 'custom'>(initial?.themeMode ?? 'default');
+  const [themeTone, setThemeTone] = useState<'site' | 'auto' | 'dark' | 'light'>(initial?.themeTone ?? 'site');
   const [visibility, setVisibility] = useState<Visibility>(initial?.visibility ?? 'public');
   const [fontId, setFontId] = useState(initial?.fontId ?? 'serif');
   const [nameSize, setNameSize] = useState(initial?.nameSize ?? 38);   // 상세 큰 이름 크기 (v2.0)
@@ -213,6 +214,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       altName: altName.trim() || undefined,
       color,
       themeMode,
+      themeTone: themeMode === 'custom' && themeTone !== 'site' ? themeTone : undefined,
       colors: colors.filter(x => x.hex).map(({ hex, label }) => ({ hex, label })),
       colorTipMode,
       colorBd,
@@ -633,6 +635,20 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
               <button className={themeMode === 'default' ? 'on' : ''} onClick={() => setThemeMode('default')}>기존 테마 따르기</button>
               <button className={themeMode === 'custom' ? 'on' : ''} onClick={() => setThemeMode('custom')}>캐릭터 테마색</button>
             </div>
+            {/* 캐릭터 테마색일 때 — 대표 테마색으로 만들 팔레트를 밝게/어둡게 (자동은 색 밝기를 보고 고른다) */}
+            {themeMode === 'custom' && (
+              <>
+                <div className="mini-seg">
+                  <button className={themeTone === 'site' ? 'on' : ''} onClick={() => setThemeTone('site')}>기본</button>
+                  <button className={themeTone === 'auto' ? 'on' : ''} onClick={() => setThemeTone('auto')}>자동</button>
+                  <button className={themeTone === 'dark' ? 'on' : ''} onClick={() => setThemeTone('dark')}>어두운 테마</button>
+                  <button className={themeTone === 'light' ? 'on' : ''} onClick={() => setThemeTone('light')}>밝은 테마</button>
+                </div>
+                <p className="hint" style={{ margin: '-2px 0 0' }}>
+                  대표 테마색으로 만드는 홈페이지 팔레트의 밝기 — 기본은 홈페이지 설정 그대로, 자동은 대표 테마색이 밝으면 밝은 테마·어두우면 어두운 테마
+                </p>
+              </>
+            )}
             {/* 공개범위는 base 소관 — AU 편집에선 숨김 (v1.9) */}
             {!auMode && (
               <KSelect value={visibility} onChange={v => setVisibility(v as Visibility)}
