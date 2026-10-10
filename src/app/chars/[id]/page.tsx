@@ -22,7 +22,7 @@ import { ConfirmModal } from '@/components/ui/Modal';
 import { usePageBgm } from '@/lib/bgmStore';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
 import { RelTab } from '@/components/chars/RelTab';
-import { StageWindow } from '@/components/chars/StageWindow';
+import { StageWindow, type StageWindowItem } from '@/components/chars/StageWindow';
 import type { BackupPost } from '@/lib/galleryStore';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
 import { useBgInk } from '@/lib/useBgInk';
@@ -335,6 +335,12 @@ function CharDetailInner() {
   const stageArtCur = Math.min(artIdx, Math.max(0, stageArts.length - 1));
   const stageArtRef = stageArts[stageArtCur] ?? (stageTabArts ? undefined : eff.artUrl);
   const stageWinTitle = win === GALLERY_TAB ? 'Gallery' : win === REL_TAB ? 'Relations' : win === TRPG_TAB ? 'TRPG' : win === BGM_TAB ? 'BGM' : '';
+  // 항목 창 왼쪽 목록 — 우측 바로가기와 같은 조건으로 있는 항목만 (창 안에서 서로 오갈 수 있다)
+  const stageWinItems: StageWindowItem[] = [
+    ...(hasGallery(ch) ? [{ key: GALLERY_TAB, title: 'Gallery', sub: 'GALLERY' }] : []),
+    ...(ch.relEnabled ? [{ key: REL_TAB, title: 'Relations', sub: 'RELATIONS' }] : []),
+    ...((ch.trpgEnabled || hasTrpgLinks) ? [{ key: TRPG_TAB, title: 'TRPG', sub: 'SESSIONS' }] : []),
+  ];
   // 추가 탭을 열었을 때 좌측에 띄울 항목 — 클래식과 같은 조건 (룰을 고르고 항목이 있을 때만)
   const stageTabSpecs = curTab?.rule && curTab.specs?.length ? curTab.specs : null;
 
@@ -527,7 +533,7 @@ function CharDetailInner() {
 
         {/* 항목 창 — 옆으로 펼쳐지며 열린다 (BGM·갤러리·관계·TRPG. 추가 탭은 창 없이 페이지 내용이 바뀐다) */}
         {win && (
-          <StageWindow title={stageWinTitle} onClose={() => setWin(null)}>
+          <StageWindow title={stageWinTitle} name={eff.name} items={stageWinItems} current={win} onSelect={setWin} onClose={() => setWin(null)}>
             {win === BGM_TAB ? (
               <div style={{ display: 'grid', gap: 18 }}>
                 {(ch.bgm?.playlists ?? []).filter(pl => pl.tracks.length > 0).map(pl => (
