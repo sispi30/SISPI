@@ -2644,9 +2644,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   --sub:color-mix(in srgb,var(--cs-body) 74%,transparent);
   --faint:color-mix(in srgb,var(--cs-body) 55%,transparent);
   --line:color-mix(in srgb,var(--cs-body) 22%,transparent)}
-.cs[data-ink="dark"]{--cs-body:#12161d;--cs-body-sh:0 0 12px rgba(255,255,255,.55),0 0 2px rgba(255,255,255,.4)}
+.cs[data-ink="dark"]{--cs-accent:color-mix(in srgb,var(--accent,#7fd6d0) 72%,#000);--cs-body:#12161d;--cs-body-sh:0 0 12px rgba(255,255,255,.55),0 0 2px rgba(255,255,255,.4)}
 .cs .cs-intro,.cs .cs-tabhead b,.cs .cs-tabhead span{color:var(--cs-body);text-shadow:var(--cs-body-sh)}
 .cs .cs-tabhead span{opacity:.72}
 @media (max-width:960px){
-  .cs,.cs[data-ink="dark"]{--cs-body:#f3f5f8;--cs-body-sh:0 1px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}
+  .cs,.cs[data-ink="dark"]{--cs-accent:color-mix(in srgb,var(--accent,#7fd6d0) 55%,#fff);--cs-body:#f3f5f8;--cs-body-sh:0 1px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}
 }

@@ -160,6 +160,11 @@ function CharDetailInner() {
     const t = params.get('tab');
     return t === 'trpg' ? TRPG_TAB : t === 'gallery' ? GALLERY_TAB : t === 'rel' ? REL_TAB : 'basic';
   });
+  // 스테이지의 항목 창(Gallery·Relations·TRPG) — 페이지 내용(tab)과 따로 둬서, 창을 열어도 보던 탭 내용이 기본 정보로 돌아가지 않는다
+  const [win, setWin] = useState<string | null>(() => {
+    const t = params.get('tab');
+    return t === 'trpg' ? TRPG_TAB : t === 'gallery' ? GALLERY_TAB : t === 'rel' ? REL_TAB : null;
+  });
   const [artIdx, setArtIdx] = useState(0);
   // 스테이지 소개 본문 글자색 — 캐릭터마다 배경이 다르므로 지금 깔린 배경의 밝기를 재서 자동으로 (밝은 배경 → 어두운 글자)
   const bgInk = useBgInk();
@@ -183,7 +188,7 @@ function CharDetailInner() {
   const eff = ch ? charWithAu(ch, auKey) : undefined;
 
   // AU 전환 시 탭 구성·아트가 달라지므로 리셋
-  useEffect(() => { setTab('basic'); setArtIdx(0); }, [auKey]);
+  useEffect(() => { setTab('basic'); setWin(null); setArtIdx(0); }, [auKey]);
   // 탭마다 다른 아트를 보여줄 수 있어(v2.4), 탭을 옮기면 이미지 인덱스를 처음으로
   useEffect(() => { setArtIdx(0); }, [tab]);
 
@@ -282,7 +287,7 @@ function CharDetailInner() {
   const stageArts = stageTabArts ?? (stageBaseArts.length > 1 ? stageBaseArts.slice(1) : stageBaseArts);
   const stageArtCur = Math.min(artIdx, Math.max(0, stageArts.length - 1));
   const stageArtRef = stageArts[stageArtCur] ?? (stageTabArts ? undefined : eff.artUrl);
-  const stageWinTitle = tab === GALLERY_TAB ? 'Gallery' : tab === REL_TAB ? 'Relations' : tab === TRPG_TAB ? 'TRPG' : tab === BGM_TAB ? 'BGM' : '';
+  const stageWinTitle = win === GALLERY_TAB ? 'Gallery' : win === REL_TAB ? 'Relations' : win === TRPG_TAB ? 'TRPG' : win === BGM_TAB ? 'BGM' : '';
   // 추가 탭을 열었을 때 좌측에 띄울 항목 — 클래식과 같은 조건 (룰을 고르고 항목이 있을 때만)
   const stageTabSpecs = curTab?.rule && curTab.specs?.length ? curTab.specs : null;
 
@@ -435,11 +440,11 @@ function CharDetailInner() {
           {/* 추가 탭(ADD TAB) 이동 버튼 — 누르면 이 페이지의 내용이 그 탭의 항목·본문·그림으로 바뀐다 */}
           {eff.tabs.length > 0 && (
             <div className="cs-tabs">
-              <button className={!curTab ? 'on' : ''} onClick={() => setTab('basic')}>
+              <button className={!curTab ? 'on' : ''} onClick={() => { setTab('basic'); setWin(null); }}>
                 <span className="k">Basic</span><b>기본 정보</b>
               </button>
               {eff.tabs.map(t => (
-                <button key={t.id} className={curTab?.id === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
+                <button key={t.id} className={curTab?.id === t.id ? 'on' : ''} onClick={() => { setTab(t.id); setWin(null); }}>
                   <span className="k">{t.subtitle || 'Tab'}</span><b>{t.title}</b><i>›</i>
                 </button>
               ))}
@@ -456,21 +461,21 @@ function CharDetailInner() {
           <div className="cs-links">
             {/* BGM 바로가기는 표시하지 않는다 (사용자 요청) — 이 캐릭터 BGM은 페이지에 들어오면 플레이어에서 그대로 재생된다 */}
             {hasGallery(ch) && (
-              <button className="cs-link" onClick={() => setTab(GALLERY_TAB)}>
+              <button className="cs-link" onClick={() => setWin(GALLERY_TAB)}>
                 <span className="cs-link-k">Gallery</span>
                 <span className="cs-link-s">{stageGallery.length ? `사진 묶음 ${stageGallery.length}개` : '아직 없음'}</span>
                 <span className="cs-link-a">→</span>
               </button>
             )}
             {ch.relEnabled && (
-              <button className="cs-link" onClick={() => setTab(REL_TAB)}>
+              <button className="cs-link" onClick={() => setWin(REL_TAB)}>
                 <span className="cs-link-k">Relations</span>
                 <span className="cs-link-s">{stageRel.length ? stageRel.map(g => `${g.name} ${g.cards.length}`).join(' · ') : '아직 없음'}</span>
                 <span className="cs-link-a">→</span>
               </button>
             )}
             {(ch.trpgEnabled || hasTrpgLinks) && (
-              <button className="cs-link" onClick={() => setTab(TRPG_TAB)}>
+              <button className="cs-link" onClick={() => setWin(TRPG_TAB)}>
                 <span className="cs-link-k">TRPG</span>
                 <span className="cs-link-s">{stageTrpgCount ? `참여 세션 ${stageTrpgCount}개` : '아직 없음'}</span>
                 <span className="cs-link-a">→</span>
@@ -480,9 +485,9 @@ function CharDetailInner() {
         </div>
 
         {/* 항목 창 — 옆으로 펼쳐지며 열린다 (BGM·갤러리·관계·TRPG. 추가 탭은 창 없이 페이지 내용이 바뀐다) */}
-        {tab !== 'basic' && !curTab && (
-          <StageWindow title={stageWinTitle} onClose={() => setTab('basic')}>
-            {tab === BGM_TAB ? (
+        {win && (
+          <StageWindow title={stageWinTitle} onClose={() => setWin(null)}>
+            {win === BGM_TAB ? (
               <div style={{ display: 'grid', gap: 18 }}>
                 {(ch.bgm?.playlists ?? []).filter(pl => pl.tracks.length > 0).map(pl => (
                   <div key={pl.id}>
@@ -498,9 +503,9 @@ function CharDetailInner() {
                 ))}
                 <p className="hint" style={{ margin: 0 }}>이 페이지에 들어오면 플레이어에서 이 BGM이 재생됩니다</p>
               </div>
-            ) : tab === TRPG_TAB ? (
+            ) : win === TRPG_TAB ? (
               <TrpgSessionsList charId={ch.id} order={ch.trpgOrder} records={playRecords} chars={chars} />
-            ) : tab === REL_TAB ? (
+            ) : win === REL_TAB ? (
               <RelTab groups={stageRel} />
             ) : (
               <GalleryPanel ph={ch.thumbClass} loggedIn={!!user} posts={stageGallery} canSeePrivate={stageViewer.canEdit} />
