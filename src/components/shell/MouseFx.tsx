@@ -95,7 +95,7 @@ export function MouseFx() {
       ctx.lineCap = 'round';
       for (const s of segs) {
         const al = fade(s.b.t); if (al <= 0) continue;
-        const p = Math.min(1, (now - s.b.t) / DRAW), e = 1 - Math.pow(1 - p, 3);   // 선이 점에서 점으로 그어짐
+        const p = Math.max(0, Math.min(1, (now - s.b.t) / DRAW)), e = 1 - Math.pow(1 - p, 3);   // 선이 점에서 점으로 그어짐
         const hx = s.a.x + (s.b.x - s.a.x) * e, hy = s.a.y + (s.b.y - s.a.y) * e;
         ctx.globalAlpha = al * 0.8; ctx.strokeStyle = fx.lineColor; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(s.a.x, s.a.y); ctx.lineTo(hx, hy); ctx.stroke();
@@ -116,7 +116,7 @@ export function MouseFx() {
       }
       for (const n of nodes) {
         const al = fade(n.t); if (al <= 0) continue;
-        const pop = Math.min(1, (now - n.t) / 180);
+        const pop = Math.max(0, Math.min(1, (now - n.t) / 180));
         const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 12 * pop + 1);
         g.addColorStop(0, rgba(fx.lineColor, 0.5)); g.addColorStop(1, rgba(fx.lineColor, 0));
         ctx.globalAlpha = al; ctx.fillStyle = g;
@@ -126,7 +126,7 @@ export function MouseFx() {
         for (const d of n.dust) {
           const tw = 0.5 + 0.5 * Math.sin(now * d.sp + d.ph);                 // 깜빡임
           const show = Math.min(1, Math.max(0, (now - n.t - 120) / 300));    // 클릭 직후 하나둘 나타남
-          const dl = Math.max(0, 1 - (now - n.t) / Math.min(LIFE, 1800));   // 반짝이는 선보다 먼저 사라져 선이 남는다
+          const dl = Math.max(0, Math.min(1, 1 - (now - n.t) / Math.min(LIFE, 1800)));   // 반짝이는 선보다 먼저 사라져 선이 남는다
           const a = al * tw * show * dl; if (a <= 0.02) continue;
           ctx.globalAlpha = a; ctx.fillStyle = fx.lineColor;
           ctx.save(); ctx.translate(n.x + d.dx, n.y + d.dy);
@@ -180,7 +180,7 @@ export function MouseFx() {
     };
     const drawSparks = (c: CanvasRenderingContext2D, now: number) => {
       for (let i = sparks.length - 1; i >= 0; i--) {
-        const q = sparks[i], k = (now - q.t) / q.life;
+        const q = sparks[i], k = Math.max(0, (now - q.t) / q.life);
         if (k >= 1) { sparks.splice(i, 1); continue; }
         const pop = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8;       // 커졌다가 작아지며 사라짐
         const r = q.r * (0.4 + 0.6 * pop);
@@ -197,8 +197,13 @@ export function MouseFx() {
 
     /* ── 한 루프로 구동 (주사율이 달라도 원본과 같은 속도) ── */
     let raf = 0, last = performance.now();
-    const loop = (now: number) => {
-      const dt = Math.min(100, now - last); last = now;
+    // rAF가 넘겨 주는 시각은 프레임 시작 시각이라, 같은 프레임 안에서 발생한 클릭·이동의 시각(performance.now)보다
+    // 몇 ms 이를 수 있다 — 그러면 나이가 음수가 되어 캔버스 그라디언트에 음수 반지름이 들어가 예외가 나고,
+    // 루프가 멈춰 별이 화면에 그대로 얼어붙는다. 그래서 항상 performance.now()를 쓰고, 예외가 나도 루프는 이어 간다.
+    const loop = () => {
+      const now = performance.now();
+      try {
+      const dt = Math.max(0, Math.min(100, now - last)); last = now;
       const k = dt / FRAME;
       for (let i = stars.length - 1; i >= 0; i--) {
         const s = stars[i];
@@ -212,6 +217,10 @@ export function MouseFx() {
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
         if (fx.line) drawLines(now);
         if (fx.trail) drawSparks(ctx, now);
+      }
+      } catch {
+        if (ctx && canvas) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        sparks.length = 0; nodes.length = 0; segs.length = 0;
       }
       raf = requestAnimationFrame(loop);
     };
