@@ -278,6 +278,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
     return <>
       <TabEditView
         tab={curTab}
+        themeColor={color}
         onChange={patch => setTabs(l => l.map(x => (x.id === curTab.id ? { ...x, ...patch } : x)))}
         onDelete={() => askDeleteTab(curTab.id, () => setView('main'))}
         onBack={() => setView('main')} />
@@ -477,7 +478,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
 
         {/* 기본 소개 본문 — 리치 에디터 */}
         <label className="k-label" style={{ margin: 0 }}>기본 정보 소개 본문</label>
-        <RichEditor value={basicHtml} onChange={setBasicHtml}
+        <RichEditor value={basicHtml} onChange={setBasicHtml} themeColor={color}
           placeholder="캐릭터 소개를 작성하세요 — 이미지 삽입 가능 (스크립트 불허 6.3)" />
 
         {/* 추가 탭 — 목록만, 내용은 전용 화면에서 */}
@@ -852,8 +853,9 @@ function TrpgLinkEditView({ charId, order, onOrderChange, onBack }: {
   );
 }
 
-function TabEditView({ tab, onChange, onDelete, onBack }: {
+function TabEditView({ tab, onChange, onDelete, onBack, themeColor }: {
   tab: CharTab;
+  themeColor?: string;
   onChange: (patch: Partial<CharTab>) => void;
   onDelete: () => void;
   onBack: () => void;
@@ -892,7 +894,7 @@ function TabEditView({ tab, onChange, onDelete, onBack }: {
           onChange={newSpecs => onChange({ specs: newSpecs })} />
       )}
       {/* 리치 에디터 (TipTap) — 툴바로 서식·이미지 삽입, 출력은 HTML */}
-      <RichEditor value={tab.html} onChange={html => onChange({ html })}
+      <RichEditor value={tab.html} onChange={html => onChange({ html })} themeColor={themeColor}
         placeholder="탭 내용을 작성하세요 — 이미지 삽입 가능 (스크립트 불허 6.3)" />
       <button className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={onBack}>완료 — 목록으로</button>
     </div>
