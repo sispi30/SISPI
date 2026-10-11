@@ -24,10 +24,21 @@ const ThemeColor = Mark.create({
   name: 'themeColor',
   addAttributes() {
     return {
+      // 'theme' = 캐릭터 대표 테마색을 따라간다(페이지가 --char-theme로 현재 색을 내려줌), #rrggbb = 옛 데이터(고정 색)
       color: {
         default: null,
         parseHTML: (el: HTMLElement) => el.getAttribute('data-theme-color'),
-        renderHTML: (attrs: { color?: string | null }) => (attrs.color ? { 'data-theme-color': attrs.color, style: `color:${attrs.color}` } : {}),
+        renderHTML: (attrs: { color?: string | null; fb?: string | null }) => {
+          if (!attrs.color) return {};
+          if (attrs.color !== 'theme') return { 'data-theme-color': attrs.color, style: `color:${attrs.color}` };
+          // 변수를 못 받는 곳(목록·미리보기 등)에서도 읽히도록 저장 시점의 색을 대체값으로
+          return { 'data-theme-color': 'theme', style: `color:var(--char-theme${attrs.fb ? `,${attrs.fb}` : ''})` };
+        },
+      },
+      fb: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-theme-fb'),
+        renderHTML: (attrs: { color?: string | null; fb?: string | null }) => (attrs.color === 'theme' && attrs.fb ? { 'data-theme-fb': attrs.fb } : {}),
       },
     };
   },
@@ -93,7 +104,7 @@ export function RichEditor({ value, onChange, placeholder, themeColor }: {
   };
 
   return (
-    <div className="re-wrap">
+    <div className="re-wrap" style={themeColor ? ({ '--char-theme': themeColor } as React.CSSProperties) : undefined}>
       <div className="re-toolbar">
         <TBtn title="굵게" label={<b>B</b>} on={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()} />
@@ -103,15 +114,15 @@ export function RichEditor({ value, onChange, placeholder, themeColor }: {
           onClick={() => editor.chain().focus().toggleStrike().run()} />
         {/* 대표 테마색 — 선택한 글자를 캐릭터 대표 테마색으로 (이미 그 색이면 해제) */}
         {themeColor && /^#[0-9a-f]{6}$/i.test(themeColor) && (
-          <TBtn title="글자를 대표 테마색으로 (다시 누르면 해제)"
-            on={editor.isActive('themeColor', { color: themeColor })}
+          <TBtn title="글자를 대표 테마색으로 — 테마색을 바꾸면 같이 바뀝니다 (다시 누르면 해제)"
+            on={editor.isActive('themeColor')}
             label={<span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
               <b style={{ fontSize: 13 }}>A</b>
               <span style={{ width: 14, height: 3, borderRadius: 1, background: themeColor, marginTop: 1 }} />
             </span>}
-            onClick={() => (editor.isActive('themeColor', { color: themeColor })
+            onClick={() => (editor.isActive('themeColor')
               ? editor.chain().focus().unsetMark('themeColor').run()
-              : editor.chain().focus().setMark('themeColor', { color: themeColor }).run())} />
+              : editor.chain().focus().setMark('themeColor', { color: 'theme', fb: themeColor }).run())} />
         )}
         <span className="re-sep" />
         <TBtn title="제목" label="H2" on={editor.isActive('heading', { level: 2 })}
