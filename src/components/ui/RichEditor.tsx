@@ -6,6 +6,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { Mark, mergeAttributes } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
+import type { Transaction } from '@tiptap/pm/state';
 import { putBlob } from '@/lib/blobStore';
 import { useToast } from '@/components/ui/Toast';
 
@@ -45,6 +47,35 @@ const ThemeColor = Mark.create({
   parseHTML() { return [{ tag: 'span[data-theme-color]' }]; },
   renderHTML({ HTMLAttributes }) { return ['span', mergeAttributes(HTMLAttributes), 0]; },
 });
+
+/** 블록 서식(제목·목록·인용)은 원래 커서가 놓인 줄(문단) 전체에 걸린다 — 그래서 일부만 골라도 같은 문단의 나머지 글까지 같이 바뀌었다.
+ *  서식을 적용하기 전에 선택 시작·끝 지점에서 문단을 나눠, 고른 부분만 따로 한 줄이 되게 한다.
+ *  (Shift+Enter 줄바꿈으로 이어진 줄은 그 줄바꿈 자리에서 나누고 줄바꿈은 없앤다. 선택이 문단 경계에 있으면 나누지 않는다) */
+function splitAtSelection({ tr }: { tr: Transaction }) {
+  if (tr.selection.empty) return true;
+  let f = tr.selection.from, t = tr.selection.to;
+  const depthFor = (pos: number) => {
+    const $p = tr.doc.resolve(pos);
+    return $p.depth >= 2 && $p.node($p.depth - 1).type.name === 'listItem' ? 2 : 1;
+  };
+  const textblockAt = (pos: number) => tr.doc.resolve(pos).parent.isTextblock;
+  if (!textblockAt(f) || !textblockAt(t)) return true;
+  // 끝 지점 먼저 (앞쪽 위치가 밀리지 않게)
+  {
+    const $t = tr.doc.resolve(t);
+    if ($t.nodeAfter?.type.name === 'hardBreak') tr.delete(t, t + 1);
+    const $t2 = tr.doc.resolve(t);
+    if ($t2.parentOffset < $t2.parent.content.size) tr.split(t, depthFor(t));
+  }
+  {
+    const $f = tr.doc.resolve(f);
+    if ($f.nodeBefore?.type.name === 'hardBreak') { tr.delete(f - 1, f); f -= 1; t -= 1; }
+    const $f2 = tr.doc.resolve(f);
+    if ($f2.parentOffset > 0) { const d = depthFor(f); tr.split(f, d); f += 2 * d; t += 2 * d; }
+  }
+  tr.setSelection(TextSelection.create(tr.doc, f, t));
+  return true;
+}
 
 function TBtn({ on, label, title, onClick }: { on?: boolean; label: React.ReactNode; title: string; onClick: () => void }) {
   return (
@@ -126,16 +157,16 @@ export function RichEditor({ value, onChange, placeholder, themeColor }: {
         )}
         <span className="re-sep" />
         <TBtn title="제목" label="H2" on={editor.isActive('heading', { level: 2 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
+          onClick={() => editor.chain().focus().command(splitAtSelection).toggleHeading({ level: 2 }).run()} />
         <TBtn title="소제목" label="H3" on={editor.isActive('heading', { level: 3 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} />
+          onClick={() => editor.chain().focus().command(splitAtSelection).toggleHeading({ level: 3 }).run()} />
         <span className="re-sep" />
         <TBtn title="글머리 목록" label="•≡" on={editor.isActive('bulletList')}
-          onClick={() => editor.chain().focus().toggleBulletList().run()} />
+          onClick={() => editor.chain().focus().command(splitAtSelection).toggleBulletList().run()} />
         <TBtn title="번호 목록" label="1≡" on={editor.isActive('orderedList')}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()} />
+          onClick={() => editor.chain().focus().command(splitAtSelection).toggleOrderedList().run()} />
         <TBtn title="인용" label="❝" on={editor.isActive('blockquote')}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()} />
+          onClick={() => editor.chain().focus().command(splitAtSelection).toggleBlockquote().run()} />
         <TBtn title="구분선" label="—" onClick={() => editor.chain().focus().setHorizontalRule().run()} />
         <span className="re-sep" />
         <TBtn title={busy ? '올리는 중…' : '이미지 올리기'} label={busy ? '⏳' : '🖼'}
