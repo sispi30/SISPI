@@ -2747,3 +2747,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs-deco .dc-scan{animation:dcScan 7s steps(8) infinite alternate}
 @keyframes dcScan{from{transform:translateY(0)}to{transform:translateY(168px)}}
 @media (prefers-reduced-motion:reduce){.cs-deco *,.cs-deco-ghost{animation:none!important}}
+
+/* 필기체 글씨 — 지그재그 붓질 마스크가 왼쪽부터 쓸어 내려 글자가 써지는 것처럼 드러난다 */
+.cs-deco .dc-write{stroke-dasharray:1;stroke-dashoffset:0;animation:dcWrite 2.8s cubic-bezier(.45,.05,.4,1) .9s both}
+@keyframes dcWrite{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}

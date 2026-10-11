@@ -8,7 +8,7 @@
 // 배경 이미지를 등록한 경우 (mode)
 //  · 'band' : 이미지를 뒤쪽의 큰 반원 안에 넣고, 나머지는 포인트색 장식 + 테마 바탕
 //  · 'mono' : 이미지는 전체 배경 그대로, 장식 요소만 흰색/검은색(이미지 밝기에 맞춰)으로
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 /* ── 모션 ──
    · 처음 불러올 때: 조각들이 어긋난 자리에서 깜빡이며(적·청 색번짐) 제자리로 모인다 (.dc-i — globals.css)
@@ -82,12 +82,59 @@ interface Props {
   /** 하단 라벨에 적을 값 */
   name?: string;
   colorHex?: string;
+  /** 큰 이름 글씨 위에 겹쳐 쓰는 필기체 글씨 (처음에 써 내려가는 효과) */
+  script?: { text: string; font?: string; color?: string; size: number; x: number; y: number; rot: number };
+}
+
+/** 큰 이름 글씨 크기(vw) — 화면 폭의 약 92%에 들어오게 (한글·한자는 글자 폭이 넓어 계수가 다르다). 편집 미리보기도 같은 식을 쓴다 */
+export function ghostSizeVw(g: string): number {
+  const wide = /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7af\u3040-\u30ff\u3400-\u9fff]/.test(g);
+  return g ? Math.min(30, 92 / Math.max(3, g.length * (wide ? 1.0 : 0.6))) : 0;
+}
+
+/** 필기체 글씨 — 글자를 지그재그 붓질 마스크로 왼쪽부터 쓸어 드러내, 쓰는 것처럼 나타낸다 */
+function ScriptWrite({ t }: { t: NonNullable<Props['script']> }) {
+  const ref = useRef<SVGTextElement>(null);
+  const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const fs = t.size * 10.8, cx = t.x * 19.2, cy = t.y * 10.8;
+  useEffect(() => {
+    let alive = true;
+    const measure = () => {
+      const el = ref.current; if (!alive || !el) return;
+      try { const b = el.getBBox(); if (b.width > 0) setBox({ x: b.x, y: b.y, w: b.width, h: b.height }); } catch { /* 무시 */ }
+    };
+    setBox(null);
+    const go = () => requestAnimationFrame(measure);
+    (document.fonts?.ready ?? Promise.resolve()).then(go);
+    return () => { alive = false; };
+  }, [t.text, t.font, t.size]);
+  let d = '', sw = 0;
+  if (box) {
+    const step = Math.max(14, box.h * 0.4), pad = box.h * 0.1;
+    const n = Math.ceil((box.w + pad * 2) / step) + 2;
+    const pts: string[] = [];
+    for (let i = 0; i <= n; i++) {
+      const px = box.x - pad + i * step;
+      const jit = ((i * 37) % 11) / 11 * box.h * 0.08;           // 붓질이 약간씩 달라 보이게
+      pts.push(`${i ? 'L' : 'M'}${px.toFixed(1)} ${(i % 2 ? box.y - pad - jit : box.y + box.h + pad + jit).toFixed(1)}`);
+    }
+    d = pts.join(' '); sw = step * 1.2;
+  }
+  return (
+    <g transform={`rotate(${t.rot} ${cx} ${cy})`}>
+      <mask id="dc-wr" maskUnits="userSpaceOnUse" x="-400" y="-400" width="2800" height="1900">
+        {d && <path className="dc-write" d={d} pathLength={1} fill="none" stroke="#fff" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />}
+      </mask>
+      <text ref={ref} x={cx} y={cy} textAnchor="middle" dominantBaseline="central" mask="url(#dc-wr)"
+        fontSize={fs} fill={t.color || 'var(--d-acc)'} style={{ fontFamily: t.font ?? 'cursive' }}>{t.text}</text>
+    </g>
+  );
 }
 
 // 뒤쪽 큰 반원 (부채꼴) — 중심 (960,905) · 반지름 610
 const FAN = 'M350 905 A610 610 0 0 1 1570 905 Z';
 
-export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, name, colorHex }: Props) {
+export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, name, colorHex, script }: Props) {
   const mono = mode === 'mono';
   const band = mode === 'accent' && !!image;
   const style = (mono
@@ -103,8 +150,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
 
   // 고스트 글씨 크기 — 화면 폭의 약 92%에 들어오게 (한글·한자는 글자 폭이 넓어 계수가 다르다)
   const g = (ghost ?? '').trim();
-  const wide = /[ᄀ-ᇿ㄰-㆏가-힯぀-ヿ㐀-鿿]/.test(g);
-  const gsize = g ? Math.min(30, 92 / Math.max(3, g.length * (wide ? 1.0 : 0.6))) : 0;
+  const gsize = ghostSizeVw(g);
 
   return (
     <div className="cs-deco" aria-hidden="true" style={style} data-mode={mode} data-tone={tone}>
@@ -156,6 +202,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           <path d="M312 905 A648 648 0 0 1 1608 905" fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
           <line x1="230" y1="905" x2="1690" y2="905" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
         </g>
+
+        {script && script.text && <ScriptWrite t={script} />}
 
         {/* 왼쪽 가장자리 — 세로 줄 셋 + 포인트색 막대 */}
         <g className="dc-i" style={I(0.15, -60, 0)}>

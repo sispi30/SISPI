@@ -439,7 +439,8 @@ function CharDetailInner() {
           <StageDeco mode={bgUrl && !decoBand ? 'mono' : 'accent'} tone={bgInk === 'dark' ? 'light' : 'dark'}
             ink={bgInk === 'dark' ? 'dark' : 'light'} image={decoBand ? bgUrl : undefined} blur={bgBlur}
             ghost={eff.altName?.trim() || undefined} ghostFont={familyOf(eff.decoFontId || eff.fontId) ?? undefined}
-            name={eff.name} colorHex={eff.color} />
+            name={eff.name} colorHex={eff.color}
+            script={eff.decoScript ? { ...eff.decoScript, text: eff.decoScript.text?.trim() || eff.altName?.trim() || '', font: familyOf(eff.decoScript.fontId) ?? undefined } : undefined} />
         )}
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">

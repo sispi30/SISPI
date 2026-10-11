@@ -59,6 +59,18 @@ export function galleryPostsOf(c: { gallery?: GalleryImg[]; galleryPosts?: Galle
 export const hasGallery = (c: { gallery?: GalleryImg[]; galleryPosts?: GalleryPost[] }) =>
   c.galleryPosts !== undefined || c.gallery !== undefined;
 
+/** 상세 배경의 「필기체 글씨」 — 큰 이름 글씨 위에 다른 색·다른 폰트로 겹쳐 쓰는 글씨 (처음 나타날 때 써 내려가는 효과) */
+export interface DecoScript {
+  text?: string;      // 비우면 「이름 다른 표기」
+  fontId?: string;    // 필기체로 쓸 폰트
+  color?: string;     // 비우면 포인트색
+  size: number;       // 글씨 크기 (화면 높이의 %, 기본 22)
+  x: number;          // 가로 위치 (화면 폭의 %, 가운데=50)
+  y: number;          // 세로 위치 (화면 높이의 %, 기본 36)
+  rot: number;        // 기울기 (도)
+}
+export const DEFAULT_DECO_SCRIPT: DecoScript = { size: 22, x: 52, y: 36, rot: -4 };
+
 export interface Character {
   id: string;
   name: string;          // 대표 이름 (전용 폰트 적용 대상)
@@ -78,6 +90,8 @@ export interface Character {
   decoBg?: 'full' | 'band';
   /** 배경 장식의 고스트 글씨(이름 다른 표기) 폰트 — 비우면 이름 폰트와 같게 */
   decoFontId?: string;
+  /** 큰 이름 글씨 위에 겹치는 필기체 글씨 — 없으면(비우면) 쓰지 않는다 */
+  decoScript?: DecoScript | null;
   color: string;         // 대표 테마색 (말풍선·리스트 점)
   // 상세 페이지 테마 (v1.9 사용자 확정) — custom이면 대표 테마색으로 홈 팔레트 임시 전환 (4.18 방식)
   themeMode?: 'default' | 'custom';
@@ -171,6 +185,7 @@ export interface AuCharProfile {
   deco?: 'on' | 'off';
   decoBg?: 'full' | 'band';
   decoFontId?: string;
+  decoScript?: DecoScript | null;
   artShadow?: 'auto' | 'dark' | 'light' | 'none';   // AU도 자기 값을 따로 — 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
   color?: string;
   themeMode?: 'default' | 'custom';
@@ -219,6 +234,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.deco !== undefined ? { deco: p.deco } : {}),
     ...(p.decoBg !== undefined ? { decoBg: p.decoBg } : {}),
     ...(p.decoFontId !== undefined ? { decoFontId: p.decoFontId } : {}),
+    ...(p.decoScript !== undefined ? { decoScript: p.decoScript } : {}),
     ...(p.color !== undefined ? { color: p.color } : {}),
     ...(p.themeMode !== undefined ? { themeMode: p.themeMode } : {}),
     ...(p.themeTone !== undefined ? { themeTone: p.themeTone } : {}),
