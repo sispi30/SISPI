@@ -1573,7 +1573,7 @@ function MouseFxRows() {
         <KToggle checked={fx.click} onChange={v => set({ click: v })} />
       </div>
       <div className="set-row">
-        <div className="l"><b>이동 반짝이 효과</b><small>마우스를 움직이면 커서를 따라 반짝이가 떨어집니다</small></div>
+        <div className="l"><b>이동 반짝이 효과</b><small>마우스가 지나간 자리에 작은 별이 점점이 남아 반짝입니다</small></div>
         <KToggle checked={fx.trail} onChange={v => set({ trail: v })} />
       </div>
       <div className="set-row">

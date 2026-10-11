@@ -2,13 +2,12 @@
 // 마우스 효과 (사용자 요청) — 기존 그누보드 사이트(sispi.dothome.co.kr)의 두 효과를 그대로 옮김.
 //  ① 클릭: ✦ 4각 별이 클릭한 자리에서 위로 떠오르며 커지고 사라짐 (랜덤 회전 · 파랑 3색)
 //  ③ 클릭 선: 클릭한 자리마다 은은한 점이 생기고, 직전에 클릭한 점과 가는 선으로 이어졌다 서서히 사라짐
-//  ② 이동: 팅커벨 반짝이 — 커서를 따라 작은 십자 별이 떨어지다 점으로 바뀌어 사라짐 (최대 50개)
+//  ② 이동: 반짝이 — 커서가 지나간 자리에 작은 4각 별이 점점이 남아 반짝이다 사라짐 (최대 개수 설정)
 // 원본은 전역 이벤트를 덮어쓰고 body에 직접 붙였지만, 여기서는 리스너를 추가/해제만 하고
 // 고정 컨테이너 안에서만 그린다 (pointer-events:none · 다른 화면 요소에 영향 없음).
 // 터치 입력과 시스템의 「동작 줄이기」 설정에서는 동작하지 않는다.
 import { useEffect } from 'react';
 import { normFx, useCursorSettings } from '@/lib/cursorStore';
-const TICK = 40;       // 반짝이 갱신 간격(ms) — 원본과 동일
 const FRAME = 1000 / 60;
 
 interface ClickStar { el: HTMLDivElement; x: number; y: number; scale: number; alpha: number; rot: number }
@@ -44,7 +43,7 @@ export function MouseFx() {
       canvas.width = Math.round(window.innerWidth * dpr); canvas.height = Math.round(window.innerHeight * dpr);
       canvas.style.width = '100%'; canvas.style.height = '100%';
     };
-    if (fx.line) {
+    if (fx.line || fx.trail) {
       canvas = document.createElement('canvas');
       canvas.style.cssText = 'position:absolute;inset:0;pointer-events:none';
       box.appendChild(canvas); ctx = canvas.getContext('2d'); resize();
@@ -60,8 +59,6 @@ export function MouseFx() {
     };
     const drawLines = (now: number) => {
       if (!ctx || !canvas) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
       const fade = (t: number) => { const k = (now - t) / LIFE; return k >= 1 ? 0 : k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4; };
       ctx.strokeStyle = fx.lineColor; ctx.lineWidth = 1; ctx.lineCap = 'round';
       for (const s of segs) {
@@ -80,7 +77,7 @@ export function MouseFx() {
         ctx.globalAlpha = al * 0.35; ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(n.x, n.y, 9 * pop + 1, 0, Math.PI * 2); ctx.fill();
         ctx.globalAlpha = al; ctx.fillStyle = fx.lineColor;
-        ctx.beginPath(); ctx.arc(n.x, n.y, 1.8, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.translate(n.x, n.y); starPath(ctx, 3.5 * pop + 0.5); ctx.fill(); ctx.restore();
       }
       ctx.globalAlpha = 1;
       while (nodes.length && fade(nodes[0].t) <= 0) nodes.shift();
@@ -104,87 +101,47 @@ export function MouseFx() {
       stars.push({ el, x: e.clientX - 8, y: e.clientY - 8, scale: 1, alpha: 1, rot: Math.floor(Math.random() * 360) });
     };
 
-    /* ── ② 팅커벨 반짝이 ── */
-    let mx = -1, my = -1, ox = -1, oy = -1, moved = false;
+    /* ── ② 이동 반짝이 — 지나간 자리에 작은 4각 별이 남아 반짝이다 사라짐 (캔버스) ── */
+    interface Spark { x: number; y: number; r: number; rot: number; t: number; life: number; c: string }
+    const sparks: Spark[] = [];
+    let mx = -1, my = -1, lx = -1, ly = -1;
     const onMove = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return;
-      mx = e.clientX; my = e.clientY; moved = true;
+      mx = e.clientX; my = e.clientY;
+      if (lx < 0) { lx = mx; ly = my; return; }
+      if (Math.hypot(mx - lx, my - ly) < 16) return;        // 일정 거리마다 하나씩 — 궤적을 따라 점점이 남는다
+      lx = mx; ly = my;
+      if (sparks.length >= SPARKLES) sparks.shift();
+      sparks.push({
+        x: mx + (Math.random() - 0.5) * 6, y: my + (Math.random() - 0.5) * 6,
+        r: 3 + Math.random() * 3.5, rot: Math.random() * Math.PI / 2,
+        t: performance.now(), life: 700 + Math.random() * 500, c: pick(),
+      });
     };
-
-    const mk = (h: number, w: number) => {
-      const d = document.createElement('div');
-      d.style.cssText = `position:absolute;height:${h}px;width:${w}px;overflow:hidden;pointer-events:none;visibility:hidden`;
-      return d;
+    const starPath = (c: CanvasRenderingContext2D, r: number) => {
+      c.beginPath(); c.moveTo(0, -r);
+      c.quadraticCurveTo(0, 0, r, 0); c.quadraticCurveTo(0, 0, 0, r);
+      c.quadraticCurveTo(0, 0, -r, 0); c.quadraticCurveTo(0, 0, 0, -r); c.closePath();
     };
-    const tiny: HTMLDivElement[] = [];
-    const star: HTMLDivElement[] = [];
-    const starv: number[] = [], tinyv: number[] = [];
-    const sx: number[] = [], sy: number[] = [], tx: number[] = [], ty: number[] = [];
-    for (let i = 0; i < SPARKLES; i++) {
-      const t = mk(3, 3); box.appendChild(t); tiny.push(t);
-      const s = mk(5, 5); s.style.backgroundColor = 'transparent';
-      const l = mk(1, 5), d = mk(5, 1);
-      l.style.visibility = d.style.visibility = 'inherit';
-      l.style.top = '2px'; l.style.left = '0px'; d.style.top = '0px'; d.style.left = '2px';
-      s.appendChild(l); s.appendChild(d); box.appendChild(s); star.push(s);
-      starv.push(0); tinyv.push(0); sx.push(0); sy.push(0); tx.push(0); ty.push(0);
-    }
-    const starColor = (i: number, c: string) => {
-      (star[i].childNodes[0] as HTMLElement).style.backgroundColor = c;
-      (star[i].childNodes[1] as HTMLElement).style.backgroundColor = c;
-    };
-
-    const updateStar = (i: number) => {
-      const h = window.innerHeight;
-      if (--starv[i] === 25) star[i].style.clip = 'rect(1px, 4px, 4px, 1px)';
-      if (starv[i]) {
-        sy[i] += 1 + Math.random() * 3;
-        sx[i] += ((i % 5) - 2) / 5;
-        if (sy[i] < h) { star[i].style.top = sy[i] + 'px'; star[i].style.left = sx[i] + 'px'; }
-        else { star[i].style.visibility = 'hidden'; starv[i] = 0; }
-      } else {
-        // 별 → 작은 점으로 바뀌어 한 번 더 떨어진다
-        tinyv[i] = 50; ty[i] = sy[i]; tx[i] = sx[i];
-        const t = tiny[i];
-        t.style.top = ty[i] + 'px'; t.style.left = tx[i] + 'px';
-        t.style.width = '2px'; t.style.height = '2px';
-        t.style.backgroundColor = (star[i].childNodes[0] as HTMLElement).style.backgroundColor;
-        star[i].style.visibility = 'hidden';
-        t.style.visibility = 'visible';
-      }
-    };
-    const updateTiny = (i: number) => {
-      const h = window.innerHeight;
-      if (--tinyv[i] === 25) { tiny[i].style.width = '1px'; tiny[i].style.height = '1px'; }
-      if (tinyv[i]) {
-        ty[i] += 1 + Math.random() * 3;
-        tx[i] += ((i % 5) - 2) / 5;
-        if (ty[i] < h) { tiny[i].style.top = ty[i] + 'px'; tiny[i].style.left = tx[i] + 'px'; }
-        else { tiny[i].style.visibility = 'hidden'; tinyv[i] = 0; }
-      } else tiny[i].style.visibility = 'hidden';
-    };
-    const sparkleTick = () => {
-      if (moved && (Math.abs(mx - ox) > 1 || Math.abs(my - oy) > 1)) {
-        ox = mx; oy = my;
-        for (let c = 0; c < SPARKLES; c++) {
-          if (starv[c]) continue;
-          sx[c] = mx; sy[c] = my + 1;
-          star[c].style.left = mx + 'px'; star[c].style.top = (my + 1) + 'px';
-          star[c].style.clip = 'rect(0px, 5px, 5px, 0px)';
-          starColor(c, pick());
-          star[c].style.visibility = 'visible';
-          starv[c] = 50;
-          break;
-        }
-      }
-      for (let c = 0; c < SPARKLES; c++) {
-        if (starv[c]) updateStar(c);
-        if (tinyv[c]) updateTiny(c);
+    const drawSparks = (c: CanvasRenderingContext2D, now: number) => {
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const q = sparks[i], k = (now - q.t) / q.life;
+        if (k >= 1) { sparks.splice(i, 1); continue; }
+        const pop = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8;       // 커졌다가 작아지며 사라짐
+        const r = q.r * (0.4 + 0.6 * pop);
+        c.save(); c.translate(q.x, q.y);
+        const g = c.createRadialGradient(0, 0, 0, 0, 0, r * 2.6);
+        g.addColorStop(0, q.c); g.addColorStop(1, 'transparent');
+        c.globalAlpha = 0.22 * pop; c.fillStyle = g;
+        c.beginPath(); c.arc(0, 0, r * 2.6, 0, Math.PI * 2); c.fill();   // 은은한 번짐
+        c.globalAlpha = Math.min(1, pop * 1.4); c.fillStyle = q.c;
+        c.rotate(q.rot + k * 0.6); starPath(c, r); c.fill();
+        c.restore();
       }
     };
 
     /* ── 한 루프로 구동 (주사율이 달라도 원본과 같은 속도) ── */
-    let raf = 0, last = performance.now(), acc = 0;
+    let raf = 0, last = performance.now();
     const loop = (now: number) => {
       const dt = Math.min(100, now - last); last = now;
       const k = dt / FRAME;
@@ -195,9 +152,12 @@ export function MouseFx() {
         s.el.style.cssText = `left:${s.x}px;top:${s.y}px;opacity:${Math.max(0, s.alpha)};`
           + `transform:scale(${s.scale},${s.scale}) rotate(${s.rot}deg);background:${s.el.style.background}`;
       }
-      if (fx.line) drawLines(now);
-      acc += dt;
-      while (acc >= TICK) { acc -= TICK; sparkleTick(); }
+      if (ctx && canvas) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        if (fx.line) drawLines(now);
+        if (fx.trail) drawSparks(ctx, now);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
