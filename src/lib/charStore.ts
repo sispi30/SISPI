@@ -71,6 +71,11 @@ export interface Character {
   bodyInkColor?: string;
   /** 상세(스테이지) 아트 그림자 — 비우거나 'auto'면 배경이 밝을 때 밝은 그림자·어두울 때 어두운 그림자, 'dark'/'light'는 고정, 'none'은 그림자 없음 */
   artShadow?: 'auto' | 'dark' | 'light' | 'none';
+  /** 상세(스테이지) 배경 장식 (대각 띠·원·십자 표식 등) — 비우면 켜짐, 'off'면 장식 없음.
+   *  색은 포인트색, 바탕은 밝은 테마=흰색 계열·어두운 테마=검은색 계열 */
+  deco?: 'on' | 'off';
+  /** 배경 이미지를 등록했을 때 — 비우면 'full'(이미지는 전체 배경, 장식은 흰색/검은색), 'band'면 이미지를 장식(대각 띠) 안에 넣고 나머지는 포인트색 */
+  decoBg?: 'full' | 'band';
   color: string;         // 대표 테마색 (말풍선·리스트 점)
   // 상세 페이지 테마 (v1.9 사용자 확정) — custom이면 대표 테마색으로 홈 팔레트 임시 전환 (4.18 방식)
   themeMode?: 'default' | 'custom';
@@ -161,6 +166,8 @@ export interface AuCharProfile {
   altName?: string;      // 이름 다른 표기 — AU에서 비웠다면 '' 로 저장해 원본 값을 물려받지 않게 한다
   bodyInk?: 'auto' | 'light' | 'dark' | 'custom';   // 소개 본문 글자색 — AU에서 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
   bodyInkColor?: string;
+  deco?: 'on' | 'off';
+  decoBg?: 'full' | 'band';
   artShadow?: 'auto' | 'dark' | 'light' | 'none';   // AU도 자기 값을 따로 — 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
   color?: string;
   themeMode?: 'default' | 'custom';
@@ -206,6 +213,8 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.altName !== undefined ? { altName: p.altName } : {}),
     ...(p.bodyInk !== undefined ? { bodyInk: p.bodyInk, bodyInkColor: p.bodyInkColor } : {}),
     ...(p.artShadow !== undefined ? { artShadow: p.artShadow } : {}),
+    ...(p.deco !== undefined ? { deco: p.deco } : {}),
+    ...(p.decoBg !== undefined ? { decoBg: p.decoBg } : {}),
     ...(p.color !== undefined ? { color: p.color } : {}),
     ...(p.themeMode !== undefined ? { themeMode: p.themeMode } : {}),
     ...(p.themeTone !== undefined ? { themeTone: p.themeTone } : {}),

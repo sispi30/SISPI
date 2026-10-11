@@ -119,6 +119,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [bodyFontId, setBodyFontId] = useState(initial?.bodyFontId ?? 'default');
   // 상세 소개 본문 글자색 — 기본은 자동(배경 밝기를 보고 밝은/어두운 글자를 고른다)
   const [bodyInk, setBodyInk] = useState<'auto' | 'light' | 'dark' | 'custom'>(initial?.bodyInk ?? 'auto');
+  const [deco, setDeco] = useState<'on' | 'off'>(initial?.deco ?? 'on');
+  const [decoBg, setDecoBg] = useState<'full' | 'band'>(initial?.decoBg ?? 'full');
   const [artShadow, setArtShadow] = useState<'auto' | 'dark' | 'light' | 'none'>(initial?.artShadow ?? 'auto');
   const [bodyInkColor, setBodyInkColor] = useState(initial?.bodyInkColor ?? '#ffffff');
   const [specs, setSpecs] = useState<SpecRow[]>(
@@ -238,6 +240,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       bodyFontId,
       // 자동이면 저장하지 않는다(기본) — AU 저장은 edit/page.tsx가 'auto'로 명시해 원본 지정을 물려받지 않게 한다
       artShadow: artShadow === 'auto' ? undefined : artShadow,
+      deco: deco === 'on' ? undefined : 'off',
+      decoBg: decoBg === 'full' ? undefined : 'band',
       bodyInk: bodyInk === 'auto' ? undefined : bodyInk,
       bodyInkColor: bodyInk === 'custom' ? bodyInkColor : undefined,
       thumbClass: initial?.thumbClass ?? '',
@@ -705,6 +709,26 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
               <button className={artShadow === 'dark' ? 'on' : ''} onClick={() => setArtShadow('dark')}>어두운 그림자</button>
               <button className={artShadow === 'none' ? 'on' : ''} onClick={() => setArtShadow('none')}>없음</button>
             </div>
+
+            {/* 배경 장식 — 대각 띠·원·십자 표식 같은 얇은 디자인 요소. 포인트색이 반영되고 바탕은 밝은 테마=흰색 계열·어두운 테마=검은색 계열 */}
+            <p className="hint" style={{ margin: '2px 0 0' }}>
+              배경 장식 — 상세 배경에 대각 띠·원·십자 표식 같은 장식을 깝니다. 색은 포인트 컬러, 바탕은 밝은 테마면 흰색 계열·어두운 테마면 검은색 계열
+            </p>
+            <div className="mini-seg">
+              <button className={deco === 'on' ? 'on' : ''} onClick={() => setDeco('on')}>켜기 (기본)</button>
+              <button className={deco === 'off' ? 'on' : ''} onClick={() => setDeco('off')}>끄기</button>
+            </div>
+            {deco === 'on' && hasBg && (
+              <>
+                <p className="hint" style={{ margin: '2px 0 0' }}>
+                  배경 이미지를 등록했을 때 — 이미지를 어디에 쓸지 고릅니다
+                </p>
+                <div className="mini-seg">
+                  <button className={decoBg === 'full' ? 'on' : ''} onClick={() => setDecoBg('full')}>이미지 전체 배경 + 흰색/검은색 장식 (기본)</button>
+                  <button className={decoBg === 'band' ? 'on' : ''} onClick={() => setDecoBg('band')}>장식(대각 띠) 안에 이미지 + 포인트색 장식</button>
+                </div>
+              </>
+            )}
 
             {/* 배경 이미지 (v5.8 사용자 요청) — 자관 배경 이미지·환경설정의 배경 변경과 같은 방식.
                 업로드 + 블러 슬라이더, 상세 페이지 전체 배경으로 고정·cover로 깔림 (선택) */}

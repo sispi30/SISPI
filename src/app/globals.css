@@ -2712,3 +2712,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 @media (max-width:960px){
   .cs,.cs[data-ink="dark"]{--cs-accent:color-mix(in srgb,var(--accent,#7fd6d0) 55%,#fff);--cs-body:#f3f5f8;--cs-body-sh:0 1px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}
 }
+
+/* 상세 배경 장식 — 그림·글자 뒤, 클릭 불가. 모바일(카드형)은 어두운 판 위라 장식을 끈다 */
+.cs-deco{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.cs-deco svg{display:block}
+@media (max-width:960px){.cs-deco{display:none}}

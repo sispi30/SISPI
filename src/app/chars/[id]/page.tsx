@@ -26,6 +26,7 @@ import { StageWindow, type StageWindowItem } from '@/components/chars/StageWindo
 import type { BackupPost } from '@/lib/galleryStore';
 import { SpecsDisplay, PlainSpecRow } from '@/components/chars/SpecsDisplay';
 import { useBgInk } from '@/lib/useBgInk';
+import { StageDeco } from '@/components/chars/StageDeco';
 
 /** 우측 정보 패널에서 「기본 정보」·탭 다음으로 쓰는 세 번째 특수 탭 값 — TRPG 버튼(EDIT·DELETE·
  *  GALLERY와 같은 자리)을 누르면 새 탭 전환과 같은 방식으로 이 값으로 바뀐다 (v2.8) */
@@ -262,11 +263,14 @@ function CharDetailInner() {
   // 아무것도 하지 않아 사이트 배경이 그대로 보인다. 벗어나면 풀려서 사이트 배경으로 되돌아간다
   const bgUrl = useBlobUrl(auRegistered ? eff?.bgImgId : undefined);
   const bgBlur = eff?.bgBlur ?? 16;
+  // 배경 장식 — 이미지를 「장식(대각 띠) 안에」 넣기로 했으면 페이지 전체 배경으로는 깔지 않는다
+  const decoOn = (eff?.deco ?? 'on') !== 'off';
+  const decoBand = decoOn && !!bgUrl && eff?.decoBg === 'band';
   useEffect(() => {
-    if (!bgUrl) return;
+    if (!bgUrl || decoBand) return;
     setPageBgImage(bgUrl, bgBlur);
     return () => setPageBgImage(null);
-  }, [bgUrl, bgBlur, setPageBgImage]);
+  }, [bgUrl, bgBlur, decoBand, setPageBgImage]);
 
   const curTab = eff?.tabs.find(t => t.id === tab);
   const tabHtml = useMemo(
@@ -430,6 +434,11 @@ function CharDetailInner() {
       stage ? (
       <div className="cs" data-ink={stageInk} data-art-sh={(eff.artShadow ?? 'auto') === 'auto' ? (bgInk === 'dark' ? 'auto-light' : 'auto-dark') : eff.artShadow}
         style={{ fontFamily: familyOf(eff.bodyFontId), '--char-theme': eff.color, ...(customInk ? { '--cs-body': customInk } : {}) } as React.CSSProperties}>
+        {/* 배경 장식 — 그림보다 뒤. 이미지를 등록하면 기본은 이미지 전체 + 흰색/검은색 장식, 「장식 안에 이미지」면 띠 안에 이미지 + 포인트색 */}
+        {decoOn && (
+          <StageDeco mode={bgUrl && !decoBand ? 'mono' : 'accent'} tone={bgInk === 'dark' ? 'light' : 'dark'}
+            ink={bgInk === 'dark' ? 'dark' : 'light'} image={decoBand ? bgUrl : undefined} blur={bgBlur} />
+        )}
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">
           {stageArtRef
