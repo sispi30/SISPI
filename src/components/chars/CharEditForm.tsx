@@ -476,11 +476,6 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         <button className="btn btn-ghost" style={addBtn}
           onClick={() => setColors(l => [...l, { id: newId(), hex: '#888888', label: '' }])}>＋ ADD COLOR</button>
 
-        {/* 기본 소개 본문 — 리치 에디터 */}
-        <label className="k-label" style={{ margin: 0 }}>기본 정보 소개 본문</label>
-        <RichEditor value={basicHtml} onChange={setBasicHtml} themeColor={color}
-          placeholder="캐릭터 소개를 작성하세요 — 이미지 삽입 가능 (스크립트 불허 6.3)" />
-
         {/* 추가 탭 — 목록만, 내용은 전용 화면에서 */}
         <label className="k-label" style={{ margin: 0 }}>추가 탭 — 내용은 [편집]을 눌러 전용 화면에서 작성</label>
         {tabs.map(t => (
@@ -588,6 +583,11 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
               onClick={() => setView(BGM_VIEW)}>편집 ›</button>
           </div>
         )}
+
+        {/* 기본 소개 본문 — 리치 에디터 (추가 탭·갤러리·관계·TRPG·레이아웃·BGM 아래로 옮김) */}
+        <label className="k-label" style={{ margin: 0 }}>기본 정보 소개 본문</label>
+        <RichEditor value={basicHtml} onChange={setBasicHtml} themeColor={color}
+          placeholder="캐릭터 소개를 작성하세요 — 이미지 삽입 가능 (스크립트 불허 6.3)" />
 
         {/* 회원 권한 — 역극 플레이 / 편집까지 (3차 회원-캐릭터 연결, v1.9) — AU 편집에선 base 소관.
             **관리자만** (v2.0 사용자 확정) — 편집 권한을 받은 회원이 이 화면에 들어와도
