@@ -437,7 +437,9 @@ function CharDetailInner() {
         {/* 배경 장식 — 그림보다 뒤. 이미지를 등록하면 기본은 이미지 전체 + 흰색/검은색 장식, 「장식 안에 이미지」면 띠 안에 이미지 + 포인트색 */}
         {decoOn && (
           <StageDeco mode={bgUrl && !decoBand ? 'mono' : 'accent'} tone={bgInk === 'dark' ? 'light' : 'dark'}
-            ink={bgInk === 'dark' ? 'dark' : 'light'} image={decoBand ? bgUrl : undefined} blur={bgBlur} />
+            ink={bgInk === 'dark' ? 'dark' : 'light'} image={decoBand ? bgUrl : undefined} blur={bgBlur}
+            ghost={eff.altName?.trim() || undefined} ghostFont={familyOf(eff.decoFontId || eff.fontId) ?? undefined}
+            name={eff.name} colorHex={eff.color} />
         )}
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">

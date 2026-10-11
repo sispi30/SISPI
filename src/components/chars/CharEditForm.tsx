@@ -120,6 +120,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // 상세 소개 본문 글자색 — 기본은 자동(배경 밝기를 보고 밝은/어두운 글자를 고른다)
   const [bodyInk, setBodyInk] = useState<'auto' | 'light' | 'dark' | 'custom'>(initial?.bodyInk ?? 'auto');
   const [deco, setDeco] = useState<'on' | 'off'>(initial?.deco ?? 'on');
+  const [decoFontId, setDecoFontId] = useState(initial?.decoFontId ?? '');
   const [decoBg, setDecoBg] = useState<'full' | 'band'>(initial?.decoBg ?? 'full');
   const [artShadow, setArtShadow] = useState<'auto' | 'dark' | 'light' | 'none'>(initial?.artShadow ?? 'auto');
   const [bodyInkColor, setBodyInkColor] = useState(initial?.bodyInkColor ?? '#ffffff');
@@ -242,6 +243,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       artShadow: artShadow === 'auto' ? undefined : artShadow,
       deco: deco === 'on' ? undefined : 'off',
       decoBg: decoBg === 'full' ? undefined : 'band',
+      decoFontId: decoFontId || undefined,
       bodyInk: bodyInk === 'auto' ? undefined : bodyInk,
       bodyInkColor: bodyInk === 'custom' ? bodyInkColor : undefined,
       thumbClass: initial?.thumbClass ?? '',
@@ -712,12 +714,22 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
 
             {/* 배경 장식 — 대각 띠·원·십자 표식 같은 얇은 디자인 요소. 포인트색이 반영되고 바탕은 밝은 테마=흰색 계열·어두운 테마=검은색 계열 */}
             <p className="hint" style={{ margin: '2px 0 0' }}>
-              배경 장식 — 상세 배경에 대각 띠·원·십자 표식 같은 장식을 깝니다. 색은 포인트 컬러, 바탕은 밝은 테마면 흰색 계열·어두운 테마면 검은색 계열
+              배경 장식 — 상세 배경에 얇은 선·눈금·라벨·반짝이 같은 장식을 깝니다. 「이름 다른 표기」를 입력했다면 그 글씨가 뒤에 크게 깔립니다. 색은 포인트 컬러, 바탕은 밝은 테마면 흰색 계열·어두운 테마면 검은색 계열
             </p>
             <div className="mini-seg">
               <button className={deco === 'on' ? 'on' : ''} onClick={() => setDeco('on')}>켜기 (기본)</button>
               <button className={deco === 'off' ? 'on' : ''} onClick={() => setDeco('off')}>끄기</button>
             </div>
+            {deco === 'on' && (
+              <>
+                <p className="hint" style={{ margin: '2px 0 0' }}>
+                  장식 글씨 폰트 — 뒤에 크게 깔리는 「이름 다른 표기」에 적용 (비우면 이름 폰트와 같게)
+                </p>
+                <KSelect value={decoFontId} onChange={setDecoFontId}
+                  options={[{ value: '', label: '이름 폰트와 같게 (기본)' },
+                    ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
+              </>
+            )}
             {deco === 'on' && hasBg && (
               <>
                 <p className="hint" style={{ margin: '2px 0 0' }}>
@@ -725,7 +737,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
                 </p>
                 <div className="mini-seg">
                   <button className={decoBg === 'full' ? 'on' : ''} onClick={() => setDecoBg('full')}>이미지 전체 배경 + 흰색/검은색 장식 (기본)</button>
-                  <button className={decoBg === 'band' ? 'on' : ''} onClick={() => setDecoBg('band')}>장식(대각 띠) 안에 이미지 + 포인트색 장식</button>
+                  <button className={decoBg === 'band' ? 'on' : ''} onClick={() => setDecoBg('band')}>장식(뒤쪽 큰 반원) 안에 이미지 + 포인트색 장식</button>
                 </div>
               </>
             )}

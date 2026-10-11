@@ -74,8 +74,10 @@ export interface Character {
   /** 상세(스테이지) 배경 장식 (대각 띠·원·십자 표식 등) — 비우면 켜짐, 'off'면 장식 없음.
    *  색은 포인트색, 바탕은 밝은 테마=흰색 계열·어두운 테마=검은색 계열 */
   deco?: 'on' | 'off';
-  /** 배경 이미지를 등록했을 때 — 비우면 'full'(이미지는 전체 배경, 장식은 흰색/검은색), 'band'면 이미지를 장식(대각 띠) 안에 넣고 나머지는 포인트색 */
+  /** 배경 이미지를 등록했을 때 — 비우면 'full'(이미지는 전체 배경, 장식은 흰색/검은색), 'band'면 이미지를 장식(뒤쪽 큰 반원) 안에 넣고 나머지는 포인트색 */
   decoBg?: 'full' | 'band';
+  /** 배경 장식의 고스트 글씨(이름 다른 표기) 폰트 — 비우면 이름 폰트와 같게 */
+  decoFontId?: string;
   color: string;         // 대표 테마색 (말풍선·리스트 점)
   // 상세 페이지 테마 (v1.9 사용자 확정) — custom이면 대표 테마색으로 홈 팔레트 임시 전환 (4.18 방식)
   themeMode?: 'default' | 'custom';
@@ -168,6 +170,7 @@ export interface AuCharProfile {
   bodyInkColor?: string;
   deco?: 'on' | 'off';
   decoBg?: 'full' | 'band';
+  decoFontId?: string;
   artShadow?: 'auto' | 'dark' | 'light' | 'none';   // AU도 자기 값을 따로 — 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
   color?: string;
   themeMode?: 'default' | 'custom';
@@ -215,6 +218,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.artShadow !== undefined ? { artShadow: p.artShadow } : {}),
     ...(p.deco !== undefined ? { deco: p.deco } : {}),
     ...(p.decoBg !== undefined ? { decoBg: p.decoBg } : {}),
+    ...(p.decoFontId !== undefined ? { decoFontId: p.decoFontId } : {}),
     ...(p.color !== undefined ? { color: p.color } : {}),
     ...(p.themeMode !== undefined ? { themeMode: p.themeMode } : {}),
     ...(p.themeTone !== undefined ? { themeTone: p.themeTone } : {}),
