@@ -46,7 +46,8 @@ service cloud.firestore {
     // ── 소유자(관리자) 지정 — 아직 없을 때 딱 한 번 ──────────────
     match /meta/owner {
       allow read: if true;
-      allow create: if signedIn() && !exists(/databases/$(database)/documents/meta/owner);
+      allow create: if signedIn() && !exists(/databases/$(database)/documents/meta/owner)
+        && request.resource.data.uid == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
@@ -76,7 +77,13 @@ service cloud.firestore {
       // 쓰기: 로그인 회원 — 방명록·댓글은 비로그인 방문자도 남길 수 있음(닉네임+비밀번호 방식)
       // notifications: 손님 댓글·방명록이 관리자에게 알림을 남길 수 있어야 한다 (v2.0) —
       // 행 주인(authorId)은 받는 사람이라 읽기·수정·삭제는 받는 사람·관리자만 (아래 공통 규칙)
-      allow create: if isContent(coll) && (signedIn() || coll in ['guestbook', 'comments', 'notifications']);
+      // v2.1: 로그인 회원은 작성자(authorId)를 자기 자신으로만 적을 수 있다 (남의 이름으로 쓰기 방지 — 관리자·알림 예외).
+      // 비로그인 방문자는 방명록·댓글에 작성자 없이만 남길 수 있다.
+      allow create: if isContent(coll) && (
+        coll == 'notifications'
+        || (signedIn() && (isAdmin() || request.resource.data.get('authorId', null) == request.auth.uid))
+        || (coll in ['guestbook', 'comments'] && request.resource.data.get('authorId', null) in [null, ''])
+      );
 
       // 수정·삭제: 작성자 본인 · 편집 권한을 받은 회원 · 관리자
       // 댓글은 글과 따로 저장되므로(v2.0) 댓글을 달 때 글을 수정할 필요가 없다 —
@@ -85,12 +92,20 @@ service cloud.firestore {
       // 지우는 것은 관리자만 — 방명록의 게스트 글과 같은 규칙이다.
       // editorIds: 캐릭터에 「편집까지」 권한을 준 회원 (v2.0). grants는 객체 배열이라
       // 규칙에서 훑을 수 없어, 저장할 때 회원 id만 뽑아 둔 평평한 배열을 본다.
-      allow update, delete: if isContent(coll)
+      // v2.1: 편집 권한만 받은 회원은 작성자(authorId)를 바꿀 수 없다.
+      allow delete: if isContent(coll)
         && signedIn()
         && (resource.data.authorId == request.auth.uid
             || isAdmin()
             || (resource.data.keys().hasAny(['editorIds'])
                 && request.auth.uid in resource.data.editorIds));
+      allow update: if isContent(coll)
+        && signedIn()
+        && (resource.data.authorId == request.auth.uid
+            || isAdmin()
+            || (resource.data.keys().hasAny(['editorIds'])
+                && request.auth.uid in resource.data.editorIds
+                && request.resource.data.get('authorId', null) == resource.data.get('authorId', null)));
     }
   }
 }
@@ -110,7 +125,9 @@ service firebase.storage {
   match /b/{bucket}/o {
     match /ohome/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
+      // v2.1: 새 파일 올리기만 허용 — 이미 있는 파일을 덮어쓰기(update)는 막는다.
+      // (파일 이름이 매번 새로 만들어져서 정상 사용에는 덮어쓰기가 없다)
+      allow create: if request.auth != null
         && request.resource.size < 20 * 1024 * 1024;
       allow delete: if request.auth != null;
     }

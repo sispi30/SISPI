@@ -40,6 +40,25 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
 $$;
 
+-- ── 4-1. 역할(role) 보호 (v2.1) ─────────────────────────────
+-- 프로필 수정 정책이 「본인 행」을 허용하므로, 막지 않으면 누구든 자기 role 을 admin 으로 바꿀 수 있다.
+-- 로그인한 요청(auth.uid() 있음)이 관리자가 아니면 role 은 기존 값(새 행이면 member)으로 되돌린다.
+create or replace function public.guard_profile_role()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is not null and not public.is_admin() then
+    if tg_op = 'INSERT' then new.role := 'member';
+    else new.role := old.role;
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists profiles_guard_role on public.profiles;
+create trigger profiles_guard_role
+  before insert or update on public.profiles
+  for each row execute function public.guard_profile_role();
+
 -- ── 5. 가입 시 프로필 자동 생성 (첫 가입자 = 관리자) ─────────
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -123,7 +142,8 @@ begin
     -- 쓰기: 로그인 회원 (방명록만 아래에서 비로그인 허용으로 덮어씀)
     execute format('drop policy if exists "insert" on public.%I', t);
     execute format($p$
-      create policy "insert" on public.%I for insert to authenticated with check (true)$p$, t);
+      create policy "insert" on public.%I for insert to authenticated
+        with check (author_id = auth.uid() or public.is_admin())$p$, t);
 
     -- 수정·삭제: 본인 · 편집 권한을 받은 회원(editor_ids) · 관리자
     execute format('drop policy if exists "update" on public.%I', t);
@@ -142,12 +162,12 @@ end $$;
 
 -- 방명록·게시판 댓글은 비로그인 방문자도 남길 수 있음 (닉네임+비밀번호 방식)
 drop policy if exists "insert" on public.guestbook;
-create policy "insert" on public.guestbook for insert with check (true);
+create policy "insert" on public.guestbook for insert with check (author_id is null or author_id = auth.uid());
 
 -- 댓글도 비로그인 방문자가 남길 수 있다 (닉네임+비밀번호 방식 — 방명록과 동일, v2.0).
 -- 수정·삭제는 위 공통 정책 그대로: 작성자 본인 또는 관리자.
 drop policy if exists "insert" on public.comments;
-create policy "insert" on public.comments for insert with check (true);
+create policy "insert" on public.comments for insert with check (author_id is null or author_id = auth.uid());
 
 -- 알림도 비로그인 방문자가 만들 수 있다 (v2.0) — 손님 댓글·방명록이 관리자에게 알림을 남겨야 하므로.
 -- 행의 주인(author_id)은 받는 사람이라, 읽기·수정·삭제는 받는 사람과 관리자만 (공통 정책 그대로).
@@ -174,12 +194,11 @@ create policy "profiles_delete_admin" on public.profiles for delete to authentic
   using (public.is_admin());
 
 drop policy if exists "invite_select" on public.invite_codes;
-create policy "invite_select" on public.invite_codes for select using (true);
+create policy "invite_select" on public.invite_codes for select to authenticated using (public.is_admin());
 drop policy if exists "invite_write" on public.invite_codes;
 create policy "invite_write" on public.invite_codes for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 drop policy if exists "invite_use" on public.invite_codes;
-create policy "invite_use" on public.invite_codes for update using (used_by is null);
 
 drop policy if exists "settings_select" on public.site_settings;
 create policy "settings_select" on public.site_settings for select using (true);
@@ -197,7 +216,8 @@ create policy "ohome_read" on storage.objects for select using (bucket_id = 'oho
 drop policy if exists "ohome_write" on storage.objects;
 create policy "ohome_write" on storage.objects for insert to authenticated with check (bucket_id = 'ohome');
 drop policy if exists "ohome_update" on storage.objects;
-create policy "ohome_update" on storage.objects for update to authenticated using (bucket_id = 'ohome');
+create policy "ohome_update" on storage.objects for update to authenticated
+  using (bucket_id = 'ohome' and (owner = auth.uid() or public.is_admin()));
 drop policy if exists "ohome_delete" on storage.objects;
 create policy "ohome_delete" on storage.objects for delete to authenticated
   using (bucket_id = 'ohome' and (owner = auth.uid() or public.is_admin()));
