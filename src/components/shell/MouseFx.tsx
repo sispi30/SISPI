@@ -31,9 +31,28 @@ export function MouseFx() {
     box.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:99999';
     document.body.appendChild(box);
 
+    /* 빛번짐용 — 'transparent'로 끝나는 그라디언트는 중간이 회색(검정 섞임)으로 보여서,
+       같은 색의 투명도만 낮춘 값을 쓴다. 어떤 CSS 색 표기든 한 번 풀어서 캐시한다. */
+    const rgbCache = new Map<string, [number, number, number]>();
+    const probe = document.createElement('canvas'); probe.width = probe.height = 1;
+    const pctx = probe.getContext('2d', { willReadFrequently: true });
+    const rgba = (col: string, a: number) => {
+      let v = rgbCache.get(col);
+      if (!v) {
+        v = [111, 101, 119];
+        if (pctx) {
+          pctx.clearRect(0, 0, 1, 1); pctx.fillStyle = '#000'; pctx.fillStyle = col; pctx.fillRect(0, 0, 1, 1);
+          const d = pctx.getImageData(0, 0, 1, 1).data; v = [d[0], d[1], d[2]];
+        }
+        rgbCache.set(col, v);
+      }
+      return `rgba(${v[0]},${v[1]},${v[2]},${a})`;
+    };
+
     /* ── ③ 클릭 선 (캔버스) ── */
-    const LIFE = fx.lineLife * 1000, DRAW = 260;
-    interface Node { x: number; y: number; t: number }
+    const LIFE = fx.lineLife * 1000, DRAW = 420;
+    interface Dust { dx: number; dy: number; r: number; ph: number; sp: number; star: boolean }
+    interface Node { x: number; y: number; t: number; dust: Dust[] }
     interface Seg { a: Node; b: Node }
     const nodes: Node[] = [], segs: Seg[] = [];
     let canvas: HTMLCanvasElement | null = null, ctx: CanvasRenderingContext2D | null = null, dpr = 1;
@@ -52,7 +71,14 @@ export function MouseFx() {
     const onLineClick = (e: MouseEvent) => {
       if ((e as PointerEvent).pointerType === 'touch') return;
       const now = performance.now();
-      const n: Node = { x: e.clientX, y: e.clientY, t: now };
+      // 클릭한 자리 둘레에 밤하늘처럼 흩어진 작은 별들이 남아 깜빡인다
+      const dust: Dust[] = [];
+      for (let i = 0; i < 9; i++) {
+        const ang = Math.random() * Math.PI * 2, d = 14 + Math.random() * 54;
+        dust.push({ dx: Math.cos(ang) * d, dy: Math.sin(ang) * d, r: 0.8 + Math.random() * 2.6,
+          ph: Math.random() * 6.28, sp: 0.004 + Math.random() * 0.006, star: Math.random() < 0.45 });
+      }
+      const n: Node = { x: e.clientX, y: e.clientY, t: now, dust };
       const prev = nodes[nodes.length - 1];
       if (prev && now - prev.t < LIFE) { segs.push({ a: prev, b: n }); if (segs.length > 40) segs.shift(); }
       nodes.push(n); if (nodes.length > 41) nodes.shift();
@@ -60,24 +86,46 @@ export function MouseFx() {
     const drawLines = (now: number) => {
       if (!ctx || !canvas) return;
       const fade = (t: number) => { const k = (now - t) / LIFE; return k >= 1 ? 0 : k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4; };
-      ctx.strokeStyle = fx.lineColor; ctx.lineWidth = 1; ctx.lineCap = 'round';
+      ctx.lineCap = 'round';
       for (const s of segs) {
         const al = fade(s.b.t); if (al <= 0) continue;
         const p = Math.min(1, (now - s.b.t) / DRAW), e = 1 - Math.pow(1 - p, 3);   // 선이 점에서 점으로 그어짐
-        ctx.globalAlpha = al * 0.8;
-        ctx.beginPath(); ctx.moveTo(s.a.x, s.a.y);
-        ctx.lineTo(s.a.x + (s.b.x - s.a.x) * e, s.a.y + (s.b.y - s.a.y) * e); ctx.stroke();
+        const hx = s.a.x + (s.b.x - s.a.x) * e, hy = s.a.y + (s.b.y - s.a.y) * e;
+        ctx.globalAlpha = al * 0.8; ctx.strokeStyle = fx.lineColor; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(s.a.x, s.a.y); ctx.lineTo(hx, hy); ctx.stroke();
+        if (p < 1) {
+          // 별똥별 — 머리가 앞서 가며 꼬리가 가늘게 끌린다
+          const len = Math.hypot(hx - s.a.x, hy - s.a.y), tl = Math.min(len, 140);
+          if (len > 1) {
+            const tx = hx - (hx - s.a.x) / len * tl, ty = hy - (hy - s.a.y) / len * tl;
+            const g = ctx.createLinearGradient(tx, ty, hx, hy);
+            g.addColorStop(0, rgba(fx.lineColor, 0)); g.addColorStop(1, rgba(fx.lineColor, 1));
+            ctx.globalAlpha = al; ctx.strokeStyle = g; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(hx, hy); ctx.stroke();
+            const hg = ctx.createRadialGradient(hx, hy, 0, hx, hy, 10);
+            hg.addColorStop(0, rgba(fx.lineColor, 0.6)); hg.addColorStop(1, rgba(fx.lineColor, 0));
+            ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(hx, hy, 10, 0, Math.PI * 2); ctx.fill();
+          }
+        }
       }
-      ctx.fillStyle = fx.lineColor;
       for (const n of nodes) {
         const al = fade(n.t); if (al <= 0) continue;
         const pop = Math.min(1, (now - n.t) / 180);
-        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 9 * pop + 1);
-        g.addColorStop(0, fx.lineColor); g.addColorStop(1, 'transparent');
-        ctx.globalAlpha = al * 0.35; ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(n.x, n.y, 9 * pop + 1, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = al; ctx.fillStyle = fx.lineColor;
-        ctx.save(); ctx.translate(n.x, n.y); starPath(ctx, 3.5 * pop + 0.5); ctx.fill(); ctx.restore();
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 12 * pop + 1);
+        g.addColorStop(0, rgba(fx.lineColor, 0.5)); g.addColorStop(1, rgba(fx.lineColor, 0));
+        ctx.globalAlpha = al; ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 12 * pop + 1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = fx.lineColor;
+        ctx.save(); ctx.translate(n.x, n.y); starPath(ctx, 4 * pop + 0.5); ctx.fill(); ctx.restore();
+        for (const d of n.dust) {
+          const tw = 0.5 + 0.5 * Math.sin(now * d.sp + d.ph);                 // 깜빡임
+          const show = Math.min(1, Math.max(0, (now - n.t - 120) / 300));    // 클릭 직후 하나둘 나타남
+          const a = al * tw * show; if (a <= 0.02) continue;
+          ctx.globalAlpha = a; ctx.fillStyle = fx.lineColor;
+          ctx.save(); ctx.translate(n.x + d.dx, n.y + d.dy);
+          if (d.star) starPath(ctx, d.r * 1.8); else { ctx.beginPath(); ctx.arc(0, 0, d.r * 0.6, 0, Math.PI * 2); }
+          ctx.fill(); ctx.restore();
+        }
       }
       ctx.globalAlpha = 1;
       while (nodes.length && fade(nodes[0].t) <= 0) nodes.shift();
@@ -131,8 +179,8 @@ export function MouseFx() {
         const r = q.r * (0.4 + 0.6 * pop);
         c.save(); c.translate(q.x, q.y);
         const g = c.createRadialGradient(0, 0, 0, 0, 0, r * 2.6);
-        g.addColorStop(0, q.c); g.addColorStop(1, 'transparent');
-        c.globalAlpha = 0.22 * pop; c.fillStyle = g;
+        g.addColorStop(0, rgba(q.c, 0.55)); g.addColorStop(1, rgba(q.c, 0));
+        c.globalAlpha = pop; c.fillStyle = g;
         c.beginPath(); c.arc(0, 0, r * 2.6, 0, Math.PI * 2); c.fill();   // 은은한 번짐
         c.globalAlpha = Math.min(1, pop * 1.4); c.fillStyle = q.c;
         c.rotate(q.rot + k * 0.6); starPath(c, r); c.fill();
