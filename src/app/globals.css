@@ -2722,25 +2722,20 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 @media (max-width:960px){.cs-deco{display:none}}
 
 /* ---------- 상세 배경 장식 모션 ----------
-   처음: 조각마다 어긋난 자리에서 깜빡이며(적·청 색번짐) 제자리로. 이후: 작은 장식만 반복 */
+   처음: 조각마다 어긋난 자리에서 깜빡이며 제자리로(큰 이름 글씨는 제자리에서 페이드인). 이후: 작은 장식만 반복 */
 .cs-deco .dc-i{animation:dcIn 1.15s linear var(--d,0s) both;will-change:transform,opacity}
 @keyframes dcIn{
-  0%{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px));filter:drop-shadow(12px 0 0 #ff2d55) drop-shadow(-12px 0 0 #1ec8ff)}
+  0%{opacity:0;transform:translate(var(--dx,0px),var(--dy,0px))}
   14%{opacity:1}
   22%{opacity:.15}
-  30%{opacity:1;transform:translate(calc(var(--dx,0px)*-.25),calc(var(--dy,0px)*.3));filter:drop-shadow(-7px 0 0 #ff2d55) drop-shadow(7px 0 0 #1ec8ff)}
+  30%{opacity:1;transform:translate(calc(var(--dx,0px)*-.25),calc(var(--dy,0px)*.3))}
   44%{opacity:.35;transform:translate(calc(var(--dx,0px)*.12),0)}
   52%{opacity:1}
-  70%{opacity:1;transform:translate(0,0);filter:drop-shadow(3px 0 0 #ff2d55) drop-shadow(-3px 0 0 #1ec8ff)}
-  100%{opacity:1;transform:none;filter:none}
+  70%{opacity:1;transform:translate(0,0)}
+  100%{opacity:1;transform:none}
 }
-.cs-deco-ghost{animation:dcGhost 1.3s linear .1s both}
-@keyframes dcGhost{
-  0%{opacity:0;translate:-5vw 0;text-shadow:.8vw 0 rgba(255,45,85,.55),-.8vw 0 rgba(30,200,255,.55)}
-  18%{opacity:1}24%{opacity:.1}32%{opacity:1;translate:2vw 0}46%{opacity:.4}54%{opacity:1}
-  72%{translate:0 0;text-shadow:.3vw 0 rgba(255,45,85,.35),-.3vw 0 rgba(30,200,255,.35)}
-  100%{opacity:1;translate:0 0;text-shadow:0 0 0 transparent}
-}
+.cs-deco-ghost{animation:dcGhost 1.4s ease-out .1s both}
+@keyframes dcGhost{0%{opacity:0}100%{opacity:1}}
 /* 반복 — 쉐브론은 하나씩 꺼졌다 켜지고, 반짝이는 맥동, 십자 표식은 가끔 포인트색으로 점멸, 눈금 위 표식이 한 칸씩 이동 */
 .cs-deco .dc-blink{animation:dcBlink 2.6s steps(1) infinite}
 .cs-deco .dc-blink.slow{animation-duration:4.4s}
