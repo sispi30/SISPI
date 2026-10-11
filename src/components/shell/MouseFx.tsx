@@ -55,6 +55,7 @@ export function MouseFx() {
     interface Node { x: number; y: number; t: number; dust: Dust[] }
     interface Seg { a: Node; b: Node }
     const nodes: Node[] = [], segs: Seg[] = [];
+    let anchor: { x: number; y: number } | null = null;
     let canvas: HTMLCanvasElement | null = null, ctx: CanvasRenderingContext2D | null = null, dpr = 1;
     const resize = () => {
       if (!canvas) return;
@@ -79,8 +80,13 @@ export function MouseFx() {
           ph: Math.random() * 6.28, sp: 0.004 + Math.random() * 0.006, star: Math.random() < 0.45 });
       }
       const n: Node = { x: e.clientX, y: e.clientY, t: now, dust };
-      const prev = nodes[nodes.length - 1];
-      if (prev && now - prev.t < LIFE) { segs.push({ a: prev, b: n }); if (segs.length > 40) segs.shift(); }
+      // 선은 「직전에 클릭한 자리」에서 이번 자리로 — 직전 클릭이 오래 전이라 점이 이미 사라졌어도 자리는
+      // 기억해 두었다가 잇는다 (예전엔 시간이 지나면 선 없이 점·반짝이만 남았다).
+      // 처음 클릭이거나 같은 자리를 다시 누르면, 별똥별처럼 왼쪽 위에서 떨어지는 짧은 선을 긋는다.
+      let from = anchor;
+      if (!from || Math.hypot(from.x - n.x, from.y - n.y) < 8) from = { x: n.x - 110, y: n.y - 64 };
+      segs.push({ a: { x: from.x, y: from.y, t: now, dust: [] }, b: n }); if (segs.length > 40) segs.shift();
+      anchor = { x: n.x, y: n.y };
       nodes.push(n); if (nodes.length > 41) nodes.shift();
     };
     const drawLines = (now: number) => {
@@ -120,7 +126,8 @@ export function MouseFx() {
         for (const d of n.dust) {
           const tw = 0.5 + 0.5 * Math.sin(now * d.sp + d.ph);                 // 깜빡임
           const show = Math.min(1, Math.max(0, (now - n.t - 120) / 300));    // 클릭 직후 하나둘 나타남
-          const a = al * tw * show; if (a <= 0.02) continue;
+          const dl = Math.max(0, 1 - (now - n.t) / Math.min(LIFE, 1800));   // 반짝이는 선보다 먼저 사라져 선이 남는다
+          const a = al * tw * show * dl; if (a <= 0.02) continue;
           ctx.globalAlpha = a; ctx.fillStyle = fx.lineColor;
           ctx.save(); ctx.translate(n.x + d.dx, n.y + d.dy);
           if (d.star) starPath(ctx, d.r * 1.8); else { ctx.beginPath(); ctx.arc(0, 0, d.r * 0.6, 0, Math.PI * 2); }
