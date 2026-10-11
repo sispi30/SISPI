@@ -8,7 +8,62 @@
 // 배경 이미지를 등록한 경우 (mode)
 //  · 'band' : 이미지를 뒤쪽의 큰 반원 안에 넣고, 나머지는 포인트색 장식 + 테마 바탕
 //  · 'mono' : 이미지는 전체 배경 그대로, 장식 요소만 흰색/검은색(이미지 밝기에 맞춰)으로
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+/* ── 모션 ──
+   · 처음 불러올 때: 조각들이 어긋난 자리에서 깜빡이며(적·청 색번짐) 제자리로 모인다 (.dc-i — globals.css)
+   · 이후: 작은 장식만 반복 — 글자 스크램블, 쉐브론 깜빡임, 반짝이 맥동, 눈금 표식 이동, 십자 표식 점멸
+   시스템의 「동작 줄이기」 설정에서는 전부 멈춘다. */
+const SCR = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#/<>=+*';
+function scrambled(t: string, k: number) {   // 앞쪽 k글자는 제대로, 나머지는 무작위 글자
+  let o = '';
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    o += i < k || !/[A-Za-z0-9]/.test(ch) ? ch : SCR[Math.floor(Math.random() * SCR.length)];
+  }
+  return o;
+}
+/** 글자가 무작위 문자에서 한 글자씩 풀리며 나타나고, 이후 몇 초마다 다시 한 번 풀린다 */
+function useScramble(text: string, delay: number, period: number) {
+  const [out, setOut] = useState(text);
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    let alive = true; const timers: number[] = [];
+    const run = () => {
+      let k = 0;
+      const step = () => {
+        if (!alive) return;
+        setOut(scrambled(text, k));
+        if (k >= text.length) { setOut(text); timers.push(window.setTimeout(run, period * (0.7 + Math.random() * 0.8))); return; }
+        k += Math.max(1, Math.ceil(text.length / 9));
+        timers.push(window.setTimeout(step, 60));
+      };
+      step();
+    };
+    setOut(scrambled(text, 0));
+    timers.push(window.setTimeout(run, delay));
+    return () => { alive = false; timers.forEach(clearTimeout); };
+  }, [text, delay, period]);
+  return out;
+}
+function Scr({ text, delay, period, ...rest }: { text: string; delay: number; period: number } & React.SVGProps<SVGTextElement>) {
+  const out = useScramble(text, delay, period);
+  return <text {...rest}>{out}</text>;
+}
+/** 쉐브론 세 개가 대각선으로 놓여 차례로 깜빡이는 작은 표식 */
+function Chev({ x, y, rot = 0, d = 0 }: { x: number; y: number; rot?: number; d?: number }) {
+  return (
+    <g className="dc-i" style={{ '--d': `${d}s`, '--dx': '40px', '--dy': '-30px' } as React.CSSProperties}>
+      <g transform={`translate(${x} ${y}) rotate(${rot})`} fill="none" strokeWidth="3" strokeLinecap="square">
+        {[0, 1, 2].map(i => (
+          <path key={i} className="dc-blink" d="M0 8 L8 0 L16 8" transform={`translate(${i * 9} ${i * 9})`}
+            stroke={i === 1 ? 'var(--d-line)' : 'var(--d-acc)'} style={{ animationDelay: `${i * 0.18}s` }} />
+        ))}
+      </g>
+    </g>
+  );
+}
+const I = (d: number, dx = 0, dy = 0) => ({ '--d': `${d}s`, '--dx': `${dx}px`, '--dy': `${dy}px` }) as React.CSSProperties;
 
 export type DecoMode = 'accent' | 'mono';
 
@@ -86,6 +141,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
         style={{ position: 'absolute', inset: 0 }}>
 
         {/* 뒤쪽 큰 반원 — 이미지가 있으면(band) 그 안에 그림을, 없으면 포인트색을 옅게 */}
+        <g className="dc-i" style={I(0.05, 0, 70)}>
         {band ? (
           <g clipPath="url(#dc-fan)">
             <image href={image} x="0" y="0" width="1920" height="1080" preserveAspectRatio="xMidYMid slice"
@@ -94,58 +150,75 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
         ) : (
           <path d={FAN} fill="var(--d-acc)" opacity={mono ? 0.1 : tone === 'light' ? 0.1 : 0.16} />
         )}
-        <path d={FAN} fill="none" stroke="var(--d-acc)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".75" />
-        <path d="M312 905 A648 648 0 0 1 1608 905" fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
-        <line x1="230" y1="905" x2="1690" y2="905" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+        </g>
+        <g className="dc-i" style={I(0.25, 0, 40)}>
+          <path d={FAN} fill="none" stroke="var(--d-acc)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".75" />
+          <path d="M312 905 A648 648 0 0 1 1608 905" fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+          <line x1="230" y1="905" x2="1690" y2="905" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+        </g>
 
         {/* 왼쪽 가장자리 — 세로 줄 셋 + 포인트색 막대 */}
-        <g stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".75">
-          <line x1="20" y1="170" x2="20" y2="930" /><line x1="27" y1="170" x2="27" y2="930" /><line x1="34" y1="170" x2="34" y2="930" />
+        <g className="dc-i" style={I(0.15, -60, 0)}>
+          <g stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".75">
+            <line x1="20" y1="170" x2="20" y2="930" /><line x1="27" y1="170" x2="27" y2="930" /><line x1="34" y1="170" x2="34" y2="930" />
+          </g>
+          <rect x="31" y="770" width="6" height="160" fill="var(--d-acc)" />
         </g>
-        <rect x="31" y="770" width="6" height="160" fill="var(--d-acc)" />
 
         {/* 오른쪽 위 — 포인트색 라벨 띠 + 3x3 점 */}
-        <rect x="1690" y="62" width="230" height="34" fill="url(#dc-tag)" />
-        <text x="1708" y="84" fontSize="13" letterSpacing="4" fontWeight="700" fill="var(--d-line)"
-          fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace">CHARACTER FILE</text>
-        <g fill="var(--d-acc)" opacity=".85">
-          {[0, 1, 2].flatMap(r => [0, 1, 2].map(c => <rect key={r + '' + c} x={1700 + c * 14} y={112 + r * 14} width="7" height="7" />))}
+        <g className="dc-i" style={I(0.3, 140, -10)}>
+          <rect x="1690" y="62" width="230" height="34" fill="url(#dc-tag)" />
+          <Scr text="CHARACTER FILE" delay={700} period={7000} x="1708" y="84" fontSize="13" letterSpacing="4" fontWeight="700" fill="var(--d-line)"
+            fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" />
+        </g>
+        <g className="dc-i" style={I(0.4, 90, 40)} fill="var(--d-acc)" opacity=".85">
+          {[0, 1, 2].flatMap(r => [0, 1, 2].map(c => <rect key={r + '' + c} className="dc-blink slow" style={{ animationDelay: `${(r * 3 + c) * 0.37}s` }} x={1700 + c * 14} y={112 + r * 14} width="7" height="7" />))}
         </g>
 
         {/* 점 격자 · 십자 표식 · 반짝이 */}
-        <rect x="46" y="640" width="168" height="96" fill="url(#dc-dots)" opacity=".65" />
-        <rect x="1700" y="560" width="168" height="96" fill="url(#dc-dots)" opacity=".5" />
-        <g stroke="var(--d-line)" strokeWidth="1.4" vectorEffect="non-scaling-stroke" opacity=".9">
-          {([[96, 560], [1264, 1010], [716, 112], [1856, 420], [330, 800]] as const).map(([x, y]) => (
-            <path key={x + '-' + y} d={`M${x - 8} ${y}h16M${x} ${y - 8}v16`} />
-          ))}
-        </g>
-        <g fill="var(--d-acc)">
-          {([[1180, 220, 15], [560, 330, 10], [1440, 760, 12], [250, 960, 9], [1110, 150, 8], [1660, 330, 10]] as const).map(([x, y, r]) => (
-            <path key={x + '-' + y} transform={`translate(${x} ${y})`}
-              d={`M0 ${-r} Q0 0 ${r} 0 Q0 0 0 ${r} Q0 0 ${-r} 0 Q0 0 0 ${-r}Z`} opacity=".85" />
-          ))}
-        </g>
+        <g className="dc-i" style={I(0.45, -50, 20)}><rect x="46" y="640" width="168" height="96" fill="url(#dc-dots)" opacity=".65" /></g>
+        <g className="dc-i" style={I(0.5, 60, 20)}><rect x="1700" y="560" width="168" height="96" fill="url(#dc-dots)" opacity=".5" /></g>
+        {([[96, 560], [1264, 1010], [716, 112], [1856, 420], [330, 800]] as const).map(([x, y], i) => (
+          <g key={x + '-' + y} className="dc-i" style={I(0.55 + i * 0.06, 0, 30)}>
+            <path className="dc-flash" style={{ animationDelay: `${i * 1.3}s` }} stroke="var(--d-line)" strokeWidth="1.4" vectorEffect="non-scaling-stroke"
+              d={`M${x - 8} ${y}h16M${x} ${y - 8}v16`} />
+          </g>
+        ))}
+        {([[1180, 220, 15], [560, 330, 10], [1440, 760, 12], [250, 960, 9], [1110, 150, 8], [1660, 330, 10]] as const).map(([x, y, r], i) => (
+          <g key={x + '-' + y} className="dc-i" style={I(0.6 + i * 0.07, (i % 2 ? 40 : -40), -30)}>
+            <g transform={`translate(${x} ${y})`}>
+              <path className="dc-tw" style={{ animationDelay: `${i * 0.6}s` }} fill="var(--d-acc)"
+                d={`M0 ${-r} Q0 0 ${r} 0 Q0 0 0 ${r} Q0 0 ${-r} 0 Q0 0 0 ${-r}Z`} />
+            </g>
+          </g>
+        ))}
+        <Chev x={1730} y={380} rot={0} d={0.7} />
+        <Chev x={110} y={470} rot={90} d={0.8} />
+        <Chev x={1040} y={1010} rot={180} d={0.9} />
 
         {/* 하단 라벨 — 점선으로 이어진 이름표 */}
-        <g fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fontSize="12" letterSpacing="3">
+        <g className="dc-i" style={I(0.6, 90, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fontSize="12" letterSpacing="3">
           <rect x="1560" y="1000" width="84" height="20" fill="var(--d-acc)" />
           <text x="1572" y="1015" fill={mono ? (ink === 'dark' ? '#fff' : '#111') : (tone === 'light' ? '#fff' : '#0b0d10')} fontWeight="700">THEME</text>
           <line x1="1654" y1="1010" x2="1740" y2="1010" stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <text x="1750" y="1015" fill="var(--d-line)" textAnchor="start">{(colorHex ?? '').replace('#', '').toUpperCase().slice(0, 6)}</text>
+          <Scr text={(colorHex ?? '').replace('#', '').toUpperCase().slice(0, 6) || '------'} delay={1100} period={6000} x="1750" y="1015" fill="var(--d-line)" textAnchor="start" />
           <rect x="1560" y="1030" width="84" height="20" fill="none" stroke="var(--d-acc)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
           <text x="1572" y="1045" fill="var(--d-line)" fontWeight="700">NAME</text>
           <line x1="1654" y1="1040" x2="1700" y2="1040" stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <text x="1710" y="1045" fill="var(--d-line)">{(name ?? '').toUpperCase().slice(0, 12)}</text>
+          <Scr text={(name ?? '').toUpperCase().slice(0, 12) || '--'} delay={1300} period={8000} x="1710" y="1045" fill="var(--d-line)" />
         </g>
-        <g fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fill="var(--d-line)" letterSpacing="3">
-          <text x="60" y="1046" fontSize="14" fontWeight="800" fill="var(--d-acc)">// ARCHIVE</text>
+        <g className="dc-i" style={I(0.55, -80, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fill="var(--d-line)" letterSpacing="3">
+          <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y="1046" fontSize="14" fontWeight="800" fill="var(--d-acc)" />
           <text x="60" y="1064" fontSize="10" letterSpacing="2">CHARACTER PROFILE · ALL RIGHTS RESERVED</text>
-          <text x="1262" y="132" fontSize="12">STATUS</text>
         </g>
-        <g stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7">
-          <line x1="1296" y1="140" x2="1296" y2="330" />
-          {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <line key={i} x1="1296" y1={150 + i * 24} x2={i % 2 ? 1303 : 1310} y2={150 + i * 24} />)}
+        <g className="dc-i" style={I(0.45, 50, 0)}>
+          <Scr text="STATUS" delay={800} period={5500} x="1262" y="132" fontSize="12" letterSpacing="3" fill="var(--d-line)"
+            fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" />
+          <g stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7">
+            <line x1="1296" y1="140" x2="1296" y2="330" />
+            {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <line key={i} x1="1296" y1={150 + i * 24} x2={i % 2 ? 1303 : 1310} y2={150 + i * 24} />)}
+          </g>
+          <rect className="dc-scan" x="1290" y="146" width="22" height="4" fill="var(--d-acc)" />
         </g>
       </svg>
     </div>
