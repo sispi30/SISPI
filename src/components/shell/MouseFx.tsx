@@ -1,6 +1,7 @@
 'use client';
 // 마우스 효과 (사용자 요청) — 기존 그누보드 사이트(sispi.dothome.co.kr)의 두 효과를 그대로 옮김.
 //  ① 클릭: ✦ 4각 별이 클릭한 자리에서 위로 떠오르며 커지고 사라짐 (랜덤 회전 · 파랑 3색)
+//  ③ 클릭 선: 클릭한 자리마다 은은한 점이 생기고, 직전에 클릭한 점과 가는 선으로 이어졌다 서서히 사라짐
 //  ② 이동: 팅커벨 반짝이 — 커서를 따라 작은 십자 별이 떨어지다 점으로 바뀌어 사라짐 (최대 50개)
 // 원본은 전역 이벤트를 덮어쓰고 body에 직접 붙였지만, 여기서는 리스너를 추가/해제만 하고
 // 고정 컨테이너 안에서만 그린다 (pointer-events:none · 다른 화면 요소에 영향 없음).
@@ -20,7 +21,7 @@ export function MouseFx() {
 
   useEffect(() => {
     if (typeof window === 'undefined' || !loaded) return;
-    if (!fx.click && !fx.trail) return;
+    if (!fx.click && !fx.trail && !fx.line) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     const COLORS = colorKey.split('|');
     const pick = () => COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -30,6 +31,61 @@ export function MouseFx() {
     box.setAttribute('aria-hidden', 'true');
     box.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:99999';
     document.body.appendChild(box);
+
+    /* ── ③ 클릭 선 (캔버스) ── */
+    const LIFE = fx.lineLife * 1000, DRAW = 260;
+    interface Node { x: number; y: number; t: number }
+    interface Seg { a: Node; b: Node }
+    const nodes: Node[] = [], segs: Seg[] = [];
+    let canvas: HTMLCanvasElement | null = null, ctx: CanvasRenderingContext2D | null = null, dpr = 1;
+    const resize = () => {
+      if (!canvas) return;
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(window.innerWidth * dpr); canvas.height = Math.round(window.innerHeight * dpr);
+      canvas.style.width = '100%'; canvas.style.height = '100%';
+    };
+    if (fx.line) {
+      canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:absolute;inset:0;pointer-events:none';
+      box.appendChild(canvas); ctx = canvas.getContext('2d'); resize();
+      window.addEventListener('resize', resize);
+    }
+    const onLineClick = (e: MouseEvent) => {
+      if ((e as PointerEvent).pointerType === 'touch') return;
+      const now = performance.now();
+      const n: Node = { x: e.clientX, y: e.clientY, t: now };
+      const prev = nodes[nodes.length - 1];
+      if (prev && now - prev.t < LIFE) { segs.push({ a: prev, b: n }); if (segs.length > 40) segs.shift(); }
+      nodes.push(n); if (nodes.length > 41) nodes.shift();
+    };
+    const drawLines = (now: number) => {
+      if (!ctx || !canvas) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      const fade = (t: number) => { const k = (now - t) / LIFE; return k >= 1 ? 0 : k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4; };
+      ctx.strokeStyle = fx.lineColor; ctx.lineWidth = 1; ctx.lineCap = 'round';
+      for (const s of segs) {
+        const al = fade(s.b.t); if (al <= 0) continue;
+        const p = Math.min(1, (now - s.b.t) / DRAW), e = 1 - Math.pow(1 - p, 3);   // 선이 점에서 점으로 그어짐
+        ctx.globalAlpha = al * 0.8;
+        ctx.beginPath(); ctx.moveTo(s.a.x, s.a.y);
+        ctx.lineTo(s.a.x + (s.b.x - s.a.x) * e, s.a.y + (s.b.y - s.a.y) * e); ctx.stroke();
+      }
+      ctx.fillStyle = fx.lineColor;
+      for (const n of nodes) {
+        const al = fade(n.t); if (al <= 0) continue;
+        const pop = Math.min(1, (now - n.t) / 180);
+        const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 9 * pop + 1);
+        g.addColorStop(0, fx.lineColor); g.addColorStop(1, 'transparent');
+        ctx.globalAlpha = al * 0.35; ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 9 * pop + 1, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = al; ctx.fillStyle = fx.lineColor;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 1.8, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      while (nodes.length && fade(nodes[0].t) <= 0) nodes.shift();
+      while (segs.length && fade(segs[0].b.t) <= 0) segs.shift();
+    };
 
     /* ── ① 클릭 별 ── */
     const style = document.createElement('style');
@@ -139,6 +195,7 @@ export function MouseFx() {
         s.el.style.cssText = `left:${s.x}px;top:${s.y}px;opacity:${Math.max(0, s.alpha)};`
           + `transform:scale(${s.scale},${s.scale}) rotate(${s.rot}deg);background:${s.el.style.background}`;
       }
+      if (fx.line) drawLines(now);
       acc += dt;
       while (acc >= TICK) { acc -= TICK; sparkleTick(); }
       raf = requestAnimationFrame(loop);
@@ -146,16 +203,19 @@ export function MouseFx() {
     raf = requestAnimationFrame(loop);
 
     if (fx.click) window.addEventListener('click', onClick);
+    if (fx.line) window.addEventListener('click', onLineClick);
     if (fx.trail) window.addEventListener('pointermove', onMove, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('click', onClick);
+      window.removeEventListener('click', onLineClick);
+      window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
       box.remove();
       style.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, fx.click, fx.trail, fx.count, colorKey]);
+  }, [loaded, fx.click, fx.trail, fx.count, colorKey, fx.line, fx.lineColor, fx.lineLife]);
 
   return null;
 }

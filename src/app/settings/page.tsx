@@ -1546,7 +1546,7 @@ function CursorPane() {
   return (
     <div className="set-sec">
       <h3>마우스 커서</h3>
-      <div className="d">마우스 효과(클릭 별 · 이동 반짝이) + 상태별 커서 등록 (png·gif·cur·ani — 32px 내외 권장) + 클릭 지점(핫스팟) — ani는 애니메이션 재생 · cur/ani는 내장 핫스팟 사용 · 등록하지 않은 상태는 기본 커서</div>
+      <div className="d">마우스 효과(클릭 별 · 클릭 선 · 이동 반짝이) + 상태별 커서 등록 (png·gif·cur·ani — 32px 내외 권장) + 클릭 지점(핫스팟) — ani는 애니메이션 재생 · cur/ani는 내장 핫스팟 사용 · 등록하지 않은 상태는 기본 커서</div>
       <p className="hint" style={{ margin: '-6px 0 10px' }}>
         브라우저는 128px가 넘는 이미지를 커서로 쓰지 못합니다 — 큰 이미지를 올리면 자동으로 줄여서 등록합니다
       </p>
@@ -1575,6 +1575,22 @@ function MouseFxRows() {
       <div className="set-row">
         <div className="l"><b>이동 반짝이 효과</b><small>마우스를 움직이면 커서를 따라 반짝이가 떨어집니다</small></div>
         <KToggle checked={fx.trail} onChange={v => set({ trail: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>클릭 선 효과</b><small>클릭한 자리마다 점이 생기고, 직전에 클릭한 점과 가는 선으로 이어졌다 사라집니다</small></div>
+        <KToggle checked={fx.line} onChange={v => set({ line: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>선 유지 시간</b><small>선과 점이 화면에 남아 있는 시간 (1~10초)</small></div>
+        <KStep value={fx.lineLife} min={1} max={10} step={1} suffix="초" onChange={v => set({ lineLife: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>선 색</b><small>클릭 선과 점의 색 (별·반짝이 색과 따로 정합니다)</small></div>
+        <div className="cp-group" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <ColorField value={fx.lineColor} onChange={hex => set({ lineColor: hex })} />
+          <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+            onClick={() => set({ lineColor: DEFAULT_MOUSE_FX.lineColor })}>기본색</button>
+        </div>
       </div>
       <div className="set-row">
         <div className="l"><b>반짝이 개수</b><small>동시에 보이는 최대 개수 — 많을수록 촘촘합니다 (5~100)</small></div>
