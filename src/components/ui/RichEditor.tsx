@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import { Mark, mergeAttributes } from '@tiptap/core';
 import { putBlob } from '@/lib/blobStore';
 import { useToast } from '@/components/ui/Toast';
 
@@ -18,6 +19,33 @@ function toDataUrl(f: File): Promise<string> {
   });
 }
 
+/** 글자색(대표 테마색) 표식 — <span data-theme-color="#hex" style="color:#hex">. 색은 #rrggbb만 받는다 */
+const ThemeColor = Mark.create({
+  name: 'themeColor',
+  addAttributes() {
+    return {
+      // 'theme' = 캐릭터 대표 테마색을 따라간다(페이지가 --char-theme로 현재 색을 내려줌), #rrggbb = 옛 데이터(고정 색)
+      color: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-theme-color'),
+        renderHTML: (attrs: { color?: string | null; fb?: string | null }) => {
+          if (!attrs.color) return {};
+          if (attrs.color !== 'theme') return { 'data-theme-color': attrs.color, style: `color:${attrs.color}` };
+          // 변수를 못 받는 곳(목록·미리보기 등)에서도 읽히도록 저장 시점의 색을 대체값으로
+          return { 'data-theme-color': 'theme', style: `color:var(--char-theme${attrs.fb ? `,${attrs.fb}` : ''})` };
+        },
+      },
+      fb: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-theme-fb'),
+        renderHTML: (attrs: { color?: string | null; fb?: string | null }) => (attrs.color === 'theme' && attrs.fb ? { 'data-theme-fb': attrs.fb } : {}),
+      },
+    };
+  },
+  parseHTML() { return [{ tag: 'span[data-theme-color]' }]; },
+  renderHTML({ HTMLAttributes }) { return ['span', mergeAttributes(HTMLAttributes), 0]; },
+});
+
 function TBtn({ on, label, title, onClick }: { on?: boolean; label: React.ReactNode; title: string; onClick: () => void }) {
   return (
     <button type="button" data-tip={title} className={`re-btn ${on ? 'on' : ''}`}
@@ -27,16 +55,18 @@ function TBtn({ on, label, title, onClick }: { on?: boolean; label: React.ReactN
   );
 }
 
-export function RichEditor({ value, onChange, placeholder }: {
+export function RichEditor({ value, onChange, placeholder, themeColor }: {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  /** 있으면 툴바에 「선택한 글자를 이 색(대표 테마색)으로」 버튼이 생긴다 */
+  themeColor?: string;
 }) {
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const editor = useEditor({
-    extensions: [StarterKit, Image],
+    extensions: [StarterKit, Image, ThemeColor],
     content: value || '<p></p>',
     immediatelyRender: false,
     editorProps: {
@@ -74,7 +104,7 @@ export function RichEditor({ value, onChange, placeholder }: {
   };
 
   return (
-    <div className="re-wrap">
+    <div className="re-wrap" style={themeColor ? ({ '--char-theme': themeColor } as React.CSSProperties) : undefined}>
       <div className="re-toolbar">
         <TBtn title="굵게" label={<b>B</b>} on={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()} />
@@ -82,6 +112,18 @@ export function RichEditor({ value, onChange, placeholder }: {
           onClick={() => editor.chain().focus().toggleItalic().run()} />
         <TBtn title="취소선" label={<s>S</s>} on={editor.isActive('strike')}
           onClick={() => editor.chain().focus().toggleStrike().run()} />
+        {/* 대표 테마색 — 선택한 글자를 캐릭터 대표 테마색으로 (이미 그 색이면 해제) */}
+        {themeColor && /^#[0-9a-f]{6}$/i.test(themeColor) && (
+          <TBtn title="글자를 대표 테마색으로 — 테마색을 바꾸면 같이 바뀝니다 (다시 누르면 해제)"
+            on={editor.isActive('themeColor')}
+            label={<span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
+              <b style={{ fontSize: 13 }}>A</b>
+              <span style={{ width: 14, height: 3, borderRadius: 1, background: themeColor, marginTop: 1 }} />
+            </span>}
+            onClick={() => (editor.isActive('themeColor')
+              ? editor.chain().focus().unsetMark('themeColor').run()
+              : editor.chain().focus().setMark('themeColor', { color: 'theme', fb: themeColor }).run())} />
+        )}
         <span className="re-sep" />
         <TBtn title="제목" label="H2" on={editor.isActive('heading', { level: 2 })}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />

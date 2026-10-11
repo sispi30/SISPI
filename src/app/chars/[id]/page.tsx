@@ -429,7 +429,7 @@ function CharDetailInner() {
       ) : (
       stage ? (
       <div className="cs" data-ink={stageInk} data-art-sh={(eff.artShadow ?? 'auto') === 'auto' ? (bgInk === 'dark' ? 'auto-light' : 'auto-dark') : eff.artShadow}
-        style={{ fontFamily: familyOf(eff.bodyFontId), ...(customInk ? { '--cs-body': customInk } as React.CSSProperties : {}) }}>
+        style={{ fontFamily: familyOf(eff.bodyFontId), '--char-theme': eff.color, ...(customInk ? { '--cs-body': customInk } : {}) } as React.CSSProperties}>
         {/* 배경 — 등록한 그림 그대로 (추가 탭에 전용 그림이 있으면 그 탭을 여는 동안 그 그림) */}
         <div className="cs-bg">
           {stageArtRef
@@ -496,7 +496,7 @@ function CharDetailInner() {
           {eff.tabs.length > 0 && (
             <div className="cs-tabs">
               <button className={!curTab ? 'on' : ''} onClick={() => { setTab('basic'); setWin(null); }}>
-                <b>기본 정보</b><span className="k">Basic</span>
+                <b>BASIC</b><span className="k">기본 정보</span>
               </button>
               {eff.tabs.map(t => (
                 <button key={t.id} className={curTab?.id === t.id ? 'on' : ''} onClick={() => { setTab(t.id); setWin(null); }}>
@@ -513,7 +513,7 @@ function CharDetailInner() {
           <div className="cs-tabhead">
             {curTab
               ? <><b>{curTab.title}</b>{curTab.subtitle && <span>{curTab.subtitle}</span>}</>
-              : <><b>기본 정보</b><span>BASIC</span></>}
+              : <><b>BASIC</b><span>기본 정보</span></>}
           </div>
           <div className={`cs-intro prose${curTab ? ' tab' : ''}`} dangerouslySetInnerHTML={{ __html: curTab ? tabHtml : basicHtml }} />
           <div className="cs-links">
@@ -625,7 +625,7 @@ function CharDetailInner() {
         })()}
 
         {/* 우측 정보 패널 — 최상단 캐릭터 이름 크게 (v1.6) · AU면 그 AU의 이름·폰트 */}
-        <div className={`panel profile-info${tab === GALLERY_TAB ? ' gal-full' : ''}`} ref={infoRef} style={{ fontFamily: familyOf(eff.bodyFontId) }}>
+        <div className={`panel profile-info${tab === GALLERY_TAB ? ' gal-full' : ''}`} ref={infoRef} style={{ fontFamily: familyOf(eff.bodyFontId), '--char-theme': eff.color } as React.CSSProperties}>
           {/* 크기는 캐릭터마다 직접 정한다 (등록·수정의 「이름 크기」) — 자동으로 줄이면
               이름 길이에 따라 어중간해져서, 정한 크기를 그대로 쓴다 (v2.0 사용자 확정) */}
           <div style={{
