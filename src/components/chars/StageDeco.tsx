@@ -83,6 +83,8 @@ interface Props {
   name?: string;
   colorHex?: string;
   /** 큰 이름 글씨 위에 겹쳐 쓰는 필기체 글씨 (처음에 써 내려가는 효과) */
+  /** 큰 이름 글씨 위치·크기 (x·y = 화면 %, scale = 기본 크기 대비 %) */
+  ghostPos?: { x: number; y: number; scale: number };
   script?: { text: string; font?: string; color?: string; size: number; x: number; y: number; rot: number };
 }
 
@@ -131,10 +133,26 @@ function ScriptWrite({ t }: { t: NonNullable<Props['script']> }) {
   );
 }
 
-// 뒤쪽 큰 반원 (부채꼴) — 중심 (960,905) · 반지름 610
-const FAN = 'M350 905 A610 610 0 0 1 1570 905 Z';
+// 뒤쪽 큰 반원 (부채꼴) — 중심 (960,바닥선) · 반지름 610. 바닥선은 화면 아래에서 --cs-floor 만큼 위 (그림 하단도 같은 선에 선다)
+const fanPath = (fy: number) => `M350 ${fy} A610 610 0 0 1 1570 ${fy} Z`;
 
-export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, name, colorHex, script }: Props) {
+export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
+  const root = useRef<HTMLDivElement>(null);
+  const probe = useRef<HTMLDivElement>(null);
+  const [fy, setFy] = useState(1015);                       // 바닥선의 viewBox y — 실제 화면 크기에 맞춰 아래에서 다시 잰다
+  useEffect(() => {
+    const el = root.current, pr = probe.current; if (!el || !pr) return;
+    const calc = () => {
+      const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return;
+      const sc = Math.max(W / 1920, H / 1080), offY = (H - 1080 * sc) / 2;   // xMidYMid slice
+      const v = Math.round((pr.offsetTop - offY) / sc);
+      if (Number.isFinite(v)) setFy(Math.min(1075, Math.max(700, v)));
+    };
+    calc();
+    const ro = new ResizeObserver(calc); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const FAN = fanPath(fy);
   const mono = mode === 'mono';
   const band = mode === 'accent' && !!image;
   const style = (mono
@@ -153,7 +171,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
   const gsize = ghostSizeVw(g);
 
   return (
-    <div className="cs-deco" aria-hidden="true" style={style} data-mode={mode} data-tone={tone}>
+    <div ref={root} className="cs-deco" aria-hidden="true" style={style} data-mode={mode} data-tone={tone}>
+      <div ref={probe} className="cs-deco-floor" />
       <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" focusable="false">
         <defs>
           <pattern id="dc-grid" width="96" height="96" patternUnits="userSpaceOnUse">
@@ -181,7 +200,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
       </svg>
       {/* 고스트 글씨 — 바탕·모눈 위, 나머지 장식(반원·선·라벨)과 그림 아래 */}
       {g && (
-        <div className="cs-deco-ghost" style={{ fontFamily: ghostFont ?? 'var(--serif)', fontSize: `${gsize}vw` }}>{g}</div>
+        <div className="cs-deco-ghost" style={{ fontFamily: ghostFont ?? 'var(--serif)', fontSize: `${gsize * (ghostPos?.scale ?? 100) / 100}vw`,
+          left: `${ghostPos?.x ?? 50}%`, top: `${ghostPos?.y ?? 30}%` }}>{g}</div>
       )}
       <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" focusable="false"
         style={{ position: 'absolute', inset: 0 }}>
@@ -199,8 +219,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
         </g>
         <g className="dc-i" style={I(0.25, 0, 40)}>
           <path d={FAN} fill="none" stroke="var(--d-acc)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".75" />
-          <path d="M312 905 A648 648 0 0 1 1608 905" fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
-          <line x1="230" y1="905" x2="1690" y2="905" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+          <path d={`M312 ${fy} A648 648 0 0 1 1608 ${fy}`} fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+          <line x1="230" y1={fy} x2="1690" y2={fy} stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
         </g>
 
         {script && script.text && <ScriptWrite t={script} />}
@@ -213,12 +233,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           <rect x="31" y="770" width="6" height="160" fill="var(--d-acc)" />
         </g>
 
-        {/* 오른쪽 위 — 포인트색 라벨 띠 + 3x3 점 */}
-        <g className="dc-i" style={I(0.3, 140, -10)}>
-          <rect x="1690" y="62" width="230" height="34" fill="url(#dc-tag)" />
-          <Scr text="CHARACTER FILE" delay={700} period={7000} x="1708" y="84" fontSize="13" letterSpacing="4" fontWeight="700" fill="var(--d-line)"
-            fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" />
-        </g>
+        {/* 오른쪽 위 — 3x3 점 */}
         <g className="dc-i" style={I(0.4, 90, 40)} fill="var(--d-acc)" opacity=".85">
           {[0, 1, 2].flatMap(r => [0, 1, 2].map(c => <rect key={r + '' + c} className="dc-blink slow" style={{ animationDelay: `${(r * 3 + c) * 0.37}s` }} x={1700 + c * 14} y={112 + r * 14} width="7" height="7" />))}
         </g>

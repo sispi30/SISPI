@@ -4,7 +4,7 @@
 // 아트는 여러 장 — 첫 장이 대표 풀 아트이자 리스트 썸네일(3:4 크롭) 원본 (6.1)
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { DecoScript, DEFAULT_DECO_SCRIPT } from '@/lib/charStore';
+import { DecoScript, DecoGhost, DEFAULT_DECO_SCRIPT, DEFAULT_DECO_GHOST } from '@/lib/charStore';
 import { ScriptPlacer } from '@/components/chars/ScriptPlacer';
 import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, GalleryPost, galleryPostsOf, hasGallery, CHAR_SEED, Relation, REL_SEED, relGalleryTagsForChar } from '@/lib/charStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
@@ -123,6 +123,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   const [bodyInk, setBodyInk] = useState<'auto' | 'light' | 'dark' | 'custom'>(initial?.bodyInk ?? 'auto');
   const [deco, setDeco] = useState<'on' | 'off'>(initial?.deco ?? 'on');
   const [decoScript, setDecoScript] = useState<DecoScript | null>(initial?.decoScript ?? null);
+  const [decoGhost, setDecoGhost] = useState<DecoGhost>(initial?.decoGhost ?? { ...DEFAULT_DECO_GHOST });
   const [decoFontId, setDecoFontId] = useState(initial?.decoFontId ?? '');
   const [decoBg, setDecoBg] = useState<'full' | 'band'>(initial?.decoBg ?? 'full');
   const [artShadow, setArtShadow] = useState<'auto' | 'dark' | 'light' | 'none'>(initial?.artShadow ?? 'auto');
@@ -247,6 +248,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       deco: deco === 'on' ? undefined : 'off',
       decoBg: decoBg === 'full' ? undefined : 'band',
       decoFontId: decoFontId || undefined,
+      decoGhost: decoGhost.x === DEFAULT_DECO_GHOST.x && decoGhost.y === DEFAULT_DECO_GHOST.y && decoGhost.scale === DEFAULT_DECO_GHOST.scale ? undefined : decoGhost,
       decoScript: decoScript ? { ...decoScript, text: decoScript.text?.trim() || undefined, fontId: decoScript.fontId || undefined, color: decoScript.color || undefined } : undefined,
       bodyInk: bodyInk === 'auto' ? undefined : bodyInk,
       bodyInkColor: bodyInk === 'custom' ? bodyInkColor : undefined,
@@ -755,10 +757,24 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
                       <span className="cp-lb">기울기</span>
                       <KStep value={decoScript.rot} min={-30} max={30} step={1} suffix="°" onChange={v => setDecoScript({ ...decoScript, rot: v })} />
                     </div>
-                    <ScriptPlacer script={decoScript} scriptText={decoScript.text?.trim() || altName.trim()}
-                      scriptFont={decoScript.fontId ? deVarFamily(familyOf(decoScript.fontId) ?? '') : deVarFamily(familyOf(fontId) ?? '')}
-                      ghost={altName.trim()} ghostFont={deVarFamily(familyOf(decoFontId || fontId) ?? '')}
-                      accent={color || '#6fae2f'} onMove={(x, y) => setDecoScript({ ...decoScript, x, y })} />
+                  </>
+                )}
+                {(altName.trim() || decoScript) && (
+                  <>
+                    {altName.trim() && (
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span className="cp-lb">큰 이름 글씨 크기</span>
+                        <KStep value={decoGhost.scale} min={30} max={200} step={5} suffix="%" onChange={v => setDecoGhost({ ...decoGhost, scale: v })} />
+                        <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+                          onClick={() => setDecoGhost({ ...DEFAULT_DECO_GHOST })}>위치·크기 처음대로</button>
+                      </div>
+                    )}
+                    <ScriptPlacer script={decoScript} scriptText={decoScript?.text?.trim() || altName.trim()}
+                      scriptFont={decoScript?.fontId ? deVarFamily(familyOf(decoScript.fontId) ?? '') : deVarFamily(familyOf(fontId) ?? '')}
+                      ghost={altName.trim()} ghostPos={decoGhost} ghostFont={deVarFamily(familyOf(decoFontId || fontId) ?? '')}
+                      accent={color || '#6fae2f'}
+                      onMoveGhost={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
+                      onMoveScript={(x, y) => decoScript && setDecoScript({ ...decoScript, x, y })} />
                   </>
                 )}
               </>

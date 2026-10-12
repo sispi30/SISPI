@@ -439,6 +439,7 @@ function CharDetailInner() {
           <StageDeco mode={bgUrl && !decoBand ? 'mono' : 'accent'} tone={bgInk === 'dark' ? 'light' : 'dark'}
             ink={bgInk === 'dark' ? 'dark' : 'light'} image={decoBand ? bgUrl : undefined} blur={bgBlur}
             ghost={eff.altName?.trim() || undefined} ghostFont={familyOf(eff.decoFontId || eff.fontId) ?? undefined}
+            ghostPos={eff.decoGhost ?? undefined}
             name={eff.name} colorHex={eff.color}
             script={eff.decoScript ? { ...eff.decoScript, text: eff.decoScript.text?.trim() || eff.altName?.trim() || '', font: familyOf(eff.decoScript.fontId) ?? undefined } : undefined} />
         )}

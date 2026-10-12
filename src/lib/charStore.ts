@@ -71,6 +71,14 @@ export interface DecoScript {
 }
 export const DEFAULT_DECO_SCRIPT: DecoScript = { size: 22, x: 52, y: 36, rot: -4 };
 
+/** 상세 배경의 큰 이름 글씨 위치·크기 */
+export interface DecoGhost {
+  x: number;          // 가로 위치 (화면 폭의 %, 가운데=50)
+  y: number;          // 세로 위치 (화면 높이의 %, 기본 30)
+  scale: number;      // 크기 (기본 크기 대비 %, 기본 100)
+}
+export const DEFAULT_DECO_GHOST: DecoGhost = { x: 50, y: 30, scale: 100 };
+
 export interface Character {
   id: string;
   name: string;          // 대표 이름 (전용 폰트 적용 대상)
@@ -92,6 +100,8 @@ export interface Character {
   decoFontId?: string;
   /** 큰 이름 글씨 위에 겹치는 필기체 글씨 — 없으면(비우면) 쓰지 않는다 */
   decoScript?: DecoScript | null;
+  /** 큰 이름 글씨 위치·크기 — 없으면 기본 자리 */
+  decoGhost?: DecoGhost | null;
   color: string;         // 대표 테마색 (말풍선·리스트 점)
   // 상세 페이지 테마 (v1.9 사용자 확정) — custom이면 대표 테마색으로 홈 팔레트 임시 전환 (4.18 방식)
   themeMode?: 'default' | 'custom';
@@ -186,6 +196,7 @@ export interface AuCharProfile {
   decoBg?: 'full' | 'band';
   decoFontId?: string;
   decoScript?: DecoScript | null;
+  decoGhost?: DecoGhost | null;
   artShadow?: 'auto' | 'dark' | 'light' | 'none';   // AU도 자기 값을 따로 — 자동이면 'auto'로 저장해 원본의 지정을 물려받지 않게 한다
   color?: string;
   themeMode?: 'default' | 'custom';
@@ -235,6 +246,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     ...(p.decoBg !== undefined ? { decoBg: p.decoBg } : {}),
     ...(p.decoFontId !== undefined ? { decoFontId: p.decoFontId } : {}),
     ...(p.decoScript !== undefined ? { decoScript: p.decoScript } : {}),
+    ...(p.decoGhost !== undefined ? { decoGhost: p.decoGhost } : {}),
     ...(p.color !== undefined ? { color: p.color } : {}),
     ...(p.themeMode !== undefined ? { themeMode: p.themeMode } : {}),
     ...(p.themeTone !== undefined ? { themeTone: p.themeTone } : {}),

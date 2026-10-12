@@ -2646,10 +2646,10 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
    · 좌측 항목이 그래도 넘치면 StageLeft가 비율로 줄여 맞춘다 (스크롤 없이 전부 보이게)
    · 우측 소개 본문은 남는 높이를 쓰고, 정말 길 때만 그 안에서 스크롤 */
 @media (min-width:961px){
-  .cs{--cs-px:clamp(32px,4vw,96px);--cs-top:clamp(128px,12.5vh,150px);--cs-bottom:clamp(84px,11vh,130px);
+  .cs{--cs-px:clamp(32px,4vw,96px);--cs-top:clamp(128px,12.5vh,150px);--cs-bottom:clamp(84px,11vh,130px);--cs-floor:clamp(36px,6vh,64px);
     --cs-rowpad:clamp(5px,.9vh,10px);
     position:fixed;inset:0;z-index:1;height:auto;min-height:0;max-height:none;overflow:hidden;display:block;padding:0}
-  .cs-bg{position:absolute;inset:0}
+  .cs-bg{position:absolute;inset:0 0 var(--cs-floor) 0}   /* 그림 하단 = 반원 장식의 바닥선 */
   .cs-art{max-width:min(620px,36vw)}
   .cs-left{left:var(--cs-px);top:var(--cs-top);bottom:var(--cs-bottom);width:min(460px,26vw)}
   .cs-left-in{transform:scale(var(--fit,1));transform-origin:0 0}
@@ -2716,8 +2716,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 상세 배경 장식 — 그림·글자 뒤, 클릭 불가. 모바일(카드형)은 어두운 판 위라 장식을 끈다 */
 .cs-deco{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .cs-deco svg{display:block}
+.cs-deco-floor{position:absolute;left:0;bottom:var(--cs-floor,64px);height:0;width:0}
 /* 고스트 글씨 — 이름의 다른 표기를 뒤에 크게 (참고: 게임 아트 소개 화면의 배경 대형 문자) */
-.cs-deco-ghost{position:absolute;left:0;right:0;top:16%;text-align:center;white-space:nowrap;line-height:1;overflow:hidden;
+.cs-deco-ghost{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);width:max-content;text-align:center;white-space:nowrap;line-height:1.35;padding:.05em .1em;overflow:visible;
   font-weight:800;letter-spacing:-.02em;color:var(--d-ghost);user-select:none}
 @media (max-width:960px){.cs-deco{display:none}}
 
