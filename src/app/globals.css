@@ -2612,7 +2612,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   rgba(6,8,11,.28)}
 .cs-faces{left:50%;translate:-50% 0;bottom:92px}
 @media (max-width:960px){
-  .cs{background:#0b0d10}
+  /* 카드 바탕 — 검정 고정이 아니라 지금 깔린 테마 배경 위에 글자색 계열로 옅게 얹어, 배경이 밝으면 밝은 박스·어두우면 어두운 박스가 된다 */
+  .cs{background:color-mix(in srgb,var(--cs-body) 6%,transparent);border:1px solid var(--line)}
   .cs-bg{height:84vw;max-height:620px}
   .cs-art{height:100%;max-width:100%}
   .cs-ph{height:100%;margin-bottom:0;max-width:70vw}
@@ -2664,7 +2665,6 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 아트 그림자 색 — 밝은 배경에서는 어두운 그림자가 더러워 보이므로 밝게(자동은 배경 밝기를 따라감). 모바일은 어두운 판 위라 자동이면 늘 어둡게 */
 .cs[data-art-sh="light"],.cs[data-art-sh="auto-light"]{--cs-art-sh:0 14px 30px rgba(255,255,255,.7)}
 .cs[data-art-sh="none"]{--cs-art-sh:0 0 0 transparent}
-@media (max-width:960px){.cs[data-art-sh="auto-light"]{--cs-art-sh:0 14px 30px rgba(0,0,0,.45)}}
 
 /* BACK — 우측 상단 (EDIT/DELETE와 같은 작은 글씨). PC는 우측 칸 오른쪽 끝, 모바일은 화면 오른쪽 위 */
 .cs .cs-back{position:absolute;z-index:5;width:auto;margin:0;right:14px;top:10px}
@@ -2709,13 +2709,12 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 .cs[data-ink="dark"]{--cs-accent:color-mix(in srgb,var(--accent,#7fd6d0) 72%,#000);--cs-body:#12161d;--cs-body-sh:0 0 12px rgba(255,255,255,.55),0 0 2px rgba(255,255,255,.4)}
 .cs .cs-intro,.cs .cs-tabhead b,.cs .cs-tabhead span{color:var(--cs-body);text-shadow:var(--cs-body-sh)}
 .cs .cs-tabhead span{opacity:.72}
-@media (max-width:960px){
-  .cs,.cs[data-ink="dark"]{--cs-accent:color-mix(in srgb,var(--accent,#7fd6d0) 55%,#fff);--cs-body:#f3f5f8;--cs-body-sh:0 1px 10px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.35)}
-}
 
 /* 상세 배경 장식 — 그림·글자 뒤, 클릭 불가. 모바일(카드형)은 어두운 판 위라 장식을 끈다 */
 .cs-deco{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .cs-deco svg{display:block}
+.cs-deco-tag{position:absolute;right:calc(var(--cs-px,40px) + 190px);top:calc(var(--cs-top,128px) - 40px);padding:6px 36px 6px 14px;font:700 13px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:4px;
+  color:var(--d-line);white-space:nowrap;background:linear-gradient(90deg,color-mix(in srgb,var(--d-acc) 85%,transparent),color-mix(in srgb,var(--d-acc) 8%,transparent))}
 .cs-deco-floor{position:absolute;left:0;bottom:var(--cs-floor,64px);height:0;width:0}
 /* 고스트 글씨 — 이름의 다른 표기를 뒤에 크게 (참고: 게임 아트 소개 화면의 배경 대형 문자) */
 .cs-deco-ghost{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);width:max-content;text-align:center;white-space:nowrap;line-height:1.35;padding:.05em .1em;overflow:visible;

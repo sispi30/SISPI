@@ -69,6 +69,10 @@ function Chev({ x, y, rot = 0, d = 0, acc }: { x: number; y: number; rot?: numbe
     </g>
   );
 }
+function TagText({ text }: { text: string }) {
+  const out = useScramble(text, 700, 7000);
+  return <>{out}</>;
+}
 const I = (d: number, dx = 0, dy = 0) => ({ '--d': `${d}s`, '--dx': `${dx}px`, '--dy': `${dy}px` }) as React.CSSProperties;
 
 export type DecoMode = 'accent' | 'mono';
@@ -182,6 +186,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
   return (
     <div ref={root} className="cs-deco" aria-hidden="true" style={style} data-mode={mode} data-tone={tone}>
       <div ref={probe} className="cs-deco-floor" />
+      {/* CHARACTER FILE 표식 — 화면 비율에 따라 위가 잘리지 않게 viewBox가 아니라 화면 기준(BACK 줄 왼쪽)에 둔다 */}
+      <div className="cs-deco-tag dc-i" style={I(0.3, 90, 0)}><TagText text="CHARACTER FILE" /></div>
       <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" focusable="false">
         <defs>
           <pattern id="dc-grid" width="96" height="96" patternUnits="userSpaceOnUse">
@@ -240,6 +246,15 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           <path d={FAN} fill="var(--d-acc)" opacity={mono ? 0.1 : tone === 'light' ? 0.1 : 0.16} />
         )}
         </g>
+        {/* 큰 이름 글씨가 반원과 겹치는 부분 — 반원 이미지와 같은 그림이라 묻히지 않게, 반원 안에서만 밝은(어두운) 글자로 한 번 더 */}
+        {g && band && (
+          <g clipPath="url(#dc-fan)">
+            <text className="cs-deco-ghost-svg" textAnchor="middle" dominantBaseline="central" fill="#ffffff" fillOpacity={tone === 'light' ? 0.5 : 0.34}
+              x={(geo.W * (ghostPos?.x ?? 50) / 100 - geo.ox) / geo.sc} y={(geo.H * (ghostPos?.y ?? 30) / 100 - geo.oy) / geo.sc}
+              fontSize={(gsize * (ghostPos?.scale ?? 100) / 100) * geo.W / 100 / geo.sc} fontWeight={800} letterSpacing="-0.02em"
+              style={{ fontFamily: ghostFont ?? 'var(--serif)' }}>{g}</text>
+          </g>
+        )}
         <g className="dc-i" style={I(0.25, 0, 40)}>
           <path d={FAN} fill="none" stroke="var(--d-acc)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".75" />
           <path d={`M312 ${fy} A648 648 0 0 1 1608 ${fy}`} fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
@@ -280,20 +295,20 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
         <Chev x={110} y={470} rot={90} d={0.8} acc={acc} />
         <Chev x={1040} y={1010} rot={180} d={0.9} acc={acc} />
 
-        {/* 하단 라벨 — 점선으로 이어진 이름표 */}
+        {/* 하단 라벨 — 점선으로 이어진 이름표. 하단 독·BGM 플레이어에 가리지 않게 바닥선(fy) 위로 올려 둔다 */}
         <g className="dc-i" style={I(0.6, 90, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fontSize="12" letterSpacing="3">
-          <rect x="1560" y="1000" width="84" height="20" fill={acc} />
-          <text x="1572" y="1015" fill={mono ? (ink === 'dark' ? '#fff' : '#111') : (tone === 'light' ? '#fff' : '#0b0d10')} fontWeight="700">THEME</text>
-          <line x1="1654" y1="1010" x2="1740" y2="1010" stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <Scr text={(colorHex ?? '').replace('#', '').toUpperCase().slice(0, 6) || '------'} delay={1100} period={6000} x="1750" y="1015" fill="var(--d-line)" textAnchor="start" />
-          <rect x="1560" y="1030" width="84" height="20" fill="none" stroke="var(--d-acc)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <text x="1572" y="1045" fill="var(--d-line)" fontWeight="700">NAME</text>
-          <line x1="1654" y1="1040" x2="1700" y2="1040" stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <Scr text={(name ?? '').toUpperCase().slice(0, 12) || '--'} delay={1300} period={8000} x="1710" y="1045" fill="var(--d-line)" />
+          <rect x="1380" y={fy - 46} width="84" height="18" fill="var(--d-acc)" />
+          <text x="1392" y={fy - 33} fill={mono ? (ink === 'dark' ? '#fff' : '#111') : (tone === 'light' ? '#fff' : '#0b0d10')} fontWeight="700">THEME</text>
+          <line x1="1474" y1={fy - 37} x2="1556" y2={fy - 37} stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <Scr text={(colorHex ?? '').replace('#', '').toUpperCase().slice(0, 6) || '------'} delay={1100} period={6000} x="1566" y={fy - 33} fill="var(--d-line)" textAnchor="start" />
+          <rect x="1380" y={fy - 24} width="84" height="18" fill="none" stroke="var(--d-acc)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <text x="1392" y={fy - 11} fill="var(--d-line)" fontWeight="700">NAME</text>
+          <line x1="1474" y1={fy - 15} x2="1520" y2={fy - 15} stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <Scr text={(name ?? '').toUpperCase().slice(0, 10) || '--'} delay={1300} period={8000} x="1530" y={fy - 11} fill="var(--d-line)" />
         </g>
         <g className="dc-i" style={I(0.55, -80, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fill="var(--d-line)" letterSpacing="3">
-          <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y="1046" fontSize="14" fontWeight="800" fill={acc} />
-          <text x="60" y="1064" fontSize="10" letterSpacing="2">CHARACTER PROFILE · ALL RIGHTS RESERVED</text>
+          <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y={fy - 30} fontSize="14" fontWeight="800" fill={acc} />
+          <text x="60" y={fy - 12} fontSize="10" letterSpacing="2">CHARACTER PROFILE · ALL RIGHTS RESERVED</text>
         </g>
         <g className="dc-i" style={I(0.45, 50, 0)}>
           <Scr text="STATUS" delay={800} period={5500} x="1262" y="132" fontSize="12" letterSpacing="3" fill="var(--d-line)"

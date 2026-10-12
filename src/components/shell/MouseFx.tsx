@@ -185,10 +185,7 @@ export function MouseFx() {
         const pop = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8;       // 커졌다가 작아지며 사라짐
         const r = q.r * (0.4 + 0.6 * pop);
         c.save(); c.translate(q.x, q.y);
-        const g = c.createRadialGradient(0, 0, 0, 0, 0, r * 2.6);
-        g.addColorStop(0, rgba(q.c, 0.55)); g.addColorStop(1, rgba(q.c, 0));
-        c.globalAlpha = pop; c.fillStyle = g;
-        c.beginPath(); c.arc(0, 0, r * 2.6, 0, Math.PI * 2); c.fill();   // 은은한 번짐
+        c.globalAlpha = pop;
         c.globalAlpha = Math.min(1, pop * 1.4); c.fillStyle = q.c;
         c.rotate(q.rot + k * 0.6); starPath(c, r); c.fill();
         c.restore();
