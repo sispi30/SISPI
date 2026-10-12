@@ -5,6 +5,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useBlobUrl } from '@/lib/blobStore';
 import type { RelCardInfo, RelGroupInfo } from '@/lib/charStore';
+import { PairThumb } from '@/components/rels/PairThumb';
 
 function CardImg({ fileRef, ph }: { fileRef?: string; ph?: string }) {
   const url = useBlobUrl(fileRef);
@@ -16,7 +17,9 @@ function Card({ c }: { c: RelCardInfo }) {
   return (
     <div className={`rc-card${c.shape === 'char' ? ' rc-char' : ''}`} role="link" tabIndex={0} onClick={() => router.push(c.href)}
       onKeyDown={e => { if (e.key === 'Enter') router.push(c.href); }}>
-      <CardImg fileRef={c.thumbRef} ph={c.thumbClass} />
+      {c.shape === 'char'
+        ? <CardImg fileRef={c.thumbRef} ph={c.thumbClass} />
+        : <PairThumb fileRef={c.thumbRef} crop={c.thumbCrop} ph={c.thumbClass} tc={c.themeColor ?? 'var(--accent,#7fd6d0)'} />}
       <span className="rc-shade" />
       {c.label && <span className="rc-label">{c.label}</span>}
       <span className="rc-text">

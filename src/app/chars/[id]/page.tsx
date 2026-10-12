@@ -579,7 +579,7 @@ function CharDetailInner() {
             ) : win === REL_TAB ? (
               <RelTab groups={stageRel} />
             ) : (
-              <GalleryPanel ph={ch.thumbClass} loggedIn={!!user} posts={stageGallery} canSeePrivate={stageViewer.canEdit} />
+              <GalleryPanel ph={ch.thumbClass} loggedIn={!!user} posts={stageGallery} canSeePrivate={stageViewer.canEdit} accent={eff.color} />
             )}
           </StageWindow>
         )}

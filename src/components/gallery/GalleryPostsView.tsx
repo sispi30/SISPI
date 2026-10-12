@@ -8,11 +8,14 @@ import { useBlobUrl } from '@/lib/blobStore';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { CroppedBlobImg } from '@/components/ui/CropEditor';
 import { GalleryViewer } from '@/components/gallery/GalleryViewer';
+import { PairThumb } from '@/components/rels/PairThumb';
 
 /** 갤러리 탭 내용 — TRPG 탭과 같은 방식으로 우측 패널만 교체해 보여준다 (v3.1).
  *  좌측 아이콘 탭·아트·상단 버튼은 그대로 PROFILE 화면과 같은 자리에 있다 */
-export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn }: {
+export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn, accent }: {
   posts: GalleryPost[]; ph: string; canSeePrivate: boolean; loggedIn: boolean;
+  /** 있으면 썸네일을 페어 목록과 같은 방식(테마색 대각선)으로 — 캐릭터 상세 서랍에서 캐릭터 테마색을 넘긴다 */
+  accent?: string;
 }) {
   const [viewId, setViewId] = useState<string | null>(null);     // 단일 유형 — 전체화면 뷰어
   const [openId, setOpenId] = useState<string | null>(null);     // 로그/단일(세로) 유형 — 패널 안 상세
@@ -72,7 +75,9 @@ export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn }: {
               }}>
               <div className={`thumb ${folded ? 'veil' : ''}`}>
                 <div style={{ position: 'absolute', inset: 0 }}>
-                  {p.images[0] && <CroppedBlobImg fileRef={p.images[0].ref} crop={p.images[0].crop} ph={ph} />}
+                  {p.images[0] && (accent
+                    ? <PairThumb fileRef={p.images[0].ref} crop={p.images[0].crop} ph={ph} tc={accent} />
+                    : <CroppedBlobImg fileRef={p.images[0].ref} crop={p.images[0].crop} ph={ph} />)}
                 </div>
                 {folded && (
                   <div className="cover" onClick={e => { e.stopPropagation(); setUnveiled(u => ({ ...u, [p.id]: true })); }}>

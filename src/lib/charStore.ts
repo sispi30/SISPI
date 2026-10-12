@@ -753,6 +753,9 @@ export interface RelCardInfo {
   thumbRef?: string;       // 이미지 (IndexedDB 키)
   thumbClass?: string;     // 이미지가 없을 때 쓰는 플레이스홀더
   href: string;
+  /** 자관 카드의 크롭·테마색 — 목록과 같은 썸네일(테마색 대각선)로 그리려는 값 */
+  thumbCrop?: import("@/components/ui/CropEditor").CropValue;
+  themeColor?: string;
   /** 'char' = 직접 지정한 관계(캐릭터) — 캐릭터 목록 썸네일과 같은 3:4 비율로 보인다. 페어·그룹(자관)은 기존 세로로 긴 카드 */
   shape?: 'char';
 }
@@ -776,6 +779,8 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
       label: r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : undefined,
       thumbRef: r.thumbId ?? others[0]?.thumbId, thumbClass: others[0]?.thumbClass ?? r.thumbClass,
       href: `/rels/${r.slug ?? r.id}`,
+      thumbCrop: r.thumbId ? r.thumbCrop : undefined,
+      themeColor: r.themeMode === 'custom' && r.themeColor ? r.themeColor : undefined,
     };
     (isPair ? pairs : groups).push(card);
   }
