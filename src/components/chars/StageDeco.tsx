@@ -150,7 +150,9 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
   const root = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
   const [geo, setGeo] = useState({ fy: 1015, sc: 1, ox: 0, oy: 0, W: 1920, H: 1080 });
-  const fy = geo.fy;                        // 바닥선의 viewBox y — 실제 화면 크기에 맞춰 아래에서 다시 잰다
+  const fy = geo.fy;
+  const bl = (geo.H - 30 - geo.oy) / geo.sc;   // 하단 라벨 글자 밑선 — 화면 맨 아래에서 30px 위 (viewBox 좌표)
+                        // 바닥선의 viewBox y — 실제 화면 크기에 맞춰 아래에서 다시 잰다
   useEffect(() => {
     const el = root.current, pr = probe.current; if (!el || !pr) return;
     const calc = () => {
@@ -285,7 +287,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
               d={`M${x - 8} ${y}h16M${x} ${y - 8}v16`} />
           </g>
         ))}
-        {([[1180, 220, 15], [560, 330, 10], [1440, 760, 12], [250, 960, 9], [1110, 150, 8], [1660, 330, 10]] as const).map(([x, y, r], i) => (
+        {([[1180, 220, 15], [560, 330, 10], [1440, 760, 12], [440, 760, 9], [1110, 150, 8], [1660, 330, 10]] as const).map(([x, y, r], i) => (
           <g key={x + '-' + y} className="dc-i" style={I(0.6 + i * 0.07, (i % 2 ? 40 : -40), -30)}>
             <path className="dc-tw" style={{ animationDelay: `${i * 0.6}s` }} fill={acc}
               d={`M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r}Z`} />
@@ -295,20 +297,20 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
         <Chev x={110} y={470} rot={90} d={0.8} acc={acc} />
         <Chev x={1040} y={1010} rot={180} d={0.9} acc={acc} />
 
-        {/* 하단 라벨 — 점선으로 이어진 이름표. 하단 독·BGM 플레이어에 가리지 않게 바닥선(fy) 위로 올려 둔다 */}
+        {/* 하단 라벨 — 점선으로 이어진 이름표. 하단 독·BGM 플레이어에 가리지 않게 화면 맨 아래에서 30px 위(독 바로 위 줄)에 둔다 */}
         <g className="dc-i" style={I(0.6, 90, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fontSize="12" letterSpacing="3">
-          <rect x="1380" y={fy - 46} width="84" height="18" fill="var(--d-acc)" />
-          <text x="1392" y={fy - 33} fill={mono ? (ink === 'dark' ? '#fff' : '#111') : (tone === 'light' ? '#fff' : '#0b0d10')} fontWeight="700">THEME</text>
-          <line x1="1474" y1={fy - 37} x2="1556" y2={fy - 37} stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <Scr text={(colorHex ?? '').replace('#', '').toUpperCase().slice(0, 6) || '------'} delay={1100} period={6000} x="1566" y={fy - 33} fill="var(--d-line)" textAnchor="start" />
-          <rect x="1380" y={fy - 24} width="84" height="18" fill="none" stroke="var(--d-acc)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <text x="1392" y={fy - 11} fill="var(--d-line)" fontWeight="700">NAME</text>
-          <line x1="1474" y1={fy - 15} x2="1520" y2={fy - 15} stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <Scr text={(name ?? '').toUpperCase().slice(0, 10) || '--'} delay={1300} period={8000} x="1530" y={fy - 11} fill="var(--d-line)" />
+          <rect x="1380" y={bl - 35} width="84" height="18" fill="var(--d-acc)" />
+          <text x="1392" y={bl - 22} fill={mono ? (ink === 'dark' ? '#fff' : '#111') : (tone === 'light' ? '#fff' : '#0b0d10')} fontWeight="700">THEME</text>
+          <line x1="1474" y1={bl - 26} x2="1556" y2={bl - 26} stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <Scr text={(colorHex ?? '').replace('#', '').toUpperCase().slice(0, 6) || '------'} delay={1100} period={6000} x="1566" y={bl - 22} fill="var(--d-line)" textAnchor="start" />
+          <rect x="1380" y={bl - 13} width="84" height="18" fill="none" stroke="var(--d-acc)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <text x="1392" y={bl} fill="var(--d-line)" fontWeight="700">NAME</text>
+          <line x1="1474" y1={bl - 4} x2="1520" y2={bl - 4} stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <Scr text={(name ?? '').toUpperCase().slice(0, 10) || '--'} delay={1300} period={8000} x="1530" y={bl} fill="var(--d-line)" />
         </g>
         <g className="dc-i" style={I(0.55, -80, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fill="var(--d-line)" letterSpacing="3">
-          <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y={fy - 30} fontSize="14" fontWeight="800" fill={acc} />
-          <text x="60" y={fy - 12} fontSize="10" letterSpacing="2">CHARACTER PROFILE · ALL RIGHTS RESERVED</text>
+          <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y={bl - 18} fontSize="14" fontWeight="800" fill={acc} />
+          <text x="60" y={bl} fontSize="10" letterSpacing="2">CHARACTER PROFILE · ALL RIGHTS RESERVED</text>
         </g>
         <g className="dc-i" style={I(0.45, 50, 0)}>
           <Scr text="STATUS" delay={800} period={5500} x="1262" y="132" fontSize="12" letterSpacing="3" fill="var(--d-line)"
