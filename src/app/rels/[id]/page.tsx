@@ -272,6 +272,14 @@ function EmptyCard({ isAdmin, onAdd }: { isAdmin: boolean; onAdd: () => void }) 
 export default function RelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  // 맨 위에서는 메뉴 줄 뒤까지 그림이 이어지도록 앱 영역을 끌어올린다 (globals.css body.rel-hero-top)
+  useEffect(() => {
+    const m = document.getElementById('appMain'); if (!m) return;
+    const sync = () => document.body.classList.toggle('rel-hero-top', m.scrollTop < 58);
+    sync(); m.addEventListener('scroll', sync, { passive: true });
+    return () => { m.removeEventListener('scroll', sync); document.body.classList.remove('rel-hero-top'); };
+  }, []);
+
   const { user, isAdmin } = useAuth();
   const toast = useToast();
   const { familyOf } = useFonts();

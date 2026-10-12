@@ -1167,7 +1167,12 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
      있어서, 그 16px만큼 실제 히어로(캐릭터·이름)가 전부 아래로 밀려 보이던 진짜 원인이었다.
      margin-top을 그만큼 당겨서 기준점을 맞춘다 (v4.7) */
   margin-top:-16px;
+  /* 위쪽은 막지 않는다 — 전신 그림이 메뉴 줄 아래에서 뚝 잘려 보이던 것을, 그림이 메뉴 뒤까지 이어지게 (아래쪽 자름은 그대로) */
+  overflow:visible;clip-path:inset(-120px 0 0 0);
 }
+/* 자관 상세를 맨 위(스크롤 58px 미만)에 둔 동안은 스크롤 영역을 메뉴 줄 뒤까지 끌어올려 그림이 잘리지 않게 한다.
+   내용 위치는 padding으로 그대로 — 58px 이상 내리면 이 클래스를 빼도 화면이 바뀌지 않는다(그 윗부분은 이미 화면 밖) */
+body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .rel-center-full .fb{top:auto;bottom:0;height:100%;width:44%;border-radius:0;filter:drop-shadow(0 14px 30px rgba(0,0,0,.45))}
 .rel-center-full .fb-l{left:0}
 .rel-center-full .fb-r{right:0}
@@ -1195,7 +1200,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 스티커 — 중심 기준, 클릭은 아래로 통과 */
 .rel-center-full .hero-sticker{position:absolute;transform:translate(-50%,-50%);height:auto;max-width:none;pointer-events:none;user-select:none}
 .rel-center.one-mode .fb-ui,.rel-center.one-mode .hero-sticker{display:none}
-.rel-center-full .single{border-radius:0}
+.rel-center.rel-center-full .single{border-radius:0;top:-58px}   /* 한 장 일러스트도 메뉴 줄 뒤까지 이어지게 */
 /* 카드는 없앴다(v4.1) — 이름 밑에 그 캐릭터의 키워드만 나란히 (참고 사이트의 "예시" 자리) */
 .fb-kw-row{display:flex;flex-direction:column;align-items:inherit;gap:6px;margin-top:8px}
 .fb-kw-row .pill{background:rgba(255,255,255,.14);color:#fff;backdrop-filter:blur(4px)}
@@ -2754,3 +2759,63 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 필기체 글씨 — 지그재그 붓질 마스크가 왼쪽부터 쓸어 내려 글자가 써지는 것처럼 드러난다 */
 .cs-deco .dc-write{stroke-dasharray:1;stroke-dashoffset:0;animation:dcWrite 2.8s cubic-bezier(.45,.05,.4,1) .9s both}
 @keyframes dcWrite{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+
+/* ---------- 자관(페어) 인덱스 — 틀 안에 세로 카드가 놓이는 구성 + 진입 모션 ---------- */
+.rx{position:relative;margin-top:8px;padding:22px 26px 18px;--rx-ln:color-mix(in srgb,var(--page-title) 22%,transparent)}
+.rx-fr{position:absolute;width:14px;height:14px;border:0 solid var(--rx-ln);pointer-events:none;animation:rxFr .7s cubic-bezier(.2,.8,.2,1) both}
+.rx-fr.tl{left:0;top:0;border-width:1px 0 0 1px;--fx:10px;--fy:10px}
+.rx-fr.tr{right:0;top:0;border-width:1px 1px 0 0;--fx:-10px;--fy:10px}
+.rx-fr.bl{left:0;bottom:0;border-width:0 0 1px 1px;--fx:10px;--fy:-10px}
+.rx-fr.br{right:0;bottom:0;border-width:0 1px 1px 0;--fx:-10px;--fy:-10px}
+@keyframes rxFr{from{opacity:0;transform:translate(var(--fx),var(--fy))}to{opacity:1;transform:none}}
+.rx-cap{font:600 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.3em;color:var(--page-desc);text-transform:uppercase}
+.rx-headline{position:relative;display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:12px}
+.rx-headline::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--rx-ln);transform-origin:left;animation:rxLine .9s cubic-bezier(.6,0,.2,1) .1s both}
+@keyframes rxLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.rx-headline .rx-cap{animation:rxFade .6s ease .35s both}
+.rx-count{display:flex;align-items:baseline;gap:10px;animation:rxFade .6s ease .45s both}
+.rx-count em{font:italic 600 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;color:var(--page-desc)}
+.rx-count b{font-size:calc(20px*var(--fs,1));font-weight:800;color:var(--page-title);letter-spacing:.02em}
+@keyframes rxFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.rx-ghost{position:absolute;left:50%;top:70px;transform:translateX(-50%);font-family:var(--serif);font-weight:800;font-size:clamp(90px,19vw,250px);letter-spacing:-.02em;line-height:1;
+  color:color-mix(in srgb,var(--page-title) 7%,transparent);pointer-events:none;user-select:none;white-space:nowrap;animation:rxGhost 1.4s cubic-bezier(.2,.8,.2,1) .2s both}
+@keyframes rxGhost{from{opacity:0;transform:translateX(-50%) translateY(30px) scale(1.06);letter-spacing:.08em}to{opacity:1;transform:translateX(-50%);letter-spacing:-.02em}}
+.rx-grid{position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,350px));justify-content:center;gap:32px;padding:44px 0 52px}
+.rx-empty{grid-column:1/-1;text-align:center;color:var(--page-desc);font-size:13px}
+.rx-card{position:relative;aspect-ratio:5/8;background:#0b0d10;color:#fff;overflow:hidden;cursor:var(--cur-pointer,pointer);
+  border:1px solid color-mix(in srgb,var(--c1) 18%,rgba(255,255,255,.14));box-shadow:0 18px 40px rgba(0,0,0,.28);
+  animation:rxCard .95s cubic-bezier(.2,.8,.2,1) calc(.45s + var(--i)*.14s) backwards;transition:transform .25s,box-shadow .25s,border-color .25s}
+.rx-card:hover{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c1) 70%,#fff);box-shadow:0 24px 50px rgba(0,0,0,.4),0 0 0 1px color-mix(in srgb,var(--c1) 45%,transparent)}
+.rx-card.priv{opacity:.5}
+@keyframes rxCard{0%{opacity:0;clip-path:inset(0 0 100% 0);transform:translateY(34px)}60%{opacity:1}100%{opacity:1;clip-path:inset(0);transform:none}}
+.rx-art{position:absolute;inset:0;overflow:hidden}
+.rx-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 12%;animation:rxZoom 1.5s cubic-bezier(.2,.8,.2,1) calc(.45s + var(--i)*.14s) both}
+.rx-img.rx-gray{filter:grayscale(1) brightness(.85) contrast(1.05);clip-path:polygon(58% 0,100% 0,100% 100%,38% 100%);transition:clip-path .45s cubic-bezier(.2,.8,.2,1)}
+.rx-card:hover .rx-img.rx-gray{clip-path:polygon(66% 0,100% 0,100% 100%,46% 100%)}
+@keyframes rxZoom{from{transform:scale(1.14)}to{transform:scale(1)}}
+.rx-ph{position:absolute;inset:0;display:grid;place-items:center}
+.rx-split{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.rx-split line{stroke-dasharray:1;stroke-dashoffset:1;animation:rxDraw 1s cubic-bezier(.6,0,.2,1) calc(.9s + var(--i)*.14s) forwards}
+@keyframes rxDraw{to{stroke-dashoffset:0}}
+.rx-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,.55) 0%,rgba(6,8,11,0) 28%,rgba(6,8,11,0) 52%,rgba(6,8,11,.92) 100%)}
+.rx-corner{position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.55);z-index:3;pointer-events:none}
+.rx-corner.tr{right:10px;top:10px;border-width:1px 1px 0 0}
+.rx-corner.bl{left:10px;bottom:10px;border-width:0 0 1px 1px}
+.rx-top{position:absolute;left:22px;right:22px;top:20px;display:flex;align-items:flex-start;gap:10px;z-index:2;animation:rxFade .6s ease calc(.9s + var(--i)*.14s) both}
+.rx-no{font-size:calc(46px*var(--fs,1));font-weight:800;line-height:.9;letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.5)}
+.rx-file{font:700 8.5px/1.25 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:rgba(255,255,255,.75);margin-top:20px}
+.rx-meta{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:5px}
+.rx-meta b{font-size:calc(21px*var(--fs,1));font-weight:800;letter-spacing:.02em;line-height:1}
+.rx-meta em{font:700 8px/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:rgba(255,255,255,.6);font-style:normal}
+.rx-bot{position:absolute;left:22px;right:22px;bottom:30px;z-index:2;animation:rxFade .7s ease calc(1.05s + var(--i)*.14s) both}
+.rx-bot small{display:block;font:700 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.32em;color:rgba(255,255,255,.7);margin-bottom:8px;text-transform:uppercase;min-height:9px}
+.rx-bot h3{font-size:calc(22px*var(--fs,1));font-weight:800;letter-spacing:-.01em;line-height:1.15;word-break:keep-all;text-shadow:0 2px 12px rgba(0,0,0,.5);padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:10px}
+.rx-who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px;font:700 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:rgba(255,255,255,.88)}
+.rx-who span{display:inline-flex;align-items:center;gap:6px}
+.rx-who i{width:7px;height:7px;transform:rotate(45deg);flex:none}
+.rx-who u{text-decoration:none;opacity:.45;font-size:8px}
+.rx-foot{position:relative;display:flex;align-items:center;gap:16px;padding-top:12px;border-top:1px solid var(--rx-ln);animation:rxFade .6s ease 1s both}
+.rx-bar{width:62px;height:12px;background:repeating-linear-gradient(90deg,var(--page-desc) 0 1px,transparent 1px 3px,var(--page-desc) 3px 5px,transparent 5px 6px);opacity:.7}
+.rx-chev{margin-left:auto;font-size:14px;letter-spacing:.1em;color:var(--page-desc)}
+@media (max-width:640px){.rx{padding:16px 10px 14px}.rx-grid{gap:22px;padding:30px 0 36px}.rx-ghost{top:50px}}
+@media (prefers-reduced-motion:reduce){.rx *,.rx-card,.rx-fr,.rx-ghost{animation:none!important}.rx-split line{stroke-dashoffset:0}}
