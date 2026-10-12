@@ -2713,6 +2713,8 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
 /* 상세 배경 장식 — 그림·글자 뒤, 클릭 불가. 모바일(카드형)은 어두운 판 위라 장식을 끈다 */
 .cs-deco{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .cs-deco svg{display:block}
+.cs-deco-tag{position:absolute;right:calc(var(--cs-px,40px) + 190px);top:calc(var(--cs-top,128px) - 40px);padding:6px 36px 6px 14px;font:700 13px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:4px;
+  color:var(--d-line);white-space:nowrap;background:linear-gradient(90deg,color-mix(in srgb,var(--d-acc) 85%,transparent),color-mix(in srgb,var(--d-acc) 8%,transparent))}
 .cs-deco-floor{position:absolute;left:0;bottom:var(--cs-floor,64px);height:0;width:0}
 /* 고스트 글씨 — 이름의 다른 표기를 뒤에 크게 (참고: 게임 아트 소개 화면의 배경 대형 문자) */
 .cs-deco-ghost{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);width:max-content;text-align:center;white-space:nowrap;line-height:1.35;padding:.05em .1em;overflow:visible;
