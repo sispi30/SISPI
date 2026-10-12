@@ -32,6 +32,7 @@ const ThemeColor = Mark.create({
         parseHTML: (el: HTMLElement) => el.getAttribute('data-theme-color'),
         renderHTML: (attrs: { color?: string | null; fb?: string | null }) => {
           if (!attrs.color) return {};
+          if (attrs.color === 'gray') return { 'data-theme-color': 'gray', style: 'color:var(--char-gray,var(--faint,#8a909a))' };
           if (attrs.color !== 'theme') return { 'data-theme-color': attrs.color, style: `color:${attrs.color}` };
           // 변수를 못 받는 곳(목록·미리보기 등)에서도 읽히도록 저장 시점의 색을 대체값으로
           return { 'data-theme-color': 'theme', style: `color:var(--char-theme${attrs.fb ? `,${attrs.fb}` : ''})` };
@@ -155,18 +156,17 @@ export function RichEditor({ value, onChange, placeholder, themeColor }: {
               ? editor.chain().focus().unsetMark('themeColor').run()
               : editor.chain().focus().setMark('themeColor', { color: 'theme', fb: themeColor }).run())} />
         )}
-        {/* 연한 회색 · 진한 회색 — 선택한 글자를 고정 회색으로 (같은 표식을 쓰므로 테마색과 동시에 걸리지 않고, 다시 누르면 해제) */}
-        {([['연한 회색', '#a3a9b3'], ['진한 회색', '#4b515b']] as const).map(([name, hex]) => (
-          <TBtn key={hex} title={`글자를 ${name}으로 (다시 누르면 해제)`}
-            on={editor.isActive('themeColor', { color: hex })}
-            label={<span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
-              <b style={{ fontSize: 13 }}>A</b>
-              <span style={{ width: 14, height: 3, borderRadius: 1, background: hex, marginTop: 1, boxShadow: '0 0 0 1px rgba(0,0,0,.18)' }} />
-            </span>}
-            onClick={() => (editor.isActive('themeColor', { color: hex })
-              ? editor.chain().focus().unsetMark('themeColor').run()
-              : editor.chain().focus().setMark('themeColor', { color: hex, fb: null }).run())} />
-        ))}
+        {/* 회색 — 하나의 버튼. 글자는 「지금 화면 테마」를 따라 밝은 테마에선 밝은 회색, 어두운 테마에선 어두운 회색으로 바뀐다
+            (캐릭터 상세는 .cs의 --char-gray, 그 밖의 곳은 --faint). 테마색과 같은 표식이라 동시에 걸리지 않고, 다시 누르면 해제 */}
+        <TBtn title="글자를 회색으로 — 밝은 테마에선 밝은 회색, 어두운 테마에선 어두운 회색으로 바뀝니다 (다시 누르면 해제)"
+          on={editor.isActive('themeColor', { color: 'gray' })}
+          label={<span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
+            <b style={{ fontSize: 13 }}>A</b>
+            <span style={{ width: 14, height: 3, borderRadius: 1, marginTop: 1, background: 'linear-gradient(90deg,#a3a9b3 50%,#565c67 50%)', boxShadow: '0 0 0 1px rgba(0,0,0,.18)' }} />
+          </span>}
+          onClick={() => (editor.isActive('themeColor', { color: 'gray' })
+            ? editor.chain().focus().unsetMark('themeColor').run()
+            : editor.chain().focus().setMark('themeColor', { color: 'gray', fb: null }).run())} />
         <span className="re-sep" />
         <TBtn title="제목" label="H2" on={editor.isActive('heading', { level: 2 })}
           onClick={() => editor.chain().focus().command(splitAtSelection).toggleHeading({ level: 2 }).run()} />

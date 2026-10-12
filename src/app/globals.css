@@ -2707,6 +2707,9 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   --faint:color-mix(in srgb,var(--cs-body) 55%,transparent);
   --line:color-mix(in srgb,var(--cs-body) 22%,transparent)}
 .cs[data-ink="dark"]{--cs-accent:color-mix(in srgb,var(--accent,#7fd6d0) 72%,#000);--cs-body:#12161d;--cs-body-sh:0 0 12px rgba(255,255,255,.55),0 0 2px rgba(255,255,255,.4)}
+/* 본문의 「회색」 글자 — 밝은 테마(어두운 글자 계열)에선 밝은 회색, 어두운 테마에선 어두운 회색 */
+.cs{--char-gray:#565c67}
+.cs[data-ink="dark"]{--char-gray:#a3a9b3}
 .cs .cs-intro,.cs .cs-tabhead b,.cs .cs-tabhead span{color:var(--cs-body);text-shadow:var(--cs-body-sh)}
 .cs .cs-tabhead span{opacity:.72}
 
