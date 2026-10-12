@@ -155,6 +155,18 @@ export function RichEditor({ value, onChange, placeholder, themeColor }: {
               ? editor.chain().focus().unsetMark('themeColor').run()
               : editor.chain().focus().setMark('themeColor', { color: 'theme', fb: themeColor }).run())} />
         )}
+        {/* 연한 회색 · 진한 회색 — 선택한 글자를 고정 회색으로 (같은 표식을 쓰므로 테마색과 동시에 걸리지 않고, 다시 누르면 해제) */}
+        {([['연한 회색', '#a3a9b3'], ['진한 회색', '#4b515b']] as const).map(([name, hex]) => (
+          <TBtn key={hex} title={`글자를 ${name}으로 (다시 누르면 해제)`}
+            on={editor.isActive('themeColor', { color: hex })}
+            label={<span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
+              <b style={{ fontSize: 13 }}>A</b>
+              <span style={{ width: 14, height: 3, borderRadius: 1, background: hex, marginTop: 1, boxShadow: '0 0 0 1px rgba(0,0,0,.18)' }} />
+            </span>}
+            onClick={() => (editor.isActive('themeColor', { color: hex })
+              ? editor.chain().focus().unsetMark('themeColor').run()
+              : editor.chain().focus().setMark('themeColor', { color: hex, fb: null }).run())} />
+        ))}
         <span className="re-sep" />
         <TBtn title="제목" label="H2" on={editor.isActive('heading', { level: 2 })}
           onClick={() => editor.chain().focus().command(splitAtSelection).toggleHeading({ level: 2 }).run()} />
