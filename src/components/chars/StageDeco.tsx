@@ -145,14 +145,15 @@ const fanPath = (fy: number) => `M350 ${fy} A610 610 0 0 1 1570 ${fy} Z`;
 export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
-  const [fy, setFy] = useState(1015);                       // 바닥선의 viewBox y — 실제 화면 크기에 맞춰 아래에서 다시 잰다
+  const [geo, setGeo] = useState({ fy: 1015, sc: 1, ox: 0, oy: 0, W: 1920, H: 1080 });
+  const fy = geo.fy;                        // 바닥선의 viewBox y — 실제 화면 크기에 맞춰 아래에서 다시 잰다
   useEffect(() => {
     const el = root.current, pr = probe.current; if (!el || !pr) return;
     const calc = () => {
       const W = el.clientWidth, H = el.clientHeight; if (!W || !H) return;
-      const sc = Math.max(W / 1920, H / 1080), offY = (H - 1080 * sc) / 2;   // xMidYMid slice
+      const sc = Math.max(W / 1920, H / 1080), offX = (W - 1920 * sc) / 2, offY = (H - 1080 * sc) / 2;   // xMidYMid slice
       const v = Math.round((pr.offsetTop - offY) / sc);
-      if (Number.isFinite(v)) setFy(Math.min(1075, Math.max(700, v)));
+      if (Number.isFinite(v)) setGeo({ fy: Math.min(1075, Math.max(700, v)), sc, ox: offX, oy: offY, W, H });
     };
     calc();
     const ro = new ResizeObserver(calc); ro.observe(el);
@@ -198,7 +199,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
               <pattern id="dc-img" patternUnits="userSpaceOnUse" x="0" y="0" width="1920" height="1080">
                 <image href={image} x="0" y="0" width="1920" height="1080" preserveAspectRatio="xMidYMid slice"
                   filter={blur > 0 ? 'url(#dc-blur)' : undefined} />
-                <rect width="1920" height="1080" fill="var(--d-acc)" opacity=".3" />
+                <rect width="1920" height="1080" fill="var(--d-acc)" opacity=".35" />
               </pattern>
               <clipPath id="dc-fan"><path d={FAN} /></clipPath>
               {blur > 0 && <filter id="dc-blur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation={blur} /></filter>}
@@ -212,12 +213,20 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
         <rect width="1920" height="1080" fill="url(#dc-grid)" opacity=".13" />
       </svg>
       {/* 고스트 글씨 — 바탕·모눈 위, 나머지 장식(반원·선·라벨)과 그림 아래 */}
-      {g && (
+      {g && !band && (
         <div className="cs-deco-ghost" style={{ fontFamily: ghostFont ?? 'var(--serif)', fontSize: `${gsize * (ghostPos?.scale ?? 100) / 100}vw`,
           left: `${ghostPos?.x ?? 50}%`, top: `${ghostPos?.y ?? 30}%` }}>{g}</div>
       )}
       <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" focusable="false"
         style={{ position: 'absolute', inset: 0 }}>
+
+        {/* 큰 이름 글씨 — 「장식 안에 이미지」면 글자 속에 같은 이미지를 깐다 (화면 %를 viewBox 좌표로 옮겨 그린다) */}
+        {g && band && (
+          <g opacity=".5"><text className="cs-deco-ghost-svg" textAnchor="middle" dominantBaseline="central" fill="url(#dc-img)"
+            x={(geo.W * (ghostPos?.x ?? 50) / 100 - geo.ox) / geo.sc} y={(geo.H * (ghostPos?.y ?? 30) / 100 - geo.oy) / geo.sc}
+            fontSize={(gsize * (ghostPos?.scale ?? 100) / 100) * geo.W / 100 / geo.sc} fontWeight={800} letterSpacing="-0.02em"
+            style={{ fontFamily: ghostFont ?? 'var(--serif)' }}>{g}</text></g>
+        )}
 
         {/* 뒤쪽 큰 반원 — 이미지가 있으면(band) 그 안에 그림을, 없으면 포인트색을 옅게 */}
         <g className="dc-i" style={I(0.05, 0, 70)}>
@@ -225,6 +234,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           <g clipPath="url(#dc-fan)">
             <image href={image} x="0" y="0" width="1920" height="1080" preserveAspectRatio="xMidYMid slice"
               filter={blur > 0 ? 'url(#dc-blur)' : undefined} />
+            <rect width="1920" height="1080" fill="var(--d-acc)" opacity=".35" />
           </g>
         ) : (
           <path d={FAN} fill="var(--d-acc)" opacity={mono ? 0.1 : tone === 'light' ? 0.1 : 0.16} />

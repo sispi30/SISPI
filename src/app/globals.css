@@ -2735,7 +2735,7 @@ body.edit-on .main-grid.gridlines .wgt{outline-offset:0}
   70%{opacity:1;transform:translate(0,0)}
   100%{opacity:1;transform:none}
 }
-.cs-deco-ghost{animation:dcGhost 1.4s ease-out .1s both}
+.cs-deco-ghost,.cs-deco-ghost-svg{animation:dcGhost 1.4s ease-out .1s both}
 @keyframes dcGhost{0%{opacity:0}100%{opacity:1}}
 /* 반복 — 쉐브론은 하나씩 꺼졌다 켜지고, 반짝이는 맥동, 십자 표식은 가끔 포인트색으로 점멸, 눈금 위 표식이 한 칸씩 이동 */
 .cs-deco .dc-blink{animation:dcBlink 2.6s steps(1) infinite}
