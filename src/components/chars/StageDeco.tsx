@@ -51,13 +51,19 @@ function Scr({ text, delay, period, ...rest }: { text: string; delay: number; pe
   return <text {...rest}>{out}</text>;
 }
 /** 쉐브론 세 개가 대각선으로 놓여 차례로 깜빡이는 작은 표식 */
-function Chev({ x, y, rot = 0, d = 0 }: { x: number; y: number; rot?: number; d?: number }) {
+function Chev({ x, y, rot = 0, d = 0, acc }: { x: number; y: number; rot?: number; d?: number; acc: string }) {
+  // 이미지 칠(패턴)이 화면 좌표를 따르도록 변환 없이 좌표를 직접 계산해 그린다
+  const q = (rot * Math.PI) / 180, co = Math.cos(q), si = Math.sin(q);
+  const P = (i: number, px: number, py: number) => {
+    const ux = px + i * 9, uy = py + i * 9;
+    return `${(x + ux * co - uy * si).toFixed(1)} ${(y + ux * si + uy * co).toFixed(1)}`;
+  };
   return (
     <g className="dc-i" style={{ '--d': `${d}s`, '--dx': '40px', '--dy': '-30px' } as React.CSSProperties}>
-      <g transform={`translate(${x} ${y}) rotate(${rot})`} fill="none" strokeWidth="3" strokeLinecap="square">
+      <g fill="none" strokeWidth="3" strokeLinecap="square">
         {[0, 1, 2].map(i => (
-          <path key={i} className="dc-blink" d="M0 8 L8 0 L16 8" transform={`translate(${i * 9} ${i * 9})`}
-            stroke={i === 1 ? 'var(--d-line)' : 'var(--d-acc)'} style={{ animationDelay: `${i * 0.18}s` }} />
+          <path key={i} className="dc-blink" d={`M${P(i, 0, 8)} L${P(i, 8, 0)} L${P(i, 16, 8)}`}
+            stroke={i === 1 ? 'var(--d-line)' : acc} style={{ animationDelay: `${i * 0.18}s` }} />
         ))}
       </g>
     </g>
@@ -155,6 +161,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
   const FAN = fanPath(fy);
   const mono = mode === 'mono';
   const band = mode === 'accent' && !!image;
+  // 포인트색으로 칠하는 장식의 칠 — 「장식 안에 이미지」면 같은 이미지를 화면 좌표 그대로 깔아, 반원과 이어지는 한 장의 배경처럼 보이게 한다
+  const acc = band ? 'url(#dc-img)' : 'var(--d-acc)';
   const style = (mono
     ? { '--d-acc': ink === 'dark' ? '#111418' : '#ffffff', '--d-line': ink === 'dark' ? 'rgba(10,12,16,.5)' : 'rgba(255,255,255,.55)',
         '--d-ghost': ink === 'dark' ? 'rgba(10,12,16,.1)' : 'rgba(255,255,255,.14)' }
@@ -187,6 +195,11 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           </linearGradient>
           {band && (
             <>
+              <pattern id="dc-img" patternUnits="userSpaceOnUse" x="0" y="0" width="1920" height="1080">
+                <image href={image} x="0" y="0" width="1920" height="1080" preserveAspectRatio="xMidYMid slice"
+                  filter={blur > 0 ? 'url(#dc-blur)' : undefined} />
+                <rect width="1920" height="1080" fill="var(--d-acc)" opacity=".3" />
+              </pattern>
               <clipPath id="dc-fan"><path d={FAN} /></clipPath>
               {blur > 0 && <filter id="dc-blur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation={blur} /></filter>}
             </>
@@ -230,11 +243,11 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           <g stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".75">
             <line x1="20" y1="170" x2="20" y2="930" /><line x1="27" y1="170" x2="27" y2="930" /><line x1="34" y1="170" x2="34" y2="930" />
           </g>
-          <rect x="31" y="770" width="6" height="160" fill="var(--d-acc)" />
+          <rect x="31" y="770" width="6" height="160" fill={acc} />
         </g>
 
         {/* 오른쪽 위 — 3x3 점 */}
-        <g className="dc-i" style={I(0.4, 90, 40)} fill="var(--d-acc)" opacity=".85">
+        <g className="dc-i" style={I(0.4, 90, 40)} fill={acc} opacity=".85">
           {[0, 1, 2].flatMap(r => [0, 1, 2].map(c => <rect key={r + '' + c} className="dc-blink slow" style={{ animationDelay: `${(r * 3 + c) * 0.37}s` }} x={1700 + c * 14} y={112 + r * 14} width="7" height="7" />))}
         </g>
 
@@ -249,19 +262,17 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
         ))}
         {([[1180, 220, 15], [560, 330, 10], [1440, 760, 12], [250, 960, 9], [1110, 150, 8], [1660, 330, 10]] as const).map(([x, y, r], i) => (
           <g key={x + '-' + y} className="dc-i" style={I(0.6 + i * 0.07, (i % 2 ? 40 : -40), -30)}>
-            <g transform={`translate(${x} ${y})`}>
-              <path className="dc-tw" style={{ animationDelay: `${i * 0.6}s` }} fill="var(--d-acc)"
-                d={`M0 ${-r} Q0 0 ${r} 0 Q0 0 0 ${r} Q0 0 ${-r} 0 Q0 0 0 ${-r}Z`} />
-            </g>
+            <path className="dc-tw" style={{ animationDelay: `${i * 0.6}s` }} fill={acc}
+              d={`M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r}Z`} />
           </g>
         ))}
-        <Chev x={1730} y={380} rot={0} d={0.7} />
-        <Chev x={110} y={470} rot={90} d={0.8} />
-        <Chev x={1040} y={1010} rot={180} d={0.9} />
+        <Chev x={1730} y={380} rot={0} d={0.7} acc={acc} />
+        <Chev x={110} y={470} rot={90} d={0.8} acc={acc} />
+        <Chev x={1040} y={1010} rot={180} d={0.9} acc={acc} />
 
         {/* 하단 라벨 — 점선으로 이어진 이름표 */}
         <g className="dc-i" style={I(0.6, 90, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fontSize="12" letterSpacing="3">
-          <rect x="1560" y="1000" width="84" height="20" fill="var(--d-acc)" />
+          <rect x="1560" y="1000" width="84" height="20" fill={acc} />
           <text x="1572" y="1015" fill={mono ? (ink === 'dark' ? '#fff' : '#111') : (tone === 'light' ? '#fff' : '#0b0d10')} fontWeight="700">THEME</text>
           <line x1="1654" y1="1010" x2="1740" y2="1010" stroke="var(--d-line)" strokeDasharray="3 4" strokeWidth="1" vectorEffect="non-scaling-stroke" />
           <Scr text={(colorHex ?? '').replace('#', '').toUpperCase().slice(0, 6) || '------'} delay={1100} period={6000} x="1750" y="1015" fill="var(--d-line)" textAnchor="start" />
@@ -271,7 +282,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           <Scr text={(name ?? '').toUpperCase().slice(0, 12) || '--'} delay={1300} period={8000} x="1710" y="1045" fill="var(--d-line)" />
         </g>
         <g className="dc-i" style={I(0.55, -80, 0)} fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" fill="var(--d-line)" letterSpacing="3">
-          <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y="1046" fontSize="14" fontWeight="800" fill="var(--d-acc)" />
+          <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y="1046" fontSize="14" fontWeight="800" fill={acc} />
           <text x="60" y="1064" fontSize="10" letterSpacing="2">CHARACTER PROFILE · ALL RIGHTS RESERVED</text>
         </g>
         <g className="dc-i" style={I(0.45, 50, 0)}>
@@ -281,7 +292,7 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
             <line x1="1296" y1="140" x2="1296" y2="330" />
             {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <line key={i} x1="1296" y1={150 + i * 24} x2={i % 2 ? 1303 : 1310} y2={150 + i * 24} />)}
           </g>
-          <rect className="dc-scan" x="1290" y="146" width="22" height="4" fill="var(--d-acc)" />
+          <rect className="dc-scan" x="1290" y="146" width="22" height="4" fill={acc} />
         </g>
       </svg>
     </div>
