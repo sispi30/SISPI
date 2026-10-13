@@ -114,14 +114,14 @@ function BackupPageInner() {
             const i = start + si;   // 정렬은 전체 기준 위치로
             const folded = p.fold && !unveiled[p.id];
             return (
-              <RxCard key={p.id} {...(sort(i) as Record<string, unknown>)} no={(si % 6) + 1}
+              <RxCard key={p.id} {...(sort(i) as Record<string, unknown>)} no={i + 1} anim={si % 6}
                 fileRef={p.images[0]} crop={p.thumbCrop} ph={p.phList[0] ?? 'cool'}
                 tc="var(--accent,#7fd6d0)" tag={p.type === 'single' ? 'SINGLE' : 'LOG'}
                 meta={`${String(count(p)).padStart(2, '0')} IMAGES`} fileText={'GALLERY\nFILE'}
                 small={fmtDate(p.madeDate ? p.madeDate + 'T00:00:00' : p.date)} title={p.title}
                 who={(p.tags ?? []).slice(0, 3).map(t => ({ name: t, color: 'var(--accent,#7fd6d0)' }))}
                 whoMore={Math.max(0, (p.tags ?? []).length - 3)}
-                style={{ aspectRatio: '363/332', ...((sort(i) as { style?: React.CSSProperties }).style ?? {}) }}
+                style={{ aspectRatio: '16/9', ...((sort(i) as { style?: React.CSSProperties }).style ?? {}) }}
                 onClick={() => { if (!folded && !editOn) openPost(p); }}
                 onContextMenu={(e: React.MouseEvent) => onCtx(e, p)}>
                 {folded && (
