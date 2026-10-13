@@ -2444,7 +2444,7 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .rc-group-title{display:flex;align-items:center;gap:8px;margin:0 0 10px}
 .rc-group-name{padding:4px 13px;border-radius:999px;background:rgba(127,127,127,.16);font-size:calc(12.5px*var(--fs,1));font-weight:700;color:var(--ink)}
 .rc-group-count{font-size:calc(11.5px*var(--fs,1));font-weight:600;color:var(--sub)}
-.rc-row{display:flex;gap:12px;overflow-x:auto;padding:4px 4px 14px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.rc-row{display:flex;gap:12px;overflow-x:auto;padding:8px 6px 14px;scroll-snap-type:x proximity;scrollbar-width:thin}
 .rc-card{position:relative;flex:none;width:210px;aspect-ratio:4/3;height:auto;border-radius:16px;overflow:hidden;background:rgba(127,127,127,.14);scroll-snap-align:start;cursor:var(--cur-pointer,pointer);box-shadow:0 1px 2px rgba(0,0,0,.16);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
 /* 그림자 폭 2px — 카드 줄이 overflow로 스크롤되는 박스라 그림자가 더 퍼지면 가장자리에서 잘려 보인다 */
 .rc-card:hover{transform:translateY(-3px);box-shadow:0 2px 2px rgba(0,0,0,.22)}
@@ -2782,15 +2782,15 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @keyframes rxGhost{from{opacity:0;transform:translateX(-50%) translateY(30px) scale(1.06);letter-spacing:.08em}to{opacity:1;transform:translateX(-50%);letter-spacing:-.02em}}
 .rx-grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:44px 0 52px}   /* 이전 목록과 같은 3열 */
 .rx-empty{grid-column:1/-1;text-align:center;color:var(--page-desc);font-size:13px}
-.rx-card{position:relative;container-type:inline-size;aspect-ratio:4/3;background:#0b0d10;color:#fff;overflow:hidden;cursor:var(--cur-pointer,pointer);
-  border:1px solid color-mix(in srgb,var(--c1) 18%,rgba(255,255,255,.14));box-shadow:0 18px 40px rgba(0,0,0,.28);
+.rx-card{position:relative;container-type:inline-size;aspect-ratio:4/3;background:transparent;color:#fff;overflow:hidden;cursor:var(--cur-pointer,pointer);
+  border:1px solid color-mix(in srgb,var(--c1) 18%,rgba(255,255,255,.14));box-shadow:0 2px 2px rgba(0,0,0,.28);
   animation:rxCard .95s cubic-bezier(.2,.8,.2,1) calc(.45s + var(--i)*.14s) backwards;transition:transform .25s,box-shadow .25s,border-color .25s}
-.rx-card:hover{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c1) 70%,#fff);box-shadow:0 24px 50px rgba(0,0,0,.4),0 0 0 1px color-mix(in srgb,var(--c1) 45%,transparent)}
+.rx-card:hover{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c1) 70%,#fff);box-shadow:0 2px 2px rgba(0,0,0,.4),0 0 0 1px color-mix(in srgb,var(--c1) 45%,transparent)}
 .rx-card.priv{opacity:.5}
 .rx-card.rx-tall{aspect-ratio:auto;width:140px;height:230px}   /* 직접 지정한 관계(캐릭터)는 이전과 같은 세로 비율 */
 .rc-row>.rx-card{flex:none;width:210px;scroll-snap-align:start}
 .rc-row>.rx-card.rx-tall{width:140px}
-.rx-gal{display:grid;grid-template-columns:repeat(auto-fill,210px);gap:14px}
+.rx-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;padding:8px 6px}
 .rx-veil{position:absolute;inset:0;z-index:4;display:grid;place-items:center;text-align:center;background:rgba(8,10,14,.72);backdrop-filter:blur(10px);font-size:12px;line-height:1.5}
 .rx-veil span{opacity:.7;font-size:10px}
 /* 서랍 안 카드는 순서 지연을 짧게 */
@@ -2810,14 +2810,14 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .rx-corner.tr{right:10px;top:10px;border-width:1px 1px 0 0}
 .rx-corner.bl{left:10px;bottom:10px;border-width:0 0 1px 1px}
 .rx-top{position:absolute;left:5.2cqw;right:5.2cqw;top:4.6cqw;display:flex;align-items:flex-start;gap:10px;z-index:2;animation:rxFade .6s ease calc(.9s + var(--i)*.14s) both}
-.rx-no{font-size:max(17px,calc(11cqw*var(--fs,1)));font-weight:800;line-height:.9;letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.5)}
+.rx-no{font-size:max(17px,calc(11cqw*var(--fs,1)));font-weight:800;line-height:.9;letter-spacing:-.02em;text-shadow:0 2px 2px rgba(0,0,0,.5)}
 .rx-file{font:700 max(6.5px,2.5cqw)/1.25 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:rgba(255,255,255,.75);margin-top:4cqw}
 .rx-meta{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:5px}
 .rx-meta b{font-size:max(11px,calc(6.1cqw*var(--fs,1)));font-weight:800;letter-spacing:.02em;line-height:1}
 .rx-meta em{font:700 max(6px,2.3cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:rgba(255,255,255,.6);font-style:normal}
 .rx-bot{position:absolute;left:5.2cqw;right:5.2cqw;bottom:5.8cqw;z-index:2;animation:rxFade .7s ease calc(1.05s + var(--i)*.14s) both}
 .rx-bot small{display:block;font:700 max(7px,2.8cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.32em;color:rgba(255,255,255,.7);margin-bottom:8px;text-transform:uppercase;min-height:9px}
-.rx-bot h3{font-size:max(11px,calc(5.5cqw*var(--fs,1)));font-weight:800;letter-spacing:-.01em;line-height:1.15;word-break:keep-all;text-shadow:0 2px 12px rgba(0,0,0,.5);padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:8px}
+.rx-bot h3{font-size:max(11px,calc(5.5cqw*var(--fs,1)));font-weight:800;letter-spacing:-.01em;line-height:1.15;word-break:keep-all;text-shadow:0 2px 2px rgba(0,0,0,.5);padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:8px}
 .rx-who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px;font:700 max(7px,2.6cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:rgba(255,255,255,.88)}
 .rx-who span{display:inline-flex;align-items:center;gap:6px}
 .rx-who i{width:max(5px,2cqw);height:max(5px,2cqw);transform:rotate(45deg);flex:none}
