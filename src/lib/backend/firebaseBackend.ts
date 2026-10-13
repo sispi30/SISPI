@@ -236,6 +236,12 @@ export async function createFirebaseBackend(cfg: FirebaseCfg): Promise<Backend> 
       } catch (e) { return { ok: false, error: humanError(e) }; }
     },
 
+    async authToken() {
+      const u = auth.currentUser;
+      if (!u) return null;
+      try { return await u.getIdToken(); } catch { return null; }
+    },
+
     /** 첫 계정을 소유자(관리자)로 등록 — 규칙이 "없을 때 1회"만 허용한다 */
     async claimOwner() {
       const u = auth.currentUser;

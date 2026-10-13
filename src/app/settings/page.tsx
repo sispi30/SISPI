@@ -63,6 +63,7 @@ import { validateConfig, configFileText, saveLocalConfig, parseFirebaseSnippet, 
 import { migrateTo, findOrphanFiles } from '@/lib/transfer';
 import { FIRESTORE_RULES, STORAGE_RULES } from '@/lib/firebaseRules';
 import { SCHEMA_SQL } from '@/lib/schemaSql';
+import { PushAdminRow } from '@/components/shell/PushSettings';
 
 const CATEGORIES = [
   '디자인', '메인 페이지', '위젯', '메뉴 관리', '메뉴 위젯', '게시판 관리', '자관 질문', '커미션', 'TRPG', '감상타래', '메모장',
@@ -1187,6 +1188,8 @@ function MemberPane() {
           자격 증명은 전혀 다루지 않고, 저장해 둔 내 포크 주소로 이동만 시켜 준다 — 거기서
           [Sync fork] 버튼 한 번이면 끝 */}
       {serverOn2 && <ConfigScopeWarnRow />}
+      {/* 웹푸시 서버 키 (자놀 이식) — 회원이 정보수정에서 켤 수 있으려면 관리자가 한 번 등록해야 한다 */}
+      {serverOn2 && <div className="set-sec"><PushAdminRow /></div>}
       {serverOn2 && <ForkUpdateRow />}
       {/* 설치를 이미 마친 뒤에도 보안 규칙이 바뀔 때(버전 업데이트 등) 다시 붙여넣을 수 있게 —
           예전엔 최초 설치 화면에만 있어서 재설치 없이는 갱신된 규칙을 볼 방법이 없었다 (v2.0) */}

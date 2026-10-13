@@ -106,7 +106,8 @@ declare content_tables text[] := array[
   'comments',     -- 댓글 (v2.0 — 글 안이 아니라 자기 행으로. 글을 수정하지 않고 댓글을 달 수 있게)
   'qa_answers',   -- 자관 문답 답변 (v2.0 — 같은 이유로 자관 안이 아니라 자기 행으로)
   'rp_messages',  -- 역극 발화 (v2.0 — 같은 이유로 방 안이 아니라 자기 행으로)
-  'notifications' -- 알림 (v2.0 — 기기 보관이던 것을 서버로: 받은 사람 계정으로 어느 기기에서나)
+  'notifications', -- 알림 (v2.0 — 기기 보관이던 것을 서버로: 받은 사람 계정으로 어느 기기에서나)
+  'push_subs'     -- 웹푸시 기기 구독 (자놀 이식 — 회원마다 기기별 한 문서, 공개범위 member)
 ];
 begin
   foreach t in array content_tables loop
@@ -227,7 +228,7 @@ do $$
 declare t text;
 begin
   -- 발화·답변·댓글이 각자 행으로 분리됐으므로(v2.0) 실시간도 그 테이블을 봐야 한다
-  foreach t in array array['rp_rooms', 'rp_messages', 'relations', 'qa_answers', 'posts', 'comments', 'guestbook', 'notifications'] loop
+  foreach t in array array['rp_rooms', 'rp_messages', 'relations', 'qa_answers', 'posts', 'comments', 'guestbook', 'notifications', 'push_subs'] loop
     begin
       execute format('alter publication supabase_realtime add table public.%I', t);
     exception when others then null;  -- 이미 추가돼 있으면 무시
