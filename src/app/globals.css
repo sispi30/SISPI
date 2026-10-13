@@ -2837,3 +2837,26 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @media (max-width:640px){.rx{padding:16px 10px 14px}.rx-grid{gap:14px;padding:30px 0 36px}.rx-ghost{top:50px}}
 @media (max-width:520px){.rx-grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.rx *,.rx-card,.rx-fr,.rx-ghost{animation:none!important}.pt-line line{stroke-dashoffset:0}}
+
+/* ---------- 인트로 화면 ---------- */
+.intro-splash{position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;justify-content:space-between;padding:34px 40px;
+  color:var(--page-title,#eef1f5);cursor:var(--cur-pointer,pointer);
+  background:radial-gradient(900px 480px at 50% 30%,rgba(255,255,255,.08),transparent 60%),linear-gradient(var(--bg-angle,180deg),var(--bg-g1,#0e1116) 0%,var(--bg-g2,#06080b) 100%);
+  transition:opacity .7s ease,transform .8s cubic-bezier(.6,0,.2,1);animation:isIn .5s ease both}
+.intro-splash.out{opacity:0;transform:scale(1.04);pointer-events:none}
+.is-fr{position:absolute;width:18px;height:18px;border:0 solid currentColor;opacity:.5}
+.is-fr.tl{left:18px;top:18px;border-width:1px 0 0 1px}.is-fr.tr{right:18px;top:18px;border-width:1px 1px 0 0}
+.is-fr.bl{left:18px;bottom:18px;border-width:0 0 1px 1px}.is-fr.br{right:18px;bottom:18px;border-width:0 1px 1px 0}
+.is-top,.is-bot{display:flex;justify-content:space-between;font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;opacity:.7;text-transform:uppercase}
+.is-mid{display:grid;justify-items:center;gap:26px}
+.is-title{font-family:var(--serif);font-size:clamp(46px,9vw,120px);font-weight:700;letter-spacing:.06em;line-height:1;text-align:center;animation:isTitle 1.1s cubic-bezier(.2,.8,.2,1) .15s both}
+.is-bar{width:min(360px,64vw);height:2px;background:color-mix(in srgb,currentColor 18%,transparent);overflow:hidden}
+.is-bar b{display:block;height:100%;background:var(--accent,#7fd6d0);transition:width .12s linear}
+.is-enter{font:700 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.4em;padding:12px 26px;border:1px solid color-mix(in srgb,currentColor 45%,transparent);border-radius:30px;opacity:.55;transition:.25s}
+.intro-splash.ready .is-enter,.intro-splash.out .is-enter{opacity:1;border-color:var(--accent,#7fd6d0);animation:isPulse 1.6s ease-in-out infinite}
+.intro-splash.ready:hover .is-enter{background:var(--accent,#7fd6d0);color:#0b0d10}
+@keyframes isIn{from{opacity:0}to{opacity:1}}
+@keyframes isTitle{from{opacity:0;letter-spacing:.3em;filter:blur(8px)}to{opacity:1;letter-spacing:.06em;filter:none}}
+@keyframes isPulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--accent,#7fd6d0) 22%,transparent)}}
+@media (max-width:640px){.intro-splash{padding:24px 20px}.is-top,.is-bot{font-size:9px;letter-spacing:.2em}}
+@media (prefers-reduced-motion:reduce){.is-title,.intro-splash,.is-enter{animation:none!important}}

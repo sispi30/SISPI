@@ -14,6 +14,7 @@ import { ImgProtect } from '@/components/shell/ImgProtect';
 import { MouseFx } from '@/components/shell/MouseFx';
 import { CometLayer } from '@/components/shell/CometLayer';
 import { SetupGate } from '@/components/shell/SetupGate';
+import { IntroSplash } from '@/components/shell/IntroSplash';
 import { DocTitle } from '@/components/shell/DocTitle';
 import { DocIcon } from '@/components/shell/DocIcon';
 import { SettingSync } from '@/components/shell/SettingSync';
@@ -39,11 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     // 탭 아이콘 (v2.0 사용자 요청) — 지정했으면 기본 favicon.ico 대신 그것을 쓴다.
     // 지정이 없으면 icons를 아예 넣지 않아 Next의 기본 파일 처리를 그대로 둔다
-    // 홈 화면 아이콘(apple-touch-icon)은 늘 둔다 — 아이폰 「홈 화면에 추가」·웹푸시용 (자놀 이식). 탭 아이콘을 지정했으면 그것으로
-    icons: { ...(favicon ? { icon: favicon } : {}), apple: favicon || '/icon-192.png' },
-    manifest: '/manifest.webmanifest',
-    // 아이폰에서 홈 화면 웹앱(standalone)으로 열리게 — 그래야 웹푸시를 받을 수 있다
-    appleWebApp: { capable: true, title: title.replace(/ — 개인홈$/, ''), statusBarStyle: 'default' },
+    ...(favicon ? { icons: { icon: favicon } } : {}),
     openGraph: { title, description, type: 'website' },
     twitter: { card: 'summary', title, description },
   };
@@ -99,6 +96,8 @@ if(navigator.userAgent.indexOf('Whale/')>-1){document.documentElement.style.colo
                   {/* 설치 초기 화면 — 첫 실행이면 관리자·게스트 설정/백업 복원만 표시 (v1.9) */}
                   <SetupGate>
                   <TopBar />
+                  {/* 인트로 — 처음 들어올 때 로딩 후 ENTER (한 탭에 한 번) */}
+                  <IntroSplash />
                   {/* 앱 셸: 스크롤은 이 영역 안에서만 (7장) */}
                   {/* PageFrame: 같은 메뉴를 다시 누르면 이 안쪽만 remount (BGM·상단바는 유지, v1.9) */}
                   {/* MenuGuard: 비공개로 둔 메뉴는 주소로 들어와도 열리지 않게 (v2.0 사용자 요청) */}
