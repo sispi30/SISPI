@@ -2785,8 +2785,11 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .rx-card{position:relative;container-type:inline-size;aspect-ratio:4/3;background:transparent;color:#fff;overflow:hidden;cursor:var(--cur-pointer,pointer);
   border:1px solid color-mix(in srgb,var(--c1) 18%,rgba(255,255,255,.14));box-shadow:0 2px 2px rgba(0,0,0,.28);
   animation:rxCard .95s cubic-bezier(.2,.8,.2,1) calc(.45s + var(--i)*.14s) backwards;transition:transform .25s,box-shadow .25s,border-color .25s}
-.rx-card:hover{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c1) 70%,#fff);box-shadow:0 2px 2px rgba(0,0,0,.4),0 0 0 1px color-mix(in srgb,var(--c1) 45%,transparent)}
+.rx-card:hover{border-color:color-mix(in srgb,var(--c1) 70%,#fff);box-shadow:0 2px 2px rgba(0,0,0,.4),0 0 0 1px color-mix(in srgb,var(--c1) 45%,transparent)}
 .rx-card.priv{opacity:.5}
+/* 올리면 그림이 확대되며 왼쪽에서 오른쪽으로 흐른다 — 직접 지정한 관계(.rx-tall)는 제외 */
+.rx-card:not(.rx-tall):hover .pt-base{animation:rxPan 1.8s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rxPan{from{transform:scale(1.14) translateX(-5%)}to{transform:scale(1.14) translateX(5%)}}
 .rx-card.rx-tall{aspect-ratio:auto;width:140px;height:230px}   /* 직접 지정한 관계(캐릭터)는 이전과 같은 세로 비율 */
 .rc-row>.rx-card{flex:none;width:210px;scroll-snap-align:start}
 .rc-row>.rx-card.rx-tall{width:140px}
