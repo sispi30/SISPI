@@ -297,6 +297,9 @@ function DesignPane() {
               <span className="cp-lb">블러</span>
               <KStep value={state.vars.bgBlur ?? 0} min={0} max={30} step={2} suffix="px"
                 onChange={v => setVar('bgBlur', v)} />
+              <span className="cp-lb">메인 외 화면 블러</span>
+              <KStep value={state.vars.bgBlurSub ?? state.vars.bgBlur ?? 0} min={0} max={30} step={2} suffix="px"
+                onChange={v => setVar('bgBlurSub', v)} />
             </>
           )}
         </div>

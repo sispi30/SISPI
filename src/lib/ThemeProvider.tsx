@@ -4,6 +4,7 @@
 // · 포인트 자동은 기준색/톤을 "변경했을 때만" 전체 재파생
 // · 변경은 즉시 미리보기(DOM)되지만 저장은 [SAVE]를 눌러야 확정 — 새로고침 시 저장본으로 복귀
 // TODO(0차→): Supabase 연결 시 site_settings 테이블로 저장 위치 이동
+import { usePathname } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import {
   ThemeMode, PointTone, ThemeVars, ThemeState, ThemeStore, ThemePreset,
@@ -75,6 +76,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [pageBgImageState, setPageBgImageState] = useState<{ url: string; blur: number } | null>(null); // 자관 배경 사진 (v3.5, v5.1)
   const pageBgImageUrl = pageBgImageState?.url ?? null;
   const pageBgImageBlur = pageBgImageState?.blur ?? 0;
+  const pathname = usePathname();
   const [loaded, setLoaded] = useState(false);   // 저장본 로드 전 기본 다크를 DOM에 쓰지 않기 (FOUC 방지)
 
   // 최초 로드 — v2 우선, 없으면 v1 마이그레이션 (기존 vars를 해당 모드의 수정본으로 승계)
@@ -137,10 +139,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (pageBgImageUrl) {
       root.style.setProperty('--bg-blur', `${pageBgImageBlur}px`);
     }
+    // 메인 외 화면은 따로 정한 블러 (자관 배경 사진이 있으면 그쪽 값이 우선)
+    else if (pathname !== '/' && site.bgBlurSub != null) {
+      root.style.setProperty('--bg-blur', `${Math.max(0, site.bgBlurSub)}px`);
+    }
     root.style.removeProperty('--bg-brightness');
     root.style.removeProperty('--bg-saturate');
     root.style.removeProperty('--bg-page-height');
-  }, [draft, pageColor, pageBg, pageBgImageUrl, pageBgImageBlur, loaded]);
+  }, [draft, pageColor, pageBg, pageBgImageUrl, pageBgImageBlur, pathname, loaded]);
 
   // 배경 이미지 (v1.9) — IndexedDB 파일을 blob URL로 풀어 --bg-image 적용 (그라데이션 모드면 해제).
   // 자관 헤더 사진(pageBgImageUrl, v3.5)이 있으면 그게 최우선 — 상단 바가 투명이라

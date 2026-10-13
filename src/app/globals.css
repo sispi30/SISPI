@@ -2824,6 +2824,7 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .rx-bot{position:absolute;left:5.2cqw;right:5.2cqw;bottom:5.8cqw;z-index:2;animation:rxFade .7s ease calc(1.05s + var(--i)*.14s) both}
 .rx-bot small{display:block;font:700 max(7px,2.8cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.32em;color:rgba(255,255,255,.7);margin-bottom:8px;text-transform:uppercase;min-height:9px}
 .rx-bot h3{font-size:max(11px,calc(5.5cqw*var(--fs,1)));font-weight:800;letter-spacing:-.01em;line-height:1.15;word-break:keep-all;text-shadow:0 2px 2px rgba(0,0,0,.5);padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:8px}
+.g5:not(.chars-grid) .rx-bot h3{font-size:max(15px,calc(8cqw*var(--fs,1)))}   /* 리뷰 게시판 — 제목을 키운다 */
 .rx-who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px;font:700 max(7px,2.6cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:rgba(255,255,255,.88)}
 .rx-who span{display:inline-flex;align-items:center;gap:6px}
 .rx-who i{width:max(5px,2cqw);height:max(5px,2cqw);transform:rotate(45deg);flex:none}

@@ -303,7 +303,7 @@ function ThreadsPageInner() {
               tc="var(--accent,#7fd6d0)" tag={catLabel(cats, w.catId)} meta={`글 ${String(w.posts.length).padStart(2, '0')}`}
               fileText={'REVIEW\nFILE'} small={fmtMD(lastDate(w))} title={w.title}
               who={w.author ? [{ name: `${w.author}${w.authorRole ? ' ' + w.authorRole : ''}`, color: 'var(--accent,#7fd6d0)' }] : []}
-              style={{ aspectRatio: '214/393' }}
+              style={{ aspectRatio: '3/4' }}
               onClick={() => { setSelId(w.id); setView('thread'); }}
               /* 우클릭 → 메뉴 → 삭제 확인 모달 (v2.0 사용자 요청) — 리스트 보기에는 삭제 버튼이 없었다 */
               onContextMenu={(e: React.MouseEvent) => { if (!isAdmin) return; e.preventDefault(); setWCtx({ x: e.clientX, y: e.clientY, id: w.id }); }} />

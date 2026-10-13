@@ -15,7 +15,8 @@ export interface ThemeVars {
   bgType?: 'gradient' | 'image';
   bgAngle?: number;          // 그라데이션 각도 (deg, 기본 180)
   bgImageId?: string;        // 배경 이미지 파일 id (IndexedDB)
-  bgBlur?: number;           // 배경 이미지 블러 px (0 = 없음)
+  bgBlur?: number;           // 배경 이미지 블러 px (0 = 없음) — 메인(첫 화면)
+  bgBlurSub?: number;        // 메인 외 화면의 배경 블러 px — 없으면 bgBlur와 같다
   bgComet?: boolean;         // 배경 혜성 파티클 켜기 (기본 꺼짐)
   // 카드(패널·게시판 리스트·필터 등) 배경/글씨 (v1.9) — 보조 글씨색은 글씨색에서 자동 파생
   cardBg?: string; cardFg?: string;
