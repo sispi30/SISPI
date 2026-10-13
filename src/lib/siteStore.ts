@@ -25,7 +25,10 @@ export interface SiteSettings {
   introDot?: string;         // 점무늬·장식 색
   introFg?: string;          // 글씨 색
   introImage?: string;       // 바탕 이미지 (파일 id 또는 주소) — 있으면 색 위에 깐다
-  introImageOp?: number;     // 바탕 이미지 밝기 % (기본 14 — 어두운 바탕에 희미하게)
+  introImageOp?: number;     // 바탕 그림 밝기 % (기본 100)
+  // 인트로 글귀 — 비우면 기본 문구 (큰 제목 3줄 · 윗줄 작은 글씨 · 아랫줄 작은 글씨)
+  introT1?: string; introT2?: string; introT3?: string;
+  introKick?: string; introSub?: string;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
