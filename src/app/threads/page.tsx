@@ -16,6 +16,7 @@ import {
 import { useFonts } from '@/lib/fontStore';
 import { putBlob, BlobImg, useBlobUrl } from '@/lib/blobStore';
 import { CroppedBlobImg } from '@/components/ui/CropEditor';
+import { RxCard } from '@/components/rels/RxCard';
 import { SearchBar, KTextarea, KInput, KSelect } from '@/components/ui/Kit';
 import { GuestIdBar } from '@/components/ui/GuestId';
 import { Modal, useConfirmDelete } from '@/components/ui/Modal';
@@ -296,30 +297,16 @@ function ThreadsPageInner() {
       ) : view === 'list' ? (
         /* 리스트 보기 — 포스터 카드 그리드 (한 줄 5개, 3:4) */
         <div className="g5">
-          {visible.map(w => (
-            <div key={w.id} className="panel thr-card"
+          {visible.map((w, i) => (
+            <RxCard key={w.id} no={i + 1} anim={i % 10}
+              fileRef={w.posterId} crop={w.posterCrop} ph={w.ph}
+              tc="var(--accent,#7fd6d0)" tag={catLabel(cats, w.catId)} meta={`글 ${String(w.posts.length).padStart(2, '0')}`}
+              fileText={'REVIEW\nFILE'} small={fmtMD(lastDate(w))} title={w.title}
+              who={w.author ? [{ name: `${w.author}${w.authorRole ? ' ' + w.authorRole : ''}`, color: 'var(--accent,#7fd6d0)' }] : []}
+              style={{ aspectRatio: '214/393' }}
               onClick={() => { setSelId(w.id); setView('thread'); }}
               /* 우클릭 → 메뉴 → 삭제 확인 모달 (v2.0 사용자 요청) — 리스트 보기에는 삭제 버튼이 없었다 */
-              onContextMenu={e => { if (!isAdmin) return; e.preventDefault(); setWCtx({ x: e.clientX, y: e.clientY, id: w.id }); }}>
-              <div className="th">
-                <CroppedBlobImg fileRef={w.posterId} crop={w.posterCrop} ph={w.ph} />
-                <span className="pill dark" style={threadBadgeStyle(cats.find(c => c.id === w.catId))}>
-                  {catLabel(cats, w.catId)}
-                </span>
-              </div>
-              <div className="info">
-                <div className="tt" style={{ fontFamily: familyOf(w.titleFontId) }}>{w.title}</div>
-                {/* Author 칸 내용 — 제목과 글 수 사이, 2줄까지 (v2.0 포크 사용자 요청) */}
-                {w.author && (
-                  <div className="row" style={{
-                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden', lineHeight: 1.45,
-                  }}>{w.author}{w.authorRole ? ` ${w.authorRole}` : ''}</div>
-                )}
-                <div className="row"><b>글</b> {w.posts.length}</div>
-                <div className="row"><b>최근</b> {fmtMD(lastDate(w))}</div>
-              </div>
-            </div>
+              onContextMenu={(e: React.MouseEvent) => { if (!isAdmin) return; e.preventDefault(); setWCtx({ x: e.clientX, y: e.clientY, id: w.id }); }} />
           ))}
         </div>
       ) : (
