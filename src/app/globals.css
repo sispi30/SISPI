@@ -2808,7 +2808,10 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .pt-line line{stroke-dasharray:1;stroke-dashoffset:1;animation:rxDraw 1s cubic-bezier(.6,0,.2,1) var(--pd,0s) forwards}
 .rx-card .pt{animation:rxZoom 1.5s cubic-bezier(.2,.8,.2,1) calc(.45s + var(--i)*.14s) both}
 .rx-card .ph{position:absolute;inset:0;display:grid;place-items:center}
-.rx-shade{display:none;position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,.55) 0%,rgba(6,8,11,0) 28%,rgba(6,8,11,0) 52%,rgba(6,8,11,.92) 100%)}
+.rx-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 50%,rgba(6,8,11,.92) 100%);transition:opacity .3s}
+/* 캐릭터 목록은 평소엔 그라데이션 없이, 올렸을 때만 */
+.chars-grid .rx-shade{opacity:0}
+.chars-grid .rx-card:hover .rx-shade{opacity:1}
 .rx-corner{position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.55);z-index:3;pointer-events:none}
 .rx-corner.tr{right:10px;top:10px;border-width:1px 1px 0 0}
 .rx-corner.bl{left:10px;bottom:10px;border-width:0 0 1px 1px}
