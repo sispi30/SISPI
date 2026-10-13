@@ -1,27 +1,21 @@
 'use client';
-// 인트로 화면 — 처음 들어올 때: 점무늬 바탕에 별·물체 장식, 작은 LOADING 숫자가 100까지 차오르면 「CLICK TO ENTER」.
-// 클릭(또는 Enter·스페이스)해야 화면이 위로 걷히며 메인 페이지가 나온다. 한 탭에서 한 번만 뜬다.
-// 바탕(색·그라데이션·이미지)·점무늬 색·글씨 색은 환경설정 > 디자인 > 인트로 화면에서 정한다. 장식은 그대로.
+// 인트로 화면 — 처음 들어올 때 어두운 화면에 큰 글자·희미한 그림·가운데 위 메뉴가 떠 있고,
+// 숫자가 100까지 차오르면 「CLICK TO ENTER」. 화면을 클릭해야(또는 Enter·스페이스) 메인 페이지로 넘어간다.
+// 위쪽 메뉴를 누르면 입장하면서 그 메뉴로 바로 간다. 한 탭에서 한 번만 뜬다. 마우스 반짝임은 사이트 효과 그대로 위에 나온다.
+// 바탕(색·그라데이션·그림)·글씨 색은 환경설정 > 디자인 > 인트로 화면에서 바꾼다. 장식(큰 글자·메뉴)은 그대로.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSiteSettings } from '@/lib/siteStore';
 import { useBlobUrl } from '@/lib/blobStore';
+import { useMenuSettings, buildMenu } from '@/lib/menuStore';
 
 const SEEN = 'ohome.intro.seen';
 const LOAD_MS = 2400;
 
-const DIAS: { s: number; x: string; y: string; d: string }[] = [
-  { s: 104, x: '1.5%', y: '8%', d: '.2s' },
-  { s: 84, x: '96%', y: '44%', d: '.5s' },
-  { s: 96, x: '76%', y: '80%', d: '.35s' },
-  { s: 56, x: '14%', y: '74%', d: '.7s' },
-];
-const STARS: { x: string; y: string; d: string }[] = [
-  { x: '38%', y: '70%', d: '0s' }, { x: '62%', y: '30%', d: '.8s' }, { x: '24%', y: '26%', d: '1.4s' },
-  { x: '88%', y: '18%', d: '.4s' }, { x: '52%', y: '88%', d: '1.1s' },
-];
-
 export function IntroSplash() {
+  const router = useRouter();
   const [site, , loaded] = useSiteSettings();
+  const [menuSet, , menuLoaded] = useMenuSettings();
   const [phase, setPhase] = useState<'load' | 'ready' | 'out' | 'gone'>('load');
   const [pct, setPct] = useState(0);
   const raf = useRef(0);
@@ -49,12 +43,13 @@ export function IntroSplash() {
     return () => cancelAnimationFrame(raf.current);
   }, [phase, loaded]);
 
-  const enter = useCallback(() => {
+  const enter = useCallback((href?: string) => {
     if (phase !== 'ready') return;
     try { sessionStorage.setItem(SEEN, '1'); } catch { /* 무시 */ }
     setPhase('out');
-    setTimeout(() => setPhase('gone'), 1300);
-  }, [phase]);
+    if (href) router.push(href);
+    setTimeout(() => setPhase('gone'), 1100);
+  }, [phase, router]);
 
   useEffect(() => {
     if (phase !== 'ready') return;
@@ -64,27 +59,39 @@ export function IntroSplash() {
   }, [phase, enter]);
 
   if (phase === 'gone') return null;
-  const bg1 = site.introBg ?? '#f3f6f6';
+
+  // 위쪽 메뉴 — 사이트 메뉴의 위쪽 항목들 (각 항목의 첫 번째 주소로 간다)
+  const items = (menuLoaded ? buildMenu(menuSet, [], { loggedIn: false, isAdmin: false }) : [])
+    .map(m => ({ label: m.label, href: m.href ?? m.children?.[0]?.href }))
+    .filter((m): m is { label: string; href: string } => !!m.href)
+    .slice(0, 4);
+
+  const bg1 = site.introBg ?? '#06070a';
   const bgc = site.introBg2 ? `linear-gradient(180deg,${bg1},${site.introBg2})` : bg1;
   const vars = {
     ['--is-bgc' as string]: bgc,
     ...(site.introDot ? { ['--is-dot' as string]: site.introDot } : {}),
     ...(site.introFg ? { ['--is-fg' as string]: site.introFg } : {}),
+    ['--is-op' as string]: (site.introImageOp ?? 14) / 100,
   } as React.CSSProperties;
   const ready = phase === 'ready' || phase === 'out';
+  const title = site.title || 'HOME';
   return (
-    <div className={`intro-splash ${phase}`} style={vars} onClick={enter} role="dialog" aria-label="인트로">
-      {img && <div className="is-bgimg" style={{ backgroundImage: `url("${img}")` }} />}
-      <div className="is-dots" />
-      <div className="is-cloud" />
-      {DIAS.map((d, i) => <i key={i} className="is-dia" style={{ left: d.x, top: d.y, ['--s' as string]: `${d.s}px`, ['--d' as string]: d.d } as React.CSSProperties} />)}
-      <div className="is-obj"><i /><i /><i /><i /></div>
-      {STARS.map((t, i) => <i key={i} className="is-star" style={{ left: t.x, top: t.y, ['--d' as string]: t.d } as React.CSSProperties} />)}
-      <div className="is-center">
-        <div className="is-load">{ready ? 'CLICK TO ENTER' : 'LOADING…'}</div>
-        <div className="is-oval" />
-        <div className="is-pill"><i>{ready ? '→' : '·'}</i><span>{ready ? 'ENTER' : pct}</span></div>
-        <div className="is-name">{site.title}</div>
+    <div className={`intro-splash ${phase}`} style={vars} onClick={() => enter()} role="dialog" aria-label="인트로">
+      {img && <div className="is-art" style={{ backgroundImage: `url("${img}")` }} />}
+      <div className="is-ghost" aria-hidden="true">{title.toUpperCase()}</div>
+      <nav className="is-nav" onClick={e => e.stopPropagation()}>
+        {items.map((m, i) => (
+          <React.Fragment key={m.href + i}>
+            {i === 2 && <span className="sl">/</span>}
+            <button type="button" className={i < 2 ? 'main' : ''} disabled={!ready} onClick={() => enter(m.href)}>
+              {i >= 2 && '‹ '}{m.label}{i < 2 && <sup>{String(i + 1).padStart(2, '0')}</sup>}
+            </button>
+          </React.Fragment>
+        ))}
+      </nav>
+      <div className="is-foot">
+        {ready ? <span className="blink">CLICK TO ENTER</span> : <span>LOADING {String(pct).padStart(3, '0')}</span>}
       </div>
     </div>
   );

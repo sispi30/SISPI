@@ -351,7 +351,7 @@ function DesignPane() {
 
       {/* 인트로 화면 — 처음 들어올 때 점무늬 바탕에서 클릭해 입장. 장식은 그대로, 바탕만 바꾼다 */}
       <div className="set-row" style={{ flexWrap: 'wrap' }}>
-        <div className="l"><b>인트로 화면</b><small>처음 들어올 때 클릭해서 입장 · 장식은 그대로, 바탕색·점무늬·이미지만 바꿉니다</small></div>
+        <div className="l"><b>인트로 화면</b><small>처음 들어올 때 클릭해서 입장 · 장식(큰 글자·메뉴·반짝임)은 그대로, 바탕만 바꿉니다</small></div>
         <IntroControls />
       </div>
 
@@ -1450,18 +1450,18 @@ function IntroControls() {
       {on && (
         <>
           <span className="cp-lb">바탕</span>
-          <ColorField value={site.introBg ?? '#f3f6f6'} onChange={hex => set({ introBg: hex })} />
+          <ColorField value={site.introBg ?? '#06070a'} onChange={hex => set({ introBg: hex })} />
           <span style={{ color: 'var(--faint)', fontSize: 11 }}>→</span>
           {site.introBg2
             ? <ColorField value={site.introBg2} onChange={hex => set({ introBg2: hex })} />
             : <button className="btn btn-ghost" style={{ height: 35, padding: '0 12px', fontSize: 11 }}
-                onClick={() => set({ introBg2: site.introBg ?? '#f3f6f6' })}>+ 그라데이션</button>}
+                onClick={() => set({ introBg2: site.introBg ?? '#06070a' })}>+ 그라데이션</button>}
           {site.introBg2 && <button className="btn btn-ghost" style={{ height: 35, padding: '0 10px', fontSize: 11 }}
             onClick={() => set({ introBg2: undefined })}>단색</button>}
-          <span className="cp-lb">점·장식</span>
-          <ColorField value={site.introDot ?? '#8fc3d8'} onChange={hex => set({ introDot: hex })} />
+          <span className="cp-lb">큰 글자</span>
+          <ColorField value={site.introDot ?? '#ffffff'} onChange={hex => set({ introDot: hex })} />
           <span className="cp-lb">글씨</span>
-          <ColorField value={site.introFg ?? '#6b7b84'} onChange={hex => set({ introFg: hex })} />
+          <ColorField value={site.introFg ?? '#c9ced6'} onChange={hex => set({ introFg: hex })} />
           <input id="introBgFile" type="file" accept="image/*" style={{ display: 'none' }}
             onChange={async e => {
               const f = e.target.files?.[0];
@@ -1475,12 +1475,15 @@ function IntroControls() {
           {site.introImage && (
             <>
               {url && <span style={{ width: 35, height: 35, borderRadius: 6, backgroundImage: `url("${url}")`, backgroundSize: 'cover', backgroundPosition: 'center' }} />}
+              <span className="cp-lb">밝기</span>
+              <KStep value={site.introImageOp ?? 14} min={2} max={100} step={4} suffix="%"
+                onChange={v => set({ introImageOp: v })} />
               <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
                 onClick={() => set({ introImage: undefined })}>REMOVE</button>
             </>
           )}
           <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
-            onClick={() => set({ introBg: undefined, introBg2: undefined, introDot: undefined, introFg: undefined, introImage: undefined })}>RESET</button>
+            onClick={() => set({ introBg: undefined, introBg2: undefined, introDot: undefined, introFg: undefined, introImage: undefined, introImageOp: undefined })}>RESET</button>
         </>
       )}
     </div>

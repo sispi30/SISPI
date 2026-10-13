@@ -2838,48 +2838,31 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @media (max-width:520px){.rx-grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.rx *,.rx-card,.rx-fr,.rx-ghost{animation:none!important}.pt-line line{stroke-dashoffset:0}}
 
-/* ---------- 인트로 화면 — 점무늬 바탕 + 별·물체 장식, 작은 LOADING → 클릭해서 입장 ----------
-   바탕(색·그라데이션·이미지)은 환경설정에서 바꾸고, 점무늬·장식은 그대로 둔다 (색만 --is-dot) */
+/* ---------- 인트로 화면 — 어두운 바탕 · 희미한 그림 · 큰 글자 · 위쪽 메뉴, 클릭해서 입장 ----------
+   바탕(색·그라데이션·그림)은 환경설정에서 바꾸고, 큰 글자·메뉴·안내는 그대로 둔다 */
 .intro-splash{position:fixed;inset:0;z-index:9500;overflow:hidden;cursor:var(--cur-pointer,pointer);
-  color:var(--is-fg,#6b7b84);--is-dot:#8fc3d8;background:var(--is-bgc,#f3f6f6);
-  transition:clip-path 1s cubic-bezier(.7,0,.2,1),opacity .4s ease .7s;clip-path:inset(0)}
-.intro-splash.out{clip-path:inset(0 0 100% 0);opacity:0;pointer-events:none}
-.is-bgimg{position:absolute;inset:0;background-size:cover;background-position:center}
-/* 점무늬 + 구름처럼 옅어지는 흰 덩어리 */
-.is-dots{position:absolute;inset:0;background-image:radial-gradient(circle,color-mix(in srgb,var(--is-dot) 55%,transparent) 1.4px,transparent 1.9px);background-size:11px 11px;
-  -webkit-mask-image:radial-gradient(ellipse 85% 75% at 25% 45%,#000 25%,transparent 100%);mask-image:radial-gradient(ellipse 85% 75% at 25% 45%,#000 25%,transparent 100%);animation:isDrift 16s ease-in-out infinite alternate}
-.is-cloud{position:absolute;inset:0;background:radial-gradient(ellipse 45% 40% at 78% 22%,rgba(255,255,255,.85),transparent 70%),radial-gradient(ellipse 50% 35% at 30% 92%,rgba(255,255,255,.7),transparent 70%)}
-/* 장식 — 다이아 모양 점무늬 */
-.is-dia{position:absolute;width:var(--s,96px);aspect-ratio:1;transform:rotate(45deg) scale(.7);opacity:0;
-  background-image:radial-gradient(circle,var(--is-dot) 1.7px,transparent 2.2px);background-size:7px 7px;
-  -webkit-mask-image:radial-gradient(circle,#000 20%,transparent 72%);mask-image:radial-gradient(circle,#000 20%,transparent 72%);
-  animation:isDia 1.1s cubic-bezier(.2,.8,.2,1) var(--d,.2s) forwards,isFloat 6s ease-in-out calc(var(--d,.2s) + 1s) infinite alternate}
-.is-dia::after{content:"";position:absolute;inset:34%;background:var(--is-dot);opacity:.55;filter:blur(6px)}
-/* 장식 — 비스듬한 점무늬 물체 */
-.is-obj{position:absolute;right:15%;top:8%;width:30px;height:230px;transform:rotate(-26deg);opacity:0;animation:isObj 1.2s cubic-bezier(.2,.8,.2,1) .5s forwards}
-.is-obj i{position:absolute;left:50%;transform:translateX(-50%);background-image:radial-gradient(circle,var(--is-dot) 1.3px,transparent 1.8px);background-size:5px 5px}
-.is-obj i:nth-child(1){top:0;width:4px;height:60px}
-.is-obj i:nth-child(2){top:60px;width:22px;height:120px;border-radius:5px;box-shadow:0 0 0 1px color-mix(in srgb,var(--is-dot) 60%,transparent)}
-.is-obj i:nth-child(3){top:180px;width:36px;height:9px;border-radius:3px}
-.is-obj i:nth-child(4){top:189px;width:12px;height:36px}
-.is-star{position:absolute;width:12px;height:12px;background:var(--is-dot);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:isTwinkle 2.4s ease-in-out var(--d,0s) infinite}
-/* 가운데 안내 */
-.is-center{position:absolute;left:0;right:0;top:11%;display:grid;justify-items:center;gap:20px;z-index:3;text-align:center}
-.is-load{font:700 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.5em;text-transform:uppercase}
-.intro-splash.ready .is-load{animation:isBlink 1.4s ease-in-out infinite}
-.is-oval{width:18px;height:11px;border-radius:50%;border:1px solid color-mix(in srgb,var(--is-dot) 80%,transparent);background:rgba(255,255,255,.55)}
-.intro-splash.load .is-oval{animation:isBlink .9s ease-in-out infinite}
-.is-pill{display:flex;align-items:center;gap:10px;height:42px;padding:0 18px 0 8px;border-radius:30px;background:rgba(255,255,255,.82);
-  border:1px solid color-mix(in srgb,var(--is-dot) 55%,#fff);box-shadow:0 8px 24px color-mix(in srgb,var(--is-dot) 30%,transparent);font:800 13px/1 ui-monospace,Menlo,monospace;color:var(--is-fg);min-width:74px;justify-content:center}
-.is-pill i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;background:color-mix(in srgb,var(--is-dot) 30%,#fff);color:var(--is-fg)}
-.intro-splash.ready:hover .is-pill{transform:translateY(-2px)}
-.is-pill{transition:transform .25s}
-.is-name{font:700 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.5em;opacity:.85;text-transform:uppercase}
-@keyframes isDia{to{opacity:.95;transform:rotate(45deg) scale(1)}}
-@keyframes isFloat{to{translate:0 -10px}}
-@keyframes isObj{from{opacity:0;transform:rotate(-26deg) translateY(-30px)}to{opacity:.9;transform:rotate(-26deg)}}
-@keyframes isTwinkle{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:.9;transform:scale(1.15)}}
-@keyframes isBlink{50%{opacity:.35}}
-@keyframes isDrift{to{background-position:30px 20px}}
-@media (max-width:640px){.is-obj{right:8%;height:170px;top:12%}.is-dia{--s:70px}}
-@media (prefers-reduced-motion:reduce){.is-dots,.is-dia,.is-obj,.is-star,.is-oval,.is-load{animation:none!important;opacity:.9}}
+  --is-dot:#fff;--is-fg:#c9ced6;color:var(--is-fg);background:var(--is-bgc,#06070a);
+  transition:opacity .9s ease,transform 1.1s cubic-bezier(.6,0,.2,1),filter .9s ease}
+.intro-splash.out{opacity:0;transform:scale(1.03);filter:blur(6px);pointer-events:none}
+.is-art{position:absolute;inset:0;background-size:cover;background-position:left center;opacity:var(--is-op,.14);
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 35%,transparent 85%);mask-image:linear-gradient(90deg,#000 0%,#000 35%,transparent 85%);
+  animation:isArt 1.6s ease both}
+.is-ghost{position:absolute;left:54%;top:46%;transform:translateY(-50%);font-family:var(--serif);font-weight:900;font-size:clamp(56px,9.5vw,150px);letter-spacing:.02em;line-height:1;white-space:nowrap;
+  color:color-mix(in srgb,var(--is-dot) 7%,transparent);pointer-events:none;animation:isGhost 2s cubic-bezier(.2,.8,.2,1) both,isGhostDrift 9s ease-in-out 2s infinite alternate}
+.is-nav{position:absolute;top:10px;left:0;right:0;display:flex;justify-content:center;align-items:baseline;gap:26px;font:800 11px/1 var(--sans,system-ui);letter-spacing:.06em;text-transform:uppercase;animation:isNav 1s ease .3s both}
+.is-nav button{color:color-mix(in srgb,var(--is-fg) 55%,transparent);padding:8px 2px;transition:color .2s}
+.is-nav button.main{color:color-mix(in srgb,var(--is-fg) 70%,transparent)}
+.is-nav button.main:first-of-type{color:var(--is-fg)}
+.is-nav button:not(:disabled):hover{color:#fff}
+.is-nav button:disabled{cursor:default}
+.is-nav sup{font-size:7px;margin-left:3px;opacity:.55;vertical-align:top;position:relative;top:-3px}
+.is-nav .sl{opacity:.35;font-weight:300;font-size:16px}
+.is-foot{position:absolute;left:0;right:0;bottom:7vh;text-align:center;font:700 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.5em;opacity:.7}
+.is-foot .blink{animation:isBlink 1.5s ease-in-out infinite}
+@keyframes isArt{from{opacity:0;transform:scale(1.04)}to{opacity:var(--is-op,.14);transform:none}}
+@keyframes isGhost{from{opacity:0;transform:translate(40px,-50%)}to{opacity:1;transform:translateY(-50%)}}
+@keyframes isGhostDrift{to{transform:translate(-14px,-50%)}}
+@keyframes isNav{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes isBlink{50%{opacity:.25}}
+@media (max-width:640px){.is-ghost{left:8%;top:60%;font-size:17vw}.is-nav{gap:14px;font-size:10px}}
+@media (prefers-reduced-motion:reduce){.is-ghost,.is-art,.is-nav,.is-foot .blink{animation:none!important}}
