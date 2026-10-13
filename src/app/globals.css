@@ -2838,52 +2838,48 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @media (max-width:520px){.rx-grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.rx *,.rx-card,.rx-fr,.rx-ghost{animation:none!important}.pt-line line{stroke-dashoffset:0}}
 
-/* ---------- 인트로 화면 — 큰 제목 + 캡슐/원이 차오르는 로딩, 하단 입장 버튼 ---------- */
+/* ---------- 인트로 화면 — 점무늬 바탕 + 별·물체 장식, 작은 LOADING → 클릭해서 입장 ----------
+   바탕(색·그라데이션·이미지)은 환경설정에서 바꾸고, 점무늬·장식은 그대로 둔다 (색만 --is-dot) */
 .intro-splash{position:fixed;inset:0;z-index:9500;overflow:hidden;cursor:var(--cur-pointer,pointer);
-  --is-bg:color-mix(in srgb,var(--accent,#2a8bd6) 78%,#04101c);--is-deep:color-mix(in srgb,var(--accent,#2a8bd6) 40%,#020a12);
-  --is-band:color-mix(in srgb,var(--accent,#2a8bd6) 32%,#fff);--is-ink:color-mix(in srgb,var(--accent,#2a8bd6) 28%,#000);
-  background:#eef2f4;color:#fff;transition:clip-path 1s cubic-bezier(.7,0,.2,1),opacity .4s ease .7s;clip-path:inset(0)}
+  color:var(--is-fg,#6b7b84);--is-dot:#8fc3d8;background:var(--is-bgc,#f3f6f6);
+  transition:clip-path 1s cubic-bezier(.7,0,.2,1),opacity .4s ease .7s;clip-path:inset(0)}
 .intro-splash.out{clip-path:inset(0 0 100% 0);opacity:0;pointer-events:none}
-/* 처음 잠깐 — 점무늬 바탕에 작은 LOADING */
-.is-pre{position:absolute;inset:0;display:grid;place-items:center;background:#eef2f4;color:#5b6a73;z-index:5;transition:opacity .45s ease;
-  background-image:radial-gradient(circle,rgba(70,90,100,.28) 1px,transparent 1.6px);background-size:7px 7px}
-.is-pre span{font:600 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.5em}
-.intro-splash:not(.pre) .is-pre{opacity:0;pointer-events:none}
-.is-panel{position:absolute;inset:0;background:var(--is-bg);
-  background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:34px 34px}
-.is-nav{position:absolute;left:22px;top:20px;display:flex;align-items:center;gap:22px;font:700 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.2em;opacity:.95}
-.is-badge{display:flex;flex-direction:column;gap:4px;padding:11px 18px;border-radius:12px 4px 12px 4px;background:var(--is-deep);min-width:130px}
-.is-badge b{font-size:11px;letter-spacing:.14em}.is-badge i{font-style:normal;font-size:8px;letter-spacing:.3em;opacity:.65}
-.is-dial{position:absolute;right:6vw;top:11vh;width:clamp(74px,10vw,124px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;
-  border:1px solid rgba(255,255,255,.55);font-weight:800;font-size:clamp(18px,2.4vw,30px);letter-spacing:.06em}
-.is-dial::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:1px dashed rgba(255,255,255,.45);animation:isSpin 14s linear infinite}
-.is-title-wrap{position:absolute;left:3.2vw;right:3.2vw;bottom:calc(23vh + 54px);display:flex;align-items:flex-end}
-.is-title{font-family:var(--serif);font-weight:900;font-size:clamp(64px,15.5vw,230px);line-height:.86;letter-spacing:-.01em;white-space:nowrap;display:flex;align-items:flex-end;
-  text-transform:uppercase;animation:isTitle .9s cubic-bezier(.2,.8,.2,1) both}
-/* 글자 대신 들어가는 캡슐/원 — 로딩 퍼센트만큼 아래에서 차오른다 */
-.is-cap,.is-ring{position:relative;display:inline-block;overflow:hidden;margin:0 .03em .02em;background:rgba(255,255,255,.96);flex:none}
-.is-cap{width:.27em;height:.74em;border-radius:.14em}
-.is-ring{width:.66em;height:.66em;border-radius:50%}
-.is-cap i,.is-ring i{position:absolute;left:0;right:0;bottom:0;background:var(--is-band);transition:height .12s linear}
-.is-band{position:absolute;left:0;right:0;bottom:calc(23vh - 10px);height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 3.2vw;background:var(--is-band);color:var(--is-ink)}
-.is-band b{font-size:clamp(18px,2.4vw,30px);font-weight:900;letter-spacing:.02em}
-.is-band small{font:700 8px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.22em;margin-left:12px;opacity:.7;text-transform:uppercase}
-.is-band .r{text-align:right;font-weight:800;font-size:clamp(14px,1.6vw,20px)}
-.is-band .r small{display:block;margin:2px 0 0}
-.is-tick{position:absolute;left:0;right:0;bottom:calc(23vh - 34px);height:20px;overflow:hidden;background:var(--is-deep);font:700 8px/20px ui-monospace,Menlo,monospace;letter-spacing:.25em;white-space:nowrap}
-.is-tick span{display:inline-block;animation:isTick 28s linear infinite}
-.is-dots{position:absolute;left:3.2vw;bottom:5.5vh;display:flex;align-items:center;gap:10px;font:700 8px/1 ui-monospace,Menlo,monospace;letter-spacing:.24em}
-.is-dots i{width:18px;height:18px;border-radius:50%;border:2px solid #fff;background:conic-gradient(#fff var(--p,0%),transparent 0)}
-.is-btn{position:absolute;right:3.2vw;bottom:4.5vh;width:min(330px,56vw);height:50px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:0 18px;
-  background:var(--is-band);color:var(--is-ink);font:800 13px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;transition:background .3s,color .3s}
-.is-btn::before{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--pw,0%);background:rgba(255,255,255,.55);transition:width .12s linear}
-.is-btn span,.is-btn em{position:relative;font-style:normal}
-.intro-splash.ready .is-btn,.intro-splash.out .is-btn{background:var(--is-deep);color:#fff;animation:isPulse 1.6s ease-in-out infinite}
-.intro-splash.ready .is-btn::before{width:0}
-.intro-splash.ready .is-btn em{display:grid;place-items:center;width:30px;height:30px;border-radius:7px;background:var(--is-band);color:var(--is-ink)}
-@keyframes isTitle{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
-@keyframes isTick{to{transform:translateX(-50%)}}
-@keyframes isSpin{to{transform:rotate(360deg)}}
-@keyframes isPulse{50%{box-shadow:0 0 0 7px rgba(255,255,255,.18)}}
-@media (max-width:640px){.is-nav span{display:none}.is-dial{top:9vh}.is-band small{display:none}.is-title{font-size:19vw}}
-@media (prefers-reduced-motion:reduce){.is-title,.is-tick span,.is-dial::before,.intro-splash .is-btn{animation:none!important}}
+.is-bgimg{position:absolute;inset:0;background-size:cover;background-position:center}
+/* 점무늬 + 구름처럼 옅어지는 흰 덩어리 */
+.is-dots{position:absolute;inset:0;background-image:radial-gradient(circle,color-mix(in srgb,var(--is-dot) 55%,transparent) 1.4px,transparent 1.9px);background-size:11px 11px;
+  -webkit-mask-image:radial-gradient(ellipse 85% 75% at 25% 45%,#000 25%,transparent 100%);mask-image:radial-gradient(ellipse 85% 75% at 25% 45%,#000 25%,transparent 100%);animation:isDrift 16s ease-in-out infinite alternate}
+.is-cloud{position:absolute;inset:0;background:radial-gradient(ellipse 45% 40% at 78% 22%,rgba(255,255,255,.85),transparent 70%),radial-gradient(ellipse 50% 35% at 30% 92%,rgba(255,255,255,.7),transparent 70%)}
+/* 장식 — 다이아 모양 점무늬 */
+.is-dia{position:absolute;width:var(--s,96px);aspect-ratio:1;transform:rotate(45deg) scale(.7);opacity:0;
+  background-image:radial-gradient(circle,var(--is-dot) 1.7px,transparent 2.2px);background-size:7px 7px;
+  -webkit-mask-image:radial-gradient(circle,#000 20%,transparent 72%);mask-image:radial-gradient(circle,#000 20%,transparent 72%);
+  animation:isDia 1.1s cubic-bezier(.2,.8,.2,1) var(--d,.2s) forwards,isFloat 6s ease-in-out calc(var(--d,.2s) + 1s) infinite alternate}
+.is-dia::after{content:"";position:absolute;inset:34%;background:var(--is-dot);opacity:.55;filter:blur(6px)}
+/* 장식 — 비스듬한 점무늬 물체 */
+.is-obj{position:absolute;right:15%;top:8%;width:30px;height:230px;transform:rotate(-26deg);opacity:0;animation:isObj 1.2s cubic-bezier(.2,.8,.2,1) .5s forwards}
+.is-obj i{position:absolute;left:50%;transform:translateX(-50%);background-image:radial-gradient(circle,var(--is-dot) 1.3px,transparent 1.8px);background-size:5px 5px}
+.is-obj i:nth-child(1){top:0;width:4px;height:60px}
+.is-obj i:nth-child(2){top:60px;width:22px;height:120px;border-radius:5px;box-shadow:0 0 0 1px color-mix(in srgb,var(--is-dot) 60%,transparent)}
+.is-obj i:nth-child(3){top:180px;width:36px;height:9px;border-radius:3px}
+.is-obj i:nth-child(4){top:189px;width:12px;height:36px}
+.is-star{position:absolute;width:12px;height:12px;background:var(--is-dot);clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:isTwinkle 2.4s ease-in-out var(--d,0s) infinite}
+/* 가운데 안내 */
+.is-center{position:absolute;left:0;right:0;top:11%;display:grid;justify-items:center;gap:20px;z-index:3;text-align:center}
+.is-load{font:700 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.5em;text-transform:uppercase}
+.intro-splash.ready .is-load{animation:isBlink 1.4s ease-in-out infinite}
+.is-oval{width:18px;height:11px;border-radius:50%;border:1px solid color-mix(in srgb,var(--is-dot) 80%,transparent);background:rgba(255,255,255,.55)}
+.intro-splash.load .is-oval{animation:isBlink .9s ease-in-out infinite}
+.is-pill{display:flex;align-items:center;gap:10px;height:42px;padding:0 18px 0 8px;border-radius:30px;background:rgba(255,255,255,.82);
+  border:1px solid color-mix(in srgb,var(--is-dot) 55%,#fff);box-shadow:0 8px 24px color-mix(in srgb,var(--is-dot) 30%,transparent);font:800 13px/1 ui-monospace,Menlo,monospace;color:var(--is-fg);min-width:74px;justify-content:center}
+.is-pill i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;background:color-mix(in srgb,var(--is-dot) 30%,#fff);color:var(--is-fg)}
+.intro-splash.ready:hover .is-pill{transform:translateY(-2px)}
+.is-pill{transition:transform .25s}
+.is-name{font:700 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.5em;opacity:.85;text-transform:uppercase}
+@keyframes isDia{to{opacity:.95;transform:rotate(45deg) scale(1)}}
+@keyframes isFloat{to{translate:0 -10px}}
+@keyframes isObj{from{opacity:0;transform:rotate(-26deg) translateY(-30px)}to{opacity:.9;transform:rotate(-26deg)}}
+@keyframes isTwinkle{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:.9;transform:scale(1.15)}}
+@keyframes isBlink{50%{opacity:.35}}
+@keyframes isDrift{to{background-position:30px 20px}}
+@media (max-width:640px){.is-obj{right:8%;height:170px;top:12%}.is-dia{--s:70px}}
+@media (prefers-reduced-motion:reduce){.is-dots,.is-dia,.is-obj,.is-star,.is-oval,.is-load{animation:none!important;opacity:.9}}

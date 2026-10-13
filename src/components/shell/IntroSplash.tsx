@@ -1,41 +1,41 @@
 'use client';
-// 인트로 화면 — 처음 들어올 때: 점무늬 바탕의 짧은 LOADING → 큰 제목 화면에서 글자 속 캡슐(없으면 원)이 퍼센트만큼 차오르고
-// 하단 버튼이 LOADING n → ENTER 로 바뀐다. 누르면 화면이 위로 걷히며 입장한다.
-// 한 탭에서 한 번만 뜬다(새 탭·새 접속에서만). 환경설정 > 디자인 > 로고에서 끌 수 있다. 색은 사이트 포인트색을 따른다.
+// 인트로 화면 — 처음 들어올 때: 점무늬 바탕에 별·물체 장식, 작은 LOADING 숫자가 100까지 차오르면 「CLICK TO ENTER」.
+// 클릭(또는 Enter·스페이스)해야 화면이 위로 걷히며 메인 페이지가 나온다. 한 탭에서 한 번만 뜬다.
+// 바탕(색·그라데이션·이미지)·점무늬 색·글씨 색은 환경설정 > 디자인 > 인트로 화면에서 정한다. 장식은 그대로.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSiteSettings } from '@/lib/siteStore';
+import { useBlobUrl } from '@/lib/blobStore';
 
 const SEEN = 'ohome.intro.seen';
-const LOAD_MS = 2600;
-const PRE_MS = 700;
+const LOAD_MS = 2400;
 
-/** 제목에서 캡슐로 바꿀 글자(I) — 없으면 첫 O를 원으로 */
-function splitTitle(t: string) {
-  const up = t.toUpperCase();
-  let i = up.search(/I/);
-  let kind: 'cap' | 'ring' = 'cap';
-  if (i < 0) { i = up.search(/O/); kind = 'ring'; }
-  if (i < 0) return { a: up, b: '', kind: null as null };
-  return { a: up.slice(0, i), b: up.slice(i + 1), kind };
-}
+const DIAS: { s: number; x: string; y: string; d: string }[] = [
+  { s: 104, x: '1.5%', y: '8%', d: '.2s' },
+  { s: 84, x: '96%', y: '44%', d: '.5s' },
+  { s: 96, x: '76%', y: '80%', d: '.35s' },
+  { s: 56, x: '14%', y: '74%', d: '.7s' },
+];
+const STARS: { x: string; y: string; d: string }[] = [
+  { x: '38%', y: '70%', d: '0s' }, { x: '62%', y: '30%', d: '.8s' }, { x: '24%', y: '26%', d: '1.4s' },
+  { x: '88%', y: '18%', d: '.4s' }, { x: '52%', y: '88%', d: '1.1s' },
+];
 
 export function IntroSplash() {
   const [site, , loaded] = useSiteSettings();
-  const [phase, setPhase] = useState<'pre' | 'load' | 'ready' | 'out' | 'gone'>('pre');
+  const [phase, setPhase] = useState<'load' | 'ready' | 'out' | 'gone'>('load');
   const [pct, setPct] = useState(0);
   const raf = useRef(0);
+  const img = useBlobUrl(site.introImage);
 
   useEffect(() => {
     if (!loaded) return;
     let seen = false;
     try { seen = sessionStorage.getItem(SEEN) === '1'; } catch { /* 무시 */ }
-    if (seen || site.introSplash === false) { setPhase('gone'); return; }
-    const t = setTimeout(() => setPhase(p => (p === 'pre' ? 'load' : p)), PRE_MS);
-    return () => clearTimeout(t);
+    if (seen || site.introSplash === false) setPhase('gone');
   }, [loaded, site.introSplash]);
 
   useEffect(() => {
-    if (phase !== 'load') return;
+    if (phase !== 'load' || !loaded) return;
     const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const dur = reduce ? 500 : LOAD_MS;
     const t0 = performance.now();
@@ -47,7 +47,7 @@ export function IntroSplash() {
     };
     raf.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf.current);
-  }, [phase]);
+  }, [phase, loaded]);
 
   const enter = useCallback(() => {
     if (phase !== 'ready') return;
@@ -64,43 +64,27 @@ export function IntroSplash() {
   }, [phase, enter]);
 
   if (phase === 'gone') return null;
-  const title = site.title || 'HOME';
-  const { a, b, kind } = splitTitle(title);
-  const fill = <i style={{ height: `${pct}%` }} />;
-  const sub = site.subtitle || 'PERSONAL ARCHIVE';
-  const tick = `${sub} + ${title} + OPEN 24H + `.toUpperCase().repeat(8);
-  const lit = Math.min(5, Math.floor(pct / 20));
+  const bg1 = site.introBg ?? '#f3f6f6';
+  const bgc = site.introBg2 ? `linear-gradient(180deg,${bg1},${site.introBg2})` : bg1;
+  const vars = {
+    ['--is-bgc' as string]: bgc,
+    ...(site.introDot ? { ['--is-dot' as string]: site.introDot } : {}),
+    ...(site.introFg ? { ['--is-fg' as string]: site.introFg } : {}),
+  } as React.CSSProperties;
+  const ready = phase === 'ready' || phase === 'out';
   return (
-    <div className={`intro-splash ${phase}`} onClick={enter} role="dialog" aria-label="인트로">
-      <div className="is-pre"><span>LOADING</span></div>
-      <div className="is-panel">
-        <div className="is-nav">
-          <div className="is-badge"><b>{title.toUpperCase()}</b><i>{sub.toUpperCase()}</i></div>
-          <span>+ ARCHIVE</span><span>+ PROFILE</span><span>+ LOG</span>
-        </div>
-        <div className="is-dial">{title.replace(/[^A-Za-z0-9가-힣]/g, '').slice(0, 2).toUpperCase()}</div>
-        <div className="is-title-wrap">
-          <div className="is-title" aria-label={title}>
-            {a}
-            {kind === 'cap' && <span className="is-cap">{fill}</span>}
-            {kind === 'ring' && <span className="is-ring">{fill}</span>}
-            {b}
-          </div>
-        </div>
-        <div className="is-band">
-          <div><b>{title.toUpperCase()}</b><small>{sub}</small></div>
-          <div className="r">{pct}%<small>OPEN 24H</small></div>
-        </div>
-        <div className="is-tick"><span>{tick}{tick}</span></div>
-        <div className="is-dots">
-          {[0, 1, 2, 3, 4].map(n => (
-            <i key={n} style={{ ['--p' as string]: n < lit ? '100%' : n === lit ? `${((pct % 20) / 20) * 100}%` : '0%' } as React.CSSProperties} />
-          ))}
-          <span>{phase === 'load' || phase === 'pre' ? 'LOADING' : 'COMPLETE'}</span>
-        </div>
-        <button type="button" className="is-btn" style={{ ['--pw' as string]: `${pct}%` } as React.CSSProperties} tabIndex={phase === 'ready' ? 0 : -1}>
-          <span>{phase === 'ready' || phase === 'out' ? 'ENTER' : `LOADING ${pct}`}</span><em>→</em>
-        </button>
+    <div className={`intro-splash ${phase}`} style={vars} onClick={enter} role="dialog" aria-label="인트로">
+      {img && <div className="is-bgimg" style={{ backgroundImage: `url("${img}")` }} />}
+      <div className="is-dots" />
+      <div className="is-cloud" />
+      {DIAS.map((d, i) => <i key={i} className="is-dia" style={{ left: d.x, top: d.y, ['--s' as string]: `${d.s}px`, ['--d' as string]: d.d } as React.CSSProperties} />)}
+      <div className="is-obj"><i /><i /><i /><i /></div>
+      {STARS.map((t, i) => <i key={i} className="is-star" style={{ left: t.x, top: t.y, ['--d' as string]: t.d } as React.CSSProperties} />)}
+      <div className="is-center">
+        <div className="is-load">{ready ? 'CLICK TO ENTER' : 'LOADING…'}</div>
+        <div className="is-oval" />
+        <div className="is-pill"><i>{ready ? '→' : '·'}</i><span>{ready ? 'ENTER' : pct}</span></div>
+        <div className="is-name">{site.title}</div>
       </div>
     </div>
   );
