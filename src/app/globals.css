@@ -2782,40 +2782,45 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @keyframes rxGhost{from{opacity:0;transform:translateX(-50%) translateY(30px) scale(1.06);letter-spacing:.08em}to{opacity:1;transform:translateX(-50%);letter-spacing:-.02em}}
 .rx-grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:44px 0 52px}   /* 이전 목록과 같은 3열 */
 .rx-empty{grid-column:1/-1;text-align:center;color:var(--page-desc);font-size:13px}
-.rx-card{position:relative;aspect-ratio:4/3;background:#0b0d10;color:#fff;overflow:hidden;cursor:var(--cur-pointer,pointer);
+.rx-card{position:relative;container-type:inline-size;aspect-ratio:4/3;background:#0b0d10;color:#fff;overflow:hidden;cursor:var(--cur-pointer,pointer);
   border:1px solid color-mix(in srgb,var(--c1) 18%,rgba(255,255,255,.14));box-shadow:0 18px 40px rgba(0,0,0,.28);
   animation:rxCard .95s cubic-bezier(.2,.8,.2,1) calc(.45s + var(--i)*.14s) backwards;transition:transform .25s,box-shadow .25s,border-color .25s}
 .rx-card:hover{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c1) 70%,#fff);box-shadow:0 24px 50px rgba(0,0,0,.4),0 0 0 1px color-mix(in srgb,var(--c1) 45%,transparent)}
 .rx-card.priv{opacity:.5}
+.rx-card.rx-tall{aspect-ratio:auto;width:140px;height:230px}   /* 직접 지정한 관계(캐릭터)는 이전과 같은 세로 비율 */
+.rc-row>.rx-card{flex:none;width:210px;scroll-snap-align:start}
+.rc-row>.rx-card.rx-tall{width:140px}
+.rx-gal{display:grid;grid-template-columns:repeat(auto-fill,210px);gap:14px}
+.rx-veil{position:absolute;inset:0;z-index:4;display:grid;place-items:center;text-align:center;background:rgba(8,10,14,.72);backdrop-filter:blur(10px);font-size:12px;line-height:1.5}
+.rx-veil span{opacity:.7;font-size:10px}
+/* 서랍 안 카드는 순서 지연을 짧게 */
+.rx-d,.rx-d .rx-top,.rx-d .rx-bot,.rx-d .pt,.rx-d .pt-line line{animation-delay:calc(var(--i)*.07s + .1s)!important}
+@container (max-width:175px){.rx-file,.rx-meta em{display:none}}
 @keyframes rxCard{0%{opacity:0;clip-path:inset(0 0 100% 0);transform:translateY(34px)}60%{opacity:1}100%{opacity:1;clip-path:inset(0);transform:none}}
 .rx-art{position:absolute;inset:0;overflow:hidden}
 @keyframes rxDraw{to{stroke-dashoffset:0}}
-/* 페어 썸네일(.pt) — 크롭한 그림 위를 대각선으로 갈라, 한쪽은 같은 그림을 테마색(--tc) 단색조로 */
+/* 페어 썸네일(.pt) — 크롭한 그림 위에 테마색(--tc) 대각선 한 줄 */
 .pt{position:absolute;inset:0;overflow:hidden}
-.pt-base,.pt-half{position:absolute;inset:0}
-.pt-half{background:var(--tc);isolation:isolate;clip-path:polygon(58% 0,100% 0,100% 100%,38% 100%);transition:clip-path .45s cubic-bezier(.2,.8,.2,1)}
-.pt-half img{filter:grayscale(1) contrast(1.08);mix-blend-mode:luminosity}
-.pt:hover .pt-half,.rx-card:hover .pt-half,.rc-card:hover .pt-half{clip-path:polygon(66% 0,100% 0,100% 100%,46% 100%)}
-.pt-line{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pt-base,.pt-line{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .pt-line line{stroke-dasharray:1;stroke-dashoffset:1;animation:rxDraw 1s cubic-bezier(.6,0,.2,1) var(--pd,0s) forwards}
 .rx-card .pt{animation:rxZoom 1.5s cubic-bezier(.2,.8,.2,1) calc(.45s + var(--i)*.14s) both}
-.rx-card .ph,.rc-card .ph{position:absolute;inset:0;display:grid;place-items:center}
+.rx-card .ph{position:absolute;inset:0;display:grid;place-items:center}
 .rx-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,.55) 0%,rgba(6,8,11,0) 28%,rgba(6,8,11,0) 52%,rgba(6,8,11,.92) 100%)}
 .rx-corner{position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.55);z-index:3;pointer-events:none}
 .rx-corner.tr{right:10px;top:10px;border-width:1px 1px 0 0}
 .rx-corner.bl{left:10px;bottom:10px;border-width:0 0 1px 1px}
-.rx-top{position:absolute;left:18px;right:18px;top:16px;display:flex;align-items:flex-start;gap:10px;z-index:2;animation:rxFade .6s ease calc(.9s + var(--i)*.14s) both}
-.rx-no{font-size:calc(38px*var(--fs,1));font-weight:800;line-height:.9;letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.5)}
-.rx-file{font:700 8.5px/1.25 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:rgba(255,255,255,.75);margin-top:14px}
+.rx-top{position:absolute;left:5.2cqw;right:5.2cqw;top:4.6cqw;display:flex;align-items:flex-start;gap:10px;z-index:2;animation:rxFade .6s ease calc(.9s + var(--i)*.14s) both}
+.rx-no{font-size:max(17px,calc(11cqw*var(--fs,1)));font-weight:800;line-height:.9;letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.5)}
+.rx-file{font:700 max(6.5px,2.5cqw)/1.25 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:rgba(255,255,255,.75);margin-top:4cqw}
 .rx-meta{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:5px}
-.rx-meta b{font-size:calc(21px*var(--fs,1));font-weight:800;letter-spacing:.02em;line-height:1}
-.rx-meta em{font:700 8px/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:rgba(255,255,255,.6);font-style:normal}
-.rx-bot{position:absolute;left:18px;right:18px;bottom:20px;z-index:2;animation:rxFade .7s ease calc(1.05s + var(--i)*.14s) both}
-.rx-bot small{display:block;font:700 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.32em;color:rgba(255,255,255,.7);margin-bottom:8px;text-transform:uppercase;min-height:9px}
-.rx-bot h3{font-size:calc(19px*var(--fs,1));font-weight:800;letter-spacing:-.01em;line-height:1.15;word-break:keep-all;text-shadow:0 2px 12px rgba(0,0,0,.5);padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:8px}
-.rx-who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px;font:700 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:rgba(255,255,255,.88)}
+.rx-meta b{font-size:max(11px,calc(6.1cqw*var(--fs,1)));font-weight:800;letter-spacing:.02em;line-height:1}
+.rx-meta em{font:700 max(6px,2.3cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:rgba(255,255,255,.6);font-style:normal}
+.rx-bot{position:absolute;left:5.2cqw;right:5.2cqw;bottom:5.8cqw;z-index:2;animation:rxFade .7s ease calc(1.05s + var(--i)*.14s) both}
+.rx-bot small{display:block;font:700 max(7px,2.8cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.32em;color:rgba(255,255,255,.7);margin-bottom:8px;text-transform:uppercase;min-height:9px}
+.rx-bot h3{font-size:max(11px,calc(5.5cqw*var(--fs,1)));font-weight:800;letter-spacing:-.01em;line-height:1.15;word-break:keep-all;text-shadow:0 2px 12px rgba(0,0,0,.5);padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:8px}
+.rx-who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px;font:700 max(7px,2.6cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:rgba(255,255,255,.88)}
 .rx-who span{display:inline-flex;align-items:center;gap:6px}
-.rx-who i{width:7px;height:7px;transform:rotate(45deg);flex:none}
+.rx-who i{width:max(5px,2cqw);height:max(5px,2cqw);transform:rotate(45deg);flex:none}
 .rx-who u{text-decoration:none;opacity:.45;font-size:8px}
 .rx-foot{position:relative;display:flex;align-items:center;gap:16px;padding-top:12px;border-top:1px solid var(--rx-ln);animation:rxFade .6s ease 1s both}
 .rx-bar{width:62px;height:12px;background:repeating-linear-gradient(90deg,var(--page-desc) 0 1px,transparent 1px 3px,var(--page-desc) 3px 5px,transparent 5px 6px);opacity:.7}

@@ -756,6 +756,9 @@ export interface RelCardInfo {
   /** 자관 카드의 크롭·테마색 — 목록과 같은 썸네일(테마색 대각선)로 그리려는 값 */
   thumbCrop?: import("@/components/ui/CropEditor").CropValue;
   themeColor?: string;
+  /** 카드 표기용 — 꼬리표(CP·NCP·PAIR…)·멤버 수·소개 문구·멤버(이름·색) */
+  tag?: string; memberCount?: number; catchphrase?: string;
+  who?: { name: string; color: string }[];
   /** 'char' = 직접 지정한 관계(캐릭터) — 캐릭터 목록 썸네일과 같은 3:4 비율로 보인다. 페어·그룹(자관)은 기존 세로로 긴 카드 */
   shape?: 'char';
 }
@@ -781,6 +784,9 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
       href: `/rels/${r.slug ?? r.id}`,
       thumbCrop: r.thumbId ? r.thumbCrop : undefined,
       themeColor: r.themeMode === 'custom' && r.themeColor ? r.themeColor : undefined,
+      tag: r.cp === 'ncp' ? 'NCP' : r.cp === 'cp' ? 'CP' : r.kind === 'multi' ? 'MULTI' : 'PAIR',
+      memberCount: r.members.length, catchphrase: r.catchphrase,
+      who: r.members.map(m => ({ name: charOf(m.charId)?.name || '—', color: charOf(m.charId)?.color ?? '#666' })),
     };
     (isPair ? pairs : groups).push(card);
   }
@@ -792,7 +798,8 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
   for (const l of ch.relLinks ?? []) {
     const c = charOf(l.charId);
     if (!c || c.id === ch.id || !ok(c.visibility)) continue;
-    manual.push({ key: `link:${c.id}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass, href: charHref(c), shape: 'char' });
+    manual.push({ key: `link:${c.id}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass, href: charHref(c), shape: 'char',
+      who: [{ name: c.name, color: c.color }], themeColor: c.color });
   }
   if (manual.length) out.push({ name: '관계', cards: manual });
 

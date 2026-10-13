@@ -1,5 +1,5 @@
 'use client';
-// 페어 썸네일 — 크롭한 썸네일을 그대로 보여 주고, 그 위를 대각선으로 갈라 한쪽은 같은 그림을 「테마색 단색조」로 입힌다.
+// 페어 썸네일 — 크롭한 썸네일을 그대로 보여 주고, 그 위에 테마색 대각선 한 줄을 긋는다.
 // 페어 목록 · 캐릭터 상세 서랍(Relations·Gallery)이 같이 쓴다. 부모는 position:relative(또는 absolute) + overflow:hidden.
 import React from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
@@ -20,7 +20,6 @@ export function PairThumb({ fileRef, crop, ph, label, tc, delay = 0 }: {
   return (
     <div className="pt" style={{ '--tc': tc, '--pd': `${delay}s` } as React.CSSProperties}>
       <div className="pt-base"><CropImg src={url} crop={crop} /></div>
-      <div className="pt-half"><CropImg src={url} crop={crop} /></div>
       <svg className="pt-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <line x1="58" y1="0" x2="38" y2="100" stroke={tc} strokeWidth="1.4" vectorEffect="non-scaling-stroke" pathLength={1} />
       </svg>

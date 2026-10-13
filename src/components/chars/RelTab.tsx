@@ -3,30 +3,22 @@
 // 카드: 위쪽에 이미지, 왼쪽 위 꼬리표, 아래쪽 이름·영문(보조) — 누르면 그 자관/캐릭터 페이지로
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useBlobUrl } from '@/lib/blobStore';
 import type { RelCardInfo, RelGroupInfo } from '@/lib/charStore';
-import { PairThumb } from '@/components/rels/PairThumb';
+import { RxCard } from '@/components/rels/RxCard';
 
-function CardImg({ fileRef, ph }: { fileRef?: string; ph?: string }) {
-  const url = useBlobUrl(fileRef);
-  return <span className={`rc-img${url ? '' : ` ph ${ph ?? ''}`}`} style={url ? { backgroundImage: `url("${url}")` } : undefined} />;
-}
-
-function Card({ c }: { c: RelCardInfo }) {
+function Card({ c, no }: { c: RelCardInfo; no: number }) {
   const router = useRouter();
+  const isChar = c.shape === 'char';
+  const pad = (n: number) => String(n).padStart(2, '0');
   return (
-    <div className={`rc-card${c.shape === 'char' ? ' rc-char' : ''}`} role="link" tabIndex={0} onClick={() => router.push(c.href)}
-      onKeyDown={e => { if (e.key === 'Enter') router.push(c.href); }}>
-      {c.shape === 'char'
-        ? <CardImg fileRef={c.thumbRef} ph={c.thumbClass} />
-        : <PairThumb fileRef={c.thumbRef} crop={c.thumbCrop} ph={c.thumbClass} tc={c.themeColor ?? 'var(--accent,#7fd6d0)'} />}
-      <span className="rc-shade" />
-      {c.label && <span className="rc-label">{c.label}</span>}
-      <span className="rc-text">
-        <strong className="rc-name">{c.name}</strong>
-        {c.sub && <span className="rc-sub">{c.sub}</span>}
-      </span>
-    </div>
+    <RxCard drawer no={no} tall={isChar} fileRef={c.thumbRef} crop={c.thumbCrop} ph={c.thumbClass}
+      tc={c.themeColor ?? 'var(--accent,#7fd6d0)'}
+      tag={isChar ? c.label : c.tag} meta={isChar ? undefined : `${pad(c.memberCount ?? 0)} MEMBERS`}
+      fileText={isChar ? 'CHAR\nFILE' : 'PAIR\nFILE'}
+      small={isChar ? (c.sub ?? '') : (c.catchphrase ?? '').replace(/ /g, '')}
+      title={c.name} who={c.who ?? []}
+      tabIndex={0} onClick={() => router.push(c.href)}
+      onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') router.push(c.href); }} />
   );
 }
 
@@ -48,7 +40,7 @@ function Row({ cards }: { cards: RelCardInfo[] }) {
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
-  return <div className="rc-row" ref={ref}>{cards.map(c => <Card key={c.key} c={c} />)}</div>;
+  return <div className="rc-row" ref={ref}>{cards.map((c, i) => <Card key={c.key} c={c} no={i + 1} />)}</div>;
 }
 
 export function RelTab({ groups }: { groups: RelGroupInfo[] }) {

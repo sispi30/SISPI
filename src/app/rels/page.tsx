@@ -8,54 +8,31 @@ import { useLocalList } from '@/lib/postStore';
 import { Relation, REL_SEED, Character, CHAR_SEED, relPath } from '@/lib/charStore';
 import { SearchBar } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
-import { PairThumb, relThemeColor } from '@/components/rels/PairThumb';
+import { relThemeColor } from '@/components/rels/PairThumb';
+import { RxCard } from '@/components/rels/RxCard';
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useMainStore } from '@/lib/mainStore';
 import { useCardSort, mergeOrder } from '@/lib/cardSort';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-/** 카드 한 장 — 대표 아트를 한 번은 컬러로, 한 번은 흑백으로 겹쳐 대각선으로 가른다 (멤버 두 명이 나란히 선 느낌) */
+/** 카드 한 장 — 서랍의 Relations·Gallery와 같은 RxCard */
 function PairCard({ rel, no, locked, priv, members, onOpen, dragProps }: {
   rel: Relation; no: number; locked: boolean; priv: boolean;
   members: { name: string; color: string }[]; onOpen: () => void;
   dragProps: { style?: React.CSSProperties } & Record<string, unknown>;
 }) {
+  const c1 = members[0]?.color ?? '#7fd6d0';
   // 크롭한 썸네일(thumbId + thumbCrop)을 그대로 — 없을 때만 대표 아트
-  const useThumb = !!rel.thumbId;
   const ref = locked ? undefined : (rel.thumbId ?? rel.arts?.[0]);
-  const c1 = members[0]?.color ?? '#7fd6d0', c2 = members[1]?.color ?? c1;
-  const tc = relThemeColor(rel, c1);
   const tag = rel.cp === 'ncp' ? 'NCP' : rel.cp === 'cp' ? 'CP' : rel.kind === 'multi' ? 'MULTI' : 'PAIR';
-  const { style: dstyle, ...drest } = dragProps;
   return (
-    <div className={`rx-card${priv ? ' priv' : ''}`} {...drest} onClick={onOpen}
-      style={{ ['--i' as string]: no - 1, ['--c1' as string]: tc, ['--c2' as string]: c2, ...(dstyle ?? {}) } as React.CSSProperties}>
-      <div className="rx-art">
-        <PairThumb fileRef={ref} crop={useThumb ? rel.thumbCrop : undefined} ph={rel.thumbClass}
-          label={priv ? '나만보기' : locked ? '멤버공개' : 'NO ART'} tc={tc} delay={0.9 + (no - 1) * 0.14} />
-        <div className="rx-shade" />
-      </div>
-      <i className="rx-corner tr" /><i className="rx-corner bl" />
-      <div className="rx-top">
-        <span className="rx-no">{pad2(no)}</span>
-        <span className="rx-file">PAIR<br />FILE</span>
-        <span className="rx-meta"><b style={{ color: tc }}>{tag}</b><em>{pad2(rel.members.length)} MEMBERS</em></span>
-      </div>
-      <div className="rx-bot">
-        {rel.catchphrase && <small>{locked ? '' : rel.catchphrase.replace(/ /g, '')}</small>}
-        <h3>{rel.name}{rel.visibility === 'member' && <span className="pill" style={{ marginLeft: 8, verticalAlign: 'middle' }}>멤버</span>}</h3>
-        <div className="rx-who">
-          {members.slice(0, 3).map((m, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <u>×</u>}
-              <span><i style={{ background: m.color }} />{m.name.toUpperCase()}</span>
-            </React.Fragment>
-          ))}
-          {members.length > 3 && <u>+{members.length - 3}</u>}
-        </div>
-      </div>
-    </div>
+    <RxCard no={no} fileRef={ref} crop={rel.thumbId ? rel.thumbCrop : undefined} ph={rel.thumbClass}
+      phLabel={priv ? '나만보기' : locked ? '멤버공개' : 'NO ART'} tc={relThemeColor(rel, c1)}
+      tag={tag} meta={`${pad2(rel.members.length)} MEMBERS`}
+      small={locked ? '' : rel.catchphrase.replace(/ /g, '')} title={rel.name}
+      titleExtra={rel.visibility === 'member' ? <span className="pill" style={{ marginLeft: 8, verticalAlign: 'middle' }}>멤버</span> : undefined}
+      who={members.slice(0, 3)} whoMore={members.length - 3} priv={priv} onClick={onOpen} {...dragProps} />
   );
 }
 

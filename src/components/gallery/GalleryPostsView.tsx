@@ -8,7 +8,7 @@ import { useBlobUrl } from '@/lib/blobStore';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { CroppedBlobImg } from '@/components/ui/CropEditor';
 import { GalleryViewer } from '@/components/gallery/GalleryViewer';
-import { PairThumb } from '@/components/rels/PairThumb';
+import { RxCard } from '@/components/rels/RxCard';
 
 /** 갤러리 탭 내용 — TRPG 탭과 같은 방식으로 우측 패널만 교체해 보여준다 (v3.1).
  *  좌측 아이콘 탭·아트·상단 버튼은 그대로 PROFILE 화면과 같은 자리에 있다 */
@@ -63,6 +63,35 @@ export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn, accent }: {
   return (
     <>
       {/* 홈페이지 갤러리 게시판(/gallery)과 같은 카드 — 4:3 썸네일 + 제목 + 'N장 · 날짜', 3열 */}
+      {accent ? (
+        <div className="rx-gal">
+          {shown.map((p, i) => {
+            const folded = !!p.fold && !unveiled[p.id];
+            const small = [dateOf(p), p.from].filter(Boolean).join(' · ');
+            return (
+              <RxCard key={p.id} drawer no={i + 1} fileRef={p.images[0]?.ref} crop={p.images[0]?.crop} ph={ph}
+                tc={accent} tag="PHOTO" meta={`${String(p.images.length).padStart(2, '0')} IMAGES`} fileText={'GALLERY\nFILE'}
+                small={small} title={p.title}
+                who={(p.tags ?? []).slice(0, 3).map(t => ({ name: t, color: accent }))}
+                whoMore={Math.max(0, (p.tags ?? []).length - 3)}
+                priv={p.visibility !== 'public'}
+                tabIndex={0}
+                onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' && !folded) { if (p.type === 'single' && p.images.length > 0) setViewId(p.id); else setOpenId(p.id); } }}
+                onClick={() => {
+                  if (folded) return;
+                  if (p.type === 'single' && p.images.length > 0) setViewId(p.id);
+                  else setOpenId(p.id);
+                }}>
+                {folded && (
+                  <div className="rx-veil" onClick={e => { e.stopPropagation(); setUnveiled(u => ({ ...u, [p.id]: true })); }}>
+                    <div><b>{foldLabel(p)}</b><br /><span>클릭하여 표시</span></div>
+                  </div>
+                )}
+              </RxCard>
+            );
+          })}
+        </div>
+      ) : (
       <div className="g3">
         {shown.map(p => {
           const folded = !!p.fold && !unveiled[p.id];
@@ -75,9 +104,7 @@ export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn, accent }: {
               }}>
               <div className={`thumb ${folded ? 'veil' : ''}`}>
                 <div style={{ position: 'absolute', inset: 0 }}>
-                  {p.images[0] && (accent
-                    ? <PairThumb fileRef={p.images[0].ref} crop={p.images[0].crop} ph={ph} tc={accent} />
-                    : <CroppedBlobImg fileRef={p.images[0].ref} crop={p.images[0].crop} ph={ph} />)}
+                  {p.images[0] && <CroppedBlobImg fileRef={p.images[0].ref} crop={p.images[0].crop} ph={ph} />}
                 </div>
                 {folded && (
                   <div className="cover" onClick={e => { e.stopPropagation(); setUnveiled(u => ({ ...u, [p.id]: true })); }}>
@@ -97,6 +124,7 @@ export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn, accent }: {
           );
         })}
       </div>
+      )}
       {/* 갤러리 게시판 '단일' 글과 같은 전체화면 뷰어 */}
       {viewId && viewable.some(v => v.id === viewId) && (
         <GalleryViewer posts={viewable} postId={viewId}
