@@ -2817,15 +2817,16 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .rx-corner.bl{left:10px;bottom:10px;border-width:0 0 1px 1px}
 .rx-top{position:absolute;left:5.2cqw;right:5.2cqw;top:4.6cqw;display:flex;align-items:flex-start;gap:10px;z-index:2;animation:rxFade .6s ease calc(.9s + var(--i)*.14s) both}
 .rx-no{font-size:max(17px,calc(11cqw*var(--fs,1)));font-weight:800;line-height:.9;letter-spacing:-.02em;text-shadow:0 2px 2px rgba(0,0,0,.5)}
-.rx-file{font:700 max(6.5px,2.5cqw)/1.25 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:rgba(255,255,255,.75);margin-top:4cqw}
+.rx-file{font-weight:700;font-size:max(8px,2.8cqw);line-height:1.25;font-family:inherit;letter-spacing:.1em;color:rgba(255,255,255,.75);margin-top:4cqw}
 .rx-meta{margin-left:auto;text-align:right;display:flex;flex-direction:column;gap:5px}
 .rx-meta b{font-size:max(11px,calc(6.1cqw*var(--fs,1)));font-weight:800;letter-spacing:.02em;line-height:1}
-.rx-meta em{font:700 max(6px,2.3cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:rgba(255,255,255,.6);font-style:normal}
+.rx-meta em{font-weight:700;font-size:max(8px,2.6cqw);line-height:1;font-family:inherit;letter-spacing:.08em;color:rgba(255,255,255,.6);font-style:normal}
 .rx-bot{position:absolute;left:5.2cqw;right:5.2cqw;bottom:5.8cqw;z-index:2;animation:rxFade .7s ease calc(1.05s + var(--i)*.14s) both}
-.rx-bot small{display:block;font:700 max(7px,2.8cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.32em;color:rgba(255,255,255,.7);margin-bottom:8px;text-transform:uppercase;min-height:9px}
+.rx-bot small{display:block;font-weight:700;font-size:max(9px,3.2cqw);line-height:1;font-family:inherit;letter-spacing:.06em;color:rgba(255,255,255,.7);margin-bottom:8px;text-transform:uppercase;min-height:9px}
 .rx-bot h3{font-size:max(11px,calc(5.5cqw*var(--fs,1)));font-weight:800;letter-spacing:-.01em;line-height:1.15;word-break:keep-all;text-shadow:0 2px 2px rgba(0,0,0,.5);padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.22);margin-bottom:8px}
+.chars-grid .rx-bot h3{font-size:max(17px,calc(8.5cqw*var(--fs,1)))}   /* 캐릭터 목록 — 제목을 자관 목록만큼 키운다 */
 .g5:not(.chars-grid) .rx-bot h3{font-size:max(15px,calc(8cqw*var(--fs,1)))}   /* 리뷰 게시판 — 제목을 키운다 */
-.rx-who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px;font:700 max(7px,2.6cqw)/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:rgba(255,255,255,.88)}
+.rx-who{display:flex;flex-wrap:wrap;align-items:center;gap:6px 9px;font-weight:700;font-size:max(9px,3cqw);line-height:1;font-family:inherit;letter-spacing:.02em;color:rgba(255,255,255,.88)}
 .rx-who span{display:inline-flex;align-items:center;gap:6px}
 .rx-who i{width:max(5px,2cqw);height:max(5px,2cqw);transform:rotate(45deg);flex:none}
 .rx-who u{text-decoration:none;opacity:.45;font-size:8px}

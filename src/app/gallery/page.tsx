@@ -121,7 +121,7 @@ function BackupPageInner() {
                 small={fmtDate(p.madeDate ? p.madeDate + 'T00:00:00' : p.date)} title={p.title}
                 who={(p.tags ?? []).slice(0, 3).map(t => ({ name: t, color: 'var(--accent,#7fd6d0)' }))}
                 whoMore={Math.max(0, (p.tags ?? []).length - 3)}
-                style={{ aspectRatio: '16/9', ...((sort(i) as { style?: React.CSSProperties }).style ?? {}) }}
+                style={{ ...((sort(i) as { style?: React.CSSProperties }).style ?? {}) }}
                 onClick={() => { if (!folded && !editOn) openPost(p); }}
                 onContextMenu={(e: React.MouseEvent) => onCtx(e, p)}>
                 {folded && (
