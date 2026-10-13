@@ -15,6 +15,7 @@ import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useMainStore } from '@/lib/mainStore';
 import { useCardSort, mergeOrder } from '@/lib/cardSort';
 import { useMenuSettings, canGalleryWrite } from '@/lib/menuStore';
+import { RxCard } from '@/components/rels/RxCard';
 import { GalleryViewer } from '@/components/gallery/GalleryViewer';
 
 const FOLD_LABEL = { spoiler: '스포일러', adult: '수위 주의' };
@@ -113,32 +114,25 @@ function BackupPageInner() {
             const i = start + si;   // 정렬은 전체 기준 위치로
             const folded = p.fold && !unveiled[p.id];
             return (
-              <div key={p.id} className="panel g-item" {...sort(i)}
+              <RxCard key={p.id} {...(sort(i) as Record<string, unknown>)} no={(si % 6) + 1}
+                fileRef={p.images[0]} crop={p.thumbCrop} ph={p.phList[0] ?? 'cool'}
+                tc="var(--accent,#7fd6d0)" tag={p.type === 'single' ? 'SINGLE' : 'LOG'}
+                meta={`${String(count(p)).padStart(2, '0')} IMAGES`} fileText={'GALLERY\nFILE'}
+                small={fmtDate(p.madeDate ? p.madeDate + 'T00:00:00' : p.date)} title={p.title}
+                who={(p.tags ?? []).slice(0, 3).map(t => ({ name: t, color: 'var(--accent,#7fd6d0)' }))}
+                whoMore={Math.max(0, (p.tags ?? []).length - 3)}
+                style={{ aspectRatio: '363/332', ...((sort(i) as { style?: React.CSSProperties }).style ?? {}) }}
                 onClick={() => { if (!folded && !editOn) openPost(p); }}
-                onContextMenu={e => onCtx(e, p)}>
-                <div className={`thumb ${folded ? 'veil' : ''}`}>
-                  <div style={{ position: 'absolute', inset: 0 }}>
-                    <CroppedBlobImg fileRef={p.images[0]} crop={p.thumbCrop} ph={p.phList[0] ?? 'cool'} />
-                  </div>
-                  {/* 유형 뱃지(로그/단일 …)는 리스트에서 뺐다 (v2.0 사용자 요청) — 상세에는 그대로 */}
-                  {folded && (
-                    <div className="cover" onClick={e => { e.stopPropagation(); setUnveiled(u => ({ ...u, [p.id]: true })); }}>
-                      <div>
-                        <b>{p.fold!.type === 'custom' ? (p.fold!.label || '접힘') : FOLD_LABEL[p.fold!.type]}</b><br />
-                        <span>클릭하여 표시</span>
-                      </div>
+                onContextMenu={(e: React.MouseEvent) => onCtx(e, p)}>
+                {folded && (
+                  <div className="rx-veil" onClick={e => { e.stopPropagation(); setUnveiled(u => ({ ...u, [p.id]: true })); }}>
+                    <div>
+                      <b>{p.fold!.type === 'custom' ? (p.fold!.label || '접힘') : FOLD_LABEL[p.fold!.type]}</b><br />
+                      <span>클릭하여 표시</span>
                     </div>
-                  )}
-                </div>
-                <div className="info">
-                  <b>{p.title}</b>
-                  <small>
-                    {meta(p)}
-                    {/* 태그 (v2.0 사용자 요청) */}
-                    {(p.tags ?? []).map(t => <i key={t} className="tag-in">#{t}</i>)}
-                  </small>
-                </div>
-              </div>
+                  </div>
+                )}
+              </RxCard>
             );
           })}
         </div>

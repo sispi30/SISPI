@@ -9,7 +9,7 @@ import { Character, CHAR_SEED, charPath } from '@/lib/charStore';
 import { backend, isServerMode } from '@/lib/backend';
 import { useSectionParam, filterSection, sectionSetter, secQuery } from '@/lib/sectionStore';
 import { SearchBar, FitText } from '@/components/ui/Kit';
-import { CroppedBlobImg } from '@/components/ui/CropEditor';
+import { RxCard } from '@/components/rels/RxCard';
 
 import { useToast } from '@/components/ui/Toast';
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
@@ -68,20 +68,12 @@ function CharsInner() {
           const priv = c.visibility === 'private';
           const sp = sort(i) as { style?: React.CSSProperties };
           return (
-            <div key={c.id} className="char-card" {...sort(i)}
-              style={{ ...(priv ? { opacity: .45 } : undefined), ...sp.style }}
-              onClick={() => { if (!editOn) router.push(charPath(c)); }}>
-              <div className="thumb" style={{ position: 'relative' }}>
-                <CroppedBlobImg fileRef={c.arts?.[0] ?? c.thumbId} crop={c.thumbCrop} ph={c.thumbClass}
-                  label={priv ? '비공개' : '3:4'} />
-              </div>
-              <div className="nm">
-                {/* 리스트에서는 기본 폰트로 통일 — 개별 이름 폰트는 상세에서만 (사용자 확정).
-                    긴 이름은 두 줄로 갈라지지 않게 한 줄에 맞춰 줄인다 */}
-                <b style={{ minWidth: 0, flex: 1 }}><FitText>{c.name}</FitText></b>
-                <i style={{ background: c.color }} />
-              </div>
-            </div>
+            <RxCard key={c.id} {...(sort(i) as Record<string, unknown>)} no={(i % 10) + 1}
+              fileRef={c.arts?.[0] ?? c.thumbId} crop={c.thumbCrop} ph={c.thumbClass} phLabel={priv ? '비공개' : '3:4'}
+              tc={c.color || 'var(--accent,#7fd6d0)'} fileText={'CHARACTER\nFILE'} small={c.sub} title={c.name}
+              who={[{ name: '', color: c.color || 'var(--accent,#7fd6d0)' }]} priv={priv}
+              style={{ aspectRatio: '214/325', ...sp.style }}
+              onClick={() => { if (!editOn) router.push(charPath(c)); }} />
           );
         })}
         {visible.length === 0 && (
