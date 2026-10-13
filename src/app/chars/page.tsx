@@ -68,7 +68,7 @@ function CharsInner() {
           const priv = c.visibility === 'private';
           const sp = sort(i) as { style?: React.CSSProperties };
           return (
-            <RxCard key={c.id} {...(sort(i) as Record<string, unknown>)} no={(i % 10) + 1}
+            <RxCard key={c.id} {...(sort(i) as Record<string, unknown>)} no={i + 1} anim={i % 10}
               fileRef={c.arts?.[0] ?? c.thumbId} crop={c.thumbCrop} ph={c.thumbClass} phLabel={priv ? '비공개' : '3:4'}
               tc={c.color || 'var(--accent,#7fd6d0)'} fileText={'CHARACTER\nFILE'} small={c.sub} title={c.name}
               who={[{ name: '', color: c.color || 'var(--accent,#7fd6d0)' }]} priv={priv}

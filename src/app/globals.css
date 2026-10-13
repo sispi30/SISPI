@@ -2810,7 +2810,7 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .rx-card .ph{position:absolute;inset:0;display:grid;place-items:center}
 .rx-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 50%,rgba(6,8,11,.92) 100%);transition:opacity .3s}
 /* 캐릭터 목록은 평소엔 그라데이션 없이, 올렸을 때만 */
-.chars-grid .rx-shade{opacity:0}
+.chars-grid .rx-shade{opacity:0;background:linear-gradient(180deg,transparent 45%,color-mix(in srgb,var(--c1) 88%,#000) 100%)}
 .chars-grid .rx-card:hover .rx-shade{opacity:1}
 .rx-corner{position:absolute;width:12px;height:12px;border:0 solid rgba(255,255,255,.55);z-index:3;pointer-events:none}
 .rx-corner.tr{right:10px;top:10px;border-width:1px 1px 0 0}
