@@ -9,12 +9,15 @@ import { useRouter } from 'next/navigation';
 import { useSiteSettings } from '@/lib/siteStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { useMenuSettings, buildMenu } from '@/lib/menuStore';
+import { useStageFit } from '@/lib/stageFit';
 
 const SEEN = 'ohome.intro.seen';
 const LOAD_MS = 3200;
 
 export function IntroSplash() {
   const router = useRouter();
+  // 화면이 1920×1000보다 작으면 폭·높이 중 빡빡한 쪽에 맞춰 통째로 줄인다 (태블릿 가로에서 글씨·눈금이 겹치지 않게)
+  useStageFit({ name: 'intro', minWidth: 760, designH: 1000 });
   const [site, , loaded] = useSiteSettings();
   const [menuSet, , menuLoaded] = useMenuSettings();
   const [phase, setPhase] = useState<'load' | 'ready' | 'out' | 'gone'>('load');

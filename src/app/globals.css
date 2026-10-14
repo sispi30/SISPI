@@ -909,6 +909,11 @@ body.edit-on:not(.main-fixed) #appMain{overflow-x:auto}
   body.main-fixed #appMain{overflow:hidden;scrollbar-gutter:auto}
   body.main-fixed .page-main-wrap{padding-bottom:0}
   body.main-fixed .main-grid.abs{height:calc(100vh - 86px) !important}
+  /* 화면 맞춤 — 1920px보다 좁은 화면(태블릿 가로 등)에서는 1920px 기준 배치를 폭에 맞춰 같은 비율로 줄인다.
+     --ms-main(0~1)은 src/lib/stageFit.ts가 정한다. 편집모드는 좌표 계산을 위해 1:1 그대로.
+     캔버스 왼쪽 = (1920px 기준 400px) × 비율 / 높이는 줄이기 전 값으로 줘서 화면 아래까지 꽉 채운다 */
+  body.main-fixed.main-scaled:not(.edit-on) .page-main-wrap{min-width:0;margin-left:calc(400px * var(--ms-main) - 30px)}
+  body.main-fixed.main-scaled:not(.edit-on) .main-grid.abs{zoom:var(--ms-main);width:1120px;height:calc((100vh - 86px) / var(--ms-main)) !important}
 }
 /* 편집모드: 반응형 모드·좁은 창에서도 캔버스를 콘텐츠 1120px로 고정 —
    가운데 1fr 열이 항상 610px(10px 배수)이 되어 10px 격자가 정확히 맞음 */
@@ -2943,3 +2948,15 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 @media (max-width:760px){.is-ruler{top:auto;bottom:26%}.is-ghost.bot{bottom:13%}.is-lbl,.is-pct,.is-top,.is-br{display:none}.is-ghost{font-size:13vw}.is-nav{gap:12px;font-size:10px}}
 @media (prefers-reduced-motion:reduce){.is-sky,.is-sky *,.is-star,.is-star svg,.is-halo,.is-art,.is-nav,.is-lbl,.is-pct,.is-ghost,.is-mid .hint{animation:none!important}}
 
+/* 인트로 화면 맞춤 — 1920×1000보다 작은 화면에서는 통째로 줄인다(--ms-intro, src/lib/stageFit.ts).
+   zoom 안에서는 vw·vmin도 같이 줄어 두 번 줄어들므로, 1920 기준에서 상한(min/clamp)에 걸리던 값을 px로 고정한다 */
+@media (min-width:761px){
+  body.intro-scaled .intro-splash{zoom:var(--ms-intro)}
+  body.intro-scaled .is-halo,body.intro-scaled .is-art{width:420px}
+  body.intro-scaled .is-star{width:260px}
+  body.intro-scaled .is-lbl.l{right:calc(50% + 230px)}
+  body.intro-scaled .is-lbl.r{left:calc(50% + 230px)}
+  body.intro-scaled .is-mid{top:calc(50% + 186px)}
+  body.intro-scaled .is-ghost{font-size:150px}
+  body.intro-scaled .is-ruler{width:340px}
+}
