@@ -356,6 +356,12 @@ function DesignPane() {
         <IntroControls />
       </div>
 
+      {/* 크리스탈 별 — 메인 중앙에 놓이고 마우스를 따라 회전 */}
+      <div className="set-row" style={{ flexWrap: 'wrap' }}>
+        <div className="l"><b>크리스탈 별</b><small>메인 화면 한가운데에 수정 별이 놓이고, 마우스를 움직이는 대로 기울며 돕니다</small></div>
+        <CrystalControls />
+      </div>
+
       <div className="set-row">
         <div className="l"><b>상단메뉴</b></div>
         <div className="cp-group">
@@ -1432,6 +1438,26 @@ function FaviconControl() {
       {site.favicon && (
         <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
           onClick={() => set({ favicon: undefined })}>REMOVE</button>
+      )}
+    </div>
+  );
+}
+
+/** 크리스탈 별 설정 (드래프트 — 디자인 탭 SAVE로 확정) */
+function CrystalControls() {
+  const { site, set } = useSiteDraft();
+  const on = site.crystalStar !== false;
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1 }}>
+      <div className="mini-seg">
+        <button className={on ? 'on' : ''} onClick={() => set({ crystalStar: true })}>표시</button>
+        <button className={!on ? 'on' : ''} onClick={() => set({ crystalStar: false })}>숨김</button>
+      </div>
+      {on && (
+        <>
+          <span className="cp-lb">크기</span>
+          <KStep value={site.crystalSize ?? 100} min={30} max={160} step={10} suffix="%" onChange={v => set({ crystalSize: v })} />
+        </>
       )}
     </div>
   );

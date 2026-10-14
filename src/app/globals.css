@@ -2933,3 +2933,11 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @keyframes isFadeOut{to{opacity:0}}
 @media (max-width:760px){.is-ruler{top:auto;bottom:26%}.is-ghost.bot{bottom:13%}.is-lbl,.is-pct,.is-top,.is-br{display:none}.is-ghost{font-size:13vw}.is-nav{gap:12px;font-size:10px}}
 @media (prefers-reduced-motion:reduce){.is-sky,.is-sky *,.is-star,.is-star svg,.is-halo,.is-art,.is-nav,.is-lbl,.is-pct,.is-ghost,.is-mid .hint{animation:none!important}}
+
+/* ---------- 크리스탈 별 — 메인 한가운데, 마우스를 따라 기울고 돈다 (환경설정 > 디자인) ---------- */
+.crystal-star{position:fixed;left:50%;top:50%;width:var(--cs);aspect-ratio:1;transform:translate(-50%,-50%);z-index:3;pointer-events:none}
+.crystal-star .cs-halo{position:absolute;inset:-18%;border-radius:50%;background:radial-gradient(circle,rgba(150,200,255,.5) 0,rgba(70,120,220,.22) 38%,transparent 68%)}
+.crystal-star .cs-body{position:absolute;inset:0;will-change:transform;--sx:50%;--sy:50%;filter:drop-shadow(0 10px 26px rgba(40,90,200,.45))}
+.crystal-star svg{width:100%;height:100%;display:block;overflow:visible}
+.crystal-star .cs-sheen{position:absolute;inset:0;mix-blend-mode:screen;background:linear-gradient(115deg,transparent 28%,rgba(255,255,255,.65) 44%,rgba(255,214,150,.4) 50%,rgba(120,205,255,.45) 56%,transparent 72%);background-size:260% 260%;background-position:var(--sx) var(--sy)}
+@media (max-width:760px){.crystal-star{--cs:min(70vw,360px)!important}}

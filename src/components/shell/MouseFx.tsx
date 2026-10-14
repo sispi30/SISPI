@@ -72,9 +72,9 @@ export function MouseFx() {
     const onLineClick = (e: MouseEvent) => {
       if ((e as PointerEvent).pointerType === 'touch') return;
       const now = performance.now();
-      // 클릭한 자리 둘레에 밤하늘처럼 흩어진 작은 별들이 남아 깜빡인다
+      // 클릭 선 효과에는 둘레에 흩어지는 반짝이 없이 점과 선만 남긴다
       const dust: Dust[] = [];
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 0; i++) {
         const ang = Math.random() * Math.PI * 2, d = 14 + Math.random() * 54;
         dust.push({ dx: Math.cos(ang) * d, dy: Math.sin(ang) * d, r: 0.8 + Math.random() * 2.6,
           ph: Math.random() * 6.28, sp: 0.004 + Math.random() * 0.006, star: Math.random() < 0.45 });
