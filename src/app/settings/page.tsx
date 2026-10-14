@@ -37,7 +37,8 @@ import { useSections, sectionsOf, sectionMenuEntries, MAIN_SEC, inSection } from
 import { useCustomLinks, linkEntries, toInternalPath } from '@/lib/linkStore';
 import { useSiteDraft } from '@/lib/siteStore';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCursorSettings, CursorState, CURSOR_STATE_LABEL, DEFAULT_MOUSE_FX, normFx } from '@/lib/cursorStore';
+import { useCursorSettings, CursorState, CURSOR_STATE_LABEL, DEFAULT_MOUSE_FX, normFx, normSound, ClickSoundKind } from '@/lib/cursorStore';
+import { playBuiltIn } from '@/components/shell/ClickSound';
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { SymbolInput } from '@/components/ui/SymbolInput';
 import { allBlobs, putBlobAs, useBlobUrl, getBlob } from '@/lib/blobStore';
@@ -1642,8 +1643,65 @@ function CursorPane() {
         <KToggle checked={st.enabled} onChange={v => patch({ enabled: v })} />
       </div>
       <MouseFxRows />
+      <ClickSoundRows />
       {(Object.keys(CURSOR_STATE_LABEL) as CursorState[]).map(s => <CursorRow key={s} state={s} />)}
     </div>
+  );
+}
+
+/** 클릭 효과음 — 켜기/끄기 · 소리 고르기(기본 3가지 또는 직접 등록) · 볼륨 · 미리듣기 */
+function ClickSoundRows() {
+  const [st, patch] = useCursorSettings();
+  const toast = useToast();
+  const snd = normSound(st.sound);
+  const set = (x: Partial<typeof snd>) => patch({ sound: { ...snd, ...x } });
+  const ctx = useRef<AudioContext | null>(null);
+  const url = useBlobUrl(snd.file);
+  const preview = () => {
+    if (snd.kind === 'custom') {
+      if (!url) { toast('등록한 소리 파일이 없습니다'); return; }
+      const a = new Audio(url); a.volume = snd.volume / 100; void a.play().catch(() => toast('이 파일은 재생할 수 없습니다'));
+    } else playBuiltIn(ctx, snd.kind, snd.volume / 100);
+  };
+  const KINDS: { k: ClickSoundKind; l: string }[] = [{ k: 'tick', l: '틱' }, { k: 'pop', l: '팝' }, { k: 'chime', l: '차임' }, { k: 'custom', l: '내 소리' }];
+  return (
+    <>
+      <div className="set-row">
+        <div className="l"><b>클릭 효과음</b><small>마우스를 클릭할 때마다 짧은 소리가 납니다</small></div>
+        <KToggle checked={snd.on} onChange={v => set({ on: v })} />
+      </div>
+      {snd.on && (
+        <>
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>효과음 종류</b><small>기본 소리 3가지 중에서 고르거나, 내 소리 파일을 등록합니다 (mp3·wav·ogg 등)</small></div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              {KINDS.map(o => (
+                <button key={o.k} type="button" className={`btn ${snd.kind === o.k ? 'btn-dark' : 'btn-ghost'}`}
+                  style={{ height: 33, padding: '0 12px', fontSize: 11 }}
+                  onClick={() => { if (o.k === 'custom' && !snd.file) document.getElementById('clickSndFile')?.click(); else set({ kind: o.k }); }}>{o.l}</button>
+              ))}
+              <input id="clickSndFile" type="file" accept="audio/*" style={{ display: 'none' }}
+                onChange={async e => {
+                  const f = e.target.files?.[0];
+                  e.target.value = '';
+                  if (!f) return;
+                  if (f.size > 2 * 1024 * 1024) { toast('2MB 이하의 짧은 소리 파일을 올려 주세요'); return; }
+                  set({ file: await putBlob(f), kind: 'custom' });
+                }} />
+              {snd.file && <button type="button" className="btn btn-ghost" style={{ height: 33, padding: '0 12px', fontSize: 11 }}
+                onClick={() => document.getElementById('clickSndFile')?.click()}>파일 변경</button>}
+              {snd.file && <button type="button" className="btn btn-ghost" style={{ height: 33, padding: '0 12px', fontSize: 11 }}
+                onClick={() => set({ file: undefined, kind: snd.kind === 'custom' ? 'chime' : snd.kind })}>파일 삭제</button>}
+              <button type="button" className="btn btn-ghost" style={{ height: 33, padding: '0 12px', fontSize: 11 }} onClick={preview}>▶ 미리듣기</button>
+            </div>
+          </div>
+          <div className="set-row">
+            <div className="l"><b>효과음 볼륨</b><small>0~100</small></div>
+            <KStep value={snd.volume} min={0} max={100} step={5} onChange={v => set({ volume: v })} />
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
@@ -1655,6 +1713,19 @@ function MouseFxRows() {
   const setColor = (i: number, hex: string) => set({ colors: fx.colors.map((c, j) => (j === i ? hex : c)) });
   return (
     <>
+      <div className="set-row">
+        <div className="l"><b>클릭 링 효과</b><small>클릭한 자리에서 가운데 별이 톡 튀고, 얇은 링이 퍼지며, 작은 별 조각이 흩어집니다</small></div>
+        <KToggle checked={fx.burst} onChange={v => set({ burst: v })} />
+      </div>
+      <div className="set-row">
+        <div className="l"><b>링 효과 색</b><small>링과 작은 별 조각 색 · 가운데 별 색</small></div>
+        <div className="cp-group" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <ColorField value={fx.burstColor} onChange={hex => set({ burstColor: hex })} />
+          <ColorField value={fx.burstCore} onChange={hex => set({ burstCore: hex })} />
+          <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+            onClick={() => set({ burstColor: DEFAULT_MOUSE_FX.burstColor, burstCore: DEFAULT_MOUSE_FX.burstCore })}>기본색</button>
+        </div>
+      </div>
       <div className="set-row">
         <div className="l"><b>클릭 별 효과</b><small>클릭한 자리에서 ✦ 별이 떠오르며 사라집니다</small></div>
         <KToggle checked={fx.click} onChange={v => set({ click: v })} />

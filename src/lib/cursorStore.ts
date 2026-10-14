@@ -20,10 +20,14 @@ export interface MouseFxSettings {
   line: boolean;       // 클릭 선 효과 — 클릭한 자리끼리 가는 선으로 이어짐
   lineColor: string;   // 선·점 색
   lineLife: number;    // 선이 남아 있는 시간(초)
+  burst: boolean;      // 클릭 링 효과 — 가운데 별 + 퍼지는 링 + 흩어지는 작은 별
+  burstColor: string;  // 링·작은 별 색
+  burstCore: string;   // 가운데 별 색
 }
 export const DEFAULT_MOUSE_FX: MouseFxSettings = {
   click: true, trail: true, colors: ['#344ABD', '#1C55FF', '#2E3FAC'], count: 50,
   line: true, lineColor: '#6f6577', lineLife: 3,
+  burst: true, burstColor: '#6ee7b7', burstCore: '#ffffff',
 };
 export const normFx = (v?: Partial<MouseFxSettings> | null): MouseFxSettings => {
   const colors = Array.isArray(v?.colors) ? v!.colors!.filter(c => typeof c === 'string' && c.trim()) : [];
@@ -34,12 +38,27 @@ export const normFx = (v?: Partial<MouseFxSettings> | null): MouseFxSettings => 
     count: typeof v?.count === 'number' ? Math.max(5, Math.min(100, Math.round(v.count))) : DEFAULT_MOUSE_FX.count,
     line: typeof v?.line === 'boolean' ? v.line : DEFAULT_MOUSE_FX.line,
     lineColor: typeof v?.lineColor === 'string' && v.lineColor.trim() ? v.lineColor : DEFAULT_MOUSE_FX.lineColor,
+    burst: typeof v?.burst === 'boolean' ? v.burst : DEFAULT_MOUSE_FX.burst,
+    burstColor: typeof v?.burstColor === 'string' && v.burstColor.trim() ? v.burstColor : DEFAULT_MOUSE_FX.burstColor,
+    burstCore: typeof v?.burstCore === 'string' && v.burstCore.trim() ? v.burstCore : DEFAULT_MOUSE_FX.burstCore,
     lineLife: typeof v?.lineLife === 'number' ? Math.max(1, Math.min(10, Math.round(v.lineLife))) : DEFAULT_MOUSE_FX.lineLife,
   };
 };
 
+/** 클릭 효과음 — 기본 소리 3가지(코드로 만든 짧은 소리) 중 고르거나 직접 등록한 파일 */
+export type ClickSoundKind = 'tick' | 'pop' | 'chime' | 'custom';
+export interface ClickSoundSettings { on: boolean; kind: ClickSoundKind; volume: number; file?: string }
+export const DEFAULT_CLICK_SOUND: ClickSoundSettings = { on: false, kind: 'chime', volume: 50 };
+export const normSound = (v?: Partial<ClickSoundSettings> | null): ClickSoundSettings => ({
+  on: typeof v?.on === 'boolean' ? v.on : DEFAULT_CLICK_SOUND.on,
+  kind: v?.kind === 'tick' || v?.kind === 'pop' || v?.kind === 'chime' || v?.kind === 'custom' ? v.kind : DEFAULT_CLICK_SOUND.kind,
+  volume: typeof v?.volume === 'number' ? Math.max(0, Math.min(100, Math.round(v.volume))) : DEFAULT_CLICK_SOUND.volume,
+  file: typeof v?.file === 'string' && v.file ? v.file : undefined,
+});
+
 export interface CursorSettings {
   enabled: boolean;
+  sound?: ClickSoundSettings;
   states: Partial<Record<CursorState, CursorEntry>>;
   fx: MouseFxSettings;
 }
@@ -68,7 +87,7 @@ export function useCursorSettings(): [CursorSettings, (patch: Partial<CursorSett
     const load = () => {
       try {
         const raw = getRawSetting(KEY);
-        if (raw) { const j = JSON.parse(raw); setSt({ ...DEFAULT_CURSOR_SETTINGS, ...j, fx: normFx(j?.fx) }); }
+        if (raw) { const j = JSON.parse(raw); setSt({ ...DEFAULT_CURSOR_SETTINGS, ...j, fx: normFx(j?.fx), sound: normSound(j?.sound) }); }
       } catch { /* 기본값 */ }
     };
     load();

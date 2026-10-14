@@ -20,7 +20,7 @@ export function MouseFx() {
 
   useEffect(() => {
     if (typeof window === 'undefined' || !loaded) return;
-    if (!fx.click && !fx.trail && !fx.line) return;
+    if (!fx.click && !fx.trail && !fx.line && !fx.burst) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     const COLORS = colorKey.split('|');
     const pick = () => COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -143,6 +143,28 @@ export function MouseFx() {
     const style = document.createElement('style');
     style.textContent = '.mfx-star{width:16px;height:16px;position:fixed;pointer-events:none;'
       + 'clip-path:polygon(50% 0%,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0% 50%,42% 42%)}';
+    // 클릭 링 효과 — 가운데 ✦ 별이 톡 튀고, 얇은 링이 퍼지며, 작은 별 조각이 둘레로 흩어진다
+    const SP = 'polygon(50% 0%,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0% 50%,42% 42%)';
+    style.textContent += `.mfx-b{position:fixed;width:0;height:0;pointer-events:none}`
+      + `.mfx-b i{position:absolute;display:block;left:0;top:0}`
+      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1.5px solid var(--bc);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
+      + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;background:var(--bk);clip-path:${SP};filter:drop-shadow(0 0 4px var(--bk));animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
+      + `.mfx-b .sp{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--bc);clip-path:${SP};animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
+      + `@keyframes mfxRg{0%{opacity:0;transform:scale(.3)}25%{opacity:.9}100%{opacity:0;transform:scale(1.25)}}`
+      + `@keyframes mfxCo{0%{opacity:0;transform:scale(.2) rotate(0)}30%{opacity:1;transform:scale(1) rotate(45deg)}100%{opacity:0;transform:scale(.15) rotate(90deg)}}`
+      + `@keyframes mfxSp{0%{opacity:0;transform:rotate(var(--a)) translateY(-14px) scale(.3)}25%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(-32px) scale(.9) rotate(180deg)}}`;
+    const onBurst = (e: MouseEvent) => {
+      if ((e as PointerEvent).pointerType === 'touch') return;
+      const b = document.createElement('div');
+      b.className = 'mfx-b';
+      b.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--bc:${fx.burstColor};--bk:${fx.burstCore}`;
+      let h = '<i class="rg"></i><i class="co"></i>';
+      const n = 6, off = Math.random() * 60;
+      for (let i = 0; i < n; i++) h += `<i class="sp" style="--a:${Math.round(off + i * 360 / n)}deg;animation-delay:${(i % 3) * 30}ms"></i>`;
+      b.innerHTML = h;
+      box.appendChild(b);
+      setTimeout(() => b.remove(), 900);
+    };
     document.head.appendChild(style);
 
     const stars: ClickStar[] = [];
@@ -223,11 +245,13 @@ export function MouseFx() {
     };
     raf = requestAnimationFrame(loop);
 
+    if (fx.burst) window.addEventListener('click', onBurst);
     if (fx.click) window.addEventListener('click', onClick);
     if (fx.line) window.addEventListener('click', onLineClick);
     if (fx.trail) window.addEventListener('pointermove', onMove, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
+      window.removeEventListener('click', onBurst);
       window.removeEventListener('click', onClick);
       window.removeEventListener('click', onLineClick);
       window.removeEventListener('resize', resize);
@@ -236,7 +260,7 @@ export function MouseFx() {
       style.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, fx.click, fx.trail, fx.count, colorKey, fx.line, fx.lineColor, fx.lineLife]);
+  }, [loaded, fx.click, fx.trail, fx.count, colorKey, fx.line, fx.lineColor, fx.lineLife, fx.burst, fx.burstColor, fx.burstCore]);
 
   return null;
 }
