@@ -2877,9 +2877,6 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .is-star::before{content:"";position:absolute;inset:-30%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55) 0,color-mix(in srgb,var(--is-ac) 55%,transparent) 28%,transparent 62%);pointer-events:none;transition:opacity .3s}
 .is-star{border-radius:50%}
 .is-star.on{cursor:var(--cur-pointer,pointer)}
-.is-star.on:hover::before{opacity:1;background:radial-gradient(circle,color-mix(in srgb,var(--is-ac) 70%,#fff) 0,color-mix(in srgb,var(--is-ac) 80%,transparent) 30%,transparent 64%)}
-.is-star.on:hover path{fill:color-mix(in srgb,var(--is-ac) 35%,#fff)}
-.is-star path{transition:fill .25s}
 .is-star g{transform-box:view-box;transform-origin:0 0}
 .is-star path{fill:#fff}
 .intro-splash.ready .is-star svg{animation:isPulse 3s ease-in-out infinite}
@@ -2902,8 +2899,9 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .is-lbl.l{right:calc(50% + min(24vmin,230px))}.is-lbl.r{left:calc(50% + min(24vmin,230px))}
 .is-mid{position:absolute;left:0;right:0;top:calc(50% + min(18vmin,170px));display:grid;justify-items:center;z-index:3}
 .is-mid .acc{display:grid;justify-items:center;gap:10px;min-height:40px}
-.is-mid .chip{font:800 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;padding:8px 14px;border:1px solid #fff;color:#fff;background:rgba(5,7,22,.55);cursor:var(--cur-pointer,pointer);transition:background .25s,border-color .25s,color .25s,box-shadow .25s;animation:isChip .6s ease both}
-.is-mid .chip:hover,.is-mid .chip:focus-visible{background:var(--is-ac);border-color:var(--is-ac);color:#fff;box-shadow:0 0 18px color-mix(in srgb,var(--is-ac) 70%,transparent)}
+.is-mid .chip{font:800 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;padding:8px 14px;border:1px solid var(--is-ac);color:var(--is-ac);background:rgba(255,255,255,.14);cursor:var(--cur-pointer,pointer);transition:background .25s,border-color .25s,color .25s,box-shadow .25s;animation:isChip .6s ease both}
+.is-mid .chip:focus-visible{background:var(--is-ac);border-color:var(--is-ac);color:#fff;box-shadow:0 0 18px color-mix(in srgb,var(--is-ac) 70%,transparent)}
+@media (hover:hover){.is-mid .chip:hover{background:var(--is-ac);border-color:var(--is-ac);color:#fff;box-shadow:0 0 18px color-mix(in srgb,var(--is-ac) 70%,transparent)}}
 .is-mid .hint{font:700 8px/1 ui-monospace,Menlo,monospace;letter-spacing:.4em;color:color-mix(in srgb,var(--is-fg) 70%,transparent);animation:isBlink 2.4s ease-in-out infinite}
 .is-top{position:absolute;left:34px;top:48px;font:500 8px/1.7 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:color-mix(in srgb,var(--is-fg) 45%,transparent)}
 .is-top ul{list-style:none;margin:0;padding:0}.is-top li.on{color:#fff}
@@ -2932,5 +2930,5 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @keyframes isZoomC{to{transform:translate(-50%,-50%) scale(3)}}
 @keyframes isArtIn{to{transform:translate(-50%,-50%) scale(6);opacity:var(--is-op,1)}}
 @keyframes isFadeOut{to{opacity:0}}
-@media (max-width:760px){.is-lbl,.is-pct,.is-top,.is-br{display:none}.is-ghost{font-size:13vw}.is-nav{gap:12px;font-size:10px}}
+@media (max-width:760px){.is-ruler{bottom:26%}.is-ghost.bot{bottom:13%}.is-lbl,.is-pct,.is-top,.is-br{display:none}.is-ghost{font-size:13vw}.is-nav{gap:12px;font-size:10px}}
 @media (prefers-reduced-motion:reduce){.is-sky,.is-sky *,.is-star,.is-star svg,.is-halo,.is-art,.is-nav,.is-lbl,.is-pct,.is-ghost,.is-mid .hint{animation:none!important}}
