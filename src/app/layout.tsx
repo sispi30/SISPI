@@ -33,7 +33,7 @@ import { siteMeta } from '@/lib/siteMeta';
  * 여기서 같은 설정을 한 번 읽어 제목을 맞춘다 (읽기 실패하면 기본값).
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const { title, subtitle, crawlDesc, favicon } = await siteMeta();
+  const { title, subtitle, crawlDesc, favicon, appIcon } = await siteMeta();
   // 크롤링 설명 문구 (v2.0 사용자 요청) — 환경설정에서 직접 지정 > 서브타이틀 > 기본 문구
   const description = crawlDesc?.trim() || subtitle?.trim() || '자캐놀이용 개인 아카이브';
   return {
@@ -41,7 +41,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     // 탭 아이콘 (v2.0 사용자 요청) — 지정했으면 기본 favicon.ico 대신 그것을 쓴다.
     // 지정이 없으면 icons를 아예 넣지 않아 Next의 기본 파일 처리를 그대로 둔다
-    ...(favicon ? { icons: { icon: favicon } } : {}),
+    // 어플 아이콘 — 아이폰 「홈 화면에 추가」는 매니페스트 대신 애플 터치 아이콘을 쓴다 (환경설정 > 어플 아이콘)
+    ...(favicon || appIcon ? { icons: { ...(favicon ? { icon: favicon } : {}), ...(appIcon ? { apple: appIcon } : {}) } } : {}),
     openGraph: { title, description, type: 'website' },
     twitter: { card: 'summary', title, description },
   };

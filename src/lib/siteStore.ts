@@ -17,6 +17,9 @@ export interface SiteSettings {
   // 브라우저 탭 아이콘 (v2.0 사용자 요청) — 비우면 기본 아이콘.
   // 서버 모드면 저장소 주소라 서버 메타데이터에도 그대로 실리고, 로컬 모드면 파일 id라 화면에서만 붙는다
   favicon?: string;
+  // 어플(홈 화면 추가) 아이콘 — 비우면 배포 기본 아이콘(public/icon-192.png·icon-512.png).
+  // 매니페스트·애플 터치 아이콘은 서버가 만들므로 favicon과 같이 저장소 주소일 때만 반영된다
+  appIcon?: string;
   // 인트로(로딩 후 입장) 화면 — false면 끈다. 없으면 켜짐 (한 탭에서 한 번만 표시)
   crystalStar?: boolean;     // (사용 안 함 — 크리스탈 별 기능 제거됨. 이전 파일이 남아 있어도 빌드가 깨지지 않게 자리만 유지)
   crystalSize?: number;      // (사용 안 함)
