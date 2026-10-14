@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { siteMeta } from '@/lib/siteMeta';
+import { appIconSrc } from '@/lib/appIcon';
 
 // manifest.ts는 기본이 **캐시된 라우트**라 빌드 때 만든 결과가 그대로 나간다 —
 // 환경설정에서 어플 아이콘·사이트 제목을 바꿔도 다시 배포하기 전에는 반영되지 않았다.
@@ -18,12 +19,13 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#22272e',
-    // 환경설정에서 어플 아이콘을 지정했으면 그것을(같은 그림을 두 크기로 선언 — 브라우저가 맞춰 줄인다),
+    // 환경설정에서 어플 아이콘을 지정했으면 그것을 — 저장소 주소를 그대로 적지 않고, 같은 출처의
+    // /api/app-icon 이 정확한 크기의 PNG로 맞춰 내준다(안 그러면 크롬이 「설치할 수 없습니다」로 본다).
     // 없으면 배포 기본 아이콘
     icons: appIcon
       ? [
-        { src: appIcon, sizes: '192x192', purpose: 'any' },
-        { src: appIcon, sizes: '512x512', purpose: 'any' },
+        { src: appIconSrc(192, appIcon), sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: appIconSrc(512, appIcon), sizes: '512x512', type: 'image/png', purpose: 'any' },
       ]
       : [
         { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },

@@ -26,6 +26,7 @@ import { PageFrame } from '@/lib/pageRefresh';
 import { MenuGuard } from '@/components/shell/MenuGuard';
 import { ServerBoot } from '@/components/shell/ServerBoot';
 import { siteMeta } from '@/lib/siteMeta';
+import { appIconSrc } from '@/lib/appIcon';
 
 // 서버가 읽은 사이트 설정(제목·아이콘)이 배포 때 굳지 않고 5분마다 갱신되게
 export const revalidate = 300;
@@ -45,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
     // 탭 아이콘 (v2.0 사용자 요청) — 지정했으면 기본 favicon.ico 대신 그것을 쓴다.
     // 지정이 없으면 icons를 아예 넣지 않아 Next의 기본 파일 처리를 그대로 둔다
     // 어플 아이콘 — 아이폰 「홈 화면에 추가」는 매니페스트 대신 애플 터치 아이콘을 쓴다 (환경설정 > 어플 아이콘)
-    ...(favicon || appIcon ? { icons: { ...(favicon ? { icon: favicon } : {}), ...(appIcon ? { apple: appIcon } : {}) } } : {}),
+    ...(favicon || appIcon ? { icons: { ...(favicon ? { icon: favicon } : {}), ...(appIcon ? { apple: appIconSrc(180, appIcon) } : {}) } } : {}),
     openGraph: { title, description, type: 'website' },
     twitter: { card: 'summary', title, description },
   };
