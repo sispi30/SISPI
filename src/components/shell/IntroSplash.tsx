@@ -20,6 +20,32 @@ export function IntroSplash() {
   const [phase, setPhase] = useState<'load' | 'ready' | 'out' | 'gone'>('load');
   const [pct, setPct] = useState(0);
   const raf = useRef(0);
+  const starRef = useRef<SVGGElement>(null);
+  const aim = useRef({ target: 0, cur: 0, last: 0, init: false });
+
+  // 별은 저절로 돌지 않고 마우스(손가락)가 움직이는 방향을 따라 부드럽게 돈다
+  useEffect(() => {
+    if (phase === 'gone') return;
+    const mv = (e: PointerEvent) => {
+      const a = Math.atan2(e.clientY - innerHeight / 2, e.clientX - innerWidth / 2) * 180 / Math.PI;
+      const m = aim.current;
+      if (!m.init) { m.init = true; m.last = a; m.target = m.cur = a; return; }
+      let d = a - m.last; // 반 바퀴 넘게 튀지 않게 이어 붙인다
+      while (d > 180) d -= 360;
+      while (d < -180) d += 360;
+      m.last = a; m.target += d;
+    };
+    window.addEventListener('pointermove', mv);
+    let id = 0;
+    const loop = () => {
+      const m = aim.current;
+      m.cur += (m.target - m.cur) * 0.06;
+      if (starRef.current) starRef.current.style.transform = `rotate(${m.cur}deg)`;
+      id = requestAnimationFrame(loop);
+    };
+    id = requestAnimationFrame(loop);
+    return () => { window.removeEventListener('pointermove', mv); cancelAnimationFrame(id); };
+  }, [phase]);
   const img = useBlobUrl(site.introImage);
 
   useEffect(() => {
@@ -82,6 +108,9 @@ export function IntroSplash() {
     ['--is-bgc' as string]: bgc,
     ...(site.introDot ? { ['--is-ac' as string]: site.introDot } : {}),
     ...(site.introGold ? { ['--is-gold' as string]: site.introGold } : {}),
+    ...(site.introSpark ? { ['--is-sp' as string]: site.introSpark } : {}),
+    ...(site.introTop ? { ['--is-top' as string]: site.introTop } : {}),
+    ...(site.introPct ? { ['--is-pc' as string]: site.introPct } : {}),
     ...(site.introFg ? { ['--is-fg' as string]: site.introFg } : {}),
     ['--is-op' as string]: (site.introImageOp ?? 100) / 100,
     ['--is-p' as string]: `${pct}%`,
@@ -141,7 +170,7 @@ export function IntroSplash() {
       </svg>
       <div className="is-halo" />
       <div className="is-star" aria-hidden="true">
-        <svg viewBox="-100 -100 200 200"><path fillRule="evenodd" transform="rotate(-32)" d="M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z" /></svg>
+        <svg viewBox="-100 -100 200 200"><g ref={starRef}><path fillRule="evenodd" transform="rotate(-32)" d="M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z" /></g></svg>
       </div>
       <i className="is-frame" />
       <i className="is-cn tl" /><i className="is-cn tr" /><i className="is-cn bl" /><i className="is-cn br" />

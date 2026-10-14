@@ -24,6 +24,9 @@ export interface SiteSettings {
   introBg2?: string;         // 그라데이션 끝색 (비우면 단색)
   introDot?: string;         // 점무늬·장식 색
   introFg?: string;          // 글씨 색
+  introSpark?: string;       // 반짝이는 장식 색
+  introTop?: string;         // 위쪽 큰 글자 색
+  introPct?: string;         // 로딩 퍼센트 글자 색
   introGold?: string;        // 움직이는 천체(행성·금빛 고리) 색
   introImage?: string;       // 바탕 이미지 (파일 id 또는 주소) — 있으면 색 위에 깐다
   introImageOp?: number;     // 바탕 그림 밝기 % (기본 100)

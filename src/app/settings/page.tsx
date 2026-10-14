@@ -1465,6 +1465,12 @@ function IntroControls() {
           <ColorField value={site.introFg ?? '#d9dce2'} onChange={hex => set({ introFg: hex })} />
           <span className="cp-lb">천체 색</span>
           <ColorField value={site.introGold ?? '#e6b772'} onChange={hex => set({ introGold: hex })} />
+          <span className="cp-lb">반짝이 색</span>
+          <ColorField value={site.introSpark ?? '#ffffff'} onChange={hex => set({ introSpark: hex })} />
+          <span className="cp-lb">위 글자 색</span>
+          <ColorField value={site.introTop ?? '#ffffff'} onChange={hex => set({ introTop: hex })} />
+          <span className="cp-lb">로딩 글자 색</span>
+          <ColorField value={site.introPct ?? '#ffffff'} onChange={hex => set({ introPct: hex })} />
           <input id="introBgFile" type="file" accept="image/*" style={{ display: 'none' }}
             onChange={async e => {
               const f = e.target.files?.[0];
@@ -1501,7 +1507,7 @@ function IntroControls() {
               style={{ width: 190, height: 35, boxSizing: 'border-box' }} />
           </div>
           <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
-            onClick={() => set({ introBg: undefined, introBg2: undefined, introDot: undefined, introFg: undefined, introGold: undefined, introImage: undefined, introImageOp: undefined, introT1: undefined, introT2: undefined, introT3: undefined, introKick: undefined, introSub: undefined })}>RESET</button>
+            onClick={() => set({ introBg: undefined, introBg2: undefined, introDot: undefined, introFg: undefined, introGold: undefined, introSpark: undefined, introTop: undefined, introPct: undefined, introImage: undefined, introImageOp: undefined, introT1: undefined, introT2: undefined, introT3: undefined, introKick: undefined, introSub: undefined })}>RESET</button>
         </>
       )}
     </div>
