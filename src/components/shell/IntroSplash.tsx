@@ -88,29 +88,59 @@ export function IntroSplash() {
   const log = [`BOOT ${title}.OS 4.1.7`, 'MOUNT /ARCHIVE/MAIN', 'HANDSHAKE ........ OK', `TRACE ${title}-2`, 'AWAIT CREDENTIAL'];
   const shown = Math.min(log.length, 1 + Math.floor(pct / 22));
   const SP: [number, number, number][] = [[88, 242, 5], [138, 103, 4], [78, 388, 4], [103, 534, 4], [1112, 52, 3], [1203, 330, 4], [1190, 478, 3], [1142, 616, 4], [1226, 660, 4], [290, 86, 3], [980, 150, 3], [420, 640, 3]];
-  const RINGS = [96, 138, 182, 232, 282, 336, 392, 452, 520];
+  // 별자리 선 — 고리 사이 띠에 흩어 놓은 가는 선 (고정 값)
+  const CONS = [
+    '470,214 520,192 566,214 590,176', '760,200 812,230 850,214 884,252', '905,352 940,392 912,440 936,480',
+    '742,566 700,540 650,572 604,548', '420,470 466,512 440,556', '392,330 430,296 408,254',
+    '560,128 604,96 650,118', '830,520 790,556 744,540',
+  ];
+  const PL = [
+    { r: 300, s: 9, a: 0, t: 400, c: '#f1b866' }, { r: 300, s: 8, a: 38, t: 400, c: '#f1b866', half: true }, { r: 300, s: 8, a: 82, t: 400, c: '#f1b866', ring: true },
+    { r: 268, s: 13, a: -24, t: 46, c: '#f2a95a' }, { r: 246, s: 7, a: 52, t: 60, c: '#f4d79a' },
+    { r: 218, s: 9, a: -62, t: 78, c: '#f1d9a8', rev: true }, { r: 168, s: 8, a: -108, t: 95, c: '#d9c9a3' },
+  ];
   return (
     <div className={`intro-splash ${phase}`} style={vars} onClick={() => enter()} role="dialog" aria-label="인트로">
       {img && <div className="is-art" style={{ backgroundImage: `url("${img}")` }} />}
       <svg className="is-sky" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <g className="rings">
-          {RINGS.map((r, i) => <circle key={r} cx="640" cy="360" r={r} style={{ ['--d' as string]: `${i * 0.08}s` }} />)}
-          <circle className="dash" cx="640" cy="360" r="205" />
+          <circle cx="640" cy="360" r="332" style={{ ['--d' as string]: '0s' }} />
+          <circle cx="640" cy="360" r="324" className="th" style={{ ['--d' as string]: '.08s' }} />
+          <circle cx="640" cy="360" r="312" className="tick" style={{ ['--d' as string]: '.16s' }} />
+          <circle cx="640" cy="360" r="296" className="gd" style={{ ['--d' as string]: '.24s' }} />
+          <circle cx="640" cy="360" r="268" style={{ ['--d' as string]: '.32s' }} />
+          <circle cx="640" cy="360" r="246" className="dot" style={{ ['--d' as string]: '.4s' }} />
+          <circle cx="640" cy="360" r="218" style={{ ['--d' as string]: '.48s' }} />
+          <circle cx="640" cy="360" r="196" className="dash" />
+          <circle cx="640" cy="360" r="168" className="th" style={{ ['--d' as string]: '.56s' }} />
+          <circle cx="640" cy="360" r="132" className="gd" style={{ ['--d' as string]: '.64s' }} />
         </g>
         <g className="rays">
-          {[8, 33, 58, 81, 104, 127, 152].map(a => <line key={a} x1="-200" y1="360" x2="1480" y2="360" transform={`rotate(${a} 640 360)`} />)}
+          {Array.from({ length: 12 }, (_, i) => <line key={i} x1="640" y1="228" x2="640" y2="28" transform={`rotate(${i * 30 + 7} 640 360)`} />)}
+        </g>
+        <g className="cons">
+          {CONS.map((d, i) => <polyline key={i} points={d} />)}
         </g>
         <g className="orbs">
           <ellipse cx="640" cy="360" rx="700" ry="150" transform="rotate(-17 640 360)" className="gold" />
           <ellipse cx="640" cy="360" rx="720" ry="210" transform="rotate(14 640 360)" />
-          <g className="spin"><circle cx="640" cy="154" r="4.5" className="pt" /></g>
-          <g className="spin r"><circle cx="640" cy="196" r="3" className="pt" /></g>
+        </g>
+        <g className="planets">
+          {PL.map((p, i) => (
+            <g key={i} transform={`rotate(${p.a} 640 360)`}>
+              <g className={`spin${p.rev ? ' r' : ''}`} style={{ animationDuration: `${p.t}s` }}>
+                {p.half
+                  ? <><circle cx="640" cy={360 - p.r} r={p.s} className="pl ln" /><path d={`M640 ${360 - p.r - p.s}A${p.s} ${p.s} 0 0 1 640 ${360 - p.r + p.s}Z`} className="pl" /></>
+                  : <circle cx="640" cy={360 - p.r} r={p.s} className={`pl${p.ring ? ' ln' : ''}`} style={{ fill: p.ring ? 'none' : p.c }} />}
+              </g>
+            </g>
+          ))}
         </g>
         {SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={`M${x} ${y - r * 2}Q${x} ${y} ${x + r * 2} ${y}Q${x} ${y} ${x} ${y + r * 2}Q${x} ${y} ${x - r * 2} ${y}Q${x} ${y} ${x} ${y - r * 2}Z`} />)}
       </svg>
       <div className="is-halo" />
       <div className="is-star" aria-hidden="true">
-        <svg viewBox="-100 -100 200 200"><path d="M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96Z" transform="rotate(-32)" /><path d="M0 -30Q3 -3 30 0Q3 3 0 30Q-3 3 -30 0Q-3 -3 0 -30Z" className="in" /></svg>
+        <svg viewBox="-100 -100 200 200"><path fillRule="evenodd" transform="rotate(-32)" d="M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z" /></svg>
       </div>
       <i className="is-frame" />
       <i className="is-cn tl" /><i className="is-cn tr" /><i className="is-cn bl" /><i className="is-cn br" />
