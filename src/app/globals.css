@@ -2886,7 +2886,7 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .is-cn.bl{left:5px;bottom:5px;border-width:0 0 2px 2px}.is-cn.br{right:5px;bottom:5px;border-width:0 2px 2px 0}
 .is-ghost{position:absolute;left:0;right:0;text-align:center;white-space:nowrap;font-family:'Cinzel','Trajan Pro','Times New Roman',serif;font-weight:400;font-size:clamp(44px,9.4vw,150px);letter-spacing:.06em;line-height:1;text-transform:uppercase;pointer-events:none;animation:isFadeIn 1.4s ease .2s both}
 .is-ghost.top{top:-.18em;color:transparent;background:linear-gradient(180deg,var(--is-top),color-mix(in srgb,var(--is-top) 10%,transparent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;opacity:.85}
-.is-ghost.bot{bottom:-.22em;display:grid;justify-items:center}
+.is-ghost.bot{bottom:1vh;display:grid;justify-items:center}
 .is-ghost.bot>span{grid-area:1/1}
 .is-ghost.bot .o{color:transparent;-webkit-text-stroke:1.5px color-mix(in srgb,var(--is-fg) 55%,transparent)}
 .is-ghost.bot .fill{background:linear-gradient(180deg,color-mix(in srgb,var(--is-ac) 30%,#fff),color-mix(in srgb,var(--is-ac) 85%,#000));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;clip-path:inset(0 calc(100% - var(--is-p,0%)) 0 0)}
@@ -2899,17 +2899,18 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .is-lbl.l{right:calc(50% + min(24vmin,230px))}.is-lbl.r{left:calc(50% + min(24vmin,230px))}
 .is-mid{position:absolute;left:0;right:0;top:calc(50% + min(18vmin,170px));display:grid;justify-items:center;z-index:3}
 .is-mid .acc{display:grid;justify-items:center;gap:10px;min-height:40px}
-.is-mid .chip{font:800 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;padding:8px 14px;border:1px solid var(--is-ac);color:var(--is-ac);background:rgba(255,255,255,.14);cursor:var(--cur-pointer,pointer);transition:background .25s,border-color .25s,color .25s,box-shadow .25s;animation:isChip .6s ease both}
+.is-mid .chip{font:800 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;padding:8px 14px;border:1px solid var(--is-ac);color:var(--is-ac);background:rgba(255,255,255,.34);cursor:var(--cur-pointer,pointer);transition:background .25s,border-color .25s,color .25s,box-shadow .25s;animation:isChip .6s ease both}
 .is-mid .chip:focus-visible{background:var(--is-ac);border-color:var(--is-ac);color:#fff;box-shadow:0 0 18px color-mix(in srgb,var(--is-ac) 70%,transparent)}
 @media (hover:hover){.is-mid .chip:hover{background:var(--is-ac);border-color:var(--is-ac);color:#fff;box-shadow:0 0 18px color-mix(in srgb,var(--is-ac) 70%,transparent)}}
 .is-mid .hint{font:700 8px/1 ui-monospace,Menlo,monospace;letter-spacing:.4em;color:color-mix(in srgb,var(--is-fg) 70%,transparent);animation:isBlink 2.4s ease-in-out infinite}
 .is-top{position:absolute;left:34px;top:48px;font:500 8px/1.7 ui-monospace,Menlo,monospace;letter-spacing:.14em;color:color-mix(in srgb,var(--is-fg) 45%,transparent)}
 .is-top ul{list-style:none;margin:0;padding:0}.is-top li.on{color:#fff}
-.is-pct{position:absolute;right:calc(50% - 640px + 240px);bottom:104px;font-family:var(--sans,system-ui);animation:isNav 1s ease .4s both}
+
+.is-pct{position:absolute;right:calc(50% - 640px + 240px);top:calc(100% - 170px);font-family:var(--sans,system-ui);animation:isNav 1s ease .4s both}
 .is-pct b{display:block;font:300 26px/1 var(--sans,system-ui);letter-spacing:.04em;font-variant-numeric:tabular-nums;color:var(--is-pc)}
 .is-pct small{font-size:9px;opacity:.6;margin-left:3px}
 .is-pct .sub{font:600 8px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.2em;color:color-mix(in srgb,var(--is-fg) 60%,transparent);margin-top:6px}
-.is-ruler{position:absolute;left:50%;bottom:74px;width:min(340px,50vw);transform:translateX(-50%);height:1px;background:color-mix(in srgb,var(--is-fg) 30%,transparent)}
+.is-ruler{position:absolute;left:50%;top:calc(100% - 163px);width:min(340px,50vw);transform:translateX(-50%);height:1px;background:color-mix(in srgb,var(--is-fg) 30%,transparent)}
 .is-ruler i{position:absolute;left:0;top:-1px;height:3px;background:#fff;box-shadow:0 0 8px var(--is-ac)}
 .is-ruler span{position:absolute;left:0;right:0;top:8px;display:flex;justify-content:space-between;font:600 7px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;color:color-mix(in srgb,var(--is-fg) 55%,transparent)}
 .is-ruler em{font-style:normal}
@@ -2930,5 +2931,5 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @keyframes isZoomC{to{transform:translate(-50%,-50%) scale(3)}}
 @keyframes isArtIn{to{transform:translate(-50%,-50%) scale(6);opacity:var(--is-op,1)}}
 @keyframes isFadeOut{to{opacity:0}}
-@media (max-width:760px){.is-ruler{bottom:26%}.is-ghost.bot{bottom:13%}.is-lbl,.is-pct,.is-top,.is-br{display:none}.is-ghost{font-size:13vw}.is-nav{gap:12px;font-size:10px}}
+@media (max-width:760px){.is-ruler{top:auto;bottom:26%}.is-ghost.bot{bottom:13%}.is-lbl,.is-pct,.is-top,.is-br{display:none}.is-ghost{font-size:13vw}.is-nav{gap:12px;font-size:10px}}
 @media (prefers-reduced-motion:reduce){.is-sky,.is-sky *,.is-star,.is-star svg,.is-halo,.is-art,.is-nav,.is-lbl,.is-pct,.is-ghost,.is-mid .hint{animation:none!important}}

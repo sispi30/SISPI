@@ -403,6 +403,9 @@ export function BgmPlayer() {
   useEffect(() => {
     if (!settings.autoplay || !settings.enabled || !hasAnyTrack) return;
     const fire = (ev: Event) => {
+      // 인트로 화면이 떠 있는 동안에는 별·ENTRY 버튼·위쪽 메뉴로 입장할 때만 시작 — 다른 곳을 눌러도 켜지지 않는다
+      const sp = document.querySelector('.intro-splash');
+      if (sp && !(sp.classList.contains('ready') && (ev.target as Element | null)?.closest?.('.is-star,.chip,.is-nav button'))) return;
       remove();
       if (rootRef.current?.contains(ev.target as Node)) return;
       if (playingRef.current) return;
