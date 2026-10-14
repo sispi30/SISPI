@@ -18,8 +18,6 @@ export interface SiteSettings {
   // 서버 모드면 저장소 주소라 서버 메타데이터에도 그대로 실리고, 로컬 모드면 파일 id라 화면에서만 붙는다
   favicon?: string;
   // 인트로(로딩 후 입장) 화면 — false면 끈다. 없으면 켜짐 (한 탭에서 한 번만 표시)
-  crystalStar?: boolean;     // 메인 중앙 크리스탈 별 (기본 켬)
-  crystalSize?: number;      // 크리스탈 별 크기 % (기본 100)
   introSplash?: boolean;
   // 인트로 배경 — 장식(별·점무늬 물체)은 그대로 두고 바탕만 바꾼다. 비우면 기본 밝은 바탕
   introBg?: string;          // 바탕색

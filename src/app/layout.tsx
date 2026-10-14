@@ -13,7 +13,6 @@ import { CursorLayer } from '@/components/shell/CursorLayer';
 import { ImgProtect } from '@/components/shell/ImgProtect';
 import { MouseFx } from '@/components/shell/MouseFx';
 import { ClickSound } from '@/components/shell/ClickSound';
-import { CrystalStar } from '@/components/shell/CrystalStar';
 import { CometLayer } from '@/components/shell/CometLayer';
 import { SetupGate } from '@/components/shell/SetupGate';
 import { IntroSplash } from '@/components/shell/IntroSplash';
@@ -116,8 +115,6 @@ if(navigator.userAgent.indexOf('Whale/')>-1){document.documentElement.style.colo
                   <ClickSound />
                   {/* 배경 혜성 파티클 — 환경설정 > 디자인 > 배경에서 켜고 끔 */}
                   <CometLayer />
-                  {/* 크리스탈 별 — 메인 중앙, 마우스를 따라 회전 (디자인 탭에서 켜고 끔) */}
-                  <CrystalStar />
                   {/* 브라우저 탭 제목 — 디자인 탭에서 지정 (v1.9) */}
                   <DocTitle />
                   <DocIcon />
