@@ -111,20 +111,12 @@ export default function MainPage() {
     }, 250);   // 폰트·이미지 로드 후 안정된 레이아웃에서 측정
     return () => clearTimeout(t);
   }, [absMode, enabled.length]); // eslint-disable-line react-hooks/exhaustive-deps
-  const naturalH = absMode
-    ? Math.max(400, ...enabled.map(w => (w.ay ?? 0) + (w.h ?? 200))) + 40
-    : undefined;
-  // 편집모드 — 캔버스 높이를 진입 시점 그대로 고정 (요소를 아래로 옮겨도 세로가 늘어 스크롤바가 생기지 않게, 화면 비율 유지).
-  // 요소는 캔버스 아래로 나가지 못하게 WidgetFrame이 막는다. 편집을 끝내면 다시 위젯 위치에 맞춘다.
-  const frozenH = React.useRef<number | undefined>(undefined);
-  if (!editOn) frozenH.current = undefined;
-  else if (frozenH.current == null && naturalH != null) frozenH.current = naturalH;
-  const canvasH = editOn && frozenH.current != null ? frozenH.current : naturalH;
-
+  // 메인은 화면 고정 — 캔버스 높이는 CSS(.main-grid.abs)가 뷰포트에 맞춰 고정한다.
+  // 위젯이 상하좌우로 넘쳐도 캔버스가 늘어나지 않고(#appMain overflow:hidden) 스크롤바도 생기지 않는다.
   return (
     <section className="page page-main-wrap" onClick={() => setCtx(null)}>
       <div ref={gridRef} className={`main-grid ${absMode ? 'abs' : ''} ${gridOn ? 'gridlines' : ''}`}
-        style={{ marginTop: 12, ...(canvasH ? { height: canvasH } : {}) }}>
+        style={{ marginTop: 12 }}>
         {absMode ? (
           /* 절대배치 캔버스 — 위젯 전부 직속, 좌표는 각자 ax/ay */
           enabled.map(w =>

@@ -902,7 +902,14 @@ a{color:inherit;text-decoration:none}
 .main-grid .widget{margin-bottom:0} /* 갭은 래퍼(.wgt)에서만 — 마진 겹침 방지 */
 /* 고정 캔버스 모드: 창을 줄여도 배치 유지 — 좁은 창은 가로 스크롤(왼쪽 기준), 모바일 전환 시 해제 (v1.9) */
 body.main-fixed .page-main-wrap{min-width:1180px;margin-left:max(0px, calc(50% - 590px));margin-right:0}
-body.main-fixed #appMain,body.edit-on #appMain{overflow-x:auto}
+body.edit-on:not(.main-fixed) #appMain{overflow-x:auto}
+/* 메인 화면 고정 (PC) — 스크롤바 없음: 위젯이 상하좌우로 넘쳐도 캔버스는 화면 크기 그대로, 넘친 부분은 잘린다.
+   (#appMain은 메뉴 줄 뒤(-58px)까지 올라가 있고, 캔버스 위쪽 오프셋 = 58 + .page 위 패딩 16 + marginTop 12 = 86px) */
+@media (min-width:621px){
+  body.main-fixed #appMain{overflow:hidden;scrollbar-gutter:auto}
+  body.main-fixed .page-main-wrap{padding-bottom:0}
+  body.main-fixed .main-grid.abs{height:calc(100vh - 86px) !important}
+}
 /* 편집모드: 반응형 모드·좁은 창에서도 캔버스를 콘텐츠 1120px로 고정 —
    가운데 1fr 열이 항상 610px(10px 배수)이 되어 10px 격자가 정확히 맞음 */
 body.edit-on .page-main-wrap{width:1180px;min-width:1180px;margin-left:max(0px, calc(50% - 590px));margin-right:0}

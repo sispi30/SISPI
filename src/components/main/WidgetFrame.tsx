@@ -57,12 +57,17 @@ export function WidgetFrame({ conf, mobileOrder, children, className, style, onC
       const canvasW = (ref.current?.closest('.main-grid') as HTMLElement | null)?.clientWidth ?? 0;
       const myW = () => conf.w ?? Math.round(ref.current?.getBoundingClientRect().width ?? 0);
       let centered = false;
-      // 캔버스 아래로는 나가지 못하게 — 세로가 늘어나 스크롤바가 생기지 않도록 (이미 넘어 있던 위젯은 그 자리까지만)
-      const canvasH = (ref.current?.closest('.main-grid') as HTMLElement | null)?.clientHeight ?? 0;
+      // 화면 고정 — 위젯이 상하좌우로 넘쳐도 스크롤바가 생기지 않고 넘친 부분은 잘린다.
+      // 다만 화면 밖으로 완전히 나가 찾을 수 없게 되지 않도록, 가장자리에서 KEEP px는 화면 안에 남긴다.
+      const KEEP = 40;
+      const gr0 = (ref.current?.closest('.main-grid') as HTMLElement | null)?.getBoundingClientRect();
       const myH = () => conf.h ?? Math.round(ref.current?.getBoundingClientRect().height ?? 0);
-      const maxY = canvasH > 0 ? Math.max(canvasH - myH(), by) : Infinity;
+      const minX = gr0 ? Math.min(bx, KEEP - myW() - gr0.left) : -Infinity;
+      const maxX = gr0 ? Math.max(bx, window.innerWidth - KEEP - gr0.left) : Infinity;
+      const minY = gr0 ? Math.min(by, KEEP - myH() - gr0.top) : -Infinity;
+      const maxY = gr0 ? Math.max(by, window.innerHeight - KEEP - gr0.top) : Infinity;
       const mv = (ev: PointerEvent) => {
-        const nx = bx + (ev.clientX - sx), ny = Math.min(maxY, by + (ev.clientY - sy));
+        const nx = Math.min(maxX, Math.max(minX, bx + (ev.clientX - sx))), ny = Math.min(maxY, Math.max(minY, by + (ev.clientY - sy)));
         const snap = gridOn && !conf.freeMove;   // freeMove(그리드 무시)는 그리드가 켜져 있어도 자유 배치
         if (ev.shiftKey && canvasW > 0) {
           centered = true;
@@ -150,8 +155,6 @@ export function WidgetFrame({ conf, mobileOrder, children, className, style, onC
     const mv = (ev: PointerEvent) => {
       const dw = ev.clientX - sx, dh = ev.clientY - sy;
       let w = r.width + dw, h = r.height + dh;
-      const cH = (ref.current?.closest('.main-grid') as HTMLElement | null)?.clientHeight ?? 0;
-      if (cH > 0) h = Math.min(h, Math.max(cH - (abs ? conf.ay! : 0), r.height));
       if (gridOn && !conf.freeMove) {
         w = Math.round((absL + w) / 10) * 10 - absL;
         h = Math.round((absT + h) / 10) * 10 - absT;
