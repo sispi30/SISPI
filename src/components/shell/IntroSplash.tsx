@@ -151,9 +151,10 @@ export function IntroSplash() {
           {/* 선이 이어지는 꼭짓점마다 별자리 같은 4각 반짝이 (별자리와 함께 천천히 돈다) */}
           {CONS.flatMap((d, i) => d.split(' ').map((pt, j) => {
             const [x, y] = pt.split(',').map(Number);
-            const r = 3 + ((i + j) % 3);
+            // 마우스 이동 반짝이와 비슷한 아주 작은 크기 (화면 기준 약 4~6px)
+            const r = 2.4 + ((i + j) % 3) * 0.7;
             return <path key={`c${i}-${j}`} className="cs" style={{ ['--d' as string]: `${(((i * 3 + j * 5) % 11) * 0.3).toFixed(1)}s` }}
-              d={`M${x} ${y - r * 2}Q${x} ${y} ${x + r * 2} ${y}Q${x} ${y} ${x} ${y + r * 2}Q${x} ${y} ${x - r * 2} ${y}Q${x} ${y} ${x} ${y - r * 2}Z`} />;
+              d={`M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`} />;
           }))}
         </g>
         <g className="orbs">
