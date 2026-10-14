@@ -1718,12 +1718,12 @@ function MouseFxRows() {
         <KToggle checked={fx.burst} onChange={v => set({ burst: v })} />
       </div>
       <div className="set-row">
-        <div className="l"><b>링 효과 색</b><small>링과 작은 별 조각 색 · 가운데 별 색</small></div>
+        <div className="l"><b>링 효과 색</b><small>별·링·작은 별 조각의 색(하나로 통일) · 윤곽선 색</small></div>
         <div className="cp-group" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <ColorField value={fx.burstColor} onChange={hex => set({ burstColor: hex })} />
-          <ColorField value={fx.burstCore} onChange={hex => set({ burstCore: hex })} />
+          <ColorField value={fx.burstLine} onChange={hex => set({ burstLine: hex })} />
           <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
-            onClick={() => set({ burstColor: DEFAULT_MOUSE_FX.burstColor, burstCore: DEFAULT_MOUSE_FX.burstCore })}>기본색</button>
+            onClick={() => set({ burstColor: DEFAULT_MOUSE_FX.burstColor, burstLine: DEFAULT_MOUSE_FX.burstLine })}>기본색</button>
         </div>
       </div>
       <div className="set-row">

@@ -21,13 +21,13 @@ export interface MouseFxSettings {
   lineColor: string;   // 선·점 색
   lineLife: number;    // 선이 남아 있는 시간(초)
   burst: boolean;      // 클릭 링 효과 — 가운데 별 + 퍼지는 링 + 흩어지는 작은 별
-  burstColor: string;  // 링·작은 별 색
-  burstCore: string;   // 가운데 별 색
+  burstColor: string;  // 별·링·작은 별 조각의 채움 색 (하나로 통일)
+  burstLine: string;   // 윤곽선 색
 }
 export const DEFAULT_MOUSE_FX: MouseFxSettings = {
   click: true, trail: true, colors: ['#344ABD', '#1C55FF', '#2E3FAC'], count: 50,
   line: true, lineColor: '#6f6577', lineLife: 3,
-  burst: true, burstColor: '#6ee7b7', burstCore: '#ffffff',
+  burst: true, burstColor: '#ffffff', burstLine: '#6ee7b7',
 };
 export const normFx = (v?: Partial<MouseFxSettings> | null): MouseFxSettings => {
   const colors = Array.isArray(v?.colors) ? v!.colors!.filter(c => typeof c === 'string' && c.trim()) : [];
@@ -40,7 +40,7 @@ export const normFx = (v?: Partial<MouseFxSettings> | null): MouseFxSettings => 
     lineColor: typeof v?.lineColor === 'string' && v.lineColor.trim() ? v.lineColor : DEFAULT_MOUSE_FX.lineColor,
     burst: typeof v?.burst === 'boolean' ? v.burst : DEFAULT_MOUSE_FX.burst,
     burstColor: typeof v?.burstColor === 'string' && v.burstColor.trim() ? v.burstColor : DEFAULT_MOUSE_FX.burstColor,
-    burstCore: typeof v?.burstCore === 'string' && v.burstCore.trim() ? v.burstCore : DEFAULT_MOUSE_FX.burstCore,
+    burstLine: typeof v?.burstLine === 'string' && v.burstLine.trim() ? v.burstLine : DEFAULT_MOUSE_FX.burstLine,
     lineLife: typeof v?.lineLife === 'number' ? Math.max(1, Math.min(10, Math.round(v.lineLife))) : DEFAULT_MOUSE_FX.lineLife,
   };
 };
