@@ -39,8 +39,10 @@ export function IntroSplash() {
     let id = 0;
     const loop = () => {
       const m = aim.current;
-      m.cur += (m.target - m.cur) * 0.06;
-      if (starRef.current) starRef.current.style.transform = `rotate(${m.cur}deg)`;
+      if (Math.abs(m.target - m.cur) > 0.02) {
+        m.cur += (m.target - m.cur) * 0.06;
+        if (starRef.current) starRef.current.style.transform = `rotate(${m.cur}deg)`;
+      }
       id = requestAnimationFrame(loop);
     };
     id = requestAnimationFrame(loop);
@@ -79,13 +81,6 @@ export function IntroSplash() {
     if (href) router.push(href);
     setTimeout(() => setPhase('gone'), 2200);
   }, [phase, router]);
-
-  useEffect(() => {
-    if (phase !== 'ready') return;
-    const k = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(); } };
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, [phase, enter]);
 
   if (phase === 'gone') return null;
 
@@ -130,7 +125,7 @@ export function IntroSplash() {
     { r: 218, s: 9, a: -62, t: 78, w: 50, rev: true }, { r: 168, s: 8, a: -108, t: 95, w: 40 },
   ];
   return (
-    <div className={`intro-splash ${phase}`} style={vars} onClick={() => enter()} role="dialog" aria-label="인트로">
+    <div className={`intro-splash ${phase}`} style={vars} role="dialog" aria-label="인트로">
       {img && <div className="is-art" style={{ backgroundImage: `url("${img}")` }} />}
       <svg className="is-sky" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <g className="rings">
@@ -166,10 +161,10 @@ export function IntroSplash() {
             </g>
           ))}
         </g>
-        {SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={`M${x} ${y - r * 2}Q${x} ${y} ${x + r * 2} ${y}Q${x} ${y} ${x} ${y + r * 2}Q${x} ${y} ${x - r * 2} ${y}Q${x} ${y} ${x} ${y - r * 2}Z`} />)}
+        <g className="sparks">{SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={`M${x} ${y - r * 2}Q${x} ${y} ${x + r * 2} ${y}Q${x} ${y} ${x} ${y + r * 2}Q${x} ${y} ${x - r * 2} ${y}Q${x} ${y} ${x} ${y - r * 2}Z`} />)}</g>
       </svg>
       <div className="is-halo" />
-      <div className="is-star" aria-hidden="true">
+      <div className={`is-star${ready ? " on" : ""}`} role="button" tabIndex={ready ? 0 : -1} aria-label="ARCHIVE ENTRY" onClick={() => enter()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(); } }}>
         <svg viewBox="-100 -100 200 200"><g ref={starRef}><path fillRule="evenodd" transform="rotate(-32)" d="M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z" /></g></svg>
       </div>
       <i className="is-frame" />
@@ -195,7 +190,7 @@ export function IntroSplash() {
 
       <div className="is-mid">
         <div className="acc">
-          {ready ? <><span className="chip">ACCESS GRANTED</span><span className="hint">CLICK TO ENTER</span></> : <span className="hint">{'AUTH · VERIFYING'}</span>}
+          {ready ? <><button type="button" className="chip" onClick={() => enter()}>ARCHIVE ENTRY</button><span className="hint">CLICK TO ENTER</span></> : <span className="hint">{'AUTH · VERIFYING'}</span>}
         </div>
       </div>
 
