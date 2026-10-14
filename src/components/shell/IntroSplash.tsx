@@ -117,11 +117,20 @@ export function IntroSplash() {
   const shown = Math.min(log.length, 1 + Math.floor(pct / 22));
   const SP: [number, number, number][] = [[88, 242, 5], [138, 103, 4], [78, 388, 4], [103, 534, 4], [1112, 52, 3], [1203, 330, 4], [1190, 478, 3], [1142, 616, 4], [1226, 660, 4], [290, 86, 3], [980, 150, 3], [420, 640, 3]];
   // 별자리 선 — 고리 사이 띠에 흩어 놓은 가는 선 (고정 값)
+  // 별자리는 천천히 돌기 때문에, 한 번이라도 바깥 원형 궤도(반지름 268)를 넘는 자리가 있으면 돌다가 궤도 밖으로 나간다.
+  // 그래서 각 별자리의 가장 먼 점이 CONS_MAX 안에 들어오도록 중심 쪽으로 줄여 놓는다 (모양은 그대로, 크기만 조금 작아짐).
+  // 반짝이(.cs)도 이 좌표를 그대로 쓰므로 함께 궤도 안에 머문다.
+  const CONS_MAX = 248;
   const CONS = [
     '470,214 520,192 566,214 590,176', '760,200 812,230 850,214 884,252', '905,352 940,392 912,440 936,480',
     '742,566 700,540 650,572 604,548', '420,470 466,512 440,556', '392,330 430,296 408,254',
     '560,128 604,96 650,118', '830,520 790,556 744,540',
-  ];
+  ].map(d => {
+    const pts = d.split(' ').map(p => p.split(',').map(Number));
+    const far = Math.max(...pts.map(([x, y]) => Math.hypot(x - 640, y - 360)));
+    const k = far > CONS_MAX ? CONS_MAX / far : 1;
+    return pts.map(([x, y]) => `${(640 + (x - 640) * k).toFixed(1)},${(360 + (y - 360) * k).toFixed(1)}`).join(' ');
+  });
   const PL = [
     { r: 300, s: 9, a: 0, t: 400, w: 100 }, { r: 300, s: 8, a: 38, t: 400, w: 100, half: true }, { r: 300, s: 8, a: 82, t: 400, w: 100, ring: true },
     { r: 268, s: 13, a: -24, t: 46, w: 85 }, { r: 246, s: 7, a: 52, t: 60, w: 60 },
@@ -130,6 +139,15 @@ export function IntroSplash() {
   return (
     <div className={`intro-splash ${phase}`} style={vars} role="dialog" aria-label="인트로">
       {img && <div className="is-art" style={{ backgroundImage: `url("${img}")` }} />}
+      {/* 아주 옅은 모눈 — 캐릭터 화면(StageDeco)에 깔린 것과 같은 96px 격자 (1920×1080 기준, 화면에 꽉 차게) */}
+      <svg className="is-grid" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <defs>
+          <pattern id="is-grid-p" width="96" height="96" patternUnits="userSpaceOnUse">
+            <path d="M96 0H0V96" fill="none" stroke="currentColor" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          </pattern>
+        </defs>
+        <rect width="1920" height="1080" fill="url(#is-grid-p)" />
+      </svg>
       <svg className="is-sky" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <g className="rings">
           <circle cx="640" cy="360" r="332" style={{ ['--d' as string]: '0s' }} />

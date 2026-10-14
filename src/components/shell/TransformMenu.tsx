@@ -245,6 +245,9 @@ export function TransformMenu() {
         borderRadius: cfg.borderRadius,
         padding: cfg.padding,
         boxShadow: cfg.bgShadow ? 'var(--sh-md)' : 'none',
+        // 외곽선 효과 — 테두리 바깥으로 3px 띄운 선. 둥근 모서리를 그대로 따라간다
+        outline: cfg.outlineWidth > 0 ? `${cfg.outlineWidth}px solid ${cfg.outlineColor || 'var(--accent)'}` : 'none',
+        outlineOffset: 3,
       }}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

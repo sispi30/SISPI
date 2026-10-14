@@ -60,6 +60,10 @@ export interface TransformMenuSettings {
   padding: number;
   bgShadow: boolean;
 
+  // 외곽선 효과 — 테두리 바깥에 살짝 띄워 한 겹 더 두르는 선 (두께 0이면 끔)
+  outlineWidth: number;
+  outlineColor: string;    // 비우면 포인트색(--accent)
+
   // 서브메뉴 배경
   subBgColor: string;      // 비우면 --dd-bg
   subBorderRadius: number;
@@ -108,6 +112,9 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
   borderRadius: 999,
   padding: 10,
   bgShadow: true,
+
+  outlineWidth: 2,
+  outlineColor: '',
 
   subBgColor: '',
   subBorderRadius: 10,

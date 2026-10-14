@@ -2910,6 +2910,13 @@ function MenuDesignPane() {
   const [cfg, patch, loaded] = useTransformMenuSettings();
   const toast = useToast();
   const logoUrl = useBlobUrl(cfg.logoBlobId);
+  // 외곽선 색을 비워 두면 포인트색을 따른다 — 색 상자에는 지금 포인트색을 보여 준다 (#16진수가 아니면 기본값)
+  const accentHex = (() => {
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      return /^#[0-9a-f]{6}$/i.test(v) ? v : '#7fd6d0';
+    } catch { return '#7fd6d0'; }
+  })();
 
   // 아이콘 (커스텀 요청) — 메뉴 관리(useMenuSettings)의 트리에 항목별 Font Awesome 클래스명을 저장.
   // 위젯을 켜지 않아도(TopBar 기본 메뉴에도) 지정한 아이콘이 그대로 표시된다.
@@ -3121,6 +3128,14 @@ function MenuDesignPane() {
                   <KStep value={cfg.padding} min={0} max={40} step={1} suffix="px" onChange={v => patch({ padding: v })} />
                   <span className="cp-lb">모서리</span>
                   <KStep value={cfg.borderRadius} min={0} max={999} step={1} suffix="px" onChange={v => patch({ borderRadius: v })} />
+                </div>
+              </div>
+              <div className="set-row" style={{ flexWrap: 'wrap' }}>
+                <div className="l"><b>외곽선 효과</b><small>캡슐 바깥을 한 겹 더 두르는 선 · 두께 0px이면 꺼짐</small></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <span className="cp-lb">두께</span>
+                  <KStep value={cfg.outlineWidth} min={0} max={8} step={1} suffix="px" onChange={v => patch({ outlineWidth: v })} />
+                  {cfg.outlineWidth > 0 && <TfColor label="색" value={cfg.outlineColor} fallback={accentHex} patch={patch} k="outlineColor" />}
                 </div>
               </div>
               <div className="set-row" style={{ flexWrap: 'wrap' }}>

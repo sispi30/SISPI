@@ -2880,6 +2880,8 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .intro-splash.out .is-art{animation:isArtIn 1.2s cubic-bezier(.65,0,.35,1) forwards}
 .intro-splash.out .is-ghost,.intro-splash.out .is-frame,.intro-splash.out .is-cn,.intro-splash.out .is-nav,.intro-splash.out .is-top,.intro-splash.out .is-mid,.intro-splash.out .is-lbl,.intro-splash.out .is-pct,.intro-splash.out .is-ruler,.intro-splash.out .is-bl,.intro-splash.out .is-br{animation:isFadeOut .45s ease forwards}
 .is-sky,.is-star,.is-halo,.is-art{will-change:transform;backface-visibility:hidden}
+.is-grid{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;color:color-mix(in srgb,var(--is-fg) 38%,transparent);opacity:.13;animation:isFadeIn 1.6s ease both}   /* 캐릭터 화면 모눈과 같은 세기 (선 38% × 전체 .13) */
+.intro-splash.out .is-grid{animation:isFadeOut .45s ease forwards}
 .is-sky{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:color-mix(in srgb,var(--is-fg) 55%,transparent);stroke-width:1;transform-origin:50% 50%;animation:isSky 1.6s ease both}
 .is-sky .rings circle{opacity:.75;animation:isRing 1.4s cubic-bezier(.2,.8,.2,1) var(--d,0s) both;transform-origin:640px 360px}
 .is-sky .rings .dash{stroke-dasharray:6 7;stroke:#fff;opacity:.85;animation:isSpin 120s linear infinite}
