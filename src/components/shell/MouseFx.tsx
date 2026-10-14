@@ -147,8 +147,9 @@ export function MouseFx() {
     // 별·링·작은 별 조각은 한 가지 채움 색으로 통일하고, 추가한 색은 윤곽선으로 둘렀다
     style.textContent += `.mfx-b{position:fixed;width:0;height:0;pointer-events:none}`
       + `.mfx-b i{position:absolute;display:block;left:0;top:0}`
-      + `.mfx-b svg{width:100%;height:100%;overflow:visible;fill:var(--bc);stroke:var(--bk);stroke-width:7;stroke-linejoin:round}`
-      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid var(--bc);box-shadow:0 0 0 1px var(--bk),inset 0 0 0 1px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
+      + `.mfx-b svg{width:100%;height:100%;overflow:visible;fill:var(--bc);stroke:var(--bk);stroke-width:3.5;stroke-linejoin:round}`
+      + `.mfx-b .sp svg{fill:var(--bk);stroke:none}`
+      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1px solid var(--bc);box-shadow:0 0 0 .5px var(--bk),inset 0 0 0 .5px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
       + `.mfx-b .sp{width:10px;height:10px;margin:-5px 0 0 -5px;animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `@keyframes mfxRg{0%{opacity:0;transform:scale(.3)}25%{opacity:.9}100%{opacity:0;transform:scale(1.25)}}`
