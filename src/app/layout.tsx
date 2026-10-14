@@ -27,6 +27,9 @@ import { MenuGuard } from '@/components/shell/MenuGuard';
 import { ServerBoot } from '@/components/shell/ServerBoot';
 import { siteMeta } from '@/lib/siteMeta';
 
+// 서버가 읽은 사이트 설정(제목·아이콘)이 배포 때 굳지 않고 5분마다 갱신되게
+export const revalidate = 300;
+
 /**
  * 링크를 미리 읽어 가는 쪽(카톡·디스코드·검색)은 서버가 돌려준 HTML만 본다.
  * 탭 제목은 화면이 뜬 뒤에 바꾸므로 그쪽에는 늘 기본값이 나갔다 —
