@@ -1439,6 +1439,7 @@ function FaviconControl() {
 /** 인트로 화면 설정 (드래프트 — 디자인 탭 SAVE로 확정) */
 function IntroControls() {
   const { site, set } = useSiteDraft();
+  const { state: themeState } = useTheme();
   const on = site.introSplash !== false;
   const url = useBlobUrl(site.introImage);
   return (
@@ -1458,9 +1459,9 @@ function IntroControls() {
                 onClick={() => set({ introBg2: site.introBg ?? '#06070a' })}>+ 그라데이션</button>}
           {site.introBg2 && <button className="btn btn-ghost" style={{ height: 35, padding: '0 10px', fontSize: 11 }}
             onClick={() => set({ introBg2: undefined })}>단색</button>}
-          <span className="cp-lb">포인트</span>
-          <ColorField value={site.introDot ?? '#e0194f'} onChange={hex => set({ introDot: hex })} />
-          <span className="cp-lb">제목 색</span>
+          <span className="cp-lb">포인트(제목)</span>
+          <ColorField value={site.introDot ?? themeState.vars.accent} onChange={hex => set({ introDot: hex })} />
+          <span className="cp-lb">글씨 색</span>
           <ColorField value={site.introFg ?? '#d9dce2'} onChange={hex => set({ introFg: hex })} />
           <input id="introBgFile" type="file" accept="image/*" style={{ display: 'none' }}
             onChange={async e => {

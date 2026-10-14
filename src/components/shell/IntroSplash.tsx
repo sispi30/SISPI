@@ -1,7 +1,7 @@
 'use client';
 // 인트로 화면 — 처음 들어올 때: 어두운 보안 단말 느낌의 로딩 화면.
 // 왼쪽에 큰 제목 3줄(마지막 줄은 윤곽선 + 로딩 따라 포인트색이 차오름), 퍼센트 숫자와 가는 막대, 위쪽·아래쪽 작은 상태 글씨,
-// 오른쪽에는 올려 둔 그림. 100%가 되면 「ACCESS GRANTED」가 뜨고, 화면을 클릭(또는 Enter·스페이스)해야 글리치처럼 깜빡이며 메인 페이지로 넘어간다.
+// 오른쪽에는 올려 둔 그림. 100%가 되면 「ACCESS GRANTED」가 뜨고, 화면을 클릭(또는 Enter·스페이스)해야 오른쪽 그림이 커지며 가운데로 오고, 가운데에서 원 모양으로 열리며 메인 페이지가 나온다.
 // 위쪽 가운데 메뉴를 누르면 입장하면서 그 메뉴로 바로 간다. 한 탭에서 한 번만 뜬다.
 // 환경설정 > 디자인 > 인트로 화면에서 바탕·그림·포인트색·제목 색·글귀를 바꾼다. 장식(격자·상태 글씨·모서리 표식 등)은 그대로.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -51,7 +51,7 @@ export function IntroSplash() {
     try { sessionStorage.setItem(SEEN, '1'); } catch { /* 무시 */ }
     setPhase('out');
     if (href) router.push(href);
-    setTimeout(() => setPhase('gone'), 950);
+    setTimeout(() => setPhase('gone'), 2200);
   }, [phase, router]);
 
   useEffect(() => {
@@ -91,7 +91,6 @@ export function IntroSplash() {
     <div className={`intro-splash ${phase}`} style={vars} onClick={() => enter()} role="dialog" aria-label="인트로">
       <div className="is-grid" />
       {img && <div className="is-art" style={{ backgroundImage: `url("${img}")` }} />}
-      <div className="is-vig" />
       <i className="is-diag" />
       <i className="is-cn tl" /><i className="is-cn tr" /><i className="is-cn bl" /><i className="is-cn br" />
       <div className="is-vert" aria-hidden="true">{title}</div>

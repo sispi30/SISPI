@@ -2841,13 +2841,18 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 /* ---------- 인트로 화면 — 어두운 보안 단말 로딩 (제목 3줄 · 퍼센트 · ACCESS GRANTED · 클릭해서 입장) ----------
    바탕·그림·포인트색·제목 색·글귀는 환경설정에서 바꾸고, 격자·상태 글씨·모서리 표식 같은 장식은 그대로 둔다 */
 .intro-splash{position:fixed;inset:0;z-index:9500;overflow:hidden;cursor:var(--cur-pointer,pointer);
-  --is-ac:#e0194f;--is-fg:#d9dce2;color:var(--is-fg);background:var(--is-bgc,#07080b);font-family:var(--sans,system-ui),'Pretendard',sans-serif}
-.intro-splash.out{animation:isGlitch .95s steps(1,end) forwards;pointer-events:none}
+  --is-ac:var(--accent,#e0194f);--is-fg:#d9dce2;color:var(--is-fg);background:var(--is-bgc,#07080b);font-family:var(--sans,system-ui),'Pretendard',sans-serif}
+@property --am{syntax:'<percentage>';inherits:true;initial-value:38%}
+@property --r{syntax:'<percentage>';inherits:false;initial-value:0%}
+/* 입장 — 오른쪽 그림이 커지며 가운데로 오고, 가운데에서 원이 열리며 메인 페이지가 드러난다 (깜빡임 없음) */
+.intro-splash.out{pointer-events:none;animation:isOpen .9s cubic-bezier(.65,0,.35,1) 1s forwards;
+  -webkit-mask-image:radial-gradient(circle farthest-corner at 50% 50%,transparent calc(var(--r) - 4%),#000 var(--r));mask-image:radial-gradient(circle farthest-corner at 50% 50%,transparent calc(var(--r) - 4%),#000 var(--r))}
+.intro-splash.out .is-art{animation:isArtIn 1s cubic-bezier(.65,0,.35,1) forwards}
+.intro-splash.out .is-grid,.intro-splash.out .is-vert,.intro-splash.out .is-diag,.intro-splash.out .is-cn,.intro-splash.out .is-nav,.intro-splash.out .is-top,.intro-splash.out .is-main,.intro-splash.out .is-bl,.intro-splash.out .is-br,.intro-splash.out .is-scan{animation:isFadeOut .45s ease forwards}
 .is-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:56px 56px;
   -webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 40%,#000 30%,transparent 100%);mask-image:radial-gradient(ellipse 80% 80% at 50% 40%,#000 30%,transparent 100%)}
 .is-art{position:absolute;top:0;bottom:0;right:0;width:68%;background-size:cover;background-position:center;opacity:var(--is-op,1);
-  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 38%);mask-image:linear-gradient(90deg,transparent 0%,#000 38%);animation:isArt 1.6s ease both}
-.is-vig{position:absolute;inset:0;background:radial-gradient(ellipse 90% 90% at 60% 50%,transparent 40%,rgba(0,0,0,.65) 100%),linear-gradient(90deg,rgba(0,0,0,.55) 0%,transparent 45%)}
+  -webkit-mask-image:linear-gradient(90deg,transparent calc(var(--am) - 38%),#000 var(--am));mask-image:linear-gradient(90deg,transparent calc(var(--am) - 38%),#000 var(--am));animation:isArt 1.6s ease both}
 .is-diag{position:absolute;left:48%;top:-10%;width:1px;height:130%;background:linear-gradient(180deg,transparent,rgba(255,255,255,.55) 30%,rgba(255,255,255,.55) 70%,transparent);transform:rotate(11deg);transform-origin:top;animation:isNav 1.4s ease .2s both}
 .is-cn{position:absolute;width:14px;height:14px;border:0 solid rgba(255,255,255,.5)}
 .is-cn.tl{left:12px;top:12px;border-width:1px 0 0 1px}.is-cn.tr{right:12px;top:12px;border-width:1px 1px 0 0}
@@ -2867,13 +2872,12 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .is-main .kick i{width:7px;height:7px;background:var(--is-ac)}
 .is-h{margin:0;display:grid;font-weight:900;font-size:clamp(48px,8vw,128px);line-height:.92;letter-spacing:-.015em;text-transform:uppercase;font-family:'Archivo Black','Arial Black',Impact,var(--sans,system-ui),sans-serif}
 .is-h .l{display:block;white-space:nowrap}
-.is-h .a{background:linear-gradient(180deg,var(--is-fg),color-mix(in srgb,var(--is-fg) 55%,#000));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:isLine .9s cubic-bezier(.2,.8,.2,1) both}
+.is-h .a{background:linear-gradient(180deg,color-mix(in srgb,var(--is-ac) 32%,#fff),color-mix(in srgb,var(--is-ac) 88%,#000));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:isLine .9s cubic-bezier(.2,.8,.2,1) both}
 .is-h .a:nth-child(2){animation-delay:.12s}
 .is-h .o{position:relative;animation:isLine .9s cubic-bezier(.2,.8,.2,1) .24s both}
 .is-h .o em{font-style:normal;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.5)}
 .is-h .o .fill{position:absolute;left:0;top:0;color:transparent;background:linear-gradient(90deg,var(--is-ac),color-mix(in srgb,var(--is-ac) 40%,#000));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  clip-path:inset(0 calc(100% - var(--is-p,0%)) 0 0);opacity:.95;transition:opacity .5s}
-.intro-splash.ready .is-h .o .fill,.intro-splash.out .is-h .o .fill{opacity:0}
+  clip-path:inset(0 calc(100% - var(--is-p,0%)) 0 0);opacity:1}
 .is-main .sub{font:600 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.22em;color:rgba(255,255,255,.55);margin-top:2px}
 .is-main .bar{display:flex;align-items:center;gap:16px;margin-top:6px}
 .is-main .ln{width:min(360px,46vw);height:2px;background:rgba(255,255,255,.18);position:relative}
@@ -2894,16 +2898,8 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 @keyframes isChip{0%{opacity:0}50%{opacity:1}100%{opacity:.9}}
 @keyframes isBlink{50%{opacity:.2}}
 @keyframes isScan{from{transform:translateY(0);opacity:.9}to{transform:translateY(100vh);opacity:0}}
-/* 입장 — 글리치처럼 깜빡이다 꺼진다 */
-@keyframes isGlitch{
-  0%{opacity:1;transform:translateX(0)}
-  10%{opacity:.2;transform:translateX(-14px) skewX(3deg)}
-  20%{opacity:1;transform:translateX(10px)}
-  32%{opacity:.1;clip-path:inset(30% 0 40% 0)}
-  44%{opacity:1;clip-path:inset(0);transform:translateX(-6px)}
-  58%{opacity:.35;filter:invert(1) contrast(1.2)}
-  70%{opacity:1;filter:none;clip-path:inset(60% 0 10% 0)}
-  82%{opacity:.4;clip-path:inset(0);transform:none}
-  100%{opacity:0}}
+@keyframes isOpen{from{--r:0%}to{--r:115%}}
+@keyframes isArtIn{from{right:0;width:68%;--am:38%;transform:none}to{right:0;width:100%;--am:0%;transform:scale(1.14)}}
+@keyframes isFadeOut{to{opacity:0}}
 @media (max-width:760px){.is-art{width:100%;opacity:calc(var(--is-op,1)*.5)}.is-diag,.is-vert,.is-br{display:none}.is-main{top:30vh}.is-h{font-size:15vw}.is-nav{gap:12px;font-size:10px}}
-@media (prefers-reduced-motion:reduce){.is-art,.is-nav,.is-main,.is-h .a,.is-h .o,.is-scan,.is-diag,.is-main .hint{animation:none!important}.intro-splash.out{animation:none;opacity:0}}
+@media (prefers-reduced-motion:reduce){.is-art,.is-nav,.is-main,.is-h .a,.is-h .o,.is-scan,.is-diag,.is-main .hint{animation:none!important}}
