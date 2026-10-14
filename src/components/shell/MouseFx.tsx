@@ -82,11 +82,15 @@ export function MouseFx() {
       const n: Node = { x: e.clientX, y: e.clientY, t: now, dust };
       // 선은 「직전에 클릭한 자리」에서 이번 자리로 — 직전 클릭이 오래 전이라 점이 이미 사라졌어도 자리는
       // 기억해 두었다가 잇는다 (예전엔 시간이 지나면 선 없이 점·반짝이만 남았다).
-      // 처음 클릭이거나 같은 자리를 다시 누르면, 별똥별처럼 왼쪽 위에서 떨어지는 짧은 선을 긋는다.
-      let from = anchor;
-      if (!from || Math.hypot(from.x - n.x, from.y - n.y) < 8) from = { x: n.x - 110, y: n.y - 64 };
-      segs.push({ a: { x: from.x, y: from.y, t: now, dust: [] }, b: n }); if (segs.length > 40) segs.shift();
-      anchor = { x: n.x, y: n.y };
+      // 처음 클릭이면 별똥별처럼 왼쪽 위에서 떨어지는 짧은 선을 긋는다.
+      // 같은 자리를 다시 누르면 선은 긋지 않고 점만 남긴다 (왼쪽 위에서 선이 불려오지 않게).
+      if (!anchor) {
+        segs.push({ a: { x: n.x - 110, y: n.y - 64, t: now, dust: [] }, b: n }); if (segs.length > 40) segs.shift();
+        anchor = { x: n.x, y: n.y };
+      } else if (Math.hypot(anchor.x - n.x, anchor.y - n.y) >= 8) {
+        segs.push({ a: { x: anchor.x, y: anchor.y, t: now, dust: [] }, b: n }); if (segs.length > 40) segs.shift();
+        anchor = { x: n.x, y: n.y };
+      }
       nodes.push(n); if (nodes.length > 41) nodes.shift();
     };
     const drawLines = (now: number) => {
@@ -149,10 +153,10 @@ export function MouseFx() {
       + `.mfx-b i{position:absolute;display:block;left:0;top:0}`
       + `.mfx-b svg{width:100%;height:100%;overflow:visible;fill:var(--bc);stroke:var(--bk);stroke-width:3.5;stroke-linejoin:round}`
       + `.mfx-b .sp svg{fill:var(--bk);stroke:none}`
-      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1px solid var(--bc);box-shadow:0 0 0 .5px var(--bk),inset 0 0 0 .5px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
+      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1.5px solid var(--bc);box-shadow:0 0 0 .5px var(--bk),inset 0 0 0 .5px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
       + `.mfx-b .sp{width:10px;height:10px;margin:-5px 0 0 -5px;animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
-      + `@keyframes mfxRg{0%{opacity:0;transform:scale(.3)}25%{opacity:.9}100%{opacity:0;transform:scale(1.25)}}`
+      + `@keyframes mfxRg{0%{opacity:0;transform:scale(.3)}20%{opacity:1}60%{opacity:.85}100%{opacity:0;transform:scale(1.25)}}`
       + `@keyframes mfxCo{0%{opacity:0;transform:scale(.2) rotate(0)}30%{opacity:1;transform:scale(1) rotate(45deg)}100%{opacity:0;transform:scale(.15) rotate(90deg)}}`
       + `@keyframes mfxSp{0%{opacity:0;transform:rotate(var(--a)) translateY(-14px) scale(.3)}25%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(-32px) scale(.9) rotate(180deg)}}`;
     const STAR = '<svg viewBox="0 0 100 100"><polygon points="50,2 58,42 98,50 58,58 50,98 42,58 2,50 42,42"/></svg>';

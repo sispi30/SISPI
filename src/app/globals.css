@@ -2875,6 +2875,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .is-sky .rays line{stroke-width:.6;opacity:.4}
 .is-sky .cons{transform-origin:640px 360px;animation:isSpin 240s linear infinite}
 .is-sky .cons polyline{stroke:color-mix(in srgb,var(--is-fg) 45%,transparent);stroke-width:.7;opacity:.7}
+.is-sky .cons .cs{fill:var(--is-sp);stroke:none;opacity:.9;transform-box:fill-box;transform-origin:center;animation:isTwk 3.2s ease-in-out var(--d,0s) infinite}
 .is-sky .pl{stroke:none}
 .is-sky .pl.ln{stroke:var(--is-gold);stroke-width:1.5;fill:none}
 .is-sky .orbs ellipse{stroke-width:1.1;opacity:.6}
@@ -2936,6 +2937,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 @keyframes isRing{from{opacity:0;transform:scale(.5)}}
 @keyframes isSpin{to{transform:rotate(360deg)}}
 @keyframes isTw{50%{opacity:.6}}
+@keyframes isTwk{0%,100%{opacity:.35;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
 @keyframes isStar{from{opacity:0;transform:translate(-50%,-50%) scale(.3)}}
 @keyframes isPulse{50%{transform:scale(1.06)}}
 @keyframes isChip{0%{opacity:0}50%{opacity:1}100%{opacity:.95}}
