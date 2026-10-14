@@ -81,6 +81,7 @@ export function IntroSplash() {
   const vars = {
     ['--is-bgc' as string]: bgc,
     ...(site.introDot ? { ['--is-ac' as string]: site.introDot } : {}),
+    ...(site.introGold ? { ['--is-gold' as string]: site.introGold } : {}),
     ...(site.introFg ? { ['--is-fg' as string]: site.introFg } : {}),
     ['--is-op' as string]: (site.introImageOp ?? 100) / 100,
     ['--is-p' as string]: `${pct}%`,
@@ -95,9 +96,9 @@ export function IntroSplash() {
     '560,128 604,96 650,118', '830,520 790,556 744,540',
   ];
   const PL = [
-    { r: 300, s: 9, a: 0, t: 400, c: '#f1b866' }, { r: 300, s: 8, a: 38, t: 400, c: '#f1b866', half: true }, { r: 300, s: 8, a: 82, t: 400, c: '#f1b866', ring: true },
-    { r: 268, s: 13, a: -24, t: 46, c: '#f2a95a' }, { r: 246, s: 7, a: 52, t: 60, c: '#f4d79a' },
-    { r: 218, s: 9, a: -62, t: 78, c: '#f1d9a8', rev: true }, { r: 168, s: 8, a: -108, t: 95, c: '#d9c9a3' },
+    { r: 300, s: 9, a: 0, t: 400, w: 100 }, { r: 300, s: 8, a: 38, t: 400, w: 100, half: true }, { r: 300, s: 8, a: 82, t: 400, w: 100, ring: true },
+    { r: 268, s: 13, a: -24, t: 46, w: 85 }, { r: 246, s: 7, a: 52, t: 60, w: 60 },
+    { r: 218, s: 9, a: -62, t: 78, w: 50, rev: true }, { r: 168, s: 8, a: -108, t: 95, w: 40 },
   ];
   return (
     <div className={`intro-splash ${phase}`} style={vars} onClick={() => enter()} role="dialog" aria-label="인트로">
@@ -131,7 +132,7 @@ export function IntroSplash() {
               <g className={`spin${p.rev ? ' r' : ''}`} style={{ animationDuration: `${p.t}s` }}>
                 {p.half
                   ? <><circle cx="640" cy={360 - p.r} r={p.s} className="pl ln" /><path d={`M640 ${360 - p.r - p.s}A${p.s} ${p.s} 0 0 1 640 ${360 - p.r + p.s}Z`} className="pl" /></>
-                  : <circle cx="640" cy={360 - p.r} r={p.s} className={`pl${p.ring ? ' ln' : ''}`} style={{ fill: p.ring ? 'none' : p.c }} />}
+                  : <circle cx="640" cy={360 - p.r} r={p.s} className={`pl${p.ring ? ' ln' : ''}`} style={{ fill: p.ring ? 'none' : `color-mix(in srgb, var(--is-gold) ${p.w}%, #fff)` }} />}
               </g>
             </g>
           ))}

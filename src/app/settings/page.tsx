@@ -1463,6 +1463,8 @@ function IntroControls() {
           <ColorField value={site.introDot ?? themeState.vars.accent} onChange={hex => set({ introDot: hex })} />
           <span className="cp-lb">글씨 색</span>
           <ColorField value={site.introFg ?? '#d9dce2'} onChange={hex => set({ introFg: hex })} />
+          <span className="cp-lb">천체 색</span>
+          <ColorField value={site.introGold ?? '#e6b772'} onChange={hex => set({ introGold: hex })} />
           <input id="introBgFile" type="file" accept="image/*" style={{ display: 'none' }}
             onChange={async e => {
               const f = e.target.files?.[0];
@@ -1499,7 +1501,7 @@ function IntroControls() {
               style={{ width: 190, height: 35, boxSizing: 'border-box' }} />
           </div>
           <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
-            onClick={() => set({ introBg: undefined, introBg2: undefined, introDot: undefined, introFg: undefined, introImage: undefined, introImageOp: undefined, introT1: undefined, introT2: undefined, introT3: undefined, introKick: undefined, introSub: undefined })}>RESET</button>
+            onClick={() => set({ introBg: undefined, introBg2: undefined, introDot: undefined, introFg: undefined, introGold: undefined, introImage: undefined, introImageOp: undefined, introT1: undefined, introT2: undefined, introT3: undefined, introKick: undefined, introSub: undefined })}>RESET</button>
         </>
       )}
     </div>

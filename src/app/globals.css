@@ -2841,7 +2841,7 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 /* ---------- 인트로 화면 — 천구(별자리 관측의) 로딩 (겹겹의 원 · 네 갈래 별 · 잘려 보이는 큰 제목 · 클릭해서 입장) ----------
    바탕·그림·포인트색·글씨 색·글귀는 환경설정에서 바꾸고, 원·궤도·별·눈금 같은 장식은 그대로 둔다 */
 .intro-splash{position:fixed;inset:0;z-index:9500;overflow:hidden;cursor:var(--cur-pointer,pointer);
-  --is-ac:var(--accent,#e0194f);--is-fg:#dfe3f2;color:var(--is-fg);background:var(--is-bgc,#050716);font-family:var(--sans,system-ui),'Pretendard',sans-serif}
+  --is-ac:var(--accent,#e0194f);--is-gold:#e6b772;--is-fg:#dfe3f2;color:var(--is-fg);background:var(--is-bgc,#050716);font-family:var(--sans,system-ui),'Pretendard',sans-serif}
 .intro-splash::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 70% at 50% 40%,color-mix(in srgb,var(--is-ac) 22%,transparent),transparent 70%)}
 @property --r{syntax:'<percentage>';inherits:false;initial-value:0%}
 .intro-splash.out{pointer-events:none;animation:isOpen .9s cubic-bezier(.65,0,.35,1) 1s forwards;
@@ -2854,16 +2854,16 @@ body.rel-hero-top #appMain{margin-top:-58px;padding-top:58px}
 .is-sky .rings circle{opacity:.75;animation:isRing 1.4s cubic-bezier(.2,.8,.2,1) var(--d,0s) both;transform-origin:640px 360px}
 .is-sky .rings .dash{stroke-dasharray:6 7;stroke:#fff;opacity:.85;animation:isSpin 120s linear infinite}
 .is-sky .rings .th{stroke-width:.6}
-.is-sky .rings .gd{stroke:#e6b772;stroke-dasharray:3 4;opacity:.9}
-.is-sky .rings .dot{stroke:#e6b772;stroke-dasharray:1 5;stroke-width:2;opacity:.8}
-.is-sky .rings .tick{stroke:#e6b772;stroke-dasharray:1 6;stroke-width:6;opacity:.55}
+.is-sky .rings .gd{stroke:var(--is-gold);stroke-dasharray:3 4;opacity:.9}
+.is-sky .rings .dot{stroke:var(--is-gold);stroke-dasharray:1 5;stroke-width:2;opacity:.8}
+.is-sky .rings .tick{stroke:var(--is-gold);stroke-dasharray:1 6;stroke-width:6;opacity:.55}
 .is-sky .rays line{stroke-width:.6;opacity:.4}
 .is-sky .cons polyline{stroke:color-mix(in srgb,var(--is-fg) 45%,transparent);stroke-width:.7;opacity:.7;transform-origin:640px 360px;animation:isSpin 240s linear infinite}
 .is-sky .pl{stroke:none}
-.is-sky .pl.ln{stroke:#e6b772;stroke-width:1.5;fill:none}
-.is-sky .planets .pl:not(.ln){filter:drop-shadow(0 0 6px rgba(240,180,100,.7))}
+.is-sky .pl.ln{stroke:var(--is-gold);stroke-width:1.5;fill:none}
+.is-sky .planets .pl:not(.ln){filter:drop-shadow(0 0 6px color-mix(in srgb,var(--is-gold) 70%,transparent))}
 .is-sky .orbs ellipse{stroke-width:1.1;opacity:.6}
-.is-sky .orbs .gold{stroke:color-mix(in srgb,var(--is-ac) 40%,#f3e7c8);stroke-width:1.6;opacity:.95}
+.is-sky .orbs .gold{stroke:color-mix(in srgb,var(--is-ac) 40%,var(--is-gold));stroke-width:1.6;opacity:.95}
 .is-sky .spin{transform-origin:640px 360px;animation:isSpin 60s linear infinite}.is-sky .spin.r{animation-direction:reverse}
 .is-sky .pt{fill:#fff;stroke:none}
 .is-sky .sp{fill:#fff;stroke:none;opacity:.8;animation:isTw 3s ease-in-out var(--d,0s) infinite}
