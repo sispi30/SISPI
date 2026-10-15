@@ -14,7 +14,7 @@ export interface OrbitSkySettings {
   lineColor?: string;     // 고리·별자리 선 (비우면 포인트색)
   pointColor?: string;    // 알갱이(행성)·점선 고리
   sparkColor?: string;    // 반짝이 (별자리 꼭짓점·흩어진 반짝이)
-  starColor?: string;     // 가운데 별 (비우면 반짝이 색을 따른다 — 예전 설정 호환)
+  starColor?: string;     // 가운데 별 (비우면 포인트색 — 반짝이 색과는 별개)
   sparkSize?: number;     // 반짝이 크기 % (기본 100 = 인트로와 같은 크기)
   tilt?: number;          // 마우스를 따라 고리 전체가 기우는 세기 0~100 (기본 60, 0이면 안 기운다)
   starSize?: number;      // 가운데 별 크기 % (기본 100)
@@ -133,7 +133,7 @@ export function OrbitSky({
     '--ow-line': lineColor || 'var(--accent)',
     '--ow-pt': pointColor || 'var(--accent)',
     '--ow-sp': sparkColor || 'var(--accent)',
-    '--ow-st': starColor || sparkColor || 'var(--accent)',
+    '--ow-st': starColor || 'var(--accent)',
     '--ow-star': clamp(starSize, 10, 400) / 100,     // 별 크기 배율
     '--ow-wb': clamp(boldWidth, 10, 500) / 100,      // 진한 선 굵기 배율
     '--ow-wt': clamp(thinWidth, 10, 500) / 100,      // 얇은 선 굵기 배율
