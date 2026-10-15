@@ -13,7 +13,9 @@ export interface OrbitSkySettings {
   size?: number;          // 위젯 칸에 꽉 찬 크기를 100으로 본 % (기본 100)
   lineColor?: string;     // 고리·별자리 선 (비우면 포인트색)
   pointColor?: string;    // 알갱이(행성)·점선 고리
-  sparkColor?: string;    // 반짝이·가운데 별
+  sparkColor?: string;    // 반짝이 (별자리 꼭짓점·흩어진 반짝이)
+  starColor?: string;     // 가운데 별 (비우면 반짝이 색을 따른다 — 예전 설정 호환)
+  sparkSize?: number;     // 반짝이 크기 % (기본 100 = 인트로와 같은 크기)
   tilt?: number;          // 마우스를 따라 고리 전체가 기우는 세기 0~100 (기본 60, 0이면 안 기운다)
   starSize?: number;      // 가운데 별 크기 % (기본 100)
   ringCount?: number;     // 선(고리) 개수 — 기본 8개, 최대 ARM_RINGS.length개
@@ -64,7 +66,7 @@ function Ring({ g }: { g: ArmRing }) {
 }
 
 export function OrbitSky({
-  size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, sparkColor, tilt = ORBIT_DEFAULT_TILT,
+  size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, sparkColor, starColor, sparkSize = 100, tilt = ORBIT_DEFAULT_TILT,
   starSize = ORBIT_DEFAULT_STAR, ringCount = ORBIT_DEFAULT_COUNT,
   boldWidth = ORBIT_DEFAULT_WIDTH, thinWidth = ORBIT_DEFAULT_WIDTH, dashWidth = ORBIT_DEFAULT_WIDTH,
 }: OrbitSkySettings) {
@@ -131,11 +133,13 @@ export function OrbitSky({
     '--ow-line': lineColor || 'var(--accent)',
     '--ow-pt': pointColor || 'var(--accent)',
     '--ow-sp': sparkColor || 'var(--accent)',
+    '--ow-st': starColor || sparkColor || 'var(--accent)',
     '--ow-star': clamp(starSize, 10, 400) / 100,     // 별 크기 배율
     '--ow-wb': clamp(boldWidth, 10, 500) / 100,      // 진한 선 굵기 배율
     '--ow-wt': clamp(thinWidth, 10, 500) / 100,      // 얇은 선 굵기 배율
     '--ow-wd': clamp(dashWidth, 10, 500) / 100,      // 점선 굵기 배율
   });
+  const sk = clamp(sparkSize, 20, 400) / 100;
   const rings = ARM_RINGS.slice(0, clamp(Math.round(ringCount), 1, ARM_RINGS.length));
 
   return (
@@ -147,12 +151,12 @@ export function OrbitSky({
             {ARM_CONS.map((d, i) => <polyline key={i} points={d} />)}
             {ARM_CONS.flatMap((d, i) => d.split(' ').map((pt, j) => {
               const [x, y] = pt.split(',').map(Number);
-              return <path key={`c${i}-${j}`} className="cs" d={armSparkle(x, y, 6 + ((i + j) % 3) * 1.5)}
+              return <path key={`c${i}-${j}`} className="cs" d={armSparkle(x, y, (2.6 + ((i + j) % 3) * 0.8) * sk)}
                 style={{ animationDelay: `${(((i * 3 + j * 5) % 11) * 0.3).toFixed(1)}s` }} />;
             }))}
           </g>
           <g className="sparks">
-            {ARM_SPARKS.map((s, i) => <path key={i} className="sp" d={armSparkle(s.x, s.y, s.arm)} style={{ animationDelay: `${(i % 5) * 0.7}s` }} />)}
+            {ARM_SPARKS.map((s, i) => <path key={i} className="sp" d={armSparkle(s.x, s.y, s.arm * sk)} style={{ animationDelay: `${(i % 5) * 0.7}s` }} />)}
           </g>
         </svg>
         {/* 입체 무대 — 고리는 기울며 돌고, 가운데 별은 제자리에 평면으로 고정 (고리가 별의 앞뒤로 지나간다) */}

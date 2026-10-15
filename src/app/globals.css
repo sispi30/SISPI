@@ -3014,11 +3014,11 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .ow-ring.dash .a{stroke:var(--ow-pt);stroke-width:calc(3px*var(--ow-wd,1));stroke-dasharray:13px calc(6px + 3px*var(--ow-wd,1));opacity:.95}   /* 굵어져도 점선 사이 빈틈이 그대로 남게 간격에 굵기를 더한다 */
 .ow-ring.dot .a{stroke:var(--ow-pt);stroke-width:calc(6px*var(--ow-wd,1));stroke-dasharray:.5px calc(7px + 6px*var(--ow-wd,1));opacity:.9}
 .ow-ring.band .a{stroke-width:calc(2px*var(--ow-wt,1));opacity:.85}
-.ow-ring.band .tk{stroke:var(--ow-pt);stroke-width:16;stroke-dasharray:calc(1.8px*var(--ow-wd,1)) 15px;opacity:.45}
+.ow-ring.band .tk{stroke:var(--ow-pt);stroke-width:calc(4px*var(--ow-wd,1));stroke-dasharray:.5px calc(9px + 4px*var(--ow-wd,1));opacity:.9}   /* 눈금 띠는 굵은 선이 아니라 점선 */
 .ow-ring .bd{fill:var(--ow-pt);stroke:none}
 .ow-ring .bd.hl{fill:none;stroke:var(--ow-pt);stroke-width:3}
 .ow-star{position:absolute;left:50%;top:50%;width:calc(var(--ow-s)*.2*var(--ow-star,1));aspect-ratio:1/1;margin:calc(var(--ow-s)*-.1*var(--ow-star,1)) 0 0 calc(var(--ow-s)*-.1*var(--ow-star,1))}
-.ow-star svg{display:block;width:100%;height:100%;overflow:visible;fill:var(--ow-sp);stroke:none;filter:drop-shadow(0 0 calc(var(--ow-s)*.015) color-mix(in srgb,var(--ow-sp) 60%,transparent))}
+.ow-star svg{display:block;width:100%;height:100%;overflow:visible;fill:var(--ow-st);stroke:none;filter:drop-shadow(0 0 calc(var(--ow-s)*.015) color-mix(in srgb,var(--ow-st) 60%,transparent))}
 @keyframes owSpin{to{transform:rotateY(360deg)}}
 @keyframes owTurn{to{transform:rotate(360deg)}}
 @keyframes owTw{0%,100%{opacity:.3;transform:scale(.6)}50%{opacity:1;transform:scale(1.15)}}

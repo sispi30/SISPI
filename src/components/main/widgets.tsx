@@ -671,7 +671,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
       return /^#[0-9a-f]{6}$/i.test(v) ? v : '#7fd6d0';
     } catch { return '#7fd6d0'; }
   })();
-  const colorRow = (label: string, k: 'lineColor' | 'pointColor' | 'sparkColor') => (
+  const colorRow = (label: string, k: 'lineColor' | 'pointColor' | 'sparkColor' | 'starColor') => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <span className="cp-lb" style={{ minWidth: 58 }}>{label}</span>
       <ColorField value={s[k] || accentHex} onChange={hex => set({ [k]: hex } as Partial<OrbitSkySettings>)} />
@@ -683,7 +683,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
   );
   return (
     <div className="ow-wrap" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 80 }}>
-      <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} tilt={s.tilt}
+      <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} starColor={s.starColor} sparkSize={s.sparkSize} tilt={s.tilt}
         starSize={s.starSize} ringCount={s.ringCount} boldWidth={s.boldWidth} thinWidth={s.thinWidth} dashWidth={s.dashWidth} />
       <div onClick={e => e.stopPropagation()}>
         <Modal open={open} onClose={() => setOpen(false)} small title="별자리 궤도"
@@ -710,6 +710,11 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
               <KStep value={s.ringCount ?? ORBIT_DEFAULT_COUNT} min={1} max={ORBIT_MAX_COUNT} step={1} suffix="개" onChange={v => set({ ringCount: v })} />
               <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>고리 수 · 기본 {ORBIT_DEFAULT_COUNT}개, 최대 {ORBIT_MAX_COUNT}개</small>
             </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="cp-lb" style={{ minWidth: 58 }}>반짝이 크기</span>
+              <KStep value={s.sparkSize ?? 100} min={30} max={400} step={10} suffix="%" onChange={v => set({ sparkSize: v })} />
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>100% = 인트로 화면과 같은 크기</small>
+            </div>
             {([['진한 선', 'boldWidth', '굵고 밝은 고리'], ['얇은 선', 'thinWidth', '보통·가는 고리와 별자리 선'], ['점선', 'dashWidth', '점선 고리와 눈금']] as const).map(([label, k, hint]) => (
               <div key={k} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span className="cp-lb" style={{ minWidth: 58 }}>{label}</span>
@@ -719,7 +724,8 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
             ))}
             {colorRow('고리·별자리', 'lineColor')}
             {colorRow('알갱이·점선', 'pointColor')}
-            {colorRow('별·반짝이', 'sparkColor')}
+            {colorRow('가운데 별', 'starColor')}
+            {colorRow('반짝이', 'sparkColor')}
           </div>
         </Modal>
       </div>
