@@ -2982,36 +2982,43 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   body.intro-scaled .is-ruler{width:340px}
 }
 
-/* ---------- 메인 「별자리 궤도」 위젯 — 인트로의 궤도·별자리 장식 (크기·색 설정, 마우스에 따라 입체 회전) ----------
-   그림은 깊이가 다른 다섯 겹의 SVG를 쌓은 것이고, 가장 바깥 .ow-tilt가 마우스를 따라 기울면서 층마다 어긋나 입체로 보인다.
-   크기는 위젯 칸(.ow)의 짧은 변(cqmin)에 --ow-k 배를 곱한 정사각형. 선 굵기·점선 간격은 도형 좌표(700 단위) 기준이라 크기에 비례해 같이 커지고 작아진다. */
+/* ---------- 메인 「별자리 궤도」 위젯 — 혼천의(Armillary Sphere)처럼 여러 고리가 서로 다른 축으로 입체 회전 ----------
+   구조: .ow-stage(원근) 안에 평면 별 지도(.ow-back)와 입체 무대(.ow-scene)가 겹친다. 무대 안에서 고리 묶음(.ow-rig)만 마우스를 따라 기울고,
+   가운데 별(.ow-star)은 제자리 평면에 고정된 채 안에서만 돈다. 고리 하나는 .ow-axis(축 기울기) > .ow-spin(축을 중심으로 회전)
+   > .ow-hold(고리 면 기울기·높이) > svg.ow-ring(면 안에서 알갱이가 흐름) 순으로 겹쳐 있어서 고리마다 다른 축으로 돈다.
+   크기는 위젯 칸(.ow)의 짧은 변(cqmin)에 --ow-k 배를 곱한 정사각형. 선 굵기·점선 간격은 도형 좌표(700 단위) 기준이라 크기에 비례해 커지고 작아진다. */
 .ow{position:relative;width:100%;height:100%;min-height:80px;aspect-ratio:1/1;container-type:size;display:grid;place-items:center;pointer-events:none}
 .ow *{pointer-events:none}
-.ow-stage{--ow-s:calc(100cqmin*var(--ow-k,1));position:relative;width:var(--ow-s);aspect-ratio:1/1;perspective:calc(var(--ow-s)*2.2)}
-.ow-tilt{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
-.ow-l{position:absolute;inset:0;width:100%;height:100%;overflow:visible;fill:none;stroke:var(--ow-line);stroke-width:1.6;stroke-linecap:round}
-.ow-l.l0{transform:translateZ(calc(var(--ow-s)*-.05))}
-.ow-l.l2{transform:translateZ(calc(var(--ow-s)*.03))}
-.ow-l.l3{transform:translateZ(calc(var(--ow-s)*.07))}
-.ow-l.l4{transform:translateZ(calc(var(--ow-s)*.12))}
-.ow-l .rings circle{opacity:.6}
-.ow-l .rings .th{stroke-width:1}
-.ow-l .rings .gd{stroke:var(--ow-pt);stroke-dasharray:3 4;opacity:.9}
-.ow-l .rings .dot{stroke:var(--ow-pt);stroke-dasharray:1 5;stroke-width:3.2;opacity:.8}
-.ow-l .rings .tick{stroke:var(--ow-pt);stroke-dasharray:1 6;stroke-width:6;opacity:.45}
-.ow-l .rings .dash{stroke-dasharray:6 7;opacity:.85;transform-origin:640px 360px;animation:owSpin 120s linear infinite}
-.ow-l .rays line{stroke-width:1;opacity:.4}
-.ow-l .orbs ellipse{stroke-width:1.8;opacity:.6}
-.ow-l .orbs .gold{stroke:var(--ow-pt);stroke-width:2.6;opacity:.95}
-.ow-l .cons{transform-origin:640px 360px;animation:owSpin 240s linear infinite}
-.ow-l .cons polyline{stroke-width:1.2;opacity:.85}
-.ow-l .cons .cs,.ow-l .sparks .sp{fill:var(--ow-sp);stroke:none;transform-box:fill-box;transform-origin:center;animation:owTw 3.2s ease-in-out infinite}
-.ow-l .spin{transform-origin:640px 360px;animation:owSpin 60s linear infinite}
-.ow-l .spin.r{animation-direction:reverse}
-.ow-l .pl{stroke:none;fill:var(--ow-pt)}
-.ow-l .pl.ln{stroke:var(--ow-pt);stroke-width:2.4;fill:none}
-.ow-l.l4{filter:drop-shadow(0 0 3px color-mix(in srgb,var(--ow-sp) 55%,transparent))}
-.ow-l .star{fill:var(--ow-sp);stroke:none;opacity:.95}
-@keyframes owSpin{to{transform:rotate(360deg)}}
+.ow-stage{--ow-s:calc(100cqmin*var(--ow-k,1));position:relative;width:var(--ow-s);aspect-ratio:1/1;perspective:calc(var(--ow-s)*4)}
+.ow-back{position:absolute;inset:0;width:100%;height:100%;overflow:visible;fill:none;stroke:var(--ow-line);stroke-width:1.5;stroke-linecap:round}
+.ow-back .cons{transform-origin:350px 350px;animation:owTurn 240s linear infinite}
+.ow-back .cons polyline{stroke-width:1.5;opacity:.8}
+.ow-back .cs,.ow-back .sp{fill:var(--ow-sp);stroke:none;transform-box:fill-box;transform-origin:center;animation:owTw 3.2s ease-in-out infinite}
+.ow-scene{position:absolute;inset:0;transform-style:preserve-3d}
+.ow-rig{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(-22deg)}
+.ow-axis,.ow-spin,.ow-hold{position:absolute;inset:0;transform-style:preserve-3d}
+.ow-axis{transform:rotateZ(var(--az,0deg)) rotateX(var(--ax,0deg))}
+.ow-spin{animation:owSpin var(--ts,60s) linear infinite;animation-delay:calc(var(--ts,60s)*var(--ph,0)*-1)}
+.ow-spin.rev{animation-direction:reverse}
+.ow-spin.still{animation:none}
+.ow-hold{transform:translateY(calc(var(--ow-s)*var(--y,0))) rotateX(var(--rx,0deg))}
+.ow-ring{position:absolute;left:calc((1 - var(--d,1))*50%);top:calc((1 - var(--d,1))*50%);width:calc(var(--d,1)*100%);height:calc(var(--d,1)*100%);
+  overflow:visible;fill:none;stroke:var(--ow-line);stroke-linecap:round}
+.ow-ring.turn{animation:owTurn var(--tt,60s) linear infinite}
+.ow-ring.turn.rev{animation-direction:reverse}
+.ow-ring .a{stroke-width:2.6;opacity:.85}
+.ow-ring.gold .a{stroke-width:6;opacity:1}
+.ow-ring.line .a{stroke-width:2.8;opacity:.9}
+.ow-ring.th .a{stroke-width:2;opacity:.75}
+.ow-ring.dash .a{stroke:var(--ow-pt);stroke-width:3;stroke-dasharray:13 9;opacity:.95}
+.ow-ring.dot .a{stroke:var(--ow-pt);stroke-width:6;stroke-dasharray:.5 13;opacity:.9}
+.ow-ring.band .a{stroke-width:2;opacity:.85}
+.ow-ring.band .tk{stroke:var(--ow-pt);stroke-width:16;stroke-dasharray:1.8 15;opacity:.45}
+.ow-ring .bd{fill:var(--ow-pt);stroke:none}
+.ow-ring .bd.hl{fill:none;stroke:var(--ow-pt);stroke-width:3}
+.ow-star{position:absolute;left:50%;top:50%;width:calc(var(--ow-s)*.2);aspect-ratio:1/1;margin:calc(var(--ow-s)*-.1) 0 0 calc(var(--ow-s)*-.1)}
+.ow-star svg{display:block;width:100%;height:100%;overflow:visible;fill:var(--ow-sp);stroke:none;filter:drop-shadow(0 0 calc(var(--ow-s)*.015) color-mix(in srgb,var(--ow-sp) 60%,transparent))}
+@keyframes owSpin{to{transform:rotateY(360deg)}}
+@keyframes owTurn{to{transform:rotate(360deg)}}
 @keyframes owTw{0%,100%{opacity:.3;transform:scale(.6)}50%{opacity:1;transform:scale(1.15)}}
-@media (prefers-reduced-motion:reduce){.ow-l *{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.ow *{animation:none!important}}

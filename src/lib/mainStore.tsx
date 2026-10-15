@@ -12,7 +12,7 @@ export type WidgetType =
   | 'menu' | 'memo' | 'diary' | 'latest'
   | 'dday' | 'todo' | 'upcoming' | 'freetext' | 'deco' | 'memoboard'
   | 'apply'   // 'image'는 deco(장식 이미지+링크)로 일원화 (v1.9) · apply = 커미션 신청자 (v2.0)
-  | 'orbit';  // 인트로의 별자리 궤도를 메인 장식으로 (크기·색 · 마우스에 따라 입체 회전)
+  | 'orbit';  // 별자리 궤도 장식 — 혼천의처럼 고리가 입체 회전 (크기·색 · 가운데 별은 마우스를 따라 제자리 회전)
 
 export interface WidgetConf {
   id: string;
@@ -55,7 +55,7 @@ export const WIDGET_META: Record<WidgetType, { title: string; desc: string }> = 
   deco: { title: '이미지', desc: '패널 없이 이미지만' },
   memoboard: { title: 'STICKY', desc: '스티커 메모 미니보드 — 클릭 시 메모장 (4.6)' },
   apply: { title: 'COMMISSION', desc: '커미션 신청자 — 마감 빠른 순 (몇 명까지 볼지 설정)' },
-  orbit: { title: '별자리 궤도', desc: '인트로의 궤도·별자리 장식 — 크기·색 설정, 마우스에 따라 입체 회전' },
+  orbit: { title: '별자리 궤도', desc: '혼천의처럼 고리가 입체 회전하는 장식 — 크기·색 설정, 가운데 별은 마우스를 따라 제자리 회전' },
 };
 
 /** 같은 종류를 여러 개 추가할 수 있는 위젯 (v1.9 사용자 확정 — 나머지는 하나만) */

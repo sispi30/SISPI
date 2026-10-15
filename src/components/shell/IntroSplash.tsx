@@ -10,7 +10,7 @@ import { useSiteSettings } from '@/lib/siteStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { useMenuSettings, buildMenu } from '@/lib/menuStore';
 import { useStageFit } from '@/lib/stageFit';
-import { SKY_RINGS, SKY_CONS, SKY_PLANETS, SKY_SPARKS, sparklePath } from '@/lib/orbitSky';
+import { INTRO_RINGS, INTRO_CONS, INTRO_PLANETS, INTRO_SPARKS, introSparkle } from '@/lib/introSky';
 
 const SEEN = 'ohome.intro.seen';
 const LOAD_MS = 3200;
@@ -116,9 +116,9 @@ export function IntroSplash() {
   } as React.CSSProperties;
   const log = [`BOOT ${title}.OS 4.1.7`, 'MOUNT /ARCHIVE/MAIN', 'HANDSHAKE ........ OK', `TRACE ${title}-2`, 'AWAIT CREDENTIAL'];
   const shown = Math.min(log.length, 1 + Math.floor(pct / 22));
-  // 별자리·행성·반짝이·궤도 도형은 메인 「별자리 궤도」 위젯과 같이 쓰므로 lib/orbitSky.ts에 둔다
+  // 별자리·행성·반짝이·궤도 도형은 lib/introSky.ts에서 따로 관리한다 (메인 「별자리 궤도」 위젯은 lib/orbitSky.ts — 서로 영향 없음)
   // (별자리는 천천히 돌아도 바깥 원형 궤도 밖으로 나가지 않게 거기서 줄여 놓았다)
-  const SP = SKY_SPARKS, CONS = SKY_CONS, PL = SKY_PLANETS;
+  const SP = INTRO_SPARKS, CONS = INTRO_CONS, PL = INTRO_PLANETS;
   return (
     <div className={`intro-splash ${phase}`} style={vars} role="dialog" aria-label="인트로">
       {img && <div className="is-art" style={{ backgroundImage: `url("${img}")` }} />}
@@ -133,7 +133,7 @@ export function IntroSplash() {
       </svg>
       <svg className="is-sky" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <g className="rings">
-          {SKY_RINGS.map(c => (
+          {INTRO_RINGS.map(c => (
             <circle key={c.r} cx="640" cy="360" r={c.r} className={c.cls}
               style={c.d != null ? { ['--d' as string]: `${c.d}s` } : undefined} />
           ))}
@@ -149,7 +149,7 @@ export function IntroSplash() {
             // 마우스 이동 반짝이와 비슷한 아주 작은 크기 (화면 기준 약 4~6px)
             const r = 2.4 + ((i + j) % 3) * 0.7;
             return <path key={`c${i}-${j}`} className="cs" style={{ ['--d' as string]: `${(((i * 3 + j * 5) % 11) * 0.3).toFixed(1)}s` }}
-              d={sparklePath(x, y, r)} />;
+              d={introSparkle(x, y, r)} />;
           }))}
         </g>
         <g className="orbs">
@@ -167,7 +167,7 @@ export function IntroSplash() {
             </g>
           ))}
         </g>
-        <g className="sparks">{SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={sparklePath(x, y, r * 2)} />)}</g>
+        <g className="sparks">{SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={introSparkle(x, y, r * 2)} />)}</g>
       </svg>
       <div className="is-halo" />
       <div className={`is-star${ready ? " on" : ""}`} role="button" tabIndex={ready ? 0 : -1} aria-label="ARCHIVE ENTRY" onClick={() => enter()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(); } }}>

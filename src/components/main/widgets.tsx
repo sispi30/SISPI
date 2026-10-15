@@ -653,8 +653,9 @@ export function ApplyWidget({ conf }: { conf: WidgetConf }) {
 }
 
 /* ---------- 별자리 궤도 (사용자 요청) ----------
-   인트로 화면의 궤도·별자리를 메인에 장식으로 얹는다. 패널 없이 그림만 — 크기·색은 편집모드 우클릭 「설정」에서,
-   마우스를 움직이면 입체적으로 기운다. 크기(칸 대비 %)는 위젯 칸을 키우고 줄이는 것과 별개로 그림만 키우고 줄인다. */
+   혼천의(Armillary Sphere)처럼 여러 고리가 서로 다른 축으로 입체 회전하는 장식 — 가운데 별은 고정, 별은 마우스를 따라 제자리에서 돈다.
+   패널 없이 그림만 — 크기·색은 편집모드 우클릭 「설정」에서. 크기(칸 대비 %)는 위젯 칸을 키우고 줄이는 것과 별개로 그림만 키우고 줄인다.
+   도형은 인트로 화면과 따로 관리한다 (lib/orbitSky.ts ↔ lib/introSky.ts). */
 export function OrbitWidget({ conf }: { conf: WidgetConf }) {
   const { updateWidget } = useMainStore();
   const [open, setOpen] = useState(false);
@@ -683,7 +684,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
       <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} tilt={s.tilt} />
       <div onClick={e => e.stopPropagation()}>
         <Modal open={open} onClose={() => setOpen(false)} small title="별자리 궤도"
-          desc="인트로 화면의 궤도·별자리 — 마우스를 움직이면 입체적으로 돕니다. 바꾸는 즉시 적용됩니다"
+          desc="혼천의처럼 고리가 입체적으로 돕니다 — 가운데 별은 마우스를 따라 제자리에서 돕니다. 바꾸는 즉시 적용됩니다"
           actions={<button className="btn btn-dark" onClick={() => setOpen(false)}>확인</button>}>
           <div style={{ display: 'grid', gap: 12 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -692,13 +693,13 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
               <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>100% = 위젯 칸에 꽉 차는 크기</small>
             </div>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span className="cp-lb" style={{ minWidth: 58 }}>입체 회전</span>
+              <span className="cp-lb" style={{ minWidth: 58 }}>기울기</span>
               <KStep value={s.tilt ?? ORBIT_DEFAULT_TILT} min={0} max={100} step={5} suffix="%" onChange={v => set({ tilt: v })} />
-              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>마우스를 따라 기우는 세기 · 0%면 기울지 않음</small>
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>마우스를 따라 고리가 기우는 세기 · 0%면 기울지 않음 (고리는 계속 돕니다)</small>
             </div>
-            {colorRow('궤도·별자리', 'lineColor')}
-            {colorRow('행성·점선', 'pointColor')}
-            {colorRow('반짝이', 'sparkColor')}
+            {colorRow('고리·별자리', 'lineColor')}
+            {colorRow('알갱이·점선', 'pointColor')}
+            {colorRow('별·반짝이', 'sparkColor')}
           </div>
         </Modal>
       </div>
