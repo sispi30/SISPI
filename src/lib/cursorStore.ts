@@ -23,11 +23,12 @@ export interface MouseFxSettings {
   burst: boolean;      // 클릭 링 효과 — 가운데 별 + 퍼지는 링 + 흩어지는 작은 별
   burstColor: string;  // 별·링·작은 별 조각의 채움 색 (하나로 통일)
   burstLine: string;   // 윤곽선 색
+  burstPart: string;   // 별 둘레에 퍼지는 잎 모양 파티클 색 (효과 색의 세 번째 색)
 }
 export const DEFAULT_MOUSE_FX: MouseFxSettings = {
   click: true, trail: true, colors: ['#344ABD', '#1C55FF', '#2E3FAC'], count: 50,
   line: true, lineColor: '#6f6577', lineLife: 3,
-  burst: true, burstColor: '#ffffff', burstLine: '#6ee7b7',
+  burst: true, burstColor: '#ffffff', burstLine: '#6ee7b7', burstPart: '#6ee7b7',
 };
 export const normFx = (v?: Partial<MouseFxSettings> | null): MouseFxSettings => {
   const colors = Array.isArray(v?.colors) ? v!.colors!.filter(c => typeof c === 'string' && c.trim()) : [];
@@ -41,6 +42,7 @@ export const normFx = (v?: Partial<MouseFxSettings> | null): MouseFxSettings => 
     burst: typeof v?.burst === 'boolean' ? v.burst : DEFAULT_MOUSE_FX.burst,
     burstColor: typeof v?.burstColor === 'string' && v.burstColor.trim() ? v.burstColor : DEFAULT_MOUSE_FX.burstColor,
     burstLine: typeof v?.burstLine === 'string' && v.burstLine.trim() ? v.burstLine : DEFAULT_MOUSE_FX.burstLine,
+    burstPart: typeof v?.burstPart === 'string' && v.burstPart.trim() ? v.burstPart : DEFAULT_MOUSE_FX.burstPart,
     lineLife: typeof v?.lineLife === 'number' ? Math.max(1, Math.min(10, Math.round(v.lineLife))) : DEFAULT_MOUSE_FX.lineLife,
   };
 };

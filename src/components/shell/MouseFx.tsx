@@ -156,9 +156,10 @@ export function MouseFx() {
       + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid var(--bc);box-shadow:0 0 0 .7px var(--bk),inset 0 0 0 .7px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
       + `.mfx-b .sp{width:12px;height:12px;margin:-6px 0 0 -6px;animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
-      + `.mfx-b .pt{width:4px;height:4px;margin:-2px 0 0 -2px;border-radius:50%;background:var(--bc);box-shadow:0 0 0 .7px var(--bk);opacity:0;animation:mfxPt .7s cubic-bezier(.15,.7,.3,1) forwards}`   // 퍼지는 파티클 — 동그란 점과 짧은 선이 둘레로 흩어진다
-      + `.mfx-b .pt.ln{width:9px;height:2.5px;margin:-1.25px 0 0 -4.5px;border-radius:2px}`
-      + `@keyframes mfxPt{0%{opacity:0;transform:rotate(var(--a)) translateX(var(--d0)) scale(.4)}15%{opacity:1}70%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--d1)) scale(.9)}}`
+      + `.mfx-b .pt{width:5px;height:10px;margin:-5px 0 0 -2.5px;opacity:0;animation:mfxPt .7s cubic-bezier(.2,.7,.3,1) forwards}`   // 잎 모양 파티클 — 링 안쪽에서 링 테두리에 살짝 걸치는 곳까지만 퍼진다
+      + `.mfx-b .pt.bg{width:7px;height:14px;margin:-7px 0 0 -3.5px}`
+      + `.mfx-b .pt svg{fill:var(--bp);stroke:none}`
+      + `@keyframes mfxPt{0%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--d0)*-1)) scale(.4)}15%{opacity:1}70%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--d1)*-1)) scale(1)}}`
       + `@keyframes mfxRg{0%{opacity:0;transform:scale(.3)}10%{opacity:1}80%{opacity:1}100%{opacity:0;transform:scale(1.25)}}`
       + `@keyframes mfxCo{0%{opacity:0;transform:scale(.2) rotate(0)}30%{opacity:1;transform:scale(1) rotate(45deg)}100%{opacity:0;transform:scale(.15) rotate(90deg)}}`
       + `@keyframes mfxSp{0%{opacity:0;transform:rotate(var(--a)) translateY(-14px) scale(.3)}18%{opacity:1}65%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(-32px) scale(.9) rotate(180deg)}}`;
@@ -168,15 +169,16 @@ export function MouseFx() {
       if ((e as PointerEvent).pointerType === 'touch') return;
       const b = document.createElement('div');
       b.className = 'mfx-b';
-      b.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--bc:${fx.burstColor};--bk:${fx.burstLine}`;
+      b.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--bc:${fx.burstColor};--bk:${fx.burstLine};--bp:${fx.burstPart}`;
       let h = `<i class="rg"></i><i class="co">${STAR}</i>`;
       const n = 6, off = Math.random() * 60;
       for (let i = 0; i < n; i++) h += `<i class="sp" style="--a:${Math.round(off + i * 360 / n)}deg;animation-delay:${(i % 3) * 30}ms">${STAR}</i>`;
-      // 퍼지는 파티클 — 별 조각 사이사이로 점·짧은 선이 번갈아 퍼진다
-      const pn = 12, po = Math.random() * 30;
+      // 잎 파티클 — 별 사이사이, 링 안쪽 중앙과 링 테두리에 살짝 걸치는 범위에서만 퍼진다 (큰 것·작은 것 번갈아)
+      const LEAF = '<svg viewBox="-5 -9 10 18"><path d="M0 -8Q5 0 0 8Q-5 0 0 -8Z"/></svg>';
+      const pn = 6, po = 22 + Math.random() * 20;
       for (let i = 0; i < pn; i++) {
-        const d0 = 16 + (i % 3) * 3, d1 = 38 + ((i * 7) % 4) * 5;
-        h += `<i class="pt${i % 2 ? ' ln' : ''}" style="--a:${Math.round(po + i * 360 / pn)}deg;--d0:${d0}px;--d1:${d1}px;animation-delay:${(i % 4) * 25}ms"></i>`;
+        const big = i % 2 === 0;
+        h += `<i class="pt${big ? ' bg' : ''}" style="--a:${Math.round(po + i * 360 / pn)}deg;--d0:${big ? 12 : 10}px;--d1:${big ? 24 : 19}px;animation-delay:${(i % 3) * 25}ms">${LEAF}</i>`;
       }
       b.innerHTML = h;
       box.appendChild(b);
@@ -277,7 +279,7 @@ export function MouseFx() {
       style.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, fx.click, fx.trail, fx.count, colorKey, fx.line, fx.lineColor, fx.lineLife, fx.burst, fx.burstColor, fx.burstLine]);
+  }, [loaded, fx.click, fx.trail, fx.count, colorKey, fx.line, fx.lineColor, fx.lineLife, fx.burst, fx.burstColor, fx.burstLine, fx.burstPart]);
 
   return null;
 }

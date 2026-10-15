@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
-import { boardEntries, useMenuSettings, buildMenu, faClass } from '@/lib/menuStore';
+import { boardEntries, useMenuSettings, buildMenu, faClass, pageTitleFor } from '@/lib/menuStore';
 import { useBoards } from '@/lib/boardStore';
 import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
@@ -35,14 +35,6 @@ const MIcon = ({ icon }: { icon?: string }) => {
   const c = faClass(icon);
   return c ? <i className={c} aria-hidden style={{ marginRight: 6 }} /> : null;
 };
-
-/** 서랍 메뉴 한 칸의 글씨 — 주소에서 뽑은 영문 이름(큰 글씨) 아래에 한글 이름(작은 글씨). 영문으로 뽑을 수 없으면 한글 이름만 크게 */
-function DwLabel({ href, label }: { href: string; label: string }) {
-  const seg = href.startsWith('/') ? href.split(/[?#]/)[0].split('/').filter(Boolean)[0] : '';
-  const en = href === '/' ? 'MAIN' : /^[a-z0-9-]{2,18}$/i.test(seg ?? '') ? seg.replace(/-/g, ' ') : '';
-  if (!en || en.toUpperCase() === label.trim().toUpperCase()) return <b>{label}</b>;
-  return <><b>{en}</b><small>{label}</small></>;
-}
 
 export function TopBar() {
   const { user, isAdmin, logout } = useAuth();
@@ -358,13 +350,13 @@ export function TopBar() {
                   <div className="dw-cap">{item.label}</div>
                   {item.children.map(c => (
                     <button key={c.href} type="button" className={`dw-it${pathname === c.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(c.href); }}>
-                      <DwLabel href={c.href} label={c.label} />{dotHrefs.has(c.href) && <small className="nd">●</small>}
+                      <b>{pageTitleFor(menuSet, c.href) || c.label}</b>{dotHrefs.has(c.href) && <small className="nd">●</small>}
                     </button>
                   ))}
                 </React.Fragment>
               ) : (
                 <button key={item.label} type="button" className={`dw-it${pathname === item.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(item.href!); }}>
-                  <DwLabel href={item.href!} label={item.label} />{dotHrefs.has(item.href!) && <small className="nd">●</small>}
+                  <b>{pageTitleFor(menuSet, item.href!) || item.label}</b>{dotHrefs.has(item.href!) && <small className="nd">●</small>}
                 </button>
               ))}
             </div>

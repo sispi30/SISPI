@@ -3053,7 +3053,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   .dw-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:10px}
   .dw-cap{grid-column:1/-1;padding:18px 4px 6px;text-align:center;font-family:var(--serif);font-size:calc(10px*var(--fs,1));letter-spacing:.34em;text-indent:.34em;text-transform:uppercase;
     color:color-mix(in srgb,var(--dd-fg,#e8eaee) 50%,transparent)}
-  .dw-it{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:78px;padding:20px 4px 14px;text-align:center;
+  .dw-it{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:62px;padding:20px 4px 14px;text-align:center;
     color:var(--dd-fg,#e8eaee);background:transparent !important;border:0;border-radius:0;-webkit-tap-highlight-color:transparent;
     cursor:var(--cur-pointer,pointer)}
   .dw-it::before{content:"+";position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:9px;line-height:1;opacity:.4}
