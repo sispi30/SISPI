@@ -2189,7 +2189,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 /* static: gnb 자리에 그대로 얹혀서 상단바 배경을 그대로 쓰고 글자색만 재정의 */
 .gnb.tf-static > button,.gnb.tf-static .tf-grp > button{
   padding:7px 13px;border-radius:8px;white-space:nowrap;transition:.18s;
-  -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;   /* 항목 외곽선 — 박스가 아니라 아이콘·글자 자체의 윤곽선 */
+  -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;text-shadow:var(--tf-item-sh,none);   /* 항목 외곽선 — 박스가 아니라 아이콘·글자 자체의 윤곽선 */
   color:var(--tf-menu-fg);font-size:var(--tf-menu-fs);letter-spacing:var(--tf-menu-ls);
 }
 .gnb.tf-static > button:hover,.gnb.tf-static .tf-grp > button:hover,.gnb.tf-static > button.on{
@@ -2215,7 +2215,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-fixed .tf-grp{position:relative}
 .tf-fixed .tf-grp > button,.tf-fixed .tf-items > button{
   padding:7px 12px;border-radius:8px;white-space:nowrap;transition:.15s;
-  -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;   /* 항목 외곽선 — 박스가 아니라 아이콘·글자 자체의 윤곽선 */
+  -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;text-shadow:var(--tf-item-sh,none);   /* 항목 외곽선 — 박스가 아니라 아이콘·글자 자체의 윤곽선 */
   color:var(--tf-menu-fg);font-size:var(--tf-menu-fs);letter-spacing:var(--tf-menu-ls);
 }
 .tf-fixed .tf-grp > button:hover,.tf-fixed .tf-items > button:hover,.tf-fixed .tf-items > button.on{

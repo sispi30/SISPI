@@ -68,6 +68,10 @@ export interface TransformMenuSettings {
   itemOutlineWidth: number;    // 글자·아이콘 바깥으로 보이는 두께(px)
   itemOutlineColor: string;    // 비우면 포인트색(--accent)
 
+  // 항목 그림자 — 같은 방식으로 아이콘·글자 자체에 드리우는 그림자 (강도 0이면 끔)
+  itemShadow: number;          // 0~100 (%)
+  itemShadowColor: string;     // 비우면 검정
+
   // 서브메뉴 배경
   subBgColor: string;      // 비우면 --dd-bg
   subBorderRadius: number;
@@ -122,6 +126,9 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
 
   itemOutlineWidth: 1,
   itemOutlineColor: '',
+
+  itemShadow: 0,
+  itemShadowColor: '',
 
   subBgColor: '',
   subBorderRadius: 10,

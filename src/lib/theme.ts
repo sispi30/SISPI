@@ -31,7 +31,7 @@ export interface ThemeVars {
   // 모바일 헤더 (v1.9 사용자 요청): PC 설정과 동일 / 모바일에서만 생략
   pageHeadM?: 'same' | 'none';
   // 페이지 타이틀 그림자: 켜기/끄기(기본 꺼짐) + 색 (비우면 검정 계열)
-  pageTitleShadow?: boolean; pageTitleShadowColor?: string;
+  pageTitleShadow?: boolean; pageTitleShadowColor?: string; pageTitleShadowAmt?: number;  // 강도 0~100 (기본 60)
   // BGM 플레이어
   bgmBg: string; bgmFg: string; bgmIc: string; bgmVol: string;
   // 스크롤바: 색 · 테두리색
@@ -236,7 +236,10 @@ export function themeToCssVars(t: ThemeVars): Record<string, string> {
     '--top-bg': withAlpha(t.topBg, 0.84), '--top-fg': t.topFg, '--top-hv': t.topHv, '--top-brand': t.topBrand,
     '--dd-bg': withAlpha(t.ddBg, 0.97), '--dd-fg': t.ddFg, '--dd-hv': withAlpha(t.ddHv, 0.09),
     '--page-title': t.pageTitle, '--page-desc': t.pageDesc,
-    '--page-title-sh': t.pageTitleShadow ? `0 2px 8px ${t.pageTitleShadowColor || 'rgba(0,0,0,.45)'}` : 'none',
+    '--page-title-sh': t.pageTitleShadow
+      ? (() => { const a = Math.min(100, Math.max(0, t.pageTitleShadowAmt ?? 60));   // 강도 = 짙기 + 번짐 반경
+          return `0 ${(1 + a / 40).toFixed(1)}px ${(3 + a / 8).toFixed(1)}px color-mix(in srgb, ${t.pageTitleShadowColor || '#000000'} ${a}%, transparent)`; })()
+      : 'none',
     // 페이지 헤더 표시 옵션 (v1.9) — 모바일 생략은 CSS 미디어쿼리가 --ph-m을 보고 처리
     '--ph-title': (t.pageHead ?? 'both') === 'both' || t.pageHead === 'title' ? 'block' : 'none',
     '--ph-desc': (t.pageHead ?? 'both') === 'both' || t.pageHead === 'desc' ? 'block' : 'none',

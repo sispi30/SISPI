@@ -408,7 +408,14 @@ function DesignPane() {
             <button className={!state.vars.pageTitleShadow ? 'on' : ''} onClick={() => setVar('pageTitleShadow', false)}>끔</button>
             <button className={state.vars.pageTitleShadow ? 'on' : ''} onClick={() => setVar('pageTitleShadow', true)}>켬</button>
           </div>
-          {state.vars.pageTitleShadow && <CP label="그림자 색" k="pageTitleShadowColor" def="#000000" />}
+          {state.vars.pageTitleShadow && (
+            <>
+              <CP label="그림자 색" k="pageTitleShadowColor" def="#000000" />
+              <span className="cp-lb">강도</span>
+              <KStep value={state.vars.pageTitleShadowAmt ?? 60} min={0} max={100} step={5} suffix="%"
+                onChange={v => setVar('pageTitleShadowAmt', v)} />
+            </>
+          )}
         </div>
       </div>
 
@@ -3121,6 +3128,15 @@ function MenuDesignPane() {
               <span className="cp-lb">두께</span>
               <KStep value={cfg.itemOutlineWidth} min={0} max={6} step={0.5} suffix="px" onChange={v => patch({ itemOutlineWidth: v })} />
               {cfg.itemOutlineWidth > 0 && <TfColor label="색" value={cfg.itemOutlineColor} fallback={accentHex} patch={patch} k="itemOutlineColor" />}
+            </div>
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>항목 그림자</b><small>항목 외곽선과 같은 방식 — 박스가 아니라 각 아이콘·글자 자체에 드리우는 그림자 · 강도 0%이면 꺼짐</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <span className="cp-lb">강도</span>
+              <KStep value={cfg.itemShadow} min={0} max={100} step={5} suffix="%" onChange={v => patch({ itemShadow: v })} />
+              {cfg.itemShadow > 0 && <TfColor label="색" value={cfg.itemShadowColor} fallback="#000000" patch={patch} k="itemShadowColor" />}
             </div>
           </div>
 
