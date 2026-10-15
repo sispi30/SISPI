@@ -321,12 +321,12 @@ a{color:inherit;text-decoration:none}
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-100 -100 200 200'%3E%3Cpath fill-rule='evenodd' d='M0 -98Q1.6 -1.6 98 0Q1.6 1.6 0 98Q-1.6 1.6 -98 0Q-1.6 -1.6 0 -98ZM0 -34Q-4 -4 -34 0Q-4 4 0 34Q4 4 34 0Q4 -4 0 -34Z'/%3E%3C/svg%3E") center/contain no-repeat;
   animation:phStar 5s ease-in-out infinite}
 .page-head h1{letter-spacing:.38em;padding-left:.38em;font-weight:var(--fw-pagetitle,var(--fw-title,500))}
-.page-head p{letter-spacing:.3em;padding-left:.3em;text-transform:uppercase}
+.page-head p{letter-spacing:.02em;text-transform:uppercase;word-spacing:normal}   /* 설명 문구는 자간을 벌리지 않는다 */
 .page-head .desc-edit{text-align:center}
 .page-head p,.page-head > div{text-align:center;justify-self:center}   /* 설명 문구는 늘 가운데 정렬 */
 .page-head.head-stack{justify-items:center}
 @keyframes phStar{0%,100%{transform:translateY(0) scale(1);opacity:.95}50%{transform:translateY(-4px) scale(1.08);opacity:.65}}
-@media (max-width:760px){.page-head::before{margin-top:0}.page-head h1{letter-spacing:.24em;padding-left:.24em}.page-head p{letter-spacing:.12em;padding-left:.12em}}
+@media (max-width:760px){.page-head::before{margin-top:0}.page-head h1{letter-spacing:.24em;padding-left:.24em}.page-head p{letter-spacing:.02em}}
 @media (prefers-reduced-motion:reduce){.page-head::before{animation:none}}
 /* 우측 액션(검색·등록·슬롯)은 절대배치 — 높이가 커도 제목·설명 줄 간격을 벌리지 않음
    (커미션처럼 액션이 2단이면 설명 윗여백이 다른 메뉴보다 넓어지던 문제, v1.9 사용자 발견) */

@@ -32,6 +32,29 @@ export function playBuiltIn(ctxRef: { current: AudioContext | null }, kind: Excl
   } catch { /* 소리가 안 나도 화면에는 영향 없음 */ }
 }
 
+/** 인트로 입장 효과음 — 청량하게 톡 올라가는 맑은 두 음 + 반짝이는 높은 음. 볼륨 0~1 */
+export function playIntroSfx(ctxRef: { current: AudioContext | null }, vol: number) {
+  try {
+    const AC = (window.AudioContext || (window as unknown as { webkitAudioContext?: ACtor }).webkitAudioContext) as ACtor | undefined;
+    if (!AC) return;
+    const ctx = ctxRef.current ?? (ctxRef.current = new AC());
+    if (ctx.state === 'suspended') void ctx.resume();
+    const t = ctx.currentTime, v = Math.max(0, Math.min(1, vol));
+    const note = (f: number, at: number, dur: number, peak: number) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(f, t + at);
+      g.gain.setValueAtTime(0.0001, t + at);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * v), t + at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + at + dur);
+      o.connect(g); g.connect(ctx.destination); o.start(t + at); o.stop(t + at + dur + 0.02);
+    };
+    note(1318.5, 0, 0.22, 0.32);      // E6
+    note(1975.5, 0.07, 0.3, 0.3);     // B6
+    note(2637, 0.14, 0.45, 0.2);      // E7 — 맑게 반짝
+    note(3951, 0.14, 0.25, 0.07);     // B7 — 공기감
+  } catch { /* 소리가 안 나도 화면에는 영향 없음 */ }
+}
+
 export function ClickSound() {
   const [cs] = useCursorSettings();
   const snd = normSound(cs.sound);
@@ -42,6 +65,7 @@ export function ClickSound() {
     if (!snd.on) return;
     const on = (e: MouseEvent) => {
       if (!e.isTrusted) return;
+      if ((e.target as Element | null)?.closest?.('[data-nosfx]')) return;   // 인트로 입장 버튼은 전용 효과음만 낸다
       const vol = snd.volume / 100;
       if (snd.kind === 'custom') {
         if (!url) return;

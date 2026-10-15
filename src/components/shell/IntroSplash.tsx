@@ -10,6 +10,8 @@ import { useSiteSettings } from '@/lib/siteStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { useMenuSettings, buildMenu } from '@/lib/menuStore';
 import { useStageFit } from '@/lib/stageFit';
+import { playIntroSfx } from '@/components/shell/ClickSound';
+import { useCursorSettings, normSound } from '@/lib/cursorStore';
 import { INTRO_RINGS, INTRO_CONS, INTRO_PLANETS, INTRO_SPARKS, introSparkle } from '@/lib/introSky';
 
 const SEEN = 'ohome.intro.seen';
@@ -78,13 +80,17 @@ export function IntroSplash() {
     return () => cancelAnimationFrame(raf.current);
   }, [phase, loaded]);
 
+  const sfxCtx = useRef<AudioContext | null>(null);
+  const [cursorSet] = useCursorSettings();
+  const sfxVol = normSound(cursorSet.sound).volume / 100;   // 효과음 볼륨은 환경설정의 클릭 효과음 볼륨을 따른다
   const enter = useCallback((href?: string) => {
     if (phase !== 'ready') return;
+    playIntroSfx(sfxCtx, sfxVol || 0.6);
     try { sessionStorage.setItem(SEEN, '1'); } catch { /* 무시 */ }
     setPhase('out');
     if (href) router.push(href);
     setTimeout(() => setPhase('gone'), 2200);
-  }, [phase, router]);
+  }, [phase, router, sfxVol]);
 
   if (phase === 'gone') return null;
 
@@ -170,7 +176,7 @@ export function IntroSplash() {
         <g className="sparks">{SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={introSparkle(x, y, r * 2)} />)}</g>
       </svg>
       <div className="is-halo" />
-      <div className={`is-star${ready ? " on" : ""}`} role="button" tabIndex={ready ? 0 : -1} aria-label="ARCHIVE ENTRY" onClick={() => enter()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(); } }}>
+      <div className={`is-star${ready ? " on" : ""}`} role="button" tabIndex={ready ? 0 : -1} aria-label="ARCHIVE ENTRY" data-nosfx="" onClick={() => enter()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(); } }}>
         <svg viewBox="-100 -100 200 200"><g ref={starRef}><path fillRule="evenodd" transform="rotate(-32)" d="M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z" /></g></svg>
       </div>
       <i className="is-frame" />
@@ -182,7 +188,7 @@ export function IntroSplash() {
       </div>
       <h1 className="is-sr">{t1} {t2} {t3}</h1>
 
-      <nav className="is-nav" onClick={e => e.stopPropagation()}>
+      <nav className="is-nav" data-nosfx="" onClick={e => e.stopPropagation()}>
         {items.map((m, i) => (
           <React.Fragment key={m.href + i}>
             {i === 1 && <span className="sl">/</span>}
@@ -196,7 +202,7 @@ export function IntroSplash() {
 
       <div className="is-mid">
         <div className="acc">
-          {ready ? <><button type="button" className="chip" onClick={() => enter()}>ARCHIVE ENTRY</button><span className="hint">CLICK TO ENTER</span></> : <span className="hint">{'AUTH · VERIFYING'}</span>}
+          {ready ? <><button type="button" className="chip" data-nosfx="" onClick={() => enter()}>ARCHIVE ENTRY</button><span className="hint">CLICK TO ENTER</span></> : <span className="hint">{'AUTH · VERIFYING'}</span>}
         </div>
       </div>
 

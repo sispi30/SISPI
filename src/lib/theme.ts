@@ -121,7 +121,7 @@ export const LIGHT_THEME: ThemeVars = {
 export function layeredTextShadow(strength: number, color: string): string {
   const a = Math.min(100, Math.max(0, strength));
   if (a <= 0) return 'none';
-  const one = `0 ${(1 + a / 50).toFixed(1)}px ${(2 + a / 14).toFixed(1)}px color-mix(in srgb, ${color || '#000000'} ${Math.min(100, Math.round(45 + a * 0.55))}%, transparent)`;
+  const one = `0 0 ${(2 + a / 14).toFixed(1)}px color-mix(in srgb, ${color || '#000000'} ${Math.min(100, Math.round(45 + a * 0.55))}%, transparent)`;
   return Array(a < 35 ? 1 : a < 70 ? 2 : 3).fill(one).join(', ');
 }
 
