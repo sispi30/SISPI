@@ -64,10 +64,9 @@ export interface TransformMenuSettings {
   outlineWidth: number;
   outlineColor: string;    // 비우면 포인트색(--accent)
 
-  // 항목 외곽선 — 각 아이콘·글자를 하나씩 감싸는 선 (두께 0이면 끔)
-  itemOutlineWidth: number;
+  // 항목 외곽선 — 박스로 감싸는 게 아니라 각 아이콘·글자 자체에 두르는 윤곽선 (글자 윤곽선처럼, 두께 0이면 끔)
+  itemOutlineWidth: number;    // 글자·아이콘 바깥으로 보이는 두께(px)
   itemOutlineColor: string;    // 비우면 포인트색(--accent)
-  itemOutlineRadius: number;   // 모서리 (999면 캡슐·원형)
 
   // 서브메뉴 배경
   subBgColor: string;      // 비우면 --dd-bg
@@ -123,7 +122,6 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
 
   itemOutlineWidth: 1,
   itemOutlineColor: '',
-  itemOutlineRadius: 999,
 
   subBgColor: '',
   subBorderRadius: 10,

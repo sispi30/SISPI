@@ -2186,8 +2186,8 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 /* ---------- 트랜스폼 메뉴 위젯 (커스텀 요청) — 환경설정 > 메뉴 위젯 ---------- */
 /* static: gnb 자리에 그대로 얹혀서 상단바 배경을 그대로 쓰고 글자색만 재정의 */
 .gnb.tf-static > button,.gnb.tf-static .tf-grp > button{
-  padding:7px 13px;border-radius:var(--tf-item-r,8px);white-space:nowrap;transition:.18s;
-  outline:var(--tf-item-ol,0px) solid var(--tf-item-olc,transparent);   /* 항목 외곽선 — 각 아이콘·글자를 하나씩 감싼다 */
+  padding:7px 13px;border-radius:8px;white-space:nowrap;transition:.18s;
+  -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;   /* 항목 외곽선 — 박스가 아니라 아이콘·글자 자체의 윤곽선 */
   color:var(--tf-menu-fg);font-size:var(--tf-menu-fs);letter-spacing:var(--tf-menu-ls);
 }
 .gnb.tf-static > button:hover,.gnb.tf-static .tf-grp > button:hover,.gnb.tf-static > button.on{
@@ -2212,8 +2212,8 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-fixed .tf-items{align-items:center}
 .tf-fixed .tf-grp{position:relative}
 .tf-fixed .tf-grp > button,.tf-fixed .tf-items > button{
-  padding:7px 12px;border-radius:var(--tf-item-r,8px);white-space:nowrap;transition:.15s;
-  outline:var(--tf-item-ol,0px) solid var(--tf-item-olc,transparent);   /* 항목 외곽선 — 각 아이콘·글자를 하나씩 감싼다 */
+  padding:7px 12px;border-radius:8px;white-space:nowrap;transition:.15s;
+  -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;   /* 항목 외곽선 — 박스가 아니라 아이콘·글자 자체의 윤곽선 */
   color:var(--tf-menu-fg);font-size:var(--tf-menu-fs);letter-spacing:var(--tf-menu-ls);
 }
 .tf-fixed .tf-grp > button:hover,.tf-fixed .tf-items > button:hover,.tf-fixed .tf-items > button.on{
@@ -2991,8 +2991,9 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .ow *{pointer-events:none}
 .ow-stage{--ow-s:calc(100cqmin*var(--ow-k,1));position:relative;width:var(--ow-s);aspect-ratio:1/1;perspective:calc(var(--ow-s)*4)}
 .ow-back{position:absolute;inset:0;width:100%;height:100%;overflow:visible;fill:none;stroke:var(--ow-line);stroke-width:1.5;stroke-linecap:round}
+/* 선 굵기는 종류별 배율(--ow-wb 진한 선 · --ow-wt 얇은 선 · --ow-wd 점선)을 곱한다 — 설정의 굵기 % */
 .ow-back .cons{transform-origin:350px 350px;animation:owTurn 240s linear infinite}
-.ow-back .cons polyline{stroke-width:1.5;opacity:.8}
+.ow-back .cons polyline{stroke-width:calc(1.5px*var(--ow-wt,1));opacity:.8}
 .ow-back .cs,.ow-back .sp{fill:var(--ow-sp);stroke:none;transform-box:fill-box;transform-origin:center;animation:owTw 3.2s ease-in-out infinite}
 .ow-scene{position:absolute;inset:0;transform-style:preserve-3d}
 .ow-rig{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(-22deg)}
@@ -3006,17 +3007,17 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   overflow:visible;fill:none;stroke:var(--ow-line);stroke-linecap:round}
 .ow-ring.turn{animation:owTurn var(--tt,60s) linear infinite}
 .ow-ring.turn.rev{animation-direction:reverse}
-.ow-ring .a{stroke-width:2.6;opacity:.85}
-.ow-ring.gold .a{stroke-width:6;opacity:1}
-.ow-ring.line .a{stroke-width:2.8;opacity:.9}
-.ow-ring.th .a{stroke-width:2;opacity:.75}
-.ow-ring.dash .a{stroke:var(--ow-pt);stroke-width:3;stroke-dasharray:13 9;opacity:.95}
-.ow-ring.dot .a{stroke:var(--ow-pt);stroke-width:6;stroke-dasharray:.5 13;opacity:.9}
-.ow-ring.band .a{stroke-width:2;opacity:.85}
-.ow-ring.band .tk{stroke:var(--ow-pt);stroke-width:16;stroke-dasharray:1.8 15;opacity:.45}
+.ow-ring .a{stroke-width:calc(2.6px*var(--ow-wt,1));opacity:.85}
+.ow-ring.gold .a{stroke-width:calc(6px*var(--ow-wb,1));opacity:1}
+.ow-ring.line .a{stroke-width:calc(2.8px*var(--ow-wt,1));opacity:.9}
+.ow-ring.th .a{stroke-width:calc(2px*var(--ow-wt,1));opacity:.75}
+.ow-ring.dash .a{stroke:var(--ow-pt);stroke-width:calc(3px*var(--ow-wd,1));stroke-dasharray:13px calc(6px + 3px*var(--ow-wd,1));opacity:.95}   /* 굵어져도 점선 사이 빈틈이 그대로 남게 간격에 굵기를 더한다 */
+.ow-ring.dot .a{stroke:var(--ow-pt);stroke-width:calc(6px*var(--ow-wd,1));stroke-dasharray:.5px calc(7px + 6px*var(--ow-wd,1));opacity:.9}
+.ow-ring.band .a{stroke-width:calc(2px*var(--ow-wt,1));opacity:.85}
+.ow-ring.band .tk{stroke:var(--ow-pt);stroke-width:16;stroke-dasharray:calc(1.8px*var(--ow-wd,1)) 15px;opacity:.45}
 .ow-ring .bd{fill:var(--ow-pt);stroke:none}
 .ow-ring .bd.hl{fill:none;stroke:var(--ow-pt);stroke-width:3}
-.ow-star{position:absolute;left:50%;top:50%;width:calc(var(--ow-s)*.2);aspect-ratio:1/1;margin:calc(var(--ow-s)*-.1) 0 0 calc(var(--ow-s)*-.1)}
+.ow-star{position:absolute;left:50%;top:50%;width:calc(var(--ow-s)*.2*var(--ow-star,1));aspect-ratio:1/1;margin:calc(var(--ow-s)*-.1*var(--ow-star,1)) 0 0 calc(var(--ow-s)*-.1*var(--ow-star,1))}
 .ow-star svg{display:block;width:100%;height:100%;overflow:visible;fill:var(--ow-sp);stroke:none;filter:drop-shadow(0 0 calc(var(--ow-s)*.015) color-mix(in srgb,var(--ow-sp) 60%,transparent))}
 @keyframes owSpin{to{transform:rotateY(360deg)}}
 @keyframes owTurn{to{transform:rotate(360deg)}}

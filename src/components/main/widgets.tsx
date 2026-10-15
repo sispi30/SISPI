@@ -11,7 +11,9 @@ import { useBoards } from '@/lib/boardStore';
 import { Modal } from '@/components/ui/Modal';
 import { KTextarea, KSelect, KStep, KCheck } from '@/components/ui/Kit';
 import { ColorField } from '@/components/ui/ColorField';
-import { OrbitSky, OrbitSkySettings, ORBIT_DEFAULT_SIZE, ORBIT_DEFAULT_TILT } from '@/components/main/OrbitSky';
+import {
+  OrbitSky, OrbitSkySettings, ORBIT_DEFAULT_SIZE, ORBIT_DEFAULT_TILT, ORBIT_DEFAULT_STAR, ORBIT_DEFAULT_COUNT, ORBIT_MAX_COUNT, ORBIT_DEFAULT_WIDTH,
+} from '@/components/main/OrbitSky';
 import { useFonts } from '@/lib/fontStore';
 import { BannerEditor, BannerSlide, DEMO_SLIDES, DdayEditor, DecoEditor, TodoEditor, TodoSetItem } from '@/components/main/widgetEditors';
 import { CroppedBlobImg, CropValue } from '@/components/ui/CropEditor';
@@ -681,7 +683,8 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
   );
   return (
     <div className="ow-wrap" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 80 }}>
-      <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} tilt={s.tilt} />
+      <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} tilt={s.tilt}
+        starSize={s.starSize} ringCount={s.ringCount} boldWidth={s.boldWidth} thinWidth={s.thinWidth} dashWidth={s.dashWidth} />
       <div onClick={e => e.stopPropagation()}>
         <Modal open={open} onClose={() => setOpen(false)} small title="별자리 궤도"
           desc="혼천의처럼 고리가 입체적으로 돕니다 — 가운데 별은 마우스를 따라 제자리에서 돕니다. 바꾸는 즉시 적용됩니다"
@@ -697,6 +700,23 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
               <KStep value={s.tilt ?? ORBIT_DEFAULT_TILT} min={0} max={100} step={5} suffix="%" onChange={v => set({ tilt: v })} />
               <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>마우스를 따라 고리가 기우는 세기 · 0%면 기울지 않음 (고리는 계속 돕니다)</small>
             </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="cp-lb" style={{ minWidth: 58 }}>별 크기</span>
+              <KStep value={s.starSize ?? ORBIT_DEFAULT_STAR} min={30} max={300} step={10} suffix="%" onChange={v => set({ starSize: v })} />
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>가운데에서 도는 별</small>
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="cp-lb" style={{ minWidth: 58 }}>선 개수</span>
+              <KStep value={s.ringCount ?? ORBIT_DEFAULT_COUNT} min={1} max={ORBIT_MAX_COUNT} step={1} suffix="개" onChange={v => set({ ringCount: v })} />
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>고리 수 · 기본 {ORBIT_DEFAULT_COUNT}개, 최대 {ORBIT_MAX_COUNT}개</small>
+            </div>
+            {([['진한 선', 'boldWidth', '굵고 밝은 고리'], ['얇은 선', 'thinWidth', '보통·가는 고리와 별자리 선'], ['점선', 'dashWidth', '점선 고리와 눈금']] as const).map(([label, k, hint]) => (
+              <div key={k} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className="cp-lb" style={{ minWidth: 58 }}>{label}</span>
+                <KStep value={s[k] ?? ORBIT_DEFAULT_WIDTH} min={30} max={300} step={10} suffix="%" onChange={v => set({ [k]: v } as Partial<OrbitSkySettings>)} />
+                <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{hint} 굵기</small>
+              </div>
+            ))}
             {colorRow('고리·별자리', 'lineColor')}
             {colorRow('알갱이·점선', 'pointColor')}
             {colorRow('별·반짝이', 'sparkColor')}

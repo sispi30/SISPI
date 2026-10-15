@@ -7,7 +7,7 @@
 // · 크기(위젯 칸 대비 %)와 색(선·포인트·반짝이)을 바꿀 수 있다. 색을 비우면 사이트 포인트색을 따른다.
 // · 도형은 lib/orbitSky.ts — 인트로(lib/introSky.ts)와 따로 관리한다.
 import React, { useEffect, useRef } from 'react';
-import { ARM_BOX, ARM_C, ARM_RINGS, ARM_CONS, ARM_SPARKS, ARM_STAR_PATH, armSparkle, ArmRing } from '@/lib/orbitSky';
+import { ARM_BOX, ARM_C, ARM_RINGS, ARM_DEFAULT_COUNT, ARM_CONS, ARM_SPARKS, ARM_STAR_PATH, armSparkle, ArmRing } from '@/lib/orbitSky';
 
 export interface OrbitSkySettings {
   size?: number;          // 위젯 칸에 꽉 찬 크기를 100으로 본 % (기본 100)
@@ -15,9 +15,18 @@ export interface OrbitSkySettings {
   pointColor?: string;    // 알갱이(행성)·점선 고리
   sparkColor?: string;    // 반짝이·가운데 별
   tilt?: number;          // 마우스를 따라 고리 전체가 기우는 세기 0~100 (기본 60, 0이면 안 기운다)
+  starSize?: number;      // 가운데 별 크기 % (기본 100)
+  ringCount?: number;     // 선(고리) 개수 — 기본 8개, 최대 ARM_RINGS.length개
+  boldWidth?: number;     // 진한 선(굵고 밝은 고리) 굵기 % (기본 100)
+  thinWidth?: number;     // 얇은 선(보통·가는 고리, 별자리 선) 굵기 % (기본 100)
+  dashWidth?: number;     // 점선(긴 점선·점점이 고리, 눈금) 굵기 % (기본 100)
 }
 export const ORBIT_DEFAULT_SIZE = 100;
 export const ORBIT_DEFAULT_TILT = 60;
+export const ORBIT_DEFAULT_STAR = 100;
+export const ORBIT_DEFAULT_COUNT = ARM_DEFAULT_COUNT;
+export const ORBIT_MAX_COUNT = ARM_RINGS.length;
+export const ORBIT_DEFAULT_WIDTH = 100;
 
 const BASE_RX = -22;   // 마우스가 가운데 있을 때 앞쪽으로 기울어 보이는 정도(°) — 가로 고리가 납작한 타원으로 보인다
 const RING_R = 340;    // 고리 그림(700 상자) 안의 원 반지름 — 고리 크기는 지름(d)으로 정하므로 모든 고리가 같은 그림을 쓴다
@@ -54,7 +63,11 @@ function Ring({ g }: { g: ArmRing }) {
   );
 }
 
-export function OrbitSky({ size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, sparkColor, tilt = ORBIT_DEFAULT_TILT }: OrbitSkySettings) {
+export function OrbitSky({
+  size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, sparkColor, tilt = ORBIT_DEFAULT_TILT,
+  starSize = ORBIT_DEFAULT_STAR, ringCount = ORBIT_DEFAULT_COUNT,
+  boldWidth = ORBIT_DEFAULT_WIDTH, thinWidth = ORBIT_DEFAULT_WIDTH, dashWidth = ORBIT_DEFAULT_WIDTH,
+}: OrbitSkySettings) {
   const box = useRef<HTMLDivElement>(null);
   const rig = useRef<HTMLDivElement>(null);
   const star = useRef<SVGSVGElement>(null);
@@ -118,7 +131,12 @@ export function OrbitSky({ size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, spa
     '--ow-line': lineColor || 'var(--accent)',
     '--ow-pt': pointColor || 'var(--accent)',
     '--ow-sp': sparkColor || 'var(--accent)',
+    '--ow-star': clamp(starSize, 10, 400) / 100,     // 별 크기 배율
+    '--ow-wb': clamp(boldWidth, 10, 500) / 100,      // 진한 선 굵기 배율
+    '--ow-wt': clamp(thinWidth, 10, 500) / 100,      // 얇은 선 굵기 배율
+    '--ow-wd': clamp(dashWidth, 10, 500) / 100,      // 점선 굵기 배율
   });
+  const rings = ARM_RINGS.slice(0, clamp(Math.round(ringCount), 1, ARM_RINGS.length));
 
   return (
     <div className="ow" ref={box} style={vars} aria-hidden="true">
@@ -140,7 +158,7 @@ export function OrbitSky({ size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, spa
         {/* 입체 무대 — 고리는 기울며 돌고, 가운데 별은 제자리에 평면으로 고정 (고리가 별의 앞뒤로 지나간다) */}
         <div className="ow-scene">
           <div className="ow-rig" ref={rig}>
-            {ARM_RINGS.map((g, i) => <Ring key={i} g={g} />)}
+            {rings.map((g, i) => <Ring key={i} g={g} />)}
           </div>
           <div className="ow-star">
             <svg ref={star} viewBox="-100 -100 200 200" focusable="false">

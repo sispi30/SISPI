@@ -3109,17 +3109,11 @@ function MenuDesignPane() {
           </div>
 
           <div className="set-row" style={{ flexWrap: 'wrap' }}>
-            <div className="l"><b>항목 외곽선</b><small>각 아이콘·글자를 하나씩 감싸는 선 · 두께 0px이면 꺼짐</small></div>
+            <div className="l"><b>항목 외곽선</b><small>박스가 아니라 각 아이콘·글자 자체에 두르는 윤곽선 (글자 윤곽선처럼) · 두께 0px이면 꺼짐</small></div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <span className="cp-lb">두께</span>
-              <KStep value={cfg.itemOutlineWidth} min={0} max={6} step={1} suffix="px" onChange={v => patch({ itemOutlineWidth: v })} />
-              {cfg.itemOutlineWidth > 0 && (
-                <>
-                  <TfColor label="색" value={cfg.itemOutlineColor} fallback={accentHex} patch={patch} k="itemOutlineColor" />
-                  <span className="cp-lb">모서리</span>
-                  <KStep value={cfg.itemOutlineRadius} min={0} max={999} step={1} suffix="px" onChange={v => patch({ itemOutlineRadius: v })} />
-                </>
-              )}
+              <KStep value={cfg.itemOutlineWidth} min={0} max={6} step={0.5} suffix="px" onChange={v => patch({ itemOutlineWidth: v })} />
+              {cfg.itemOutlineWidth > 0 && <TfColor label="색" value={cfg.itemOutlineColor} fallback={accentHex} patch={patch} k="itemOutlineColor" />}
             </div>
           </div>
 

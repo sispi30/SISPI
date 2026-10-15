@@ -206,10 +206,10 @@ export function TransformMenu() {
     ['--tf-sub-bg' as string]: cfg.subBgColor || 'var(--dd-bg)',
     ['--tf-sub-radius' as string]: `${cfg.subBorderRadius}px`,
     ['--tf-sub-shadow' as string]: cfg.subShadow ? 'var(--sh-dd)' : 'none',
-    // 항목 외곽선 — 각 아이콘·글자를 하나씩 감싸는 선
-    ['--tf-item-ol' as string]: `${cfg.itemOutlineWidth}px`,
+    // 항목 외곽선 — 아이콘·글자 자체에 두르는 윤곽선. 글자 윤곽선(text-stroke)은 선의 절반이 글자 안쪽을 먹으므로,
+    // 선을 글자 뒤에 깔고(paint-order) 두께를 두 배로 그려서 바깥으로 보이는 두께가 설정값과 같게 한다.
+    ['--tf-item-ol' as string]: `${cfg.itemOutlineWidth * 2}px`,
     ['--tf-item-olc' as string]: cfg.itemOutlineColor || 'var(--accent)',
-    ['--tf-item-r' as string]: `${cfg.itemOutlineRadius}px`,
   };
 
   // ---------- static: 상단바 자리에 그대로 (배경/로고/로그인은 상단바가 담당) ----------

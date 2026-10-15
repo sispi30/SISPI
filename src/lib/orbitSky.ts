@@ -27,7 +27,7 @@ export interface ArmRing {
   beads?: ArmBead[];
 }
 
-/** 고리들 — 바깥 구(지름 0.84) 위의 큰 고리 넷, 회귀선 둘, 안쪽에서 다른 축으로 도는 둘 */
+/** 고리들 — 바깥 구(지름 0.84) 위의 큰 고리 넷, 회귀선 둘, 안쪽에서 다른 축으로 도는 둘. 앞에 있을수록 먼저 보이는 고리 */
 export const ARM_RINGS: ArmRing[] = [
   // 큰 틀 — 같은 크기의 네 고리
   { d: 0.84, rx: 0, spin: 54, style: 'gold', beads: [{ a: 0, s: 11 }, { a: 180, s: 7, hollow: true }] },     // 자오선 (굵고 밝은 고리)
@@ -40,7 +40,14 @@ export const ARM_RINGS: ArmRing[] = [
   // 안쪽 고리 — 서로 다른 축으로 도는 둘
   { d: 0.6, rx: 0, axis: [0, 38], spin: -36, style: 'th', beads: [{ a: 120, s: 7 }] },
   { d: 0.46, rx: 62, axis: [48, -24], spin: 30, style: 'th', beads: [{ a: 300, s: 6, hollow: true }] },
+  // 여기부터는 기본으로는 안 보이고, 「선 개수」를 늘리면 차례로 더해진다 — 사이사이 자오선 둘, 극권 둘
+  { d: 0.84, rx: 0, spin: 54, phase: 0.125, style: 'th' },
+  { d: 0.84, rx: 0, spin: 54, phase: 0.375, style: 'th' },
+  { d: 0.464, rx: 90, y: -0.35, turn: 110, style: 'dot' },
+  { d: 0.464, rx: 90, y: 0.35, turn: -110, style: 'dot' },
 ];
+/** 기본으로 보이는 고리 수 (목록 앞에서부터 센다) — 설정의 「선 개수」 기본값. 최대는 ARM_RINGS.length */
+export const ARM_DEFAULT_COUNT = 8;
 
 /** 별자리 — 고리 뒤에 평면으로 깔려 천천히 도는 별 지도. 가장 먼 점이 ARM_CONS_MAX를 넘으면 바깥 구 밖으로 삐져나오니
  *  각 별자리를 중심 쪽으로 줄여 놓는다 (모양은 그대로, 크기만 조금 작아짐). */
