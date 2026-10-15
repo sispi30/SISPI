@@ -331,19 +331,15 @@ export function TopBar() {
       ) : (
         <button className="login-link" onClick={() => nav('/login')}>로그인</button>
       )}
-      {/* 서랍 메뉴 여는 버튼 — 모바일, 메뉴리스트를 보이게 한 경우만. 열리면 X로 바뀐다 */}
-      {drawerOn && (
-        <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label="메뉴" aria-expanded={drawerOpen}
-          onClick={() => setDrawerOpen(o => !o)}>
-          <i /><i /><i />
-        </button>
-      )}
       {drawerOn && typeof document !== 'undefined' && createPortal(
         <>
+          {/* 메뉴 버튼 하나를 서랍보다 위에 둔다 — 열리면 세 줄이 부드럽게 X로 바뀌고, 같은 버튼으로 닫는다 */}
+          <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label={drawerOpen ? '메뉴 닫기' : '메뉴'} aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen(o => !o)}>
+            <i /><i /><i />
+          </button>
           <div className={`dw-dim${drawerOpen ? ' on' : ''}`} onClick={() => setDrawerOpen(false)} />
           <aside className={`dw${drawerOpen ? ' on' : ''}`} aria-hidden={!drawerOpen}>
-            {/* 닫기 버튼은 서랍 안에 둔다 — 상단바 안의 버튼은 서랍 아래로 가려져서 눌리지 않았다 */}
-            <button type="button" className="dw-x" aria-label="메뉴 닫기" onClick={() => setDrawerOpen(false)}><i /><i /></button>
             <div className="dw-grid">
               {/* 그룹마다 따로 묶는다 — 한 묶음에 항목이 하나뿐이면 가운데 정렬 */}
               {(() => {
