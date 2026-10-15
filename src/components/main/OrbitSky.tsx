@@ -14,6 +14,8 @@ export interface OrbitSkySettings {
   lineColor?: string;     // 고리·별자리 선 (비우면 포인트색)
   pointColor?: string;    // 알갱이(행성)·점선 고리
   sparkColor?: string;    // 반짝이 (별자리 꼭짓점·흩어진 반짝이)
+  beadColor?: string;     // 고리 위를 도는 동그란 알갱이 색 (비우면 알갱이·점선 색을 따른다)
+  showBeads?: boolean;    // 동그란 알갱이 장식 켜기/끄기 (기본 켜짐)
   starColor?: string;     // 가운데 별 (비우면 포인트색 — 반짝이 색과는 별개)
   sparkSize?: number;     // 반짝이 크기 % (기본 100 = 인트로와 같은 크기)
   tilt?: number;          // 마우스를 따라 고리 전체가 기우는 세기 0~100 (기본 60, 0이면 안 기운다)
@@ -35,7 +37,7 @@ const RING_R = 340;    // 고리 그림(700 상자) 안의 원 반지름 — 고
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const cssVars = (o: Record<string, string | number>) => o as unknown as React.CSSProperties;
 
-function Ring({ g }: { g: ArmRing }) {
+function Ring({ g, beads }: { g: ArmRing; beads: boolean }) {
   const [ax, az] = g.axis ?? [0, 0];
   const spin = g.spin ?? 0, turn = g.turn ?? 0;
   return (
@@ -54,7 +56,7 @@ function Ring({ g }: { g: ArmRing }) {
                 <circle className="tk" cx={ARM_C} cy={ARM_C} r={RING_R - 14} />
               </>
             )}
-            {g.beads?.map((b, i) => (
+            {beads && g.beads?.map((b, i) => (
               <circle key={i} className={`bd${b.hollow ? ' hl' : ''}`} cx={ARM_C} cy={ARM_C - RING_R} r={b.s}
                 transform={`rotate(${b.a} ${ARM_C} ${ARM_C})`} />
             ))}
@@ -66,7 +68,7 @@ function Ring({ g }: { g: ArmRing }) {
 }
 
 export function OrbitSky({
-  size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, sparkColor, starColor, sparkSize = 100, tilt = ORBIT_DEFAULT_TILT,
+  size = ORBIT_DEFAULT_SIZE, lineColor, pointColor, sparkColor, starColor, beadColor, showBeads = true, sparkSize = 100, tilt = ORBIT_DEFAULT_TILT,
   starSize = ORBIT_DEFAULT_STAR, ringCount = ORBIT_DEFAULT_COUNT,
   boldWidth = ORBIT_DEFAULT_WIDTH, thinWidth = ORBIT_DEFAULT_WIDTH, dashWidth = ORBIT_DEFAULT_WIDTH,
 }: OrbitSkySettings) {
@@ -133,6 +135,7 @@ export function OrbitSky({
     '--ow-line': lineColor || 'var(--accent)',
     '--ow-pt': pointColor || 'var(--accent)',
     '--ow-sp': sparkColor || 'var(--accent)',
+    '--ow-bd': beadColor || pointColor || 'var(--accent)',
     '--ow-st': starColor || 'var(--accent)',
     '--ow-star': clamp(starSize, 10, 400) / 100,     // 별 크기 배율
     '--ow-wb': clamp(boldWidth, 10, 500) / 100,      // 진한 선 굵기 배율
@@ -162,7 +165,7 @@ export function OrbitSky({
         {/* 입체 무대 — 고리는 기울며 돌고, 가운데 별은 제자리에 평면으로 고정 (고리가 별의 앞뒤로 지나간다) */}
         <div className="ow-scene">
           <div className="ow-rig" ref={rig}>
-            {rings.map((g, i) => <Ring key={i} g={g} />)}
+            {rings.map((g, i) => <Ring key={i} g={g} beads={showBeads} />)}
           </div>
           <div className="ow-star">
             <svg ref={star} viewBox="-100 -100 200 200" focusable="false">

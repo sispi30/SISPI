@@ -685,7 +685,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
       return /^#[0-9a-f]{6}$/i.test(v) ? v : '#7fd6d0';
     } catch { return '#7fd6d0'; }
   })();
-  const colorRow = (label: string, k: 'lineColor' | 'pointColor' | 'sparkColor' | 'starColor') => (
+  const colorRow = (label: string, k: 'lineColor' | 'pointColor' | 'sparkColor' | 'starColor' | 'beadColor') => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <span className="cp-lb" style={{ minWidth: 58 }}>{label}</span>
       <ColorField value={s[k] || accentHex} onChange={hex => set({ [k]: hex } as Partial<OrbitSkySettings>)} />
@@ -699,7 +699,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
     <div className="ow-wrap" onClick={go}
       onMouseMove={e => { e.currentTarget.style.cursor = !editOn && s.link && inSphere(e) ? 'var(--cur-pointer,pointer)' : ''; }}
       style={{ position: 'relative', width: '100%', height: '100%', minHeight: 80 }}>
-      <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} starColor={s.starColor} sparkSize={s.sparkSize} tilt={s.tilt}
+      <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} starColor={s.starColor} beadColor={s.beadColor} showBeads={s.showBeads !== false} sparkSize={s.sparkSize} tilt={s.tilt}
         starSize={s.starSize} ringCount={s.ringCount} boldWidth={s.boldWidth} thinWidth={s.thinWidth} dashWidth={s.dashWidth} />
       <div onClick={e => e.stopPropagation()}>
         <Modal open={open} onClose={() => setOpen(false)} small title="별자리 궤도"
@@ -747,6 +747,8 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
             </div>
             {colorRow('고리·별자리', 'lineColor')}
             {colorRow('알갱이·점선', 'pointColor')}
+            <KCheck checked={s.showBeads !== false} onChange={v => set({ showBeads: v })} label="원형 장식 (고리 위의 동그란 알갱이) 보이기" />
+            {s.showBeads !== false && colorRow('원형 장식', 'beadColor')}
             {colorRow('가운데 별', 'starColor')}
             {colorRow('반짝이', 'sparkColor')}
           </div>
