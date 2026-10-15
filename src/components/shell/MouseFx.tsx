@@ -156,7 +156,6 @@ export function MouseFx() {
       + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
       + `.mfx-b .sp{width:12px;height:12px;margin:-6px 0 0 -6px;animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `.mfx-b .pt{width:5px;height:10px;margin:-5px 0 0 -2.5px;opacity:0;animation:mfxPt .7s cubic-bezier(.2,.7,.3,1) forwards}`   // 잎 모양 파티클 — 링 안쪽에서 링 테두리에 살짝 걸치는 곳까지만 퍼진다
-      + `.mfx-b .pt.sm{width:3.5px;height:7px;margin:-3.5px 0 0 -1.75px}`   // 큰 잎 사이의 작은 잎
       + `.mfx-b .pt.bg{width:7px;height:14px;margin:-7px 0 0 -3.5px}`
       + `.mfx-b .pt svg{fill:var(--bp);stroke:none}`
       + `@keyframes mfxPt{0%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--d0)*-1)) scale(.4)}15%{opacity:1}70%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--d1)*-1)) scale(1)}}`
@@ -172,15 +171,11 @@ export function MouseFx() {
       let h = `<i class="co">${STAR}</i>`;
       const n = 6, off = Math.random() * 60;
       for (let i = 0; i < n; i++) h += `<i class="sp" style="--a:${Math.round(off + i * 360 / n)}deg;animation-delay:${(i % 3) * 30}ms">${STAR}</i>`;
-      // 잎 파티클 4개 — 별 조각(60° 간격 6개)과 겹치지 않도록 그 사이 빈자리(30°·90°·210°·270°)에만 둔다
+      // 잎 파티클 6개 — 별 조각(60° 간격 6개)의 사이사이(30°씩 어긋난 자리)에 놓아 겹치지 않게, 가운데 별 가까이까지만 퍼진다
       const LEAF = '<svg viewBox="-5 -9 10 18"><path d="M0 -8Q5 0 0 8Q-5 0 0 -8Z"/></svg>';
-      [30, 90, 210, 270].forEach((deg, i) => {
-        h += `<i class="pt bg" style="--a:${Math.round(off + deg)}deg;--d0:12px;--d1:30px;animation-delay:${(i % 2) * 25}ms">${LEAF}</i>`;
-      });
-      // 큰 잎 사이의 작은 잎 — 별 조각·큰 잎과 겹치지 않는 빈자리(150°·330°)에 하나씩
-      [150, 330].forEach(deg => {
-        h += `<i class="pt sm" style="--a:${Math.round(off + deg)}deg;--d0:10px;--d1:24px">${LEAF}</i>`;
-      });
+      for (let i = 0; i < 6; i++) {
+        h += `<i class="pt bg" style="--a:${Math.round(off + 30 + i * 60)}deg;--d0:9px;--d1:21px;animation-delay:${(i % 2) * 25}ms">${LEAF}</i>`;
+      }
       b.innerHTML = h;
       box.appendChild(b);
       setTimeout(() => b.remove(), 900);
