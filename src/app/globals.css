@@ -3027,33 +3027,40 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 @keyframes owTw{0%,100%{opacity:.3;transform:scale(.6)}50%{opacity:1;transform:scale(1.15)}}
 @media (prefers-reduced-motion:reduce){.ow *{animation:none!important}}
 
-/* ---------- 모바일 서랍 메뉴 — 메인의 메뉴리스트를 보이게 한 경우, 본문 목록 대신 오른쪽에서 밀려 나온다 ---------- */
+/* ---------- 모바일 서랍 메뉴 — 메인의 메뉴리스트를 보이게 한 경우, 본문 목록 대신 오른쪽에서 밀려 나온다 ----------
+   모양: 가운데 정렬 2열, 칸 위에 작은 + 표식, 영문 큰 글씨(명조) 아래 한글 작은 글씨, 칸 아래 가는 줄 — 눌러도 호버 배경색이 생기지 않는다 */
 .dw-btn,.dw-dim,.dw{display:none}
 @media (max-width:620px){
   .menu-list,.wgt-hide-pc{display:none !important}   /* 서랍이 대신하므로 본문 목록은 숨김 */
   .topbar{overflow:visible}
-  .dw-btn{display:flex;position:absolute;right:16px;top:50px;z-index:62;width:34px;height:30px;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-    padding:0;border-radius:8px;background:transparent;border:none;cursor:var(--cur-pointer,pointer);color:var(--top-fg)}
-  .dw-btn i{display:block;width:22px;height:2px;border-radius:2px;background:currentColor;transition:transform .3s,opacity .2s,width .3s}
-  .dw-btn i:nth-child(2){width:16px;align-self:flex-end;margin-right:6px}
-  .dw-btn.on{position:fixed;z-index:95;top:50px;color:var(--dd-fg,#e8eaee)}
-  .dw-btn.on i:nth-child(1){transform:translateY(7px) rotate(45deg)}
-  .dw-btn.on i:nth-child(2){opacity:0}
-  .dw-btn.on i:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .dw-btn,.dw-x{display:flex;position:absolute;right:14px;top:46px;width:40px;height:42px;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;padding:4px 0 0;
+    background:transparent;border:none;cursor:var(--cur-pointer,pointer);color:var(--top-fg);-webkit-tap-highlight-color:transparent}
+  .dw-btn i{display:block;width:20px;height:1.5px;border-radius:2px;background:currentColor}
+  .dw-btn i:nth-child(2){width:14px;align-self:flex-end;margin-right:10px}
+  .dw-btn em,.dw-x em{font-style:normal;font-size:9px;letter-spacing:.12em;margin-top:2px;opacity:.85}
+  .dw-btn.on{opacity:0;pointer-events:none}   /* 열려 있는 동안은 서랍 안의 닫기 버튼이 그 자리를 맡는다 */
+  .dw-x{z-index:3;color:var(--dd-fg,#e8eaee);gap:0}
+  .dw-x i{display:block;width:20px;height:1.5px;border-radius:2px;background:currentColor;transform:rotate(45deg);margin-top:4px}
+  .dw-x i + i{transform:rotate(-45deg);margin-top:-1.5px}
+  .dw-x em{margin-top:12px}
   .dw-dim{display:block;position:fixed;inset:0;z-index:90;background:rgba(8,10,16,.42);opacity:0;pointer-events:none;transition:opacity .3s}
   .dw-dim.on{opacity:1;pointer-events:auto}
-  .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(78vw,340px);padding:92px 14px 24px;overflow-y:auto;
+  .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(76vw,330px);padding:104px 16px 28px;overflow-y:auto;
     background:color-mix(in srgb,var(--dd-bg,#12151c) 94%,#000);color:var(--dd-fg,#e8eaee);
-    border-left:1px solid var(--line-dark,rgba(255,255,255,.12));box-shadow:-18px 0 40px rgba(0,0,0,.35);
-    transform:translateX(104%);transition:transform .38s cubic-bezier(.22,.8,.28,1);-webkit-overflow-scrolling:touch}
-  .dw.on{transform:none}
-  .dw-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
-  .dw-cap{grid-column:1/-1;padding:16px 6px 8px;font-size:calc(10px*var(--fs,1));letter-spacing:.28em;text-transform:uppercase;color:color-mix(in srgb,var(--dd-fg,#e8eaee) 55%,transparent);
-    border-bottom:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 14%,transparent)}
-  .dw-it{position:relative;display:flex;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:12px 6px;text-align:center;border-radius:0;
-    color:var(--dd-fg,#e8eaee);background:transparent;border:0;border-bottom:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 10%,transparent);
-    font-family:var(--font-menu,var(--sans));cursor:var(--cur-pointer,pointer);transition:background .15s}
-  .dw-it b{font-weight:var(--fw-menu,500);font-size:calc(13px*var(--fs-menu,1));letter-spacing:.14em}
-  .dw-it:active,.dw-it.on{background:color-mix(in srgb,var(--accent) 22%,transparent)}
-  .dw-it.on b{color:var(--accent)}
+    border-left:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 14%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.35);
+    transform:translateX(104%);transition:transform .38s cubic-bezier(.22,.8,.28,1);-webkit-overflow-scrolling:touch;visibility:hidden}
+  .dw.on{transform:none;visibility:visible}
+  .dw-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:10px}
+  .dw-cap{grid-column:1/-1;padding:18px 4px 6px;text-align:center;font-family:var(--serif);font-size:calc(10px*var(--fs,1));letter-spacing:.34em;text-indent:.34em;text-transform:uppercase;
+    color:color-mix(in srgb,var(--dd-fg,#e8eaee) 50%,transparent)}
+  .dw-it{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:78px;padding:20px 4px 14px;text-align:center;
+    color:var(--dd-fg,#e8eaee);background:transparent !important;border:0;border-radius:0;-webkit-tap-highlight-color:transparent;
+    cursor:var(--cur-pointer,pointer)}
+  .dw-it::before{content:"+";position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:9px;line-height:1;opacity:.4}
+  .dw-it::after{content:"";position:absolute;left:4px;right:4px;bottom:0;height:1px;background:color-mix(in srgb,var(--dd-fg,#e8eaee) 16%,transparent)}
+  .dw-it b{font-family:var(--serif);font-weight:500;font-size:calc(12.5px*var(--fs-menu,1));letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;line-height:1.25;word-break:keep-all}
+  .dw-it small{font-family:var(--font-menu,var(--sans));font-size:calc(9.5px*var(--fs-menu,1));letter-spacing:.06em;opacity:.6;line-height:1.2}
+  .dw-it .nd{position:absolute;top:10px;right:14px;font-size:7px;opacity:1}
+  .dw-it:not(.on){opacity:.78}
+  .dw-it.on{opacity:1}
 }

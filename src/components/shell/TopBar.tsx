@@ -36,6 +36,14 @@ const MIcon = ({ icon }: { icon?: string }) => {
   return c ? <i className={c} aria-hidden style={{ marginRight: 6 }} /> : null;
 };
 
+/** 서랍 메뉴 한 칸의 글씨 — 주소에서 뽑은 영문 이름(큰 글씨) 아래에 한글 이름(작은 글씨). 영문으로 뽑을 수 없으면 한글 이름만 크게 */
+function DwLabel({ href, label }: { href: string; label: string }) {
+  const seg = href.startsWith('/') ? href.split(/[?#]/)[0].split('/').filter(Boolean)[0] : '';
+  const en = href === '/' ? 'MAIN' : /^[a-z0-9-]{2,18}$/i.test(seg ?? '') ? seg.replace(/-/g, ' ') : '';
+  if (!en || en.toUpperCase() === label.trim().toUpperCase()) return <b>{label}</b>;
+  return <><b>{en}</b><small>{label}</small></>;
+}
+
 export function TopBar() {
   const { user, isAdmin, logout } = useAuth();
   const { state: mainState, editOn, editAvailable, gridOn, setGridOn, toggleEdit, requestExit, guardNav } = useMainStore();
@@ -335,26 +343,28 @@ export function TopBar() {
       {drawerOn && (
         <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label="메뉴" aria-expanded={drawerOpen}
           onClick={() => setDrawerOpen(o => !o)}>
-          <i /><i /><i />
+          <i /><i /><i /><em>메뉴</em>
         </button>
       )}
       {drawerOn && typeof document !== 'undefined' && createPortal(
         <>
           <div className={`dw-dim${drawerOpen ? ' on' : ''}`} onClick={() => setDrawerOpen(false)} />
           <aside className={`dw${drawerOpen ? ' on' : ''}`} aria-hidden={!drawerOpen}>
+            {/* 닫기 버튼은 서랍 안에 둔다 — 상단바 안의 버튼은 서랍 아래로 가려져서 눌리지 않았다 */}
+            <button type="button" className="dw-x" aria-label="메뉴 닫기" onClick={() => setDrawerOpen(false)}><i /><i /><em>메뉴</em></button>
             <div className="dw-grid">
               {menu.map(item => item.children ? (
                 <React.Fragment key={item.label}>
                   <div className="dw-cap">{item.label}</div>
                   {item.children.map(c => (
                     <button key={c.href} type="button" className={`dw-it${pathname === c.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(c.href); }}>
-                      <b>{c.label}</b>{dotHrefs.has(c.href) && <small className="nd">●</small>}
+                      <DwLabel href={c.href} label={c.label} />{dotHrefs.has(c.href) && <small className="nd">●</small>}
                     </button>
                   ))}
                 </React.Fragment>
               ) : (
                 <button key={item.label} type="button" className={`dw-it${pathname === item.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(item.href!); }}>
-                  <b>{item.label}</b>{dotHrefs.has(item.href!) && <small className="nd">●</small>}
+                  <DwLabel href={item.href!} label={item.label} />{dotHrefs.has(item.href!) && <small className="nd">●</small>}
                 </button>
               ))}
             </div>
