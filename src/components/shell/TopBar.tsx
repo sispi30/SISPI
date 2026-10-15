@@ -71,26 +71,20 @@ export function TopBar() {
   const menuWgt = mainState.widgets.find(w => w.type === 'menu');
   const drawerOn = isMobile && !!menuWgt && menuWgt.enabled && !menuWgt.mOff;
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // 메뉴 버튼 자리 — 알림 종·프로필(또는 로그인 버튼) 바로 왼쪽, 같은 줄 가운데. 상단바 밖(서랍 위)에 띄우므로 그 자리를 재서 맞춘다.
-  const [btnPos, setBtnPos] = useState<{ left: number; top: number } | null>(null);
+  // 서랍 폭 — 로고(메인으로 가는 버튼) 오른쪽부터 화면 끝까지. 로고를 가리지 않아서 서랍이 열려도 로고를 누를 수 있다.
+  const [dwLeft, setDwLeft] = useState(0);
   useLayoutEffect(() => {
     if (!drawerOn) return;
-    const place = () => {
-      const el = document.querySelector('.topbar .user-wrap, .topbar .login-link') as HTMLElement | null;
+    const measure = () => {
+      const el = document.querySelector('.topbar .brand') as HTMLElement | null;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      setBtnPos(p => {
-        const n = { left: Math.round(r.left - 40 - 6), top: Math.round(r.top + r.height / 2 - 11) };
-        return p && p.left === n.left && p.top === n.top ? p : n;
-      });
+      setDwLeft(Math.min(Math.round(window.innerWidth * 0.5), Math.round(r.right + 14)));   // 너무 좁은 서랍은 막는다(최대 절반)
     };
-    place();
-    const ro = new ResizeObserver(place);
-    const el0 = document.querySelector('.topbar .user-wrap, .topbar .login-link');
-    if (el0) ro.observe(el0);
-    window.addEventListener('resize', place);
-    return () => { ro.disconnect(); window.removeEventListener('resize', place); };
-  }, [drawerOn, user, siteLoaded, pathname]);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [drawerOn, siteLoaded, site.title, site.subtitle]);
   useEffect(() => { setDrawerOpen(false); }, [pathname]);
   useEffect(() => { if (!drawerOn) setDrawerOpen(false); }, [drawerOn]);
   useEffect(() => {
@@ -188,7 +182,7 @@ export function TopBar() {
   const moreMenu = menu.slice(visCount);
 
   return (
-    <header className="topbar">
+    <header className={`topbar${drawerOn ? ' dw-on' : ''}${drawerOpen ? ' dw-open' : ''}`}>
       {/* 로고 — 텍스트·서브타이틀·정렬은 환경설정 > 디자인 (5.2) */}
       <div className="brand" onClick={() => nav('/')}>
         {siteLoaded && site.title}
@@ -351,16 +345,18 @@ export function TopBar() {
       ) : (
         <button className="login-link" onClick={() => nav('/login')}>로그인</button>
       )}
+      {/* 서랍 메뉴 버튼 — 맨 오른쪽(회원정보 박스 오른쪽). 열려 있는 동안 상단바 전체가 서랍보다 위에 있어서 같은 버튼으로 닫고, 회원정보 박스도 서랍 위에서 쓸 수 있다.
+          열리면 세 줄이 부드럽게 X로 바뀐다 */}
+      {drawerOn && (
+        <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label={drawerOpen ? '메뉴 닫기' : '메뉴'} aria-expanded={drawerOpen}
+          onClick={() => setDrawerOpen(o => !o)}>
+          <i /><i /><i />
+        </button>
+      )}
       {drawerOn && typeof document !== 'undefined' && createPortal(
         <>
-          {/* 메뉴 버튼 하나를 서랍보다 위에 둔다 — 열리면 세 줄이 부드럽게 X로 바뀌고, 같은 버튼으로 닫는다 */}
-          <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label={drawerOpen ? '메뉴 닫기' : '메뉴'} aria-expanded={drawerOpen}
-            style={btnPos ? { left: btnPos.left, top: btnPos.top, right: 'auto' } : { visibility: 'hidden' }}
-            onClick={() => setDrawerOpen(o => !o)}>
-            <i /><i /><i />
-          </button>
           <div className={`dw-dim${drawerOpen ? ' on' : ''}`} onClick={() => setDrawerOpen(false)} />
-          <aside className={`dw${drawerOpen ? ' on' : ''}`} aria-hidden={!drawerOpen}>
+          <aside className={`dw${drawerOpen ? ' on' : ''}`} aria-hidden={!drawerOpen} style={dwLeft ? { width: `calc(100vw - ${dwLeft}px)` } : undefined}>
             <div className="dw-grid">
               {/* 그룹마다 따로 묶는다 — 한 묶음에 항목이 하나뿐이면 가운데 정렬 */}
               {(() => {

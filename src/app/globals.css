@@ -3033,19 +3033,21 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 @media (max-width:620px){
   .menu-list,.wgt-hide-pc{display:none !important}   /* 서랍이 대신하므로 본문 목록은 숨김 */
   .topbar{overflow:visible}
-  .dw-btn{display:flex;position:fixed;z-index:96;right:14px;top:46px;width:40px;height:42px;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;padding:4px 0 0;
+  .topbar.dw-open{z-index:94}   /* 서랍이 열려 있는 동안 상단바(로고·회원정보·메뉴 버튼)가 서랍 위에서 그대로 눌린다 */
+  .topbar.dw-on .user-wrap,.topbar.dw-on .login-link{margin-right:2px}
+  .dw-btn{display:flex;position:relative;flex-shrink:0;width:34px;height:42px;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;padding:14px 0 0;
     background:transparent;border:none;cursor:var(--cur-pointer,pointer);color:var(--top-fg);-webkit-tap-highlight-color:transparent;transition:color .38s}
   .dw-btn i{display:block;width:20px;height:1.5px;border-radius:2px;background:currentColor;transform-origin:center;
     transition:transform .38s cubic-bezier(.22,.8,.28,1),opacity .2s,width .38s cubic-bezier(.22,.8,.28,1),margin .38s cubic-bezier(.22,.8,.28,1)}
-  .dw-btn i:nth-child(2){width:14px;margin-left:auto;margin-right:10px}
+  .dw-btn i:nth-child(2){width:14px;margin-left:auto;margin-right:7px}
   /* 열림 — 위·아래 줄이 가운데로 모이며 X가 되고, 가운데 줄은 사라진다 */
   .dw-btn.on{color:var(--dd-fg,#e8eaee)}
   .dw-btn.on i:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
-  .dw-btn.on i:nth-child(2){opacity:0;width:20px;margin-right:10px;transform:scaleX(.2)}
+  .dw-btn.on i:nth-child(2){opacity:0;width:20px;margin-right:7px;transform:scaleX(.2)}
   .dw-btn.on i:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
   .dw-dim{display:block;position:fixed;inset:0;z-index:90;background:rgba(20,30,70,.14);opacity:0;pointer-events:none;transition:opacity .38s}
   .dw-dim.on{opacity:1;pointer-events:auto}
-  .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(76vw,330px);padding:70px 16px 28px;overflow-y:auto;
+  .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(76vw,330px);padding:66px 12px 28px;overflow-y:auto;
     background:linear-gradient(rgba(255,255,255,.2),rgba(255,255,255,.2)),color-mix(in srgb,var(--dd-bg,#12151c) 74%,transparent);-webkit-backdrop-filter:blur(26px) saturate(1.25) brightness(1.12);backdrop-filter:blur(26px) saturate(1.25) brightness(1.12);color:var(--dd-fg,#fff);
     border-left:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 14%,transparent);box-shadow:-10px 0 30px rgba(20,30,70,.10);
     transform:translateX(104%);transition:transform .38s cubic-bezier(.22,.8,.28,1),visibility 0s linear .38s;-webkit-overflow-scrolling:touch;visibility:hidden}   /* 닫힐 때도 열릴 때와 같은 속도로 — 끝난 뒤에 숨긴다 */
@@ -3060,7 +3062,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
     cursor:var(--cur-pointer,pointer)}
   .dw-it::before{content:"+";position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:9px;line-height:1;opacity:.4}
   .dw-it::after{content:"";position:absolute;left:4px;right:4px;bottom:0;height:1px;background:color-mix(in srgb,var(--dd-fg,#e8eaee) 16%,transparent)}
-  .dw-it b{font-family:var(--serif);font-weight:500;font-size:calc(12.5px*var(--fs-menu,1));letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;line-height:1.25;word-break:keep-all}
+  .dw-it b{font-family:var(--serif);font-weight:500;font-size:calc(12.5px*var(--fs-menu,1));letter-spacing:.14em;text-indent:.14em;text-transform:uppercase;line-height:1.25;word-break:keep-all}
   .dw-it small{font-family:var(--font-menu,var(--sans));font-size:calc(9.5px*var(--fs-menu,1));letter-spacing:.06em;opacity:.8;line-height:1.2}
   .dw-it .nd{position:absolute;top:10px;right:14px;font-size:7px;opacity:1}
   .dw-it:not(.on){opacity:.94}
