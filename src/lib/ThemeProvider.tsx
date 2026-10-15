@@ -122,6 +122,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       ? {
         ...derivePointTheme(pageColor.color, pageColor.tone ?? draft.pointTone),
         pageHead: site.pageHead, pageHeadM: site.pageHeadM,
+        pageTitleShadow: site.pageTitleShadow, pageTitleShadowColor: site.pageTitleShadowColor,
       }
       : site);
     // 페이지 배경 지정 (v2.0) — 팔레트를 적용한 뒤에 배경 세 값만 덮어쓴다.

@@ -153,7 +153,7 @@ export function MouseFx() {
       + `.mfx-b i{position:absolute;display:block;left:0;top:0}`
       + `.mfx-b svg{width:100%;height:100%;overflow:visible;fill:var(--bc);stroke:var(--bk);stroke-width:3.5;stroke-linejoin:round}`
       + `.mfx-b .sp svg{fill:var(--bk);stroke:var(--bk);stroke-width:7;stroke-linejoin:round}`   // 작은 별 조각 — 팔이 가늘어 흐리게 보여서 윤곽을 같은 색으로 둘러 굵고 진하게
-      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1.5px solid var(--bc);box-shadow:0 0 0 1px var(--bk),inset 0 0 0 1px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
+      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1.5px solid var(--bc);box-shadow:0 0 0 .7px var(--bk),inset 0 0 0 .7px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
       + `.mfx-b .sp{width:12px;height:12px;margin:-6px 0 0 -6px;animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `@keyframes mfxRg{0%{opacity:0;transform:scale(.3)}15%{opacity:1}65%{opacity:1}100%{opacity:0;transform:scale(1.25)}}`

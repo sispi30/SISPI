@@ -402,6 +402,13 @@ function DesignPane() {
           </div>
           <CP label="제목" k="pageTitle" />
           <CP label="설명" k="pageDesc" />
+          {/* 제목 그림자 (v2.0 사용자 요청) — 켜고 끄기 + 색 */}
+          <span className="cp-lb">제목 그림자</span>
+          <div className="mini-seg">
+            <button className={!state.vars.pageTitleShadow ? 'on' : ''} onClick={() => setVar('pageTitleShadow', false)}>끔</button>
+            <button className={state.vars.pageTitleShadow ? 'on' : ''} onClick={() => setVar('pageTitleShadow', true)}>켬</button>
+          </div>
+          {state.vars.pageTitleShadow && <CP label="그림자 색" k="pageTitleShadowColor" def="#000000" />}
         </div>
       </div>
 

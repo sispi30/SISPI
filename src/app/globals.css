@@ -293,7 +293,7 @@ a{color:inherit;text-decoration:none}
 .page-head{position:relative;color:#eceef1;margin-bottom:16px;min-height:calc(38px*var(--fs,1));display:grid;grid-template-columns:1fr auto;align-items:end;column-gap:20px}
 /* 메뉴 타이틀 — 별도 역할(기본은 타이틀 폰트·크기를 따름, 크기는 두 배율 곱)
    클릭 시 해당 메뉴 초기 페이지로 이동 — 텍스트 커서/드래그 선택 금지 */
-.page-head h1{--fs:calc(var(--fs-pagetitle,1)*var(--fs-title,1));font-family:var(--font-pagetitle,var(--serif));font-size:calc(30px*var(--fs,1));font-weight:var(--fw-pagetitle,var(--fw-title,600));letter-spacing:.14em;grid-column:1;color:var(--page-title);cursor:var(--cur-pointer,pointer);user-select:none;transition:opacity .15s;display:var(--ph-title,block)} /* 헤더 표시 옵션 (v1.9) */
+.page-head h1{--fs:calc(var(--fs-pagetitle,1)*var(--fs-title,1));font-family:var(--font-pagetitle,var(--serif));font-size:calc(30px*var(--fs,1));font-weight:var(--fw-pagetitle,var(--fw-title,600));letter-spacing:.14em;grid-column:1;color:var(--page-title);text-shadow:var(--page-title-sh,none);cursor:var(--cur-pointer,pointer);user-select:none;transition:opacity .15s;display:var(--ph-title,block)} /* 헤더 표시 옵션 (v1.9) */
 .page-head h1:hover{opacity:.75}
 .page-head p{--fs:var(--fs-subtitle,1);font-family:var(--font-subtitle,var(--sans));font-weight:var(--fw-subtitle,400);font-size:calc(12.5px*var(--fs,1));color:var(--page-desc);margin-top:4px;letter-spacing:.02em;grid-column:1;display:var(--ph-desc,block)} /* 헤더 표시 옵션 (v1.9) */
 /* 헤더 표시 옵션은 편집형 설명(EditableDesc)만 숨김 — 상태·안내 문구(로그인 필요, 권한 없음, 글 메타 등)는 항상 표시
