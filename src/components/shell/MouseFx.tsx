@@ -153,14 +153,12 @@ export function MouseFx() {
       + `.mfx-b i{position:absolute;display:block;left:0;top:0}`
       + `.mfx-b svg{width:100%;height:100%;overflow:visible;fill:var(--bc);stroke:var(--bk);stroke-width:3.5;stroke-linejoin:round}`
       + `.mfx-b .sp svg{fill:var(--bk);stroke:var(--bk);stroke-width:7;stroke-linejoin:round}`   // 작은 별 조각 — 팔이 가늘어 흐리게 보여서 윤곽을 같은 색으로 둘러 굵고 진하게
-      + `.mfx-b .rg{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:2px solid var(--bc);box-shadow:0 0 0 .7px var(--bk),inset 0 0 0 .7px var(--bk);opacity:0;animation:mfxRg .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
       + `.mfx-b .sp{width:12px;height:12px;margin:-6px 0 0 -6px;animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
       + `.mfx-b .pt{width:5px;height:10px;margin:-5px 0 0 -2.5px;opacity:0;animation:mfxPt .7s cubic-bezier(.2,.7,.3,1) forwards}`   // 잎 모양 파티클 — 링 안쪽에서 링 테두리에 살짝 걸치는 곳까지만 퍼진다
       + `.mfx-b .pt.bg{width:7px;height:14px;margin:-7px 0 0 -3.5px}`
       + `.mfx-b .pt svg{fill:var(--bp);stroke:none}`
       + `@keyframes mfxPt{0%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--d0)*-1)) scale(.4)}15%{opacity:1}70%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(calc(var(--d1)*-1)) scale(1)}}`
-      + `@keyframes mfxRg{0%{opacity:0;transform:scale(.3)}10%{opacity:1}80%{opacity:1}100%{opacity:0;transform:scale(1.25)}}`
       + `@keyframes mfxCo{0%{opacity:0;transform:scale(.2) rotate(0)}30%{opacity:1;transform:scale(1) rotate(45deg)}100%{opacity:0;transform:scale(.15) rotate(90deg)}}`
       + `@keyframes mfxSp{0%{opacity:0;transform:rotate(var(--a)) translateY(-14px) scale(.3)}18%{opacity:1}65%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(-32px) scale(.9) rotate(180deg)}}`;
     // 팔을 통통하게 — 가운데 별(.co)과 작은 별 조각(.sp)이 같이 쓰는 모양 (윤곽 둘러도 잘리지 않게 viewBox를 넉넉히)
@@ -170,16 +168,14 @@ export function MouseFx() {
       const b = document.createElement('div');
       b.className = 'mfx-b';
       b.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--bc:${fx.burstColor};--bk:${fx.burstLine};--bp:${fx.burstPart}`;
-      let h = `<i class="rg"></i><i class="co">${STAR}</i>`;
+      let h = `<i class="co">${STAR}</i>`;
       const n = 6, off = Math.random() * 60;
       for (let i = 0; i < n; i++) h += `<i class="sp" style="--a:${Math.round(off + i * 360 / n)}deg;animation-delay:${(i % 3) * 30}ms">${STAR}</i>`;
-      // 잎 파티클 — 별 사이사이, 링 안쪽 중앙과 링 테두리에 살짝 걸치는 범위에서만 퍼진다 (큰 것·작은 것 번갈아)
+      // 잎 파티클 4개 — 별 조각(60° 간격 6개)과 겹치지 않도록 그 사이 빈자리(30°·90°·210°·270°)에만 둔다
       const LEAF = '<svg viewBox="-5 -9 10 18"><path d="M0 -8Q5 0 0 8Q-5 0 0 -8Z"/></svg>';
-      const pn = 6, po = 22 + Math.random() * 20;
-      for (let i = 0; i < pn; i++) {
-        const big = i % 2 === 0;
-        h += `<i class="pt${big ? ' bg' : ''}" style="--a:${Math.round(po + i * 360 / pn)}deg;--d0:${big ? 12 : 10}px;--d1:${big ? 24 : 19}px;animation-delay:${(i % 3) * 25}ms">${LEAF}</i>`;
-      }
+      [30, 90, 210, 270].forEach((deg, i) => {
+        h += `<i class="pt bg" style="--a:${Math.round(off + deg)}deg;--d0:12px;--d1:30px;animation-delay:${(i % 2) * 25}ms">${LEAF}</i>`;
+      });
       b.innerHTML = h;
       box.appendChild(b);
       setTimeout(() => b.remove(), 900);

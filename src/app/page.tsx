@@ -124,7 +124,7 @@ export default function MainPage() {
           /* 절대배치 캔버스 — 위젯 전부 직속, 좌표는 각자 ax/ay */
           enabled.map(w =>
             w.type === 'member'
-              ? <WidgetFrame key={w.id} conf={w} mobileOrder={-1} onCtx={(id, x, y) => setCtx({ id, x, y })}><MemberBox /></WidgetFrame>
+              ? <WidgetFrame key={w.id} conf={w} mobileOrder={1000} onCtx={(id, x, y) => setCtx({ id, x, y })}><MemberBox /></WidgetFrame>
               : frame(w, w.type === 'menu' ? 'wgt-hide-pc' : undefined))
         ) : (
           <>
@@ -143,7 +143,7 @@ export default function MainPage() {
             <div>
               {byCol(3).map(w =>
                 w.type === 'member'
-                  ? <WidgetFrame key={w.id} conf={w} mobileOrder={-1} onCtx={(id, x, y) => setCtx({ id, x, y })}><MemberBox /></WidgetFrame>
+                  ? <WidgetFrame key={w.id} conf={w} mobileOrder={1000} onCtx={(id, x, y) => setCtx({ id, x, y })}><MemberBox /></WidgetFrame>
                   : frame(w)
               )}
             </div>

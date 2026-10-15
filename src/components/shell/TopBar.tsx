@@ -335,7 +335,7 @@ export function TopBar() {
       {drawerOn && (
         <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label="메뉴" aria-expanded={drawerOpen}
           onClick={() => setDrawerOpen(o => !o)}>
-          <i /><i /><i /><em>메뉴</em>
+          <i /><i /><i />
         </button>
       )}
       {drawerOn && typeof document !== 'undefined' && createPortal(
@@ -343,22 +343,28 @@ export function TopBar() {
           <div className={`dw-dim${drawerOpen ? ' on' : ''}`} onClick={() => setDrawerOpen(false)} />
           <aside className={`dw${drawerOpen ? ' on' : ''}`} aria-hidden={!drawerOpen}>
             {/* 닫기 버튼은 서랍 안에 둔다 — 상단바 안의 버튼은 서랍 아래로 가려져서 눌리지 않았다 */}
-            <button type="button" className="dw-x" aria-label="메뉴 닫기" onClick={() => setDrawerOpen(false)}><i /><i /><em>메뉴</em></button>
+            <button type="button" className="dw-x" aria-label="메뉴 닫기" onClick={() => setDrawerOpen(false)}><i /><i /></button>
             <div className="dw-grid">
-              {menu.map(item => item.children ? (
-                <React.Fragment key={item.label}>
-                  <div className="dw-cap">{item.label}</div>
-                  {item.children.map(c => (
-                    <button key={c.href} type="button" className={`dw-it${pathname === c.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(c.href); }}>
-                      <b>{pageTitleFor(menuSet, c.href) || c.label}</b>{dotHrefs.has(c.href) && <small className="nd">●</small>}
-                    </button>
-                  ))}
-                </React.Fragment>
-              ) : (
-                <button key={item.label} type="button" className={`dw-it${pathname === item.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(item.href!); }}>
-                  <b>{pageTitleFor(menuSet, item.href!) || item.label}</b>{dotHrefs.has(item.href!) && <small className="nd">●</small>}
-                </button>
-              ))}
+              {/* 그룹마다 따로 묶는다 — 한 묶음에 항목이 하나뿐이면 가운데 정렬 */}
+              {(() => {
+                const cell = (href: string, label: string) => (
+                  <button key={href} type="button" className={`dw-it${pathname === href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(href); }}>
+                    <b>{pageTitleFor(menuSet, href) || label}</b>{dotHrefs.has(href) && <small className="nd">●</small>}
+                  </button>
+                );
+                const out: React.ReactNode[] = [];
+                let loose: React.ReactNode[] = [];
+                const flush = () => { if (loose.length) { out.push(<div className="dw-sub" key={`l${out.length}`}>{loose}</div>); loose = []; } };
+                menu.forEach(item => {
+                  if (item.children) {
+                    flush();
+                    out.push(<div className="dw-cap" key={`c${item.label}`}>{item.label}</div>);
+                    out.push(<div className="dw-sub" key={`g${item.label}`}>{item.children.map(c => cell(c.href, c.label))}</div>);
+                  } else loose.push(cell(item.href!, item.label));
+                });
+                flush();
+                return out;
+              })()}
             </div>
           </aside>
         </>, document.body)}

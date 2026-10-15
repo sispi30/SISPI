@@ -3037,21 +3037,21 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
     background:transparent;border:none;cursor:var(--cur-pointer,pointer);color:var(--top-fg);-webkit-tap-highlight-color:transparent}
   .dw-btn i{display:block;width:20px;height:1.5px;border-radius:2px;background:currentColor}
   .dw-btn i:nth-child(2){width:14px;align-self:flex-end;margin-right:10px}
-  .dw-btn em,.dw-x em{font-style:normal;font-size:9px;letter-spacing:.12em;margin-top:2px;opacity:.85}
   .dw-btn.on{opacity:0;pointer-events:none}   /* 열려 있는 동안은 서랍 안의 닫기 버튼이 그 자리를 맡는다 */
   .dw-x{z-index:3;color:var(--dd-fg,#e8eaee);gap:0}
   .dw-x i{display:block;width:20px;height:1.5px;border-radius:2px;background:currentColor;transform:rotate(45deg);margin-top:4px}
   .dw-x i + i{transform:rotate(-45deg);margin-top:-1.5px}
-  .dw-x em{margin-top:12px}
-  .dw-dim{display:block;position:fixed;inset:0;z-index:90;background:rgba(8,10,16,.42);opacity:0;pointer-events:none;transition:opacity .3s}
+  .dw-dim{display:block;position:fixed;inset:0;z-index:90;background:rgba(8,10,16,.42);opacity:0;pointer-events:none;transition:opacity .38s}
   .dw-dim.on{opacity:1;pointer-events:auto}
   .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(76vw,330px);padding:104px 16px 28px;overflow-y:auto;
     background:color-mix(in srgb,var(--dd-bg,#12151c) 94%,#000);color:var(--dd-fg,#e8eaee);
     border-left:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 14%,transparent);box-shadow:-18px 0 40px rgba(0,0,0,.35);
-    transform:translateX(104%);transition:transform .38s cubic-bezier(.22,.8,.28,1);-webkit-overflow-scrolling:touch;visibility:hidden}
-  .dw.on{transform:none;visibility:visible}
-  .dw-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:10px}
-  .dw-cap{grid-column:1/-1;padding:18px 4px 6px;text-align:center;font-family:var(--serif);font-size:calc(10px*var(--fs,1));letter-spacing:.34em;text-indent:.34em;text-transform:uppercase;
+    transform:translateX(104%);transition:transform .38s cubic-bezier(.22,.8,.28,1),visibility 0s linear .38s;-webkit-overflow-scrolling:touch;visibility:hidden}   /* 닫힐 때도 열릴 때와 같은 속도로 — 끝난 뒤에 숨긴다 */
+  .dw.on{transform:none;visibility:visible;transition:transform .38s cubic-bezier(.22,.8,.28,1),visibility 0s}
+  .dw-grid{display:block}
+  .dw-sub{display:grid;grid-template-columns:1fr 1fr;column-gap:10px}
+  .dw-sub > .dw-it:only-child{grid-column:1/-1;width:50%;justify-self:center}   /* 항목이 하나뿐이면 가운데 */
+  .dw-cap{padding:18px 4px 6px;text-align:center;font-family:var(--serif);font-size:calc(10px*var(--fs,1));letter-spacing:.34em;text-indent:.34em;text-transform:uppercase;
     color:color-mix(in srgb,var(--dd-fg,#e8eaee) 50%,transparent)}
   .dw-it{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:62px;padding:20px 4px 14px;text-align:center;
     color:var(--dd-fg,#e8eaee);background:transparent !important;border:0;border-radius:0;-webkit-tap-highlight-color:transparent;
