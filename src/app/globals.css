@@ -3045,7 +3045,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   .dw-btn.on i:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
   .dw-dim{display:block;position:fixed;inset:0;z-index:90;background:rgba(20,30,70,.14);opacity:0;pointer-events:none;transition:opacity .38s}
   .dw-dim.on{opacity:1;pointer-events:auto}
-  .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(76vw,330px);padding:104px 16px 28px;overflow-y:auto;
+  .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(76vw,330px);padding:70px 16px 28px;overflow-y:auto;
     background:linear-gradient(rgba(255,255,255,.2),rgba(255,255,255,.2)),color-mix(in srgb,var(--dd-bg,#12151c) 74%,transparent);-webkit-backdrop-filter:blur(26px) saturate(1.25) brightness(1.12);backdrop-filter:blur(26px) saturate(1.25) brightness(1.12);color:var(--dd-fg,#fff);
     border-left:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 14%,transparent);box-shadow:-10px 0 30px rgba(20,30,70,.10);
     transform:translateX(104%);transition:transform .38s cubic-bezier(.22,.8,.28,1),visibility 0s linear .38s;-webkit-overflow-scrolling:touch;visibility:hidden}   /* 닫힐 때도 열릴 때와 같은 속도로 — 끝난 뒤에 숨긴다 */

@@ -2,7 +2,7 @@
 // 상단 바 — 기획서 3장(계층 메뉴) + 4.0(프로필 드롭다운 · 편집모드 · 그리드 토글)
 // 로고 클릭 = 메인 이동 (v1.5) · 상위 메뉴 클릭 = 첫 하위 페이지 이동 (v1.8)
 // 편집모드 중 페이지 이동 시도 → 종료 확인 모달 (v1.8)
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { boardEntries, useMenuSettings, buildMenu, faClass, pageTitleFor } from '@/lib/menuStore';
@@ -71,6 +71,26 @@ export function TopBar() {
   const menuWgt = mainState.widgets.find(w => w.type === 'menu');
   const drawerOn = isMobile && !!menuWgt && menuWgt.enabled && !menuWgt.mOff;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // 메뉴 버튼 자리 — 알림 종·프로필(또는 로그인 버튼) 바로 왼쪽, 같은 줄 가운데. 상단바 밖(서랍 위)에 띄우므로 그 자리를 재서 맞춘다.
+  const [btnPos, setBtnPos] = useState<{ left: number; top: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!drawerOn) return;
+    const place = () => {
+      const el = document.querySelector('.topbar .user-wrap, .topbar .login-link') as HTMLElement | null;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setBtnPos(p => {
+        const n = { left: Math.round(r.left - 40 - 6), top: Math.round(r.top + r.height / 2 - 11) };
+        return p && p.left === n.left && p.top === n.top ? p : n;
+      });
+    };
+    place();
+    const ro = new ResizeObserver(place);
+    const el0 = document.querySelector('.topbar .user-wrap, .topbar .login-link');
+    if (el0) ro.observe(el0);
+    window.addEventListener('resize', place);
+    return () => { ro.disconnect(); window.removeEventListener('resize', place); };
+  }, [drawerOn, user, siteLoaded, pathname]);
   useEffect(() => { setDrawerOpen(false); }, [pathname]);
   useEffect(() => { if (!drawerOn) setDrawerOpen(false); }, [drawerOn]);
   useEffect(() => {
@@ -335,6 +355,7 @@ export function TopBar() {
         <>
           {/* 메뉴 버튼 하나를 서랍보다 위에 둔다 — 열리면 세 줄이 부드럽게 X로 바뀌고, 같은 버튼으로 닫는다 */}
           <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label={drawerOpen ? '메뉴 닫기' : '메뉴'} aria-expanded={drawerOpen}
+            style={btnPos ? { left: btnPos.left, top: btnPos.top, right: 'auto' } : { visibility: 'hidden' }}
             onClick={() => setDrawerOpen(o => !o)}>
             <i /><i /><i />
           </button>
