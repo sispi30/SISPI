@@ -11,6 +11,7 @@ import { useBoards } from '@/lib/boardStore';
 import { Modal } from '@/components/ui/Modal';
 import { KTextarea, KSelect, KStep, KCheck } from '@/components/ui/Kit';
 import { ColorField } from '@/components/ui/ColorField';
+import { OrbitSky, OrbitSkySettings, ORBIT_DEFAULT_SIZE, ORBIT_DEFAULT_TILT } from '@/components/main/OrbitSky';
 import { useFonts } from '@/lib/fontStore';
 import { BannerEditor, BannerSlide, DEMO_SLIDES, DdayEditor, DecoEditor, TodoEditor, TodoSetItem } from '@/components/main/widgetEditors';
 import { CroppedBlobImg, CropValue } from '@/components/ui/CropEditor';
@@ -651,6 +652,60 @@ export function ApplyWidget({ conf }: { conf: WidgetConf }) {
   );
 }
 
+/* ---------- 별자리 궤도 (사용자 요청) ----------
+   인트로 화면의 궤도·별자리를 메인에 장식으로 얹는다. 패널 없이 그림만 — 크기·색은 편집모드 우클릭 「설정」에서,
+   마우스를 움직이면 입체적으로 기운다. 크기(칸 대비 %)는 위젯 칸을 키우고 줄이는 것과 별개로 그림만 키우고 줄인다. */
+export function OrbitWidget({ conf }: { conf: WidgetConf }) {
+  const { updateWidget } = useMainStore();
+  const [open, setOpen] = useState(false);
+  useEditEvent(conf.id, () => setOpen(true));
+  const s = conf.settings as OrbitSkySettings;
+  const set = (p: Partial<OrbitSkySettings>) => updateWidget(conf.id, { settings: { ...conf.settings, ...p } }, { persist: true });
+  // 색을 비워 두면 사이트 포인트색 — 색 상자에는 지금 포인트색을 보여 준다 (#16진수가 아니면 기본값)
+  const accentHex = (() => {
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      return /^#[0-9a-f]{6}$/i.test(v) ? v : '#7fd6d0';
+    } catch { return '#7fd6d0'; }
+  })();
+  const colorRow = (label: string, k: 'lineColor' | 'pointColor' | 'sparkColor') => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span className="cp-lb" style={{ minWidth: 58 }}>{label}</span>
+      <ColorField value={s[k] || accentHex} onChange={hex => set({ [k]: hex } as Partial<OrbitSkySettings>)} />
+      {s[k] && (
+        <button className="btn btn-ghost" style={{ height: 26, padding: '0 8px', fontSize: 10 }}
+          onClick={() => set({ [k]: '' } as Partial<OrbitSkySettings>)}>기본값</button>
+      )}
+    </div>
+  );
+  return (
+    <div className="ow-wrap" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 80 }}>
+      <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} tilt={s.tilt} />
+      <div onClick={e => e.stopPropagation()}>
+        <Modal open={open} onClose={() => setOpen(false)} small title="별자리 궤도"
+          desc="인트로 화면의 궤도·별자리 — 마우스를 움직이면 입체적으로 돕니다. 바꾸는 즉시 적용됩니다"
+          actions={<button className="btn btn-dark" onClick={() => setOpen(false)}>확인</button>}>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="cp-lb" style={{ minWidth: 58 }}>크기</span>
+              <KStep value={s.size ?? ORBIT_DEFAULT_SIZE} min={20} max={300} step={5} suffix="%" onChange={v => set({ size: v })} />
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>100% = 위젯 칸에 꽉 차는 크기</small>
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="cp-lb" style={{ minWidth: 58 }}>입체 회전</span>
+              <KStep value={s.tilt ?? ORBIT_DEFAULT_TILT} min={0} max={100} step={5} suffix="%" onChange={v => set({ tilt: v })} />
+              <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>마우스를 따라 기우는 세기 · 0%면 기울지 않음</small>
+            </div>
+            {colorRow('궤도·별자리', 'lineColor')}
+            {colorRow('행성·점선', 'pointColor')}
+            {colorRow('반짝이', 'sparkColor')}
+          </div>
+        </Modal>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- 타입 → 렌더러 ---------- */
 export function renderWidget(conf: WidgetConf) {
   switch (conf.type) {
@@ -666,6 +721,7 @@ export function renderWidget(conf: WidgetConf) {
     case 'deco': return <DecoWidget conf={conf} />;
     case 'memoboard': return <MemoBoardWidget />;
     case 'apply': return <ApplyWidget conf={conf} />;
+    case 'orbit': return <OrbitWidget conf={conf} />;
     default: return <div className="panel widget"><h4>{WIDGET_META[conf.type]?.title ?? conf.type}</h4></div>;
   }
 }

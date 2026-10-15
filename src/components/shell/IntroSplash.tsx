@@ -10,6 +10,7 @@ import { useSiteSettings } from '@/lib/siteStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { useMenuSettings, buildMenu } from '@/lib/menuStore';
 import { useStageFit } from '@/lib/stageFit';
+import { SKY_RINGS, SKY_CONS, SKY_PLANETS, SKY_SPARKS, sparklePath } from '@/lib/orbitSky';
 
 const SEEN = 'ohome.intro.seen';
 const LOAD_MS = 3200;
@@ -115,27 +116,9 @@ export function IntroSplash() {
   } as React.CSSProperties;
   const log = [`BOOT ${title}.OS 4.1.7`, 'MOUNT /ARCHIVE/MAIN', 'HANDSHAKE ........ OK', `TRACE ${title}-2`, 'AWAIT CREDENTIAL'];
   const shown = Math.min(log.length, 1 + Math.floor(pct / 22));
-  const SP: [number, number, number][] = [[88, 242, 5], [138, 103, 4], [78, 388, 4], [103, 534, 4], [1112, 52, 3], [1203, 330, 4], [1190, 478, 3], [1142, 616, 4], [1226, 660, 4], [290, 86, 3], [980, 150, 3], [420, 640, 3]];
-  // 별자리 선 — 고리 사이 띠에 흩어 놓은 가는 선 (고정 값)
-  // 별자리는 천천히 돌기 때문에, 한 번이라도 바깥 원형 궤도(반지름 268)를 넘는 자리가 있으면 돌다가 궤도 밖으로 나간다.
-  // 그래서 각 별자리의 가장 먼 점이 CONS_MAX 안에 들어오도록 중심 쪽으로 줄여 놓는다 (모양은 그대로, 크기만 조금 작아짐).
-  // 반짝이(.cs)도 이 좌표를 그대로 쓰므로 함께 궤도 안에 머문다.
-  const CONS_MAX = 248;
-  const CONS = [
-    '470,214 520,192 566,214 590,176', '760,200 812,230 850,214 884,252', '905,352 940,392 912,440 936,480',
-    '742,566 700,540 650,572 604,548', '420,470 466,512 440,556', '392,330 430,296 408,254',
-    '560,128 604,96 650,118', '830,520 790,556 744,540',
-  ].map(d => {
-    const pts = d.split(' ').map(p => p.split(',').map(Number));
-    const far = Math.max(...pts.map(([x, y]) => Math.hypot(x - 640, y - 360)));
-    const k = far > CONS_MAX ? CONS_MAX / far : 1;
-    return pts.map(([x, y]) => `${(640 + (x - 640) * k).toFixed(1)},${(360 + (y - 360) * k).toFixed(1)}`).join(' ');
-  });
-  const PL = [
-    { r: 300, s: 9, a: 0, t: 400, w: 100 }, { r: 300, s: 8, a: 38, t: 400, w: 100, half: true }, { r: 300, s: 8, a: 82, t: 400, w: 100, ring: true },
-    { r: 268, s: 13, a: -24, t: 46, w: 85 }, { r: 246, s: 7, a: 52, t: 60, w: 60 },
-    { r: 218, s: 9, a: -62, t: 78, w: 50, rev: true }, { r: 168, s: 8, a: -108, t: 95, w: 40 },
-  ];
+  // 별자리·행성·반짝이·궤도 도형은 메인 「별자리 궤도」 위젯과 같이 쓰므로 lib/orbitSky.ts에 둔다
+  // (별자리는 천천히 돌아도 바깥 원형 궤도 밖으로 나가지 않게 거기서 줄여 놓았다)
+  const SP = SKY_SPARKS, CONS = SKY_CONS, PL = SKY_PLANETS;
   return (
     <div className={`intro-splash ${phase}`} style={vars} role="dialog" aria-label="인트로">
       {img && <div className="is-art" style={{ backgroundImage: `url("${img}")` }} />}
@@ -150,16 +133,10 @@ export function IntroSplash() {
       </svg>
       <svg className="is-sky" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <g className="rings">
-          <circle cx="640" cy="360" r="332" style={{ ['--d' as string]: '0s' }} />
-          <circle cx="640" cy="360" r="324" className="th" style={{ ['--d' as string]: '.08s' }} />
-          <circle cx="640" cy="360" r="312" className="tick" style={{ ['--d' as string]: '.16s' }} />
-          <circle cx="640" cy="360" r="296" className="gd" style={{ ['--d' as string]: '.24s' }} />
-          <circle cx="640" cy="360" r="268" style={{ ['--d' as string]: '.32s' }} />
-          <circle cx="640" cy="360" r="246" className="dot" style={{ ['--d' as string]: '.4s' }} />
-          <circle cx="640" cy="360" r="218" style={{ ['--d' as string]: '.48s' }} />
-          <circle cx="640" cy="360" r="196" className="dash" />
-          <circle cx="640" cy="360" r="168" className="th" style={{ ['--d' as string]: '.56s' }} />
-          <circle cx="640" cy="360" r="132" className="gd" style={{ ['--d' as string]: '.64s' }} />
+          {SKY_RINGS.map(c => (
+            <circle key={c.r} cx="640" cy="360" r={c.r} className={c.cls}
+              style={c.d != null ? { ['--d' as string]: `${c.d}s` } : undefined} />
+          ))}
         </g>
         <g className="rays">
           {Array.from({ length: 12 }, (_, i) => <line key={i} x1="640" y1="228" x2="640" y2="28" transform={`rotate(${i * 30 + 7} 640 360)`} />)}
@@ -172,7 +149,7 @@ export function IntroSplash() {
             // 마우스 이동 반짝이와 비슷한 아주 작은 크기 (화면 기준 약 4~6px)
             const r = 2.4 + ((i + j) % 3) * 0.7;
             return <path key={`c${i}-${j}`} className="cs" style={{ ['--d' as string]: `${(((i * 3 + j * 5) % 11) * 0.3).toFixed(1)}s` }}
-              d={`M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}Z`} />;
+              d={sparklePath(x, y, r)} />;
           }))}
         </g>
         <g className="orbs">
@@ -190,7 +167,7 @@ export function IntroSplash() {
             </g>
           ))}
         </g>
-        <g className="sparks">{SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={`M${x} ${y - r * 2}Q${x} ${y} ${x + r * 2} ${y}Q${x} ${y} ${x} ${y + r * 2}Q${x} ${y} ${x - r * 2} ${y}Q${x} ${y} ${x} ${y - r * 2}Z`} />)}</g>
+        <g className="sparks">{SP.map(([x, y, r], i) => <path key={i} className="sp" style={{ ['--d' as string]: `${(i % 5) * 0.4}s` }} d={sparklePath(x, y, r * 2)} />)}</g>
       </svg>
       <div className="is-halo" />
       <div className={`is-star${ready ? " on" : ""}`} role="button" tabIndex={ready ? 0 : -1} aria-label="ARCHIVE ENTRY" onClick={() => enter()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(); } }}>

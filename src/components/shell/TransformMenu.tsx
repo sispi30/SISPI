@@ -206,6 +206,10 @@ export function TransformMenu() {
     ['--tf-sub-bg' as string]: cfg.subBgColor || 'var(--dd-bg)',
     ['--tf-sub-radius' as string]: `${cfg.subBorderRadius}px`,
     ['--tf-sub-shadow' as string]: cfg.subShadow ? 'var(--sh-dd)' : 'none',
+    // 항목 외곽선 — 각 아이콘·글자를 하나씩 감싸는 선
+    ['--tf-item-ol' as string]: `${cfg.itemOutlineWidth}px`,
+    ['--tf-item-olc' as string]: cfg.itemOutlineColor || 'var(--accent)',
+    ['--tf-item-r' as string]: `${cfg.itemOutlineRadius}px`,
   };
 
   // ---------- static: 상단바 자리에 그대로 (배경/로고/로그인은 상단바가 담당) ----------
