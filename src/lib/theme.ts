@@ -117,6 +117,14 @@ export const LIGHT_THEME: ThemeVars = {
  * 포인트 자동 모드 (v1.8 확정) — 포인트 컬러 하나로 전체 팔레트 파생.
  * 톤(다크/라이트) 선택 가능, 파생값은 세부 항목 hex 란에 전부 채워짐 (v1.9).
  */
+/** 글자 그림자 — 강도(0~100)가 올라갈수록 짙기·번짐이 커지고, 같은 그림자를 겹쳐 쌓아(최대 3겹) 더 선명하게 보이게 한다. 0이면 none */
+export function layeredTextShadow(strength: number, color: string): string {
+  const a = Math.min(100, Math.max(0, strength));
+  if (a <= 0) return 'none';
+  const one = `0 ${(1 + a / 50).toFixed(1)}px ${(2 + a / 14).toFixed(1)}px color-mix(in srgb, ${color || '#000000'} ${Math.min(100, Math.round(45 + a * 0.55))}%, transparent)`;
+  return Array(a < 35 ? 1 : a < 70 ? 2 : 3).fill(one).join(', ');
+}
+
 export function derivePointTheme(accent: string, tone: PointTone): ThemeVars {
   const { h, s } = hexToHsl(accent);
   const c = (sat: number, lig: number) => hslToHex({ h, s: Math.min(1, s * sat), l: lig });
@@ -236,10 +244,7 @@ export function themeToCssVars(t: ThemeVars): Record<string, string> {
     '--top-bg': withAlpha(t.topBg, 0.84), '--top-fg': t.topFg, '--top-hv': t.topHv, '--top-brand': t.topBrand,
     '--dd-bg': withAlpha(t.ddBg, 0.97), '--dd-fg': t.ddFg, '--dd-hv': withAlpha(t.ddHv, 0.09),
     '--page-title': t.pageTitle, '--page-desc': t.pageDesc,
-    '--page-title-sh': t.pageTitleShadow
-      ? (() => { const a = Math.min(100, Math.max(0, t.pageTitleShadowAmt ?? 60));   // 강도 = 짙기 + 번짐 반경
-          return `0 ${(1 + a / 40).toFixed(1)}px ${(3 + a / 8).toFixed(1)}px color-mix(in srgb, ${t.pageTitleShadowColor || '#000000'} ${a}%, transparent)`; })()
-      : 'none',
+    '--page-title-sh': t.pageTitleShadow ? layeredTextShadow(t.pageTitleShadowAmt ?? 60, t.pageTitleShadowColor || '#000000') : 'none',
     // 페이지 헤더 표시 옵션 (v1.9) — 모바일 생략은 CSS 미디어쿼리가 --ph-m을 보고 처리
     '--ph-title': (t.pageHead ?? 'both') === 'both' || t.pageHead === 'title' ? 'block' : 'none',
     '--ph-desc': (t.pageHead ?? 'both') === 'both' || t.pageHead === 'desc' ? 'block' : 'none',

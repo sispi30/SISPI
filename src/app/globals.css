@@ -323,6 +323,7 @@ a{color:inherit;text-decoration:none}
 .page-head h1{letter-spacing:.38em;padding-left:.38em;font-weight:var(--fw-pagetitle,var(--fw-title,500))}
 .page-head p{letter-spacing:.3em;padding-left:.3em;text-transform:uppercase}
 .page-head .desc-edit{text-align:center}
+.page-head p,.page-head > div{text-align:center;justify-self:center}   /* 설명 문구는 늘 가운데 정렬 */
 .page-head.head-stack{justify-items:center}
 @keyframes phStar{0%,100%{transform:translateY(0) scale(1);opacity:.95}50%{transform:translateY(-4px) scale(1.08);opacity:.65}}
 @media (max-width:760px){.page-head::before{margin-top:0}.page-head h1{letter-spacing:.24em;padding-left:.24em}.page-head p{letter-spacing:.12em;padding-left:.12em}}
