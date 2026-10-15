@@ -9,7 +9,7 @@ import { sectionHref, MAIN_SEC, useSections, sectionMenuEntries } from '@/lib/se
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
 import { useBoards } from '@/lib/boardStore';
 import { Modal } from '@/components/ui/Modal';
-import { KTextarea, KSelect, KStep, KCheck } from '@/components/ui/Kit';
+import { KInput, KTextarea, KSelect, KStep, KCheck } from '@/components/ui/Kit';
 import { ColorField } from '@/components/ui/ColorField';
 import {
   OrbitSky, OrbitSkySettings, ORBIT_DEFAULT_SIZE, ORBIT_DEFAULT_TILT, ORBIT_DEFAULT_STAR, ORBIT_DEFAULT_COUNT, ORBIT_MAX_COUNT, ORBIT_DEFAULT_WIDTH,
@@ -659,10 +659,24 @@ export function ApplyWidget({ conf }: { conf: WidgetConf }) {
    패널 없이 그림만 — 크기·색은 편집모드 우클릭 「설정」에서. 크기(칸 대비 %)는 위젯 칸을 키우고 줄이는 것과 별개로 그림만 키우고 줄인다.
    도형은 인트로 화면과 따로 관리한다 (lib/orbitSky.ts ↔ lib/introSky.ts). */
 export function OrbitWidget({ conf }: { conf: WidgetConf }) {
-  const { updateWidget } = useMainStore();
+  const { updateWidget, editOn } = useMainStore();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   useEditEvent(conf.id, () => setOpen(true));
-  const s = conf.settings as OrbitSkySettings;
+  const s = conf.settings as OrbitSkySettings & { link?: string };
+  // 링크 — 이미지 위젯과 같은 방식: 내부 경로면 이동, 외부 주소면 새 탭. 편집모드에서는 이동하지 않는다.
+  // 고리 구(球) 안쪽을 눌렀을 때만 이동한다 (위젯 칸의 빈 모서리는 눌려도 반응 없음)
+  const inSphere = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const rad = Math.min(r.width, r.height) * Math.min(4, Math.max(0.1, (s.size ?? ORBIT_DEFAULT_SIZE) / 100)) * 0.5;
+    return Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) <= rad;
+  };
+  const go = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (editOn || !s.link || !inSphere(e)) return;
+    const l = normalizeInternalLink(s.link);
+    if (/^https?:\/\//.test(l)) window.open(l, '_blank');
+    else router.push(l);
+  };
   const set = (p: Partial<OrbitSkySettings>) => updateWidget(conf.id, { settings: { ...conf.settings, ...p } }, { persist: true });
   // 색을 비워 두면 사이트 포인트색 — 색 상자에는 지금 포인트색을 보여 준다 (#16진수가 아니면 기본값)
   const accentHex = (() => {
@@ -682,7 +696,9 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
     </div>
   );
   return (
-    <div className="ow-wrap" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 80 }}>
+    <div className="ow-wrap" onClick={go}
+      onMouseMove={e => { e.currentTarget.style.cursor = !editOn && s.link && inSphere(e) ? 'var(--cur-pointer,pointer)' : ''; }}
+      style={{ position: 'relative', width: '100%', height: '100%', minHeight: 80 }}>
       <OrbitSky size={s.size} lineColor={s.lineColor} pointColor={s.pointColor} sparkColor={s.sparkColor} starColor={s.starColor} sparkSize={s.sparkSize} tilt={s.tilt}
         starSize={s.starSize} ringCount={s.ringCount} boldWidth={s.boldWidth} thinWidth={s.thinWidth} dashWidth={s.dashWidth} />
       <div onClick={e => e.stopPropagation()}>
@@ -722,6 +738,13 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
                 <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{hint} 굵기</small>
               </div>
             ))}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="cp-lb" style={{ minWidth: 58 }}>링크</span>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <KInput placeholder="링크 (선택 — 클릭 시 이동)" value={s.link ?? ''}
+                  onChange={e => set({ link: normalizeInternalLink(e.target.value) || undefined } as Partial<OrbitSkySettings>)} />
+              </div>
+            </div>
             {colorRow('고리·별자리', 'lineColor')}
             {colorRow('알갱이·점선', 'pointColor')}
             {colorRow('가운데 별', 'starColor')}

@@ -957,6 +957,8 @@ body.edit-on .main-grid{grid-template-columns:230px 1fr 260px}
 .banner .slide{position:absolute;inset:0;opacity:0;transition:opacity .5s}
 .banner .slide.on{opacity:1}
 .login-box{padding:18px}
+/* 회원정보창은 박스 컬러 설정과 상관없이 늘 투명 */
+.panel.login-box{background:transparent !important;box-shadow:none !important;backdrop-filter:none !important}
 .login-box h3{font-size:calc(13px*var(--fs,1));letter-spacing:.08em;margin-bottom:12px;color:var(--sub)}
 /* 위젯 스타일 (v2.0 사용자 요청) — 배경·타이틀색·본문색·테두리를 디자인 탭에서 따로 정한다.
    안 정하면 --wg-* 가 카드 색을 그대로 가리키므로 지금까지와 똑같이 보인다.
