@@ -3,6 +3,7 @@
 // 로고 클릭 = 메인 이동 (v1.5) · 상위 메뉴 클릭 = 첫 하위 페이지 이동 (v1.8)
 // 편집모드 중 페이지 이동 시도 → 종료 확인 모달 (v1.8)
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { boardEntries, useMenuSettings, buildMenu, faClass } from '@/lib/menuStore';
 import { useBoards } from '@/lib/boardStore';
@@ -37,7 +38,7 @@ const MIcon = ({ icon }: { icon?: string }) => {
 
 export function TopBar() {
   const { user, isAdmin, logout } = useAuth();
-  const { editOn, editAvailable, gridOn, setGridOn, toggleEdit, requestExit, guardNav } = useMainStore();
+  const { state: mainState, editOn, editAvailable, gridOn, setGridOn, toggleEdit, requestExit, guardNav } = useMainStore();
   const router = useRouter();
   const pathname = usePathname();
   const toast = useToast();
@@ -65,6 +66,19 @@ export function TopBar() {
     return () => mq.removeEventListener('change', f);
   }, []);
   const tfOn = tfLoaded && tfCfg.enabled && !isMobile;
+  // 서랍 메뉴 (모바일) — 메인의 「메뉴리스트」를 보이게 해 둔 경우 본문 목록 대신 오른쪽에서 밀려 나오는 서랍으로 연다.
+  // 여는 버튼은 상단바 오른쪽(프로필 아래). 메뉴리스트를 모바일에서 끄면 서랍도 없다.
+  const menuWgt = mainState.widgets.find(w => w.type === 'menu');
+  const drawerOn = isMobile && !!menuWgt && menuWgt.enabled && !menuWgt.mOff;
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
+  useEffect(() => { if (!drawerOn) setDrawerOpen(false); }, [drawerOn]);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false); };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, [drawerOpen]);
   const avatarSrc = useBlobUrl(user?.avatarUrl);     // 프로필 이미지 (마이페이지, v1.9)
   const userRef = useRef<HTMLDivElement>(null);
 
@@ -317,6 +331,35 @@ export function TopBar() {
       ) : (
         <button className="login-link" onClick={() => nav('/login')}>로그인</button>
       )}
+      {/* 서랍 메뉴 여는 버튼 — 모바일, 메뉴리스트를 보이게 한 경우만. 열리면 X로 바뀐다 */}
+      {drawerOn && (
+        <button type="button" className={`dw-btn${drawerOpen ? ' on' : ''}`} aria-label="메뉴" aria-expanded={drawerOpen}
+          onClick={() => setDrawerOpen(o => !o)}>
+          <i /><i /><i />
+        </button>
+      )}
+      {drawerOn && typeof document !== 'undefined' && createPortal(
+        <>
+          <div className={`dw-dim${drawerOpen ? ' on' : ''}`} onClick={() => setDrawerOpen(false)} />
+          <aside className={`dw${drawerOpen ? ' on' : ''}`} aria-hidden={!drawerOpen}>
+            <div className="dw-grid">
+              {menu.map(item => item.children ? (
+                <React.Fragment key={item.label}>
+                  <div className="dw-cap">{item.label}</div>
+                  {item.children.map(c => (
+                    <button key={c.href} type="button" className={`dw-it${pathname === c.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(c.href); }}>
+                      <b>{c.label}</b>{dotHrefs.has(c.href) && <small className="nd">●</small>}
+                    </button>
+                  ))}
+                </React.Fragment>
+              ) : (
+                <button key={item.label} type="button" className={`dw-it${pathname === item.href ? ' on' : ''}`} onClick={() => { setDrawerOpen(false); nav(item.href!); }}>
+                  <b>{item.label}</b>{dotHrefs.has(item.href!) && <small className="nd">●</small>}
+                </button>
+              ))}
+            </div>
+          </aside>
+        </>, document.body)}
     </header>
   );
 }

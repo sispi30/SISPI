@@ -3026,3 +3026,34 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 @keyframes owTurn{to{transform:rotate(360deg)}}
 @keyframes owTw{0%,100%{opacity:.3;transform:scale(.6)}50%{opacity:1;transform:scale(1.15)}}
 @media (prefers-reduced-motion:reduce){.ow *{animation:none!important}}
+
+/* ---------- 모바일 서랍 메뉴 — 메인의 메뉴리스트를 보이게 한 경우, 본문 목록 대신 오른쪽에서 밀려 나온다 ---------- */
+.dw-btn,.dw-dim,.dw{display:none}
+@media (max-width:620px){
+  .menu-list,.wgt-hide-pc{display:none !important}   /* 서랍이 대신하므로 본문 목록은 숨김 */
+  .topbar{overflow:visible}
+  .dw-btn{display:flex;position:absolute;right:16px;top:50px;z-index:62;width:34px;height:30px;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    padding:0;border-radius:8px;background:transparent;border:none;cursor:var(--cur-pointer,pointer);color:var(--top-fg)}
+  .dw-btn i{display:block;width:22px;height:2px;border-radius:2px;background:currentColor;transition:transform .3s,opacity .2s,width .3s}
+  .dw-btn i:nth-child(2){width:16px;align-self:flex-end;margin-right:6px}
+  .dw-btn.on{position:fixed;z-index:95;top:50px;color:var(--dd-fg,#e8eaee)}
+  .dw-btn.on i:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .dw-btn.on i:nth-child(2){opacity:0}
+  .dw-btn.on i:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .dw-dim{display:block;position:fixed;inset:0;z-index:90;background:rgba(8,10,16,.42);opacity:0;pointer-events:none;transition:opacity .3s}
+  .dw-dim.on{opacity:1;pointer-events:auto}
+  .dw{display:block;position:fixed;top:0;right:0;bottom:0;z-index:92;width:min(78vw,340px);padding:92px 14px 24px;overflow-y:auto;
+    background:color-mix(in srgb,var(--dd-bg,#12151c) 94%,#000);color:var(--dd-fg,#e8eaee);
+    border-left:1px solid var(--line-dark,rgba(255,255,255,.12));box-shadow:-18px 0 40px rgba(0,0,0,.35);
+    transform:translateX(104%);transition:transform .38s cubic-bezier(.22,.8,.28,1);-webkit-overflow-scrolling:touch}
+  .dw.on{transform:none}
+  .dw-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .dw-cap{grid-column:1/-1;padding:16px 6px 8px;font-size:calc(10px*var(--fs,1));letter-spacing:.28em;text-transform:uppercase;color:color-mix(in srgb,var(--dd-fg,#e8eaee) 55%,transparent);
+    border-bottom:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 14%,transparent)}
+  .dw-it{position:relative;display:flex;align-items:center;justify-content:center;gap:4px;min-height:64px;padding:12px 6px;text-align:center;border-radius:0;
+    color:var(--dd-fg,#e8eaee);background:transparent;border:0;border-bottom:1px solid color-mix(in srgb,var(--dd-fg,#e8eaee) 10%,transparent);
+    font-family:var(--font-menu,var(--sans));cursor:var(--cur-pointer,pointer);transition:background .15s}
+  .dw-it b{font-weight:var(--fw-menu,500);font-size:calc(13px*var(--fs-menu,1));letter-spacing:.14em}
+  .dw-it:active,.dw-it.on{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+  .dw-it.on b{color:var(--accent)}
+}
