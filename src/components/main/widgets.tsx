@@ -519,6 +519,7 @@ export function DecoWidget({ conf }: { conf: WidgetConf }) {
         // 모바일에서 PC에서 정한 크기·비율을 그대로 유지하기 위한 값 (아래 .deco-wgt.dm CSS가 모바일에서만 쓴다)
         ...(conf.w && conf.h ? { ['--dw' as string]: `${conf.w}px`, ['--da' as string]: `${conf.w} / ${conf.h}` } : {}),
         ['--ms' as string]: ((conf.settings.mScale as number | undefined) ?? 100) / 100,
+        ['--mox' as string]: `${(conf.settings.mOffX as number | undefined) ?? 0}px`,
         ['--moy' as string]: `${(conf.settings.mOffY as number | undefined) ?? 0}px`,
         position: 'relative', overflow: 'hidden',
         width: wPx ? `${wPx}px` : '100%', maxWidth: '100%',

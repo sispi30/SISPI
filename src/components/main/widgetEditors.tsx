@@ -300,10 +300,13 @@ export function DecoEditor({ conf, onClose }: { conf: WidgetConf; onClose?: () =
         <span className="cp-lb">모바일 크기</span>
         <KStep value={(conf.settings.mScale as number | undefined) ?? 100} min={30} max={200} step={5} suffix="%"
           onChange={v => set({ mScale: v })} />
+        <span className="cp-lb">가로 위치</span>
+        <KStep value={(conf.settings.mOffX as number | undefined) ?? 0} min={-300} max={300} step={2} suffix="px"
+          onChange={v => set({ mOffX: v })} />
         <span className="cp-lb">세로 위치</span>
         <KStep value={(conf.settings.mOffY as number | undefined) ?? 0} min={-300} max={300} step={2} suffix="px"
           onChange={v => set({ mOffY: v })} />
-        <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>모바일에서만 · 위젯 크기 100% = PC 크기 · 세로 위치 +는 아래로</small>
+        <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>모바일에서만 · 위젯 크기 100% = PC 크기 · 가로 +는 오른쪽 · 세로 +는 아래로</small>
       </div>
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
