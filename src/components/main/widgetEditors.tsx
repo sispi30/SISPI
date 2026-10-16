@@ -295,6 +295,17 @@ export function DecoEditor({ conf, onClose }: { conf: WidgetConf; onClose?: () =
           style={{ width: 140 }} />
       </div>
 
+      {/* 모바일 맞춤 — 모바일에서는 위젯이 세로로 쌓여 배경과 어긋날 수 있어서, 배경 도형과 대칭이 맞도록 크기·세로 위치를 보정한다 (PC에는 영향 없음) */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span className="cp-lb">모바일 크기</span>
+        <KStep value={(conf.settings.mScale as number | undefined) ?? 100} min={30} max={200} step={5} suffix="%"
+          onChange={v => set({ mScale: v })} />
+        <span className="cp-lb">세로 위치</span>
+        <KStep value={(conf.settings.mOffY as number | undefined) ?? 0} min={-300} max={300} step={2} suffix="px"
+          onChange={v => set({ mOffY: v })} />
+        <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>모바일에서만 · 위젯 크기 100% = PC 크기 · 세로 위치 +는 아래로</small>
+      </div>
+
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
           onClick={() => { setSwapFor(null); document.getElementById(inputId)?.click(); }}>＋ 이미지 추가</button>
