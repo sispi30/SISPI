@@ -590,7 +590,7 @@ function SpellCheckRow() {
 /** 메인 페이지 탭 (v1.9 확정) — 모바일 표시 토글 + 모바일 세로 나열 순서
     토글은 모바일에서만 뺀다(사용자 확정) — PC 메인 구성은 편집모드의 [＋ 위젯]·우클릭 삭제로 */
 function MainPagePane() {
-  const { state, setMobileOff, setMobileOrder, resetMain } = useMainStore();
+  const { state, setMobileOff, setMobileOrder, resetMain, updateWidget } = useMainStore();
   const toast = useToast();
   const [resetAsk, setResetAsk] = useState(false);   // 기본 구성 확인 (v1.9)
   // 모바일 순서 목록: 고정 요소(배너·회원정보창)는 포함되지 않음
@@ -614,7 +614,7 @@ function MainPagePane() {
           { label: 'RESET', kind: 'accent', onClick: () => { resetMain(); setResetAsk(false); toast('메인 페이지가 기본 구성으로 돌아갔습니다'); } },
           { label: 'CANCEL', kind: 'ghost', onClick: () => setResetAsk(false) },
         ]} />
-      <div className="d">모바일 표시 여부 + 모바일 세로 나열 순서 — ⠿ 드래그로 순서 변경</div>
+      <div className="d">PC·모바일 표시 여부 + 모바일 세로 나열 순서 — ⠿ 드래그로 순서 변경</div>
 
       {/* 메인 레이아웃은 고정 캔버스 하나 — 반응형 옵션 제거 (v1.9, PC/모바일 두 가지만) */}
       <DragList
@@ -635,10 +635,14 @@ function MainPagePane() {
                 <small>{WIDGET_META[w.type].desc}</small>
               </div>
             </div>
-            <KToggle checked={!w.mOff} onChange={v => setMobileOff(w.id, !v)} />
+            <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+              <label style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 11, color: 'var(--sub)' }}>PC <KToggle checked={!w.pcOff} onChange={v => updateWidget(w.id, { pcOff: !v }, { persist: true })} /></label>
+              <label style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 11, color: 'var(--sub)' }}>모바일 <KToggle checked={!w.mOff} onChange={v => setMobileOff(w.id, !v)} /></label>
+            </div>
           </div>
         )}
       />
+      <p className="hint"><b>PC</b> 토글을 끄면 PC 메인에서만 숨겨지고 모바일에는 그대로 보입니다 — 모바일 전용 위젯은 PC에서 등록한 뒤 PC를 끄세요 (메인 편집모드에서는 흐리게 보이며 우클릭 「PC에서 표시」로 다시 켤 수 있음)</p>
       <p className="hint">토글을 끄면 <b>모바일에서만</b> 빠지고 PC 메인에는 그대로 표시됩니다 · 순서는 <b>모바일 세로 나열 순서</b> — PC 배치는 메인에서 편집모드로 자유 조정</p>
       <p className="hint">메인에서 위젯을 완전히 빼거나 더하려면 편집모드에서 — 추가는 상단바 [＋ 위젯], 삭제는 위젯 우클릭 → 위젯 삭제</p>
       <p className="hint">고정 요소: 슬라이드 배너(최상단) · 회원정보창 — 순서 목록에 포함되지 않음</p>

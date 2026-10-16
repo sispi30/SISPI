@@ -936,6 +936,11 @@ body.edit-on .main-grid{grid-template-columns:230px 1fr 260px}
 @media (max-width:620px){.wgt-hide-pc{display:block}}
 /* 모바일 제외 위젯 (v1.9 — 환경설정 토글은 모바일 표시만 제어, PC에는 그대로) */
 @media (max-width:620px){.wgt.wgt-hide-m{display:none !important}}
+/* PC에서만 숨김 — 모바일에는 그대로. 편집모드에서는 흐리게 남겨 우클릭으로 다시 켤 수 있게 */
+@media (min-width:621px){
+  body:not(.edit-on) .wgt.wgt-hide-pcw{display:none !important}
+  body.edit-on .wgt.wgt-hide-pcw{opacity:.35;outline:1px dashed rgba(127,127,127,.8)}
+}
 .menu-list a{display:block;padding:10px 12px;font-size:calc(13px*var(--fs,1));color:var(--ink);border-radius:8px;cursor:var(--cur-pointer,pointer);transition:.15s}
 .menu-list a:hover{background:#eef0f2}
 .menu-list a small{color:var(--faint);float:right;font-size:calc(10px*var(--fs,1));margin-top:2px}

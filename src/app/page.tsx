@@ -174,6 +174,10 @@ export default function MainPage() {
                 setCtx(null);
               }}>설정</button>
             )}
+            {/* PC에서만 숨김 — 모바일에는 그대로 보임 */}
+            <button onClick={() => { updateWidget(me.id, { pcOff: !me.pcOff }, { persist: true }); setCtx(null); }}>
+              {me.pcOff ? 'PC에서 표시' : 'PC에서 숨김'}
+            </button>
             {!me.fixed && (
               <button className="danger" onClick={() => { setDelAsk(me); setCtx(null); }}>위젯 삭제</button>
             )}
