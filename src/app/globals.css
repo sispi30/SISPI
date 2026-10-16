@@ -1450,7 +1450,9 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .dy-layout{display:grid;grid-template-columns:1fr 250px;gap:14px} /* 풀 콘텐츠 폭 · 두 열 높이 일치(stretch) */
 /* 중간뷰에서는 달력을 내리지 않음 — 옆폭만 축소, 모바일에서만 아래로 (v1.9 사용자 확정) */
 @media (max-width:960px){.dy-layout{grid-template-columns:1fr 210px}}
-@media (max-width:620px){.dy-layout{grid-template-columns:1fr}}
+@media (max-width:620px){.dy-layout{grid-template-columns:minmax(0,1fr)}}   /* 1fr만 쓰면 긴 제목·날짜 때문에 칸이 화면 밖으로 밀려 박스가 잘렸다 — 최소 폭을 0으로 풀어 화면 폭에 맞춘다 */
+.dy-layout > *{min-width:0}
+.dy-row .hd{min-width:0}
 .dy-cal{padding:16px;align-self:start} /* 달력 크기만큼만 — 일기 패널과 시작 높이만 동일 */
 .dy-cal .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .dy-cal .hd b{font-size:calc(12.5px*var(--fs,1));letter-spacing:.04em}
