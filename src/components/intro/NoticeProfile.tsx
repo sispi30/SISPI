@@ -47,7 +47,7 @@ function Hero({ p }: { p: IntroProfile }) {
           {slides.map((sl, i) => (
             <div key={sl.id} className={`slide ${i === at ? 'on' : ''}`}>
               {sl.imgId
-                ? <CroppedBlobImg fileRef={sl.imgId} crop={sl.crop} ph="" />
+                ? <CroppedBlobImg fileRef={sl.imgId} crop={sl.crop} ph="" fadeIn />
                 : sl.img
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={sl.img} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />

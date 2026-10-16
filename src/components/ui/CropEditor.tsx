@@ -30,7 +30,7 @@ export function coverImgStyle(crop: CropValue | undefined, wide: boolean): React
 
 /** 프레임 채움 크롭 이미지 — 컨테이너·원본 비율을 측정해 커버 방향을 자동 결정.
  *  부모는 position:relative(또는 absolute)여야 함. */
-export function CropImg({ src, crop, alt }: { src: string; crop?: CropValue; alt?: string }) {
+export function CropImg({ src, crop, alt, fadeIn }: { src: string; crop?: CropValue; alt?: string; fadeIn?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const natRef = useRef<{ w: number; h: number } | null>(null);
   const [wide, setWide] = useState<boolean | null>(null);
@@ -53,20 +53,24 @@ export function CropImg({ src, crop, alt }: { src: string; crop?: CropValue; alt
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt ?? ''} draggable={false}
         onLoad={e => { const im = e.currentTarget; natRef.current = { w: im.naturalWidth, h: im.naturalHeight }; compute(); }}
-        style={wide == null ? { opacity: 0 } : coverImgStyle(crop, wide)} />
+        style={{
+          ...(wide == null ? { opacity: 0 } : coverImgStyle(crop, wide)),
+          // 처음 로딩될 때 갑자기 뜨지 않게 — 불러오고 크기를 잰 뒤 천천히 떠오른다
+          ...(fadeIn ? { transition: 'opacity 1.8s ease' } : {}),
+        }} />
     </div>
   );
 }
 
 /** 파일 참조 + 크롭을 적용해 표시하는 썸네일 (없으면 플레이스홀더) */
-export function CroppedBlobImg({ fileRef, crop, ph, label, alt }: {
-  fileRef?: string; crop?: CropValue; ph?: string; label?: string; alt?: string;
+export function CroppedBlobImg({ fileRef, crop, ph, label, alt, fadeIn }: {
+  fileRef?: string; crop?: CropValue; ph?: string; label?: string; alt?: string; fadeIn?: boolean;
 }) {
   const url = useBlobUrl(fileRef);
   if (!url) {
     return <div className={`ph ${ph ?? ''}`} style={{ width: '100%', height: '100%' }}>{label && <span>{label}</span>}</div>;
   }
-  return <CropImg src={url} crop={crop} alt={alt} />;
+  return <CropImg src={url} crop={crop} alt={alt} fadeIn={fadeIn} />;
 }
 
 export function CropEditor({ open, src, aspect, aspectLabel, initial, onClose, onApply }: {
