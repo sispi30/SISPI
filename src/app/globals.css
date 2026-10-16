@@ -3077,3 +3077,11 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   .deco-wgt{transform:translateY(var(--moy,0px))}   /* 세로 위치 보정 — 크기를 직접 정한 위젯에도 적용 */
   .deco-wgt.dm{width:min(100%,calc(var(--dw)*var(--ms,1))) !important;height:auto !important;aspect-ratio:var(--da) !important;margin-left:auto !important;margin-right:auto !important;min-height:0 !important}
 }
+
+/* 모바일 — 필터 태그가 두 줄로 꺾이지 않게 한 줄로 줄여 맞춘다 (넘치면 가로 스크롤) */
+@media (max-width:620px){
+  .toolrow > .tag-row{flex-basis:100%;flex-wrap:nowrap;gap:4px;overflow-x:auto;scrollbar-width:none}
+  .toolrow > .tag-row::-webkit-scrollbar{display:none}
+  .toolrow > .tag-row .tag{flex:0 1 auto;gap:3px;padding:6px 8px;white-space:nowrap;font-size:calc(11px*var(--fs,1));letter-spacing:-.02em}
+  .toolrow > .tag-row .tag small{font-size:calc(9.5px*var(--fs,1))}
+}
