@@ -3074,5 +3074,6 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 /* 모바일 이미지 위젯 — PC에서 정한 크기(칸 폭을 넘지 않게)와 가로세로 비율을 그대로 유지한다.
    예전에는 모바일 스택에서 높이가 풀려 최소 높이(80px)로 쪼그라들었다. */
 @media (max-width:620px){
-  .deco-wgt.dm{width:min(100%,calc(var(--dw)*var(--ms,1))) !important;transform:translateY(var(--moy,0px));height:auto !important;aspect-ratio:var(--da) !important;margin-left:auto !important;margin-right:auto !important;min-height:0 !important}
+  .deco-wgt{transform:translateY(var(--moy,0px))}   /* 세로 위치 보정 — 크기를 직접 정한 위젯에도 적용 */
+  .deco-wgt.dm{width:min(100%,calc(var(--dw)*var(--ms,1))) !important;height:auto !important;aspect-ratio:var(--da) !important;margin-left:auto !important;margin-right:auto !important;min-height:0 !important}
 }
