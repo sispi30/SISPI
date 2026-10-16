@@ -152,6 +152,7 @@ export function MouseFx() {
     style.textContent += `.mfx-b{position:fixed;width:0;height:0;pointer-events:none}`
       + `.mfx-b i{position:absolute;display:block;left:0;top:0}`
       + `.mfx-b svg{width:100%;height:100%;overflow:visible;fill:var(--bc);stroke:var(--bk);stroke-width:3.5;stroke-linejoin:round}`
+      + `.mfx-b .co svg{stroke-opacity:.4}`   // 가운데 별 밑에 깔린 윤곽(그림자) 색을 연하게
       + `.mfx-b .sp svg{fill:var(--bk);stroke:var(--bk);stroke-width:7;stroke-linejoin:round}`   // 작은 별 조각 — 팔이 가늘어 흐리게 보여서 윤곽을 같은 색으로 둘러 굵고 진하게
       + `.mfx-b .co{width:24px;height:24px;margin:-12px 0 0 -12px;animation:mfxCo .6s cubic-bezier(.2,.8,.3,1) forwards}`
       + `.mfx-b .sp{width:12px;height:12px;margin:-6px 0 0 -6px;animation:mfxSp .75s cubic-bezier(.2,.7,.3,1) forwards}`
