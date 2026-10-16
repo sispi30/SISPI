@@ -514,8 +514,10 @@ export function DecoWidget({ conf }: { conf: WidgetConf }) {
   const hPx = conf.settings.hPx as number | undefined;
   const canGo = !editOn && !!cur?.link;
   return (
-    <div className="deco-wgt"
+    <div className={`deco-wgt${!wPx && !hPx && conf.w && conf.h ? ' dm' : ''}`}
       style={{
+        // 모바일에서 PC에서 정한 크기·비율을 그대로 유지하기 위한 값 (아래 .deco-wgt.dm CSS가 모바일에서만 쓴다)
+        ...(conf.w && conf.h ? { ['--dw' as string]: `${conf.w}px`, ['--da' as string]: `${conf.w} / ${conf.h}` } : {}),
         position: 'relative', overflow: 'hidden',
         width: wPx ? `${wPx}px` : '100%', maxWidth: '100%',
         height: hPx ? `${hPx}px` : '100%', minHeight: hPx ? undefined : 80,
