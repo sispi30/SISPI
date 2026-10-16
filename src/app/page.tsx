@@ -8,7 +8,6 @@ import { MemberBox } from '@/components/main/MemberBox';
 import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { KRadio } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
-import { useStageFit } from '@/lib/stageFit';
 
 const ADDABLE: WidgetType[] = ['banner', 'memo', 'dday', 'todo', 'upcoming', 'freetext', 'deco', 'diary', 'latest', 'apply', 'orbit'];   // banner: 여러 개 추가 (v2.0 사용자 요청)
 /** 내용 설정 모달이 있는 위젯 — 우클릭 「설정」 노출 대상 (v1.9) */
@@ -16,8 +15,7 @@ const EDITABLE: WidgetType[] = ['banner', 'memo', 'dday', 'todo', 'freetext', 'd
 
 export default function MainPage() {
   const { state, editOn, gridOn, updateWidget, addWidget, removeWidget } = useMainStore();
-  // 1920px보다 좁은 화면(태블릿 가로 등)에서는 폭에 맞춰 같은 비율로 줄여 보여준다 — 편집모드는 1:1 그대로
-  useStageFit({ name: 'main', minWidth: 620 });
+  // 창을 줄여도 배치를 줄이지 않는다 — 편집모드와 똑같이 1:1 크기 그대로, 넘친 부분만 잘린다(스크롤 없음)
   const toast = useToast();
   const [ctx, setCtx] = useState<{ id: string; x: number; y: number } | null>(null);
   const [addOpen, setAddOpen] = useState(false);

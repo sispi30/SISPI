@@ -925,11 +925,7 @@ body.edit-on:not(.main-fixed) #appMain{overflow-x:auto}
   body.main-fixed #appMain{overflow:hidden;scrollbar-gutter:auto}
   body.main-fixed .page-main-wrap{padding-bottom:0}
   body.main-fixed .main-grid.abs{height:calc(100vh - 86px) !important}
-  /* 화면 맞춤 — 1920px보다 좁은 화면(태블릿 가로 등)에서는 1920px 기준 배치를 폭에 맞춰 같은 비율로 줄인다.
-     --ms-main(0~1)은 src/lib/stageFit.ts가 정한다. 편집모드는 좌표 계산을 위해 1:1 그대로.
-     캔버스 왼쪽 = (1920px 기준 400px) × 비율 / 높이는 줄이기 전 값으로 줘서 화면 아래까지 꽉 채운다 */
-  body.main-fixed.main-scaled:not(.edit-on) .page-main-wrap{min-width:0;margin-left:calc(400px * var(--ms-main) - 30px)}
-  body.main-fixed.main-scaled:not(.edit-on) .main-grid.abs{zoom:var(--ms-main);width:1120px;height:calc((100vh - 86px) / var(--ms-main)) !important}
+  /* 창을 줄여도 메인은 축소하지 않는다 — 편집모드와 같이 1:1 크기로 두고 넘친 부분은 잘린다 */
 }
 /* 편집모드: 반응형 모드·좁은 창에서도 캔버스를 콘텐츠 1120px로 고정 —
    가운데 1fr 열이 항상 610px(10px 배수)이 되어 10px 격자가 정확히 맞음 */
