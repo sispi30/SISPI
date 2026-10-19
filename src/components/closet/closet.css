@@ -1,0 +1,180 @@
+/* 페어 옷장 — 원본(PHP) 스타일을 .closet 안으로 가둔 것. 사이트 다른 곳에는 영향을 주지 않는다. */
+@font-face{font-family:'KotraHope';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2110@1.0/KOTRAHOPE.woff2') format('woff2');font-weight:normal;font-display:swap}
+/* 색은 사이트 테마를 따른다 — 다른 메뉴의 버튼·제목과 같은 변수 */
+.closet{--pc:var(--btn-dark,#7b9bcc);--rm:var(--btn-dark-hv,#6a8cc2);--tc:var(--btn-dark-fg,#fff)}
+.closet *{box-sizing:border-box}
+.closet{user-select:none;-webkit-user-select:none;font-family:'KotraHope',var(--sans,sans-serif)}
+.closet button,.closet input{font-family:inherit}
+.closet .guide-box,.closet .guide-box *{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+.closet .cl-wrap{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;justify-content:center}
+.closet .cl-main{display:flex;flex-direction:column;align-items:center;gap:14px;flex:0 1 auto;max-width:100%}
+.closet .cl-side{flex:1 1 340px;max-width:440px;min-width:300px;position:sticky;top:20px;display:flex;flex-direction:column}
+
+/* 제목 리본 */
+.closet .ribbon-wrapper{position:relative;display:inline-block;margin:6px 0 4px;padding:0 40px;z-index:1;filter:drop-shadow(0 5px 5px rgba(0,0,0,.15))}
+.closet .ribbon-wrapper::before,.closet .ribbon-wrapper::after{content:'';position:absolute;top:12px;width:60px;height:60px;background:var(--rm);z-index:-2}
+.closet .ribbon-wrapper::before{right:100%;margin-right:-12px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,20% 50%)}
+.closet .ribbon-wrapper::after{left:100%;margin-left:-12px;clip-path:polygon(0 0,100% 0,80% 50%,100% 100%,0 100%)}
+.closet .ribbon-bg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:60px;background:linear-gradient(to bottom,var(--pc) 0%,var(--rm) 50%,var(--rm) 100%);border-radius:4px;z-index:2}
+.closet .ribbon-bg::before,.closet .ribbon-bg::after{content:'';position:absolute;bottom:-12px;width:0;height:0;z-index:-1;filter:brightness(.7)}
+.closet .ribbon-bg::before{left:0;border-top:12px solid var(--rm);border-left:12px solid transparent}
+.closet .ribbon-bg::after{right:0;border-top:12px solid var(--rm);border-right:12px solid transparent}
+.closet .game-title,.closet .game-title span{font-family:'KotraHope',var(--sans,sans-serif)}
+.closet .game-title{position:relative;z-index:3;font-size:38px;color:var(--tc);height:60px;display:flex;align-items:center;justify-content:center;letter-spacing:2px;white-space:nowrap;padding:0 10px;text-shadow:0 1px 1px rgba(255,255,255,.4)}
+.closet .game-title span{display:inline-block}
+.closet .game-title.wag span{animation:closetWagle .5s ease-in-out}
+@keyframes closetWagle{0%{transform:rotate(0) translateY(0)}25%{transform:rotate(-5deg) translateY(-2px)}50%{transform:rotate(5deg) translateY(2px)}75%{transform:rotate(-3deg) translateY(-1px)}100%{transform:rotate(0) translateY(0)}}
+.closet .title-btns{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+
+/* 캐릭터 */
+.closet .dual-stage{display:flex;gap:20px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.closet .char-name-label{font-size:30px;color:var(--pc);font-weight:bold;letter-spacing:1px;text-align:center;margin-bottom:10px}
+.closet .char-btn-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+.closet .character-stage{position:relative;z-index:5;cursor:pointer;max-width:100%}
+.closet .char-visuals{width:100%;height:100%;position:relative}
+.closet .base-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.closet .dropped-item{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.closet .speech-bubble{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#fff;border:2px solid #333;border-radius:15px;padding:8px 15px;font-size:15px;color:#333;z-index:100;opacity:0;pointer-events:none;box-shadow:2px 2px 5px rgba(0,0,0,.1);white-space:pre-wrap;max-width:280px;text-align:center;transition:opacity .4s ease}
+.closet .speech-bubble.bvis{opacity:1}
+.closet .speech-bubble::after{content:'';position:absolute;bottom:-10px;left:50%;margin-left:-6px;border-width:10px 6px 0;border-style:solid;border-color:#333 transparent;display:block;width:0}
+.closet .speech-bubble::before{content:'';position:absolute;bottom:-7px;left:50%;margin-left:-4px;border-width:8px 4px 0;border-style:solid;border-color:#fff transparent;display:block;width:0;z-index:1}
+.closet .blush-overlay{position:absolute;background:radial-gradient(ellipse at center,rgba(255,0,0,.3) 0%,transparent 70%);z-index:15;opacity:0;transition:opacity 1s ease-in;pointer-events:none}
+.closet .active-blush{opacity:1!important}
+.closet .sweat-drop{position:absolute;width:12px;height:12px;background:#8ED6FF;border-radius:0 50% 50% 50%;transform:rotate(45deg);opacity:0;z-index:100;pointer-events:none}
+@keyframes closetSweat{0%{opacity:0;top:8.3%}20%{opacity:1;top:8.3%}80%{opacity:1;top:15%}100%{opacity:0;top:16.7%}}
+.closet .dark-cloud{position:absolute;background:#999;border-radius:50px;z-index:90;opacity:0;pointer-events:none;filter:drop-shadow(2px 2px 0 #666);animation:floatCloud 4s infinite ease-in-out}
+.closet .dark-cloud::after,.closet .dark-cloud::before{content:'';position:absolute;background:inherit;border-radius:50%}
+.closet .dark-cloud::after{width:50%;height:120%;top:-50%;left:15%}
+.closet .dark-cloud::before{width:50%;height:110%;top:-40%;right:15%}
+@keyframes floatCloud{0%{transform:translateY(0);opacity:0}20%{opacity:.9}50%{transform:translateY(-8px);opacity:.9}100%{transform:translateY(0);opacity:.9}}
+
+/* 모션 */
+@keyframes flyUpOff{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-60px);opacity:0}}
+@keyframes flyDownOff{0%{transform:translateY(0);opacity:1}100%{transform:translateY(60px);opacity:0}}
+@keyframes flyInDown{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes flyInUp{0%{transform:translateY(30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+.closet .anim-fly-down{animation:flyDownOff .5s ease-in forwards}
+.closet .anim-fly-in-up{animation:flyInUp .5s ease-out forwards}
+@keyframes bounceEffect{0%{transform:scale(1) translateY(0)}40%{transform:scale(1.1,.9) translateY(5px)}60%{transform:scale(.95,1.05) translateY(-10px)}80%{transform:scale(1.02,.98) translateY(2px)}100%{transform:scale(1) translateY(0)}}
+.closet .anim-bounce{animation:bounceEffect .5s ease-in-out;transform-origin:bottom center}
+@keyframes jumpEffect{0%{transform:translateY(0)}30%{transform:translateY(-20px)}50%{transform:translateY(0)}70%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+.closet .anim-jump{animation:jumpEffect .8s ease-out}
+@keyframes shakeEffect{0%{transform:translate(1px,1px) rotate(0)}10%{transform:translate(-1px,-2px) rotate(-1deg)}20%{transform:translate(-3px,0) rotate(1deg)}30%{transform:translate(3px,2px)}40%{transform:translate(1px,-1px) rotate(1deg)}50%{transform:translate(-1px,2px) rotate(-1deg)}60%{transform:translate(-3px,1px)}70%{transform:translate(3px,1px) rotate(-1deg)}80%{transform:translate(-1px,-1px) rotate(1deg)}90%{transform:translate(1px,2px)}100%{transform:translate(1px,-2px) rotate(-1deg)}}
+.closet .anim-shake{animation:shakeEffect .5s}
+@keyframes weakShake{0%{transform:translate(0,0)}25%{transform:translate(1px,1px)}50%{transform:translate(-1px,-1px)}75%{transform:translate(-1px,1px)}100%{transform:translate(0,0)}}
+.closet .anim-weak-shake{animation:weakShake .2s infinite}
+@keyframes gloomAnim{0%{transform:scale(1);filter:grayscale(0%)}50%{transform:scale(1.02,.96) translateY(3px);filter:grayscale(60%) brightness(.95)}100%{transform:scale(1);filter:grayscale(0%)}}
+.closet .anim-gloom{animation:gloomAnim 3s infinite ease-in-out;transform-origin:bottom center}
+@keyframes heavyEffect{0%{transform:scale(1)}50%{transform:scale(1.05,.92) translateY(5px)}100%{transform:scale(1)}}
+.closet .anim-heavy{animation:heavyEffect .6s ease-in-out;transform-origin:bottom center}
+.closet .anim-heavy-slow{animation:heavyEffect 2.5s ease-in-out;transform-origin:bottom center}
+@keyframes peepEffect{0%{transform:scale(1)}50%{transform:scale(.95,1.08) translateY(-3px)}100%{transform:scale(1)}}
+.closet .anim-peep{animation:peepEffect 2s ease-in-out;transform-origin:bottom center}
+@keyframes attentionBounce{0%{transform:translateY(0)}30%{transform:translateY(-5px)}50%{transform:translateY(0)}80%{transform:translateY(-5px)}100%{transform:translateY(0)}}
+.closet .anim-attention{animation:attentionBounce .6s ease-out}
+@keyframes bubblePop{0%{transform:translateX(-50%) scale(0);opacity:0}60%{transform:translateX(-50%) scale(1.15);opacity:1}80%{transform:translateX(-50%) scale(.95);opacity:1}100%{transform:translateX(-50%) scale(1);opacity:1}}
+.closet .anim-pop{display:block;transform-origin:bottom center;animation:bubblePop .4s cubic-bezier(.175,.885,.32,1.275) forwards}
+
+/* 버튼 */
+.closet .btn_custom{background:var(--ink,#555);color:#fff;border:none;height:30px;padding:0 12px;border-radius:15px;cursor:pointer;font-size:13px;transition:all .3s;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.closet .btn_custom:hover{background:var(--pc);transform:translateY(-1px)}
+.closet .btn_custom.big{height:34px;padding:0 20px;font-size:14px;background:var(--pc)}
+.closet .btn_custom.off{background:#aaa}
+.closet .btn_reset:hover{background:#d9534f!important;animation:btnStartle .4s;transform:none!important}
+@keyframes btnStartle{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.15) rotate(-5deg)}60%{transform:scale(1.15) rotate(5deg)}80%{transform:scale(1.05) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
+
+/* 착용 중 패널 */
+.closet .worn-panel-wrap{margin-top:6px}
+.closet .worn-panel-title{font-size:11px;color:var(--faint);margin-bottom:4px}
+.closet .worn-panel{display:flex;flex-wrap:wrap;gap:6px;min-height:52px;padding:6px;background:rgba(255,255,255,.65);border:1px dashed #ddd;border-radius:10px;align-content:flex-start}
+.closet .worn-chip{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px}
+.closet .worn-chip img{width:46px;height:46px;object-fit:contain;border:2px solid var(--pc);border-radius:8px;background:#fff}
+.closet .worn-chip .chip-lbl{font-size:8px;color:#aaa;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.closet .worn-x{position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:#d9534f;color:#fff;border:none;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.closet .worn-x:hover{background:#a02020}
+.closet .zi-row{display:flex;gap:2px;align-items:center;margin-top:1px}
+.closet .zi-btn{width:14px;height:14px;border:1px solid #ddd;background:#f5f5f5;border-radius:3px;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;color:#666;padding:0}
+.closet .zi-btn:hover{background:var(--pc);color:#fff;border-color:var(--pc)}
+.closet .zi-val{font-size:8px;color:#888;min-width:16px;text-align:center}
+.closet .worn-empty{font-size:11px;color:#ccc;padding:4px;align-self:center}
+
+/* 옷장(오른쪽) */
+.closet .wardrobe-top-bar{display:flex;gap:6px;align-items:center;margin-bottom:4px;padding:0 2px;flex-wrap:wrap}
+.closet .search-box{flex:1;min-width:110px;max-width:200px;height:30px;padding:0 12px;border:2px solid #ddd;border-radius:15px;font-size:13px;outline:none;transition:border-color .2s;background:#fff;color:#333;user-select:text;-webkit-user-select:text}
+.closet .search-box:focus{border-color:var(--pc)}
+.closet .tab-nav{display:flex;gap:0;margin-bottom:-2px;position:relative;z-index:5}
+.closet .tab-btn{background:#e8e8e8;border:2px solid #ccc;border-bottom:none;border-radius:9px 9px 0 0;padding:6px 3px;white-space:nowrap;font-size:12.5px;color:#999;cursor:pointer;transition:background .15s,color .15s;flex:1;text-align:center;min-width:0;overflow:hidden}
+.closet .tab-btn:hover{background:#f0f0f0;color:#666}
+.closet .tab-btn.active{background:rgba(255,255,255,.92);color:var(--pc);font-weight:bold}
+.closet .wardrobe{background:rgba(255,255,255,.88);border:2px dashed #bbb;border-radius:0 0 12px 12px;box-shadow:0 5px 15px rgba(0,0,0,.05);height:400px;overflow-y:auto;padding:12px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.closet .clothes-item{width:60px;height:60px;cursor:grab;transition:transform .2s,border-color .2s;background:#fff;border:2px solid #eee;border-radius:10px;object-fit:contain;flex-shrink:0;touch-action:none;-webkit-user-drag:none}
+.closet .clothes-item:hover{transform:translateY(-3px);border-color:#bbb;box-shadow:0 4px 8px rgba(0,0,0,.1)}
+.closet .clothes-item.item-worn{visibility:hidden;pointer-events:none}
+.closet .clothes-item.dbl-flash{outline:3px solid var(--pc);outline-offset:-2px}
+.closet .clothes-item.bg{cursor:pointer;border-style:dashed}
+.closet .clothes-item.bg:hover{border-style:solid;border-color:var(--pc)}
+.closet .bg-remove-btn{width:60px;height:60px;background:#f8f8f8;border:2px dashed #ccc;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#aaa;cursor:pointer;transition:all .2s;text-align:center;gap:2px;line-height:1.2}
+.closet .bg-remove-btn:hover{border-color:#d9534f;color:#d9534f;background:#fff0f0}
+.closet .tab-empty{width:100%;text-align:center;color:#ccc;font-size:13px;margin-top:18px}
+.closet .dbl-bar{display:flex;align-items:center;gap:4px;margin-top:6px;flex-wrap:wrap}
+.closet .dbl-hint{font-size:11px;color:#999;margin-right:2px}
+.closet .dbl-btn{background:#eee;border:1px solid #ddd;border-radius:11px;padding:2px 9px;font-size:11px;color:#999;cursor:pointer;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.closet .dbl-btn.active{background:var(--pc);border-color:var(--pc);color:#fff;font-weight:bold}
+.closet .footer-credit{margin-top:8px;display:flex;align-items:center;gap:10px;font-size:11.5px;color:#aaa;flex-wrap:wrap}
+.closet .footer-credit a{color:#aaa;text-decoration:none;transition:color .2s}
+.closet .footer-credit a:hover{color:#555}
+
+/* 사용법 상자 — 원본 그대로: 떠 있고 제목 줄을 끌어 옮긴다 */
+.closet .guide-box{position:fixed;top:130px;left:10px;width:275px;background:rgba(255,255,255,.98);border:2px dashed var(--pc);border-radius:15px;padding:14px 17px;z-index:60;box-shadow:0 5px 15px rgba(0,0,0,.05);font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif!important;color:#666;font-size:13px;line-height:1.5;transition:opacity .5s,transform .5s}
+.closet .guide-box *{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif!important}
+.closet .guide-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px dashed #eee;padding-bottom:7px;margin-bottom:9px;font-size:16px;color:var(--pc);cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
+.closet .guide-header span{font-family:'KotraHope','Malgun Gothic',sans-serif!important}
+.closet .guide-header .guide-grip{color:#ccc;font-size:12px;letter-spacing:2px;cursor:move}
+.closet .guide-box.is-dragging{transition:none!important;opacity:.9;box-shadow:0 10px 26px rgba(0,0,0,.16)}
+.closet .btn-close-guide{background:none;border:none;font-size:17px;cursor:pointer;color:#ccc}
+.closet .guide-list{list-style:none;padding:0;margin:0}
+.closet .guide-list li{margin-bottom:4px;position:relative;padding-left:14px;font-size:12px}
+.closet .guide-list li::before{content:'✔';position:absolute;left:0;top:1px;color:var(--pc);font-size:10px}
+.closet .guide-list li b{color:var(--pc)}
+.closet .guide-details{padding-top:8px;border-top:1px dashed #eee}
+.closet .btn-toggle-detail{width:100%;margin-top:6px;padding:2px 0;background:transparent;border:none;color:#aaa;cursor:pointer;font-family:'KotraHope','Malgun Gothic',sans-serif!important;font-size:12px;transition:color .3s}
+.closet .btn-toggle-detail:hover{color:var(--pc);text-decoration:underline}
+@media(max-width:1000px){.closet .guide-box{display:none}}
+
+/* 관리자 편집 진입 — 원본의 「관리자 페이지로 이동」 자리(맨 아래 가운데) */
+.closet .admin-link{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 24px;background:var(--pc);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15);transition:opacity .2s}
+.closet .admin-link:hover{opacity:.8}
+
+/* 툴팁 · 끌고 다니는 그림 — 원본 모양 */
+.closet-tip{position:fixed;background:rgba(255,255,255,.95);border:2px solid #888;border-radius:8px;padding:4px 10px;font-family:'KotraHope',sans-serif;font-size:14px;color:#444;pointer-events:none;z-index:10000;white-space:nowrap;box-shadow:2px 2px 5px rgba(0,0,0,.1);transition:opacity .15s}
+.closet-ghost{position:fixed;z-index:10001;pointer-events:none;object-fit:contain;background:transparent;border:none}
+body.closet-dragging,body.closet-dragging *{cursor:grabbing!important}
+/* 페어 구분 칩 */
+.closet-pairs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:2px 0 6px}
+.closet-pairs button{padding:6px 16px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--sub);font-size:13px;font-weight:600;cursor:var(--cur-pointer,pointer);transition:.15s}
+.closet-pairs button:hover{border-color:var(--btn-dark,#7b9bcc);color:var(--ink)}
+.closet-pairs button.on{background:var(--btn-dark,#7b9bcc);border-color:var(--btn-dark,#7b9bcc);color:var(--btn-dark-fg,#fff)}
+/* 관리자 편집창 */
+.closet-adm{display:grid;gap:14px}
+.closet-adm .sec{display:grid;gap:8px}
+.closet-adm .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.closet-adm .grid-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.closet-adm .it{border:1.5px solid var(--line);border-radius:12px;padding:8px;display:grid;gap:6px;background:#fff}
+.closet-adm .it img{width:100%;height:90px;object-fit:contain;background:repeating-conic-gradient(#f3f4f6 0 25%,#fff 0 50%) 50%/14px 14px;border-radius:8px}
+.closet-adm .face{width:64px;height:100px;object-fit:contain;background:repeating-conic-gradient(#f3f4f6 0 25%,#fff 0 50%) 50%/14px 14px;border-radius:8px;border:1px solid var(--line)}
+.closet-adm .faces{display:flex;gap:8px;flex-wrap:wrap}
+.closet-adm .faces>div{display:grid;gap:4px;justify-items:center;font-size:10.5px;color:var(--sub)}
+.closet-adm .hint{font-size:11px;color:var(--faint);line-height:1.5}
+.closet-adm .dlg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.closet-adm .dlg .k-textarea{min-height:34px}
+.closet-adm .tabs{display:flex;gap:4px;flex-wrap:wrap}
+.closet-adm .chk{display:flex;flex-wrap:wrap;gap:4px 12px}
+.mng-box.closet-wide{width:860px}
+
+@media(max-width:1000px){
+  .closet .cl-side{position:static;max-width:640px;width:100%}
+  .closet .wardrobe{height:300px}
+  .closet .game-title{font-size:28px}
+  .closet-adm .dlg{grid-template-columns:1fr}
+}
+

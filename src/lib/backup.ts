@@ -23,6 +23,7 @@ const SITE_KEYS = [
   'ohome.cursor.v1', 'ohome.bgm.v1', 'ohome.bgm.fold', 'ohome.boardset.v1', 'ohome.boards.v1',
   'ohome.commset.v1', 'ohome.memoset.v1', 'ohome.threadset.v1', 'ohome.trpgset.v1',
   'ohome.moods.v1', 'ohome.relqsets.v1', 'ohome.notifset.v1',
+  'ohome.closet.v1',
 ];
 
 export interface ResetGroup { key: string; label: string; desc?: string; keys: string[] }
