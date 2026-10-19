@@ -4,7 +4,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useCloset, itemsForPair } from '@/lib/closetStore';
-import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { ClosetStage, type StageSaved } from '@/components/closet/ClosetStage';
 import { ClosetAdmin } from '@/components/closet/ClosetAdmin';
 
@@ -44,11 +43,6 @@ export default function ClosetPage() {
 
   return (
     <section className="page">
-      <div className="page-head">
-        <PageTitle>CLOSET</PageTitle>
-        <EditableDesc k="closet-desc" def="두 명에게 옷을 입혀 보고, 사진으로 남겨요" />
-      </div>
-
       {data.pairs.length > 1 && (
         <div className="closet-pairs">
           {data.pairs.map(p => (
