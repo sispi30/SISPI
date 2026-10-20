@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { putBlob, useUploading } from '@/lib/blobStore';
 import { newId } from '@/lib/postStore';
 import {
-  CLOSET_TABS, DIALOGUE_FIELDS, itemsForPair, newPair,
+  CLOSET_TABS, DIALOGUE_FIELDS, itemsForPair, newPair, pairTitle,
   type ClosetChar, type ClosetData, type ClosetItem, type ClosetPair,
 } from '@/lib/closetStore';
 import { Modal, useConfirmDelete } from '@/components/ui/Modal';
@@ -184,7 +184,11 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
             </p>
             {d.pairs.map((p, idx) => (
               <div className="row" key={p.id}>
-                <KInput style={{ width: 180 }} value={p.name} onChange={e => patchPair(p.id, { name: e.target.value })} />
+                <KInput style={{ width: 180 }} value={p.name} onChange={e => {
+                  // 제목이 자동(이름 따라가는) 상태면 이름을 바꿀 때 제목도 같이 바꾼다
+                  const auto = pairTitle(p) === `${p.name}의 옷장`;
+                  patchPair(p.id, { name: e.target.value, ...(auto ? { title: `${e.target.value}의 옷장` } : {}) });
+                }} />
                 <button className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 11 }} disabled={idx === 0} onClick={() => movePair(idx, -1)}>▲</button>
                 <button className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 11 }} disabled={idx === d.pairs.length - 1} onClick={() => movePair(idx, 1)}>▼</button>
                 <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => dupPair(p)}>복제</button>
@@ -290,7 +294,7 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
         {sec === 'design' && (
           <div className="sec">
             <KLabel>제목 (리본에 타자로 나옵니다)</KLabel>
-            <KInput value={cur.title} onChange={e => patchPair(cur.id, { title: e.target.value })} />
+            <KInput value={pairTitle(cur)} onChange={e => patchPair(cur.id, { title: e.target.value })} />
             <KLabel>저장 파일 기본 이름</KLabel>
             <KInput value={cur.saveName} onChange={e => patchPair(cur.id, { saveName: e.target.value })} />
           </div>

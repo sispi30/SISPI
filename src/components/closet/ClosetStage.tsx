@@ -3,7 +3,7 @@
 // 입은 옷과 표정은 React 상태로, 말풍선·모션·홍조 같은 연출은 Brain 이 DOM 에 직접 건다.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getBlob } from '@/lib/blobStore';
-import { CLOSET_TABS, CLOTH_TABS, STACK_TABS, type ClosetItem, type ClosetPair } from '@/lib/closetStore';
+import { CLOSET_TABS, CLOTH_TABS, STACK_TABS, type ClosetItem, type ClosetPair, pairTitle } from '@/lib/closetStore';
 import { Modal } from '@/components/ui/Modal';
 import { KInput } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
@@ -358,7 +358,7 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
     <div className="closet">
       <div className="cl-wrap">
         <div className="cl-main">
-          <div className="ribbon-wrapper"><div className="ribbon-bg" /><Title text={data.title} /></div>
+          <div className="ribbon-wrapper"><div className="ribbon-bg" /><Title text={pairTitle(data)} /></div>
           <div className="title-btns">
             <button type="button" className="btn_custom big" onClick={() => setSaveAsk(data.saveName)}>📸 찰칵!</button>
             <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={() => {
@@ -371,10 +371,6 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
             {chars.map(([cid, c]) => (
               <div className="char-col" key={cid}>
                 <div className="char-name-label">{c.name}</div>
-                <div className="char-btn-row">
-                  <button type="button" className="btn_custom" onClick={() => restore(cid)}>다시 입히기</button>
-                  <button type="button" className="btn_custom btn_reset" onClick={() => stripAll(cid)}>전부 벗기!</button>
-                </div>
                 <div className="character-stage" data-zone={cid} style={{
                   width: c.width, height: c.height,
                   backgroundImage: bgSrc[cid] ? `url("${bgSrc[cid]}")` : undefined, backgroundSize: 'cover', backgroundPosition: 'center',
@@ -393,6 +389,10 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
                         alt="" draggable={false} src={w.src} style={{ zIndex: w.zi }} />
                     ))}
                   </div>
+                </div>
+                <div className="char-btn-row below">
+                  <button type="button" className="btn_custom" onClick={() => restore(cid)}>다시 입히기</button>
+                  <button type="button" className="btn_custom btn_reset" onClick={() => stripAll(cid)}>전부 벗기!</button>
                 </div>
                 <div className="worn-panel-wrap" style={{ width: c.width, maxWidth: '100%' }}>
                   <div className="worn-panel-title">👕 착용 중 — ✕ 벗기 / ▲▼ 앞뒤 조절</div>

@@ -113,10 +113,16 @@ export function newPair(id: string, name: string, outfit: [string[], string[]] =
   };
 }
 
+/** 제목이 비었거나 예시 글자(「페어명의 옷장」) 그대로면 페어 이름을 넣어 「이름의 옷장」으로 보여 준다 */
+export function pairTitle(p: { name: string; title: string }): string {
+  const t = (p.title || '').trim();
+  return !t || t === '페어명의 옷장' ? `${p.name}의 옷장` : p.title;
+}
+
 /** 처음 열었을 때 보이는 예시 */
 export function defaultCloset(): ClosetData {
   return {
-    pairs: [{ ...newPair('p1', '페어 1', [['base-wear0', 'base-ace1'], ['base-wear1', 'base-ace2']]), title: '페어명의 옷장' }],
+    pairs: [{ ...newPair('p1', '페어 1', [['base-wear0', 'base-ace1'], ['base-wear1', 'base-ace2']]) }],
     items: SAMPLE_ITEMS,
   };
 }
