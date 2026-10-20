@@ -343,6 +343,14 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
   };
 
   /* ---------- 표시용 ---------- */
+  // 찰칵·소리 버튼 — 넓은 화면에서는 사용법 상자 안에, 좁은 화면에서는 제목 아래에 보인다
+  const actionBtns = (<>
+    <button type="button" className="btn_custom big" onClick={() => setSaveAsk(data.saveName)}>📸 찰칵!</button>
+    <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={() => {
+      const v = !mute; setMute(v); muteRef.current = v;
+      try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
+    }}>{mute ? '🔇 소리 꺼짐' : '🔊 소리'}</button>
+  </>);
   // 옷장(오른쪽 목록)은 사용법 상자처럼 끌어서 옮긴다 — 캐릭터 화면은 가운데에 둔다
   const ward = useFloat('ohome.closet.wardpos', () => ({ l: window.innerWidth - 460, t: 130 }));
   const [c1, c2] = data.chars;
@@ -359,13 +367,7 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
       <div className="cl-wrap">
         <div className="cl-main">
           <div className="ribbon-wrapper"><div className="ribbon-bg" /><Title text={pairTitle(data)} /></div>
-          <div className="title-btns">
-            <button type="button" className="btn_custom big" onClick={() => setSaveAsk(data.saveName)}>📸 찰칵!</button>
-            <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={() => {
-              const v = !mute; setMute(v); muteRef.current = v;
-              try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
-            }}>{mute ? '🔇 소리 꺼짐' : '🔊 소리'}</button>
-          </div>
+          <div className="title-btns narrow-only">{actionBtns}</div>
 
           <div className="dual-stage">
             {chars.map(([cid, c]) => (
@@ -468,7 +470,7 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
         </div>
       )}
 
-      <GuideBox c1={c1} c2={c2} pairs={pairs} pairId={pair.id} onPick={onPick} />
+      <GuideBox c1={c1} c2={c2} pairs={pairs} pairId={pair.id} onPick={onPick} actions={actionBtns} />
 
       {tip && (
         <div className="closet-tip" style={{
@@ -545,24 +547,23 @@ function useFloat(key: string, home: () => { l: number; t: number }) {
   return { box, down, reset };
 }
 
-/** 사용법 상자 — 떠 있고 제목 줄을 끌어 옮기고, × 로 접기. 페어가 둘 이상이면 여기서 페어를 고른다(많으면 스크롤) */
-function GuideBox({ c1, c2, pairs, pairId, onPick }: {
+/** 사용법 상자 — 떠 있고 제목 줄을 끌어 옮긴다. 찰칵·소리 버튼과 페어 고르기가 여기 있다. 페어가 둘 이상이면 여기서 페어를 고른다(많으면 스크롤) */
+function GuideBox({ c1, c2, pairs, pairId, onPick, actions }: {
+  actions?: React.ReactNode;
   c1: { name: string; label: string }; c2: { name: string; label: string };
   pairs?: ClosetPair[]; pairId: string; onPick?: (id: string) => void;
 }) {
   const g = useFloat('ohome.closet.guidepos', () => ({ l: 10, t: 130 }));
-  const [gone, setGone] = useState(false);
   const [more, setMore] = useState(false);
 
-  if (gone) return <button type="button" className="guide-reopen" onClick={() => setGone(false)}>📖 사용법</button>;
   const sz = [c1, c2].sort((a, b) => a.label.localeCompare(b.label));
   return (
     <div ref={g.box} className="guide-box" style={{ left: '10px', top: '130px' }}>
       <div className="guide-header" title="이 줄을 끌어서 옮기세요 (두 번 누르면 제자리로)"
         onPointerDown={g.down} onDoubleClick={g.reset}>
         <span>📖 사용법</span><span className="guide-grip">⠿</span>
-        <button type="button" className="btn-close-guide" onClick={() => setGone(true)}>×</button>
       </div>
+      <div className="guide-actions">{actions}</div>
       {pairs && pairs.length > 1 && (
         <div className="guide-pairs">
           <div className="guide-pairs-title">👫 페어 고르기</div>

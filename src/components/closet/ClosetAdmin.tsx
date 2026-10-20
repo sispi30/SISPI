@@ -258,13 +258,36 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
                 ))}
               </div>
               <p className="hint">표정 5장은 크기가 모두 같은 투명 PNG 여야 하고, 위 크기(px)와 맞춰 주세요. 얼굴 위치도 5장 모두 똑같이 맞춥니다.</p>
-              <div className="row">
-                <span className="hint">홍조 위치(왼쪽·위·너비·높이)</span>
-                {([0, 1, 2, 3] as const).map(k => (
-                  <KStep key={k} value={c.blush[k]} min={0} max={1600} step={5}
-                    onChange={v => setChar(n, { blush: c.blush.map((x, i) => i === k ? v : x) as ClosetChar['blush'] })} />
-                ))}
-              </div>
+              <KLabel>홍조 위치 (부끄러운 표정에서 볼에 붉게 번집니다)</KLabel>
+              {(() => {
+                const set = (k: 0 | 1 | 2 | 3, v: number) =>
+                  setChar(n, { blush: c.blush.map((x, i) => i === k ? v : x) as ClosetChar['blush'] });
+                const sc = Math.min(1, 220 / Math.max(c.height, 1));
+                const [bl, bt, bw, bh] = c.blush;
+                const rows: [0 | 1 | 2 | 3, string, number][] = [
+                  [1, '상하', c.height], [0, '좌우', c.width], [2, '너비', c.width], [3, '높이', c.height],
+                ];
+                return (
+                  <div className="blush-edit">
+                    <div className="blush-prev" style={{ width: c.width * sc, height: c.height * sc }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={resolve(c.bodies[3] || c.bodies[0])} alt="" />
+                      <i style={{ left: bl * sc, top: bt * sc, width: bw * sc, height: bh * sc }} />
+                    </div>
+                    <div className="blush-ctl">
+                      {rows.map(([k, label, max]) => (
+                        <label key={k}>
+                          <span>{label}</span>
+                          <input type="range" min={0} max={max} step={1} value={Math.min(c.blush[k], max)}
+                            onChange={e => set(k, Number(e.target.value))} />
+                          <KStep value={c.blush[k]} min={0} max={1600} step={1} suffix="px" onChange={v => set(k, v)} />
+                        </label>
+                      ))}
+                      <p className="hint">상하를 움직이면 미리보기의 붉은 번짐이 위아래로 움직입니다.</p>
+                    </div>
+                  </div>
+                );
+              })()}
               <KLabel>처음 입고 나오는 옷</KLabel>
               <div className="chk">
                 {curItems.map(it => (
