@@ -36,8 +36,9 @@ export function useUrlMap(refs: string[]) {
 /** 페어를 바꿨다 돌아와도 입혀 둔 모습이 남도록, 떠날 때 맡겨 두는 상태 */
 export interface StageSaved { worn: Record<Cid, Worn[]>; bg: Record<Cid, string> }
 
-export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave }: {
+export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs, onPick }: {
   pair: ClosetPair; items: ClosetItem[]; isAdmin: boolean; onEdit: () => void;
+  pairs?: ClosetPair[]; onPick?: (id: string) => void;
   saved?: StageSaved; onSave: (s: StageSaved) => void;
 }) {
   const toast = useToast();
@@ -342,6 +343,8 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave }: {
   };
 
   /* ---------- 표시용 ---------- */
+  // 옷장(오른쪽 목록)은 사용법 상자처럼 끌어서 옮긴다 — 캐릭터 화면은 가운데에 둔다
+  const ward = useFloat('ohome.closet.wardpos', () => ({ l: window.innerWidth - 460, t: 130 }));
   const [c1, c2] = data.chars;
   const chars: [Cid, typeof c1][] = [[1, c1], [2, c2]];
   const tabItems = useMemo(() => data.items.filter(i => i.tab === tab), [data.items, tab]);
@@ -415,7 +418,11 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave }: {
           </div>
         </div>
 
-        <div className="cl-side">
+        <div className="cl-side floating" ref={ward.box}>
+          <div className="float-header" title="이 줄을 끌어서 옮기세요 (두 번 누르면 제자리로)"
+            onPointerDown={ward.down} onDoubleClick={ward.reset}>
+            <span>👗 옷장</span><span className="guide-grip">⠿</span>
+          </div>
           <div className="wardrobe-top-bar">
             <input className="search-box" placeholder="아이템 검색..." value={kw} onChange={e => setKw(e.target.value)} />
             <div className="dbl-bar">
@@ -461,7 +468,7 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave }: {
         </div>
       )}
 
-      <GuideBox c1={c1} c2={c2} />
+      <GuideBox c1={c1} c2={c2} pairs={pairs} pairId={pair.id} onPick={onPick} />
 
       {tip && (
         <div className="closet-tip" style={{
@@ -492,14 +499,9 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave }: {
   );
 }
 
-/** 사용법 상자 — 원본처럼 떠 있고, 제목 줄을 끌어 옮기고(자리는 기억됨), 두 번 누르면 제자리, × 로 닫기 */
-function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name: string; label: string } }) {
-  const KEY = 'ohome.closet.guidepos';
+/** 끌어서 옮기는 떠 있는 상자 공통 — 자리는 기억되고, 제목 줄을 두 번 누르면 제자리 */
+function useFloat(key: string, home: () => { l: number; t: number }) {
   const box = useRef<HTMLDivElement>(null);
-  const [gone, setGone] = useState(false);
-  const [more, setMore] = useState(false);
-  const home = { left: '10px', top: '130px' };
-
   const place = (l: number, t: number) => {
     const g = box.current;
     if (!g) return;
@@ -508,10 +510,14 @@ function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name:
     g.style.left = `${l}px`; g.style.top = `${t}px`;
   };
   useEffect(() => {
-    try { const sv = JSON.parse(localStorage.getItem(KEY) || 'null'); if (sv && typeof sv.l === 'number') place(sv.l, sv.t); } catch { /* 무시 */ }
+    let sv: { l: number; t: number } | null = null;
+    try { sv = JSON.parse(localStorage.getItem(key) || 'null'); } catch { /* 무시 */ }
+    const h = sv && typeof sv.l === 'number' ? sv : home();
+    place(h.l, h.t);
     const onResize = () => { const g = box.current; if (g) place(parseFloat(g.style.left) || 0, parseFloat(g.style.top) || 0); };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const down = (e: React.PointerEvent) => {
@@ -525,26 +531,48 @@ function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name:
       window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       g.classList.remove('is-dragging');
-      try { localStorage.setItem(KEY, JSON.stringify({ l: parseFloat(g.style.left) || 0, t: parseFloat(g.style.top) || 0 })); } catch { /* 무시 */ }
+      try { localStorage.setItem(key, JSON.stringify({ l: parseFloat(g.style.left) || 0, t: parseFloat(g.style.top) || 0 })); } catch { /* 무시 */ }
     };
     window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     e.preventDefault();
   };
-  const reset = () => {
-    const g = box.current;
-    if (g) { g.style.left = home.left; g.style.top = home.top; }
-    try { localStorage.removeItem(KEY); } catch { /* 무시 */ }
+  const reset = (e?: React.MouseEvent) => {
+    if (e && (e.target as HTMLElement).closest('button')) return;
+    const h = home();
+    place(h.l, h.t);
+    try { localStorage.removeItem(key); } catch { /* 무시 */ }
   };
+  return { box, down, reset };
+}
 
-  if (gone) return null;
+/** 사용법 상자 — 떠 있고 제목 줄을 끌어 옮기고, × 로 접기. 페어가 둘 이상이면 여기서 페어를 고른다(많으면 스크롤) */
+function GuideBox({ c1, c2, pairs, pairId, onPick }: {
+  c1: { name: string; label: string }; c2: { name: string; label: string };
+  pairs?: ClosetPair[]; pairId: string; onPick?: (id: string) => void;
+}) {
+  const g = useFloat('ohome.closet.guidepos', () => ({ l: 10, t: 130 }));
+  const [gone, setGone] = useState(false);
+  const [more, setMore] = useState(false);
+
+  if (gone) return <button type="button" className="guide-reopen" onClick={() => setGone(false)}>📖 사용법</button>;
   const sz = [c1, c2].sort((a, b) => a.label.localeCompare(b.label));
   return (
-    <div ref={box} className="guide-box" style={home}>
+    <div ref={g.box} className="guide-box" style={{ left: '10px', top: '130px' }}>
       <div className="guide-header" title="이 줄을 끌어서 옮기세요 (두 번 누르면 제자리로)"
-        onPointerDown={down} onDoubleClick={e => { if (!(e.target as HTMLElement).closest('button')) reset(); }}>
+        onPointerDown={g.down} onDoubleClick={g.reset}>
         <span>📖 사용법</span><span className="guide-grip">⠿</span>
         <button type="button" className="btn-close-guide" onClick={() => setGone(true)}>×</button>
       </div>
+      {pairs && pairs.length > 1 && (
+        <div className="guide-pairs">
+          <div className="guide-pairs-title">👫 페어 고르기</div>
+          <div className="guide-pairs-list">
+            {pairs.map(p => (
+              <button key={p.id} type="button" className={p.id === pairId ? 'on' : ''} onClick={() => onPick?.(p.id)}>{p.name}</button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="guide-details" style={{ display: more ? 'block' : 'none' }}>
         <ul className="guide-list">
           <li><b>드래그&드롭</b>으로 옷 입히기</li>
@@ -558,6 +586,7 @@ function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name:
           <li><b>전부 벗기!</b>: 해당 캐릭터 모두 벗기기</li>
           <li><b>방치 모드</b>: 가만히 두면 혼잣말을 합니다.</li>
           <li><b>부끄럼 모드</b>: 레어 모드?</li>
+          <li><b>옷장</b>(오른쪽 목록)도 제목 줄을 끌어 옮길 수 있어요</li>
         </ul>
       </div>
       <button type="button" className="btn-toggle-detail" onClick={() => setMore(m => !m)}>{more ? '닫기 ▲' : '자세히 ▼'}</button>
