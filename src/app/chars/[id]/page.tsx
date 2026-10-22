@@ -3,7 +3,7 @@
 // 스크롤: 정보가 길면 페이지가 이어지고 탭·아트는 스티키 (v1.9)
 // AU 선택 시 프로필 전체(이름·스펙·아트·탭·소개)가 그 AU의 값으로 전환 (charWithAu) —
 // 편집은 EDIT → /chars/[id]/edit?au= 전용 페이지에서 새 프로필처럼 작성 (v1.9 사용자 확정)
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
@@ -13,6 +13,7 @@ import { Lightbox } from '@/components/ui/Lightbox';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { useFonts } from '@/lib/fontStore';
 import { useTheme } from '@/lib/ThemeProvider';
+import { CharLayoutAlive } from '@/lib/charLayoutAlive';
 import { BlobImg, useBlobUrl } from '@/lib/blobStore';
 import { CroppedBlobImg, CropEditor, type CropValue } from '@/components/ui/CropEditor';
 
@@ -249,14 +250,20 @@ function CharDetailInner() {
   usePageBgm(bgmAllowed ? `char:${ch!.id}` : undefined, bgmAllowed ? ch!.bgm : undefined);
   const { setPageTheme, setPageBgImage } = useTheme();
   const baseColor = ch?.themeMode === 'custom' ? ch.color : null;
+  const layoutAlive = useContext(CharLayoutAlive);
   const auColor = auRegistered && eff?.themeMode === 'custom' ? eff.color : null;
   const baseTone = baseColor ? resolveThemeTone(ch?.themeTone, ch?.color) : undefined;
   const auTone = auColor ? resolveThemeTone(eff?.themeTone, eff?.color) : undefined;
   useEffect(() => {
     if (!auColor || (auColor === baseColor && auTone === baseTone)) return; // 기본과 같으면 레이아웃이 이미 칠해 둔 색 그대로 둔다
     setPageTheme(auColor, auTone);
-    return () => setPageTheme(baseColor, baseTone);
-  }, [auColor, auTone, baseColor, baseTone, setPageTheme]);
+    return () => {
+      // 캐릭터 화면을 아예 벗어나는 중(레이아웃도 같이 떠남)이면 되칠하지 않는다 —
+      // 레이아웃이 먼저 null 로 풀어 둔 뒤라, 여기서 칠하면 다른 메뉴에서도 캐릭터 색 배경이 남는다
+      if (layoutAlive && !layoutAlive.current) return;
+      setPageTheme(baseColor, baseTone);
+    };
+  }, [auColor, auTone, baseColor, baseTone, setPageTheme, layoutAlive]);
 
   // 배경 이미지 (v5.8 사용자 요청) — 자관 배경·환경설정 배경 변경과 똑같이 페이지 전체에 고정·cover로
   // 깔고 블러만 조절한다. AU는 자기 배경만(원본 것을 물려받지 않음 — charWithAu). 이미지가 없으면

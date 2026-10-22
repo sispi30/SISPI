@@ -8,11 +8,12 @@
 // 계속 마운트된 채로 유지되므로 페이지를 오가도 테마가 끊기지 않는다.
 // (AU별로 테마색이 다른 경우의 "미세 조정"은 상세 페이지 자체에서 별도로 얹는다 — 그 경우에도
 // 벗어날 때 null이 아니라 이 레이아웃의 기본색으로 되돌아가게 해 깜빡임이 나지 않도록 함)
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useLocalList } from '@/lib/postStore';
 import { Character, CHAR_SEED, findByKey, resolveThemeTone } from '@/lib/charStore';
 import { useTheme } from '@/lib/ThemeProvider';
+import { CharLayoutAlive } from '@/lib/charLayoutAlive';
 
 export default function CharIdLayout({ children }: { children: React.ReactNode }) {
   const { id } = useParams<{ id: string }>();
@@ -22,10 +23,17 @@ export default function CharIdLayout({ children }: { children: React.ReactNode }
   const baseColor = ch?.themeMode === 'custom' ? ch.color : null;
   const baseTone = baseColor ? resolveThemeTone(ch?.themeTone, ch?.color) : undefined;
 
+  // 이 레이아웃이 떠나는 중인지 — 자식 페이지의 정리 코드가 이걸 보고 기본색을 되칠하지 않는다
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
+
   useEffect(() => {
     setPageTheme(baseColor, baseTone);
     return () => setPageTheme(null);
   }, [baseColor, baseTone, setPageTheme]);
 
-  return children;
+  return <CharLayoutAlive.Provider value={alive}>{children}</CharLayoutAlive.Provider>;
 }
