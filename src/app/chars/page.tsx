@@ -63,7 +63,15 @@ function CharsInner() {
           {isAdmin && <button className="btn btn-dark" onClick={() => router.push('/chars/new' + secQuery('chars', sec.id))}>＋ ADD CHARACTER</button>}
         </div>
       </div>
-      <div className="g5 chars-grid">
+      {/* 캐릭터 인덱스 — 자관 목록과 같은 화면 틀(모서리 표식·머리줄·바닥줄·큰 배경 글씨) 안에 카드가 놓인다 */}
+      <div className="rx">
+        <i className="rx-fr tl" /><i className="rx-fr tr" /><i className="rx-fr bl" /><i className="rx-fr br" />
+        <div className="rx-headline">
+          <span className="rx-cap">CHARACTER ARCHIVE // CHARACTER INDEX</span>
+          <span className="rx-count"><em>CHARACTER</em><b>{String(visible.length).padStart(2, '0')}</b></span>
+        </div>
+        <div className="rx-ghost" aria-hidden="true">CHARACTER</div>
+      <div className="g5 chars-grid rx-pad">
         {visible.map((c, i) => {
           const priv = c.visibility === 'private';
           const sp = sort(i) as { style?: React.CSSProperties };
@@ -81,6 +89,12 @@ function CharsInner() {
             표시할 캐릭터가 없습니다
           </p>
         )}
+      </div>
+        <div className="rx-foot">
+          <span className="rx-bar" aria-hidden="true" />
+          <span className="rx-cap">CHARACTER FILE // {String(visible.length).padStart(2, '0')}</span>
+          <span className="rx-chev" aria-hidden="true">›››</span>
+        </div>
       </div>
     </section>
   );

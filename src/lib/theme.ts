@@ -39,7 +39,7 @@ export interface ThemeVars {
   // 검색창 (6.4 공통 검색): 배경 · 글씨 · 아이콘/플레이스홀더 · 테두리
   searchBg?: string; searchFg?: string; searchIc?: string; searchBd?: string;
   // 진한 버튼(btn-dark) — 배경·글씨·호버 3색. 체크박스·선택 필터 칩에도 공통 적용 (v1.9 사용자 피드백)
-  btnDark?: string; btnDarkFg?: string; btnDarkHv?: string;
+  btnDark?: string; btnDarkFg?: string; btnDarkHv?: string; btnDarkFgHv?: string;
   // 스티커 메모 보드 (v1.9 사용자 피드백) — 메모장 배치 판·메인 미니보드 배경/테두리
   // (기존 고정 rgba가 라이트 모드에서 안 보이던 문제)
   memoBoard?: string; memoBoardBd?: string;
@@ -262,6 +262,7 @@ export function themeToCssVars(t: ThemeVars): Record<string, string> {
     // 진한 버튼 3색 — 호버 미지정 시 배경에서 살짝 밝게 자동 파생
     '--btn-dark': t.btnDark ?? '#1d2025',
     '--btn-dark-fg': t.btnDarkFg ?? '#ffffff',
+    '--btn-dark-fg-hv': t.btnDarkFgHv ?? t.btnDarkFg ?? '#ffffff',   // 호버 글씨색 — 미지정이면 평소 글씨색 그대로
     '--btn-dark-hv': t.btnDarkHv ?? adjust(t.btnDark ?? '#1d2025', cc => ({ l: Math.min(1, cc.l + 0.07) })),
     // 스티커 메모 보드 (v1.9)
     '--memo-board': t.memoBoard ?? '#2a2f37',

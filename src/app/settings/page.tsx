@@ -71,13 +71,13 @@ const CATEGORIES = [
 ] as const;
 
 /** 색 항목 한 쌍 렌더 헬퍼 */
-function CP({ label, k, def }: { label?: string; k: keyof ThemeVars; def?: string }) {
+function CP({ label, k, def, defKey }: { label?: string; k: keyof ThemeVars; def?: string; defKey?: keyof ThemeVars }) {
   const { state, setVar } = useTheme();
   // def: 값이 없을 때 실제로 적용되는 기본색 (예: 입력 포커스 = 포인트색)
   return (
     <>
       {label && <span className="cp-lb">{label}</span>}
-      <ColorField value={String(state.vars[k] ?? def ?? '#888888')} onChange={hex => setVar(k, hex as never)} />
+      <ColorField value={String(state.vars[k] ?? (defKey ? state.vars[defKey] : undefined) ?? def ?? '#888888')} onChange={hex => setVar(k, hex as never)} />
     </>
   );
 }
@@ -514,11 +514,12 @@ function DesignPane() {
       <WidgetStyleRow />
 
       <div className="set-row">
-        <div className="l"><b>진한 버튼</b><small>등록·저장 버튼과 체크박스·선택 필터 칩 공통</small></div>
+        <div className="l"><b>진한 버튼</b><small>등록·저장 버튼과 체크박스·선택 필터 칩 공통 · 호버 시 배경색과 글씨색을 따로 정할 수 있어요</small></div>
         <div className="cp-group">
           <CP label="버튼" k="btnDark" />
           <CP label="글씨" k="btnDarkFg" />
           <CP label="호버" k="btnDarkHv" />
+          <CP label="호버 글씨" k="btnDarkFgHv" defKey="btnDarkFg" />
         </div>
       </div>
 
