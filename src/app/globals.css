@@ -3091,3 +3091,8 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   .toolrow > .tag-row .tag{flex:0 1 auto;gap:3px;padding:6px 8px;white-space:nowrap;font-size:calc(11px*var(--fs,1));letter-spacing:-.02em}
   .toolrow > .tag-row .tag small{font-size:calc(9.5px*var(--fs,1))}
 }
+
+/* 캐릭터 스테이지 — 좌측 탭 버튼 위의 AU 박스 */
+.cs-au{margin-top:18px;display:grid;gap:8px;width:100%}
+.cs-au-label{font-size:11px;font-weight:700;letter-spacing:.22em;opacity:.85}
+.cs-au-list{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}

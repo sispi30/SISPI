@@ -28,6 +28,7 @@ import { fileDrop } from '@/lib/dnd';
 import { isValidSlug, slugify } from '@/lib/link';
 import { useToast } from '@/components/ui/Toast';
 import { Lightbox } from '@/components/ui/Lightbox';
+import { AuAddBlock } from '@/components/chars/AuAddBlock';
 
 interface SpecRow extends Spec { id: string }
 interface ColorRow extends ColorChip { id: string }
@@ -422,6 +423,9 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           {...fileDrop(fl => addArts(fl))}>
           ＋ ADD ART {arts.length === 0 && '(첫 장 등록 시 썸네일 크롭 지정)'}
         </button>
+
+        {/* AU 캐릭터 추가 — 원본 편집에서만(신규 등록·AU 편집 중에는 숨김) */}
+        {!auMode && !isNew && initial && <AuAddBlock ch={initial} />}
 
         {/* 기본 정보 스펙 — TRPG 룰을 선택하면 그 룰 전용 항목(게이지·관계표·기능표·STATUS 등)을
             불러와 편집하고, 선택하지 않으면 기존과 같은 자유 항목(라벨/값) 그대로 편집한다 */}

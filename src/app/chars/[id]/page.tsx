@@ -320,6 +320,32 @@ function CharDetailInner() {
     }
   };
 
+  // AU 박스 줄 — 스테이지 레이아웃에서는 좌측 탭 버튼 위에, 클래식에서는 우상단에 둔다
+  const renderAuList = (cls: string, style?: React.CSSProperties) => (
+    <div className={cls} style={style}>
+          <div className={`au-item ${auKey === null ? 'on' : ''} ph ${ch.thumbClass}`} style={{ borderColor: auKey === null ? 'var(--accent)' : 'var(--line)' }}
+            onClick={() => setAuKey(null)}>
+            <small>원본</small>
+          </div>
+          {charAus.map(a => {
+            /* 이 AU **자신의** 썸네일만 (v2.0 사용자 제보 — 「새 세계관을 만들면 리스트가 기존
+               이미지로 채워져 있다」). charWithAu는 프로필이 아예 없으면 base를 그대로 돌려줘서,
+               미등록 AU가 원본 그림을 빌려 쓰는 것처럼 보였다 — 안 넣었으면 색 플레이스홀더 */
+            const p = ch.auProfiles?.[a.key];
+            const ref = p?.thumbId ?? p?.arts?.[0];
+            return (
+              <div key={a.key} className={`au-item ${auKey === a.key ? 'on' : ''} ph ${ch.thumbClass}`}
+                style={{ borderColor: auKey === a.key ? 'var(--accent)' : 'var(--line)' }}
+                data-tip={`${a.relName} · ${a.label}`}
+                onClick={() => setAuKey(a.key)}>
+                {ref && <CroppedBlobImg fileRef={ref} crop={p?.thumbCrop} ph={ch.thumbClass} />}
+                <small>{a.label}</small>
+              </div>
+            );
+          })}
+        </div>
+  );
+
   const editHref = auKey ? `/chars/${ch.id}/edit?au=${encodeURIComponent(auKey)}` : `/chars/${ch.id}/edit`;
   // 플레이기록 게시판 쪽에서 이미 이 캐릭터를 참여자로 연결해 둔 게 있으면, trpgEnabled를
   // 켜지 않았어도 TRPG 탭이 자동으로 보인다 (v3.0 사용자 요청)
@@ -400,30 +426,7 @@ function CharDetailInner() {
       {/* AU 프로필 리스트 (v1.9) — 자관에 추가된 AU가 있으면 우상단.
           대표 썸네일 이미지는 목록(리스트) 화면 전용으로 두고, 캐릭터를 클릭해 들어온
           이 상세 화면에서는 이미지 없이 라벨만 보이는 버튼으로 전환함 (v2.3) */}
-      {charAus.length > 0 && (
-        <div className="au-list" style={{ justifyContent: 'flex-end', marginBottom: 10 }}>
-          <div className={`au-item ${auKey === null ? 'on' : ''} ph ${ch.thumbClass}`} style={{ borderColor: auKey === null ? 'var(--accent)' : 'var(--line)' }}
-            onClick={() => setAuKey(null)}>
-            <small>원본</small>
-          </div>
-          {charAus.map(a => {
-            /* 이 AU **자신의** 썸네일만 (v2.0 사용자 제보 — 「새 세계관을 만들면 리스트가 기존
-               이미지로 채워져 있다」). charWithAu는 프로필이 아예 없으면 base를 그대로 돌려줘서,
-               미등록 AU가 원본 그림을 빌려 쓰는 것처럼 보였다 — 안 넣었으면 색 플레이스홀더 */
-            const p = ch.auProfiles?.[a.key];
-            const ref = p?.thumbId ?? p?.arts?.[0];
-            return (
-              <div key={a.key} className={`au-item ${auKey === a.key ? 'on' : ''} ph ${ch.thumbClass}`}
-                style={{ borderColor: auKey === a.key ? 'var(--accent)' : 'var(--line)' }}
-                data-tip={`${a.relName} · ${a.label}`}
-                onClick={() => setAuKey(a.key)}>
-                {ref && <CroppedBlobImg fileRef={ref} crop={p?.thumbCrop} ph={ch.thumbClass} />}
-                <small>{a.label}</small>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {charAus.length > 0 && !stageShown && renderAuList('au-list', { justifyContent: 'flex-end', marginBottom: 10 })}
       {/* AU 미등록 (v1.9 사용자 확정) — base를 보여주지 않고 그 AU에 맞춰 캐릭터를 새로 등록 */}
       {auKey && !auRegistered ? (
         <div className="panel" style={{ textAlign: 'center', padding: 56 }}>
@@ -510,6 +513,13 @@ function CharDetailInner() {
                   )}
                 </>
               )}
+            </div>
+          )}
+          {/* AU — 추가 탭 버튼 위에 AU 박스를 둔다 */}
+          {charAus.length > 0 && (
+            <div className="cs-au">
+              <div className="cs-au-label">AU</div>
+              {renderAuList('cs-au-list')}
             </div>
           )}
           {/* 추가 탭(ADD TAB) 이동 버튼 — 누르면 이 페이지의 내용이 그 탭의 항목·본문·그림으로 바뀐다 */}
