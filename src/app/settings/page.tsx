@@ -51,7 +51,7 @@ import {
   TextSettingEditor, DdayEditor, TodoEditor, BannerEditor, DecoEditor,
 } from '@/components/main/widgetEditors';
 import { useBgm, BgmTrack, BgmPlaylist, parseVideoId, extractDominantColorFromBlob } from '@/lib/bgmStore';
-import { useFonts, fontCssUrl, FontDef, FontRole, ROLE_LABEL, FOLLOW_MENU, FOLLOW_TITLE } from '@/lib/fontStore';
+import { useFonts, deVarFamily, fontCssUrl, FontDef, FontRole, ROLE_LABEL, FOLLOW_MENU, FOLLOW_TITLE } from '@/lib/fontStore';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle, EditableDesc, getPageText, setPageText } from '@/components/ui/PageText';
 import { putBlob } from '@/lib/blobStore';
@@ -298,11 +298,59 @@ function DesignPane() {
               <span className="cp-lb">블러</span>
               <KStep value={state.vars.bgBlur ?? 0} min={0} max={30} step={2} suffix="px"
                 onChange={v => setVar('bgBlur', v)} />
-              <span className="cp-lb">메인 외 화면 블러</span>
-              <KStep value={state.vars.bgBlurSub ?? state.vars.bgBlur ?? 0} min={0} max={30} step={2} suffix="px"
-                onChange={v => setVar('bgBlurSub', v)} />
             </>
           )}
+        </div>
+      </div>
+
+      {/* 메인 외 화면 배경 — 메인과 따로 (그라데이션 / 이미지 / 블러) */}
+      <div className="set-row" style={{ flexWrap: 'wrap' }}>
+        <div className="l"><b>메인 외 화면 배경</b><small>첫 화면이 아닌 모든 화면에 따로 적용 — 꺼 두면 위 배경과 같음</small></div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div className="mini-seg">
+            <button className={!state.vars.subBgOn ? 'on' : ''} onClick={() => setVar('subBgOn', false)}>메인과 같게</button>
+            <button className={state.vars.subBgOn ? 'on' : ''} onClick={() => setVar('subBgOn', true)}>따로 설정</button>
+          </div>
+          {state.vars.subBgOn && (
+            <>
+              <div className="mini-seg">
+                <button className={(state.vars.subBgType ?? 'gradient') === 'gradient' ? 'on' : ''}
+                  onClick={() => setVar('subBgType', 'gradient')}>그라데이션</button>
+                <button className={state.vars.subBgType === 'image' ? 'on' : ''}
+                  onClick={() => setVar('subBgType', 'image')}>이미지</button>
+              </div>
+              {(state.vars.subBgType ?? 'gradient') === 'gradient' ? (
+                <>
+                  <CP k="subBgG1" def={state.vars.bgG1} />
+                  <span style={{ color: 'var(--faint)', fontSize: 11 }}>→</span>
+                  <CP k="subBgG2" def={state.vars.bgG2} />
+                  <span className="cp-lb">각도</span>
+                  <KStep value={state.vars.subBgAngle ?? state.vars.bgAngle ?? 180} min={0} max={360} step={15} suffix="°"
+                    onChange={v => setVar('subBgAngle', v)} />
+                </>
+              ) : (
+                <>
+                  <input id="themeSubBgFile" type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={async e => {
+                      const f = e.target.files?.[0];
+                      if (f) setVar('subBgImageId', await putBlob(f));
+                      e.target.value = '';
+                    }} />
+                  <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                    onClick={() => document.getElementById('themeSubBgFile')?.click()}>
+                    {state.vars.subBgImageId ? 'CHANGE' : 'UPLOAD'}
+                  </button>
+                  {state.vars.subBgImageId && (
+                    <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11 }}
+                      onClick={() => setVar('subBgImageId', undefined)}>REMOVE</button>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          <span className="cp-lb">블러</span>
+          <KStep value={state.vars.bgBlurSub ?? state.vars.bgBlur ?? 0} min={0} max={30} step={2} suffix="px"
+            onChange={v => setVar('bgBlurSub', v)} />
         </div>
       </div>
 
@@ -2927,6 +2975,7 @@ function TfColor({ label, value, patch, k, fallback }: {
 /** 메뉴 위젯 탭 (커스텀 요청) — 그누보드 「트랜스폼 메뉴 위젯」 이식.
  *  켜면 상단바의 기본 메뉴 줄 대신 위치·글꼴·배경을 자유롭게 꾸민 메뉴로 대체된다. */
 function MenuDesignPane() {
+  const { fonts } = useFonts();
   const [cfg, patch, loaded] = useTransformMenuSettings();
   const toast = useToast();
   const logoUrl = useBlobUrl(cfg.logoBlobId);
@@ -3131,6 +3180,10 @@ function MenuDesignPane() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <span className="cp-lb">크기</span>
               <KStep value={cfg.menuFontSize} min={9} max={26} step={1} suffix="px" onChange={v => patch({ menuFontSize: v })} />
+              <span className="cp-lb">글꼴</span>
+              <KSelect minWidth={140} value={cfg.menuFontId || ''} onChange={v => patch({ menuFontId: v })}
+                options={[{ value: '', label: '기본 글꼴' },
+                  ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
               <span className="cp-lb">자간</span>
               <KStep value={cfg.menuLetterSpacing} min={-2} max={6} step={0.5} suffix="px" onChange={v => patch({ menuLetterSpacing: v })} />
               <TfColor label="글자색" value={cfg.menuFontColor} fallback="#aab0ba" patch={patch} k="menuFontColor" />

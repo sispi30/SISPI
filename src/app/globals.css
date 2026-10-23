@@ -3169,3 +3169,6 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .gnb.tf-static .tf-sub,.tf-fixed .tf-sub{left:50%;transform:translateX(-50%);width:max-content}
 .gnb.tf-static .tf-grp.open .tf-sub,.tf-fixed .tf-grp.open .tf-sub{animation:tfSubIn .15s}
 @keyframes tfSubIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translateX(-50%)}}
+
+/* 메뉴 위젯 글꼴 (아이콘 <i>는 제외) */
+.tf-fixed button,.gnb.tf-static button,.tf-sub button{font-family:var(--tf-font,inherit)}

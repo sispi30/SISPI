@@ -39,6 +39,7 @@ export interface TransformMenuSettings {
   menuFontColor: string;   // 비우면 --top-fg
   menuHoverColor: string;  // 비우면 --top-hv
   menuLetterSpacing: number;
+  menuFontId: string;      // 메뉴 글꼴 (비우면 사이트 기본)
 
   // 서브메뉴 글자
   subFontSize: number;
@@ -107,6 +108,7 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
   menuFontColor: '',
   menuHoverColor: '',
   menuLetterSpacing: 0,
+  menuFontId: '',
 
   subFontSize: 13,
   subFontColor: '',

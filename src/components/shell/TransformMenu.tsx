@@ -14,6 +14,7 @@ import { layeredTextShadow } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { useMainStore } from '@/lib/mainStore';
 import { useBlobUrl } from '@/lib/blobStore';
+import { useFonts, deVarFamily } from '@/lib/fontStore';
 import { refreshPage } from '@/lib/pageRefresh';
 import {
   loadTfPosition, saveTfPosition, useTransformMenuSettings, TransformMenuSettings, tfEnglishLabel,
@@ -204,7 +205,10 @@ export function TransformMenu() {
     )
   ));
 
+  const { familyOf } = useFonts();
+  const menuFam = cfg.menuFontId ? familyOf(cfg.menuFontId) : undefined;
   const fontVars: React.CSSProperties = {
+    ...(menuFam ? { ['--tf-font' as string]: deVarFamily(menuFam) } : {}),
     ['--tf-menu-fs' as string]: `${cfg.menuFontSize}px`,
     ['--tf-menu-fg' as string]: cfg.menuFontColor || 'var(--top-fg)',
     ['--tf-menu-hv' as string]: cfg.menuHoverColor || 'var(--top-hv)',

@@ -128,6 +128,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // 페이지 배경 지정 (v2.0) — 팔레트를 적용한 뒤에 배경 세 값만 덮어쓴다.
     // 이 effect가 팔레트를 다시 칠하므로 순서상 여기서 덮어야 남는다.
     const root = document.documentElement;
+    if (!pageColor && !pageBg && !pageBgImageUrl && pathname !== '/' && site.subBgOn) {
+      root.style.setProperty('--bg-g1', site.subBgG1 ?? site.bgG1);
+      root.style.setProperty('--bg-g2', site.subBgG2 ?? site.bgG2);
+      root.style.setProperty('--bg-angle', `${site.subBgAngle ?? site.bgAngle ?? 180}deg`);
+    }
     if (pageBg) {
       root.style.setProperty('--bg-g1', pageBg.g1);
       root.style.setProperty('--bg-g2', pageBg.g2);
@@ -160,8 +165,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const vars = draft.perMode[draft.mode];
-    if (vars.bgType === 'image' && vars.bgImageId && !pageColor && !pageBg) {
-      const ref = vars.bgImageId;
+    // 메인 외 화면에서 따로 정한 배경이 켜져 있으면 그쪽 종류·이미지를 쓴다
+    const subOn = !!vars.subBgOn && pathname !== '/';
+    const effType = subOn ? (vars.subBgType ?? 'gradient') : vars.bgType;
+    const effImg = subOn ? vars.subBgImageId : vars.bgImageId;
+    if (effType === 'image' && effImg && !pageColor && !pageBg) {
+      const ref = effImg;
       /* **주소면 그대로 쓴다** (v2.0 사용자 발견 — 「배경에 사진을 올렸는데 안 바뀐다」).
          서버 모드에서는 올린 이미지가 저장소의 공개 주소로 저장되는데, 여기서만 그것을
          `getBlob`으로 **다시 내려받아** blob 주소로 바꾸고 있었다. 그 fetch는 저장소의
@@ -186,7 +195,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       };
     }
     root.style.removeProperty('--bg-image');
-  }, [draft, pageColor, pageBg, pageBgImageUrl, loaded]);
+  }, [draft, pageColor, pageBg, pageBgImageUrl, pathname, loaded]);
 
   const dirty = useMemo(() => JSON.stringify(saved) !== JSON.stringify(draft), [saved, draft]);
 
