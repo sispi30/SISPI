@@ -14,7 +14,7 @@ import { useLocalList, newId, Post, BOARD_SEED } from '@/lib/postStore';
 import {
   Relation, REL_SEED, Character, CHAR_SEED, RelMember, QaEntry, QaAnswer, TlItem, findChar, Visibility, CharGrant,
   auMember, auStyle, fullShadow, hasRelGrant,
-  RelAu, RelCpTag, charWithAu, charGrant,
+  RelAu, RelCpTag, charWithAu, auProfileOf, charGrant,
   QaAnswerRow, QA_KEY, QA_SEED, MergedAnswer, answersFor,
   findByKey, charPath, relGalleryPosts,
   HeroSticker, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID,
@@ -546,7 +546,7 @@ export default function RelDetailPage() {
     return c && auCharKey ? charWithAu(c, auCharKey) : c;
   };
   // AU 선택 중 그 캐릭터의 AU 프로필 미등록 여부 + 캐릭터 페이지 링크(au 유지) (v1.9)
-  const auUnregOf = (cid: string) => !!auCharKey && !findChar(chars, cid)?.auProfiles?.[auCharKey];
+  const auUnregOf = (cid: string) => !!auCharKey && !(() => { const c = findChar(chars, cid); return c ? auProfileOf(c, auCharKey) : undefined; })();
   // 캐릭터 별명 주소 우선 (v2.0) — 없으면 id 그대로
   const charHref = (cid: string) => {
     const base = charPath(charOf(cid) ?? { id: cid });

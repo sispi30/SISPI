@@ -7,7 +7,7 @@ import React, { Suspense, useContext, useEffect, useMemo, useRef, useState } fro
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, charGrant, charWithAu, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, charGalleryPosts, charRelGroups, galleryPostsOf, hasGallery, resolveThemeTone } from '@/lib/charStore';
+import { Character, CHAR_SEED, charGrant, charWithAu, auProfileOf, ownAuKey, chipBorder, Relation, REL_SEED , findByKey, GalleryPost, charGalleryPosts, charRelGroups, galleryPostsOf, hasGallery, resolveThemeTone } from '@/lib/charStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -224,15 +224,21 @@ function CharDetailInner() {
   const ch = findByKey(chars, id);
 
   // AU 프로필 (v1.9) — 이 캐릭터가 속한 자관들의 AU 리스트 (base 제외), 우상단에 썸네일로
-  const charAus = useMemo(() => (ch
-    ? rels.flatMap(r => r.members.some(m => m.charId === ch.id)
-      ? r.aus.filter(a => a.id !== 'base').map(a => ({ key: `${r.id}:${a.id}`, label: a.label, relName: r.name }))
-      : [])
-    : []), [rels, ch]);
+  const charAus = useMemo(() => {
+    if (!ch) return [];
+    // 내가 직접 만든 AU (자관과 무관) — 자관 AU에 연결했으면 그 이름을 보조로 단다
+    const own = (ch.ownAus ?? []).map(a => ({ key: ownAuKey(a.id), label: a.label, relName: '' }));
+    const linked = new Set((ch.ownAus ?? []).map(a => a.link).filter(Boolean));
+    // 자관에 속해서 따라오는 AU (내 AU에 연결된 것은 중복이라 뺀다)
+    const fromRels = rels.flatMap(r => r.members.some(m => m.charId === ch.id)
+      ? r.aus.filter(a => a.id !== 'base' && !linked.has(`${r.id}:${a.id}`)).map(a => ({ key: `${r.id}:${a.id}`, label: a.label, relName: r.name }))
+      : []);
+    return [...own, ...fromRels];
+  }, [rels, ch]);
   // AU 편집에서 ?au= 로 돌아오면 그 AU가 선택된 채 시작
   const [auKey, setAuKey] = useState<string | null>(() => params.get('au'));
   // AU는 "새로 등록"하는 프로필 (v1.9 사용자 확정) — 등록 전엔 base를 보여주지 않고 등록 안내
-  const auRegistered = !auKey || !!ch?.auProfiles?.[auKey];
+  const auRegistered = !auKey || !!(ch && auProfileOf(ch, auKey));
   // 표시용 캐릭터 — AU에서 지정한 필드만 base를 대체 (이름·키·성별부터 전부 바뀔 수 있음)
   const eff = ch ? charWithAu(ch, auKey) : undefined;
 
@@ -323,27 +329,15 @@ function CharDetailInner() {
   // AU 박스 줄 — 스테이지 레이아웃에서는 좌측 탭 버튼 위에, 클래식에서는 우상단에 둔다
   const renderAuList = (cls: string, style?: React.CSSProperties) => (
     <div className={cls} style={style}>
-          <div className={`au-item ${auKey === null ? 'on' : ''} ph ${ch.thumbClass}`} style={{ borderColor: auKey === null ? 'var(--accent)' : 'var(--line)' }}
-            onClick={() => setAuKey(null)}>
-            <small>원본</small>
-          </div>
-          {charAus.map(a => {
-            /* 이 AU **자신의** 썸네일만 (v2.0 사용자 제보 — 「새 세계관을 만들면 리스트가 기존
-               이미지로 채워져 있다」). charWithAu는 프로필이 아예 없으면 base를 그대로 돌려줘서,
-               미등록 AU가 원본 그림을 빌려 쓰는 것처럼 보였다 — 안 넣었으면 색 플레이스홀더 */
-            const p = ch.auProfiles?.[a.key];
-            const ref = p?.thumbId ?? p?.arts?.[0];
-            return (
-              <div key={a.key} className={`au-item ${auKey === a.key ? 'on' : ''} ph ${ch.thumbClass}`}
-                style={{ borderColor: auKey === a.key ? 'var(--accent)' : 'var(--line)' }}
-                data-tip={`${a.relName} · ${a.label}`}
-                onClick={() => setAuKey(a.key)}>
-                {ref && <CroppedBlobImg fileRef={ref} crop={p?.thumbCrop} ph={ch.thumbClass} />}
-                <small>{a.label}</small>
-              </div>
-            );
-          })}
-        </div>
+      {[{ key: null as string | null, label: '원본', relName: '' }, ...charAus].map((a, i) => (
+        <button key={a.key ?? 'base'} type="button" className={`au-num ${auKey === a.key ? 'on' : ''}`}
+          data-tip={a.relName ? `${a.relName} · ${a.label}` : undefined}
+          onClick={() => setAuKey(a.key)}>
+          <b>{String(i + 1).padStart(2, '0')}</b>
+          <span>{a.label}</span>
+        </button>
+      ))}
+    </div>
   );
 
   const editHref = auKey ? `/chars/${ch.id}/edit?au=${encodeURIComponent(auKey)}` : `/chars/${ch.id}/edit`;

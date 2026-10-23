@@ -180,6 +180,9 @@ export interface Character {
   // 상세 우상단에 AU 리스트가 뜨고, 선택 시 프로필 전체가 이 값으로 전환.
   // 편집은 /chars/[id]/edit?au= — AU 전용 편집 페이지에서 아예 새 프로필처럼 작성 (사용자 확정)
   auProfiles?: Record<string, AuCharProfile>;
+  /** 자관과 무관하게 이 캐릭터가 직접 만든 AU (키 `own:<id>`) — 프로필은 auProfiles 에 같은 키로 담긴다.
+   *  link = 나중에 연결한 자관 AU 키(`relId:auId`). 연결하면 자관 쪽 화면도 이 AU의 프로필을 쓴다. */
+  ownAus?: OwnAu[];
 }
 
 /** AU 캐릭터 프로필 (v1.9 전면 확장) — 이름·키·성별부터 전부 AU별로 달라질 수 있음.
@@ -231,9 +234,21 @@ export function resolveThemeTone(tone: Character['themeTone'], color: string | u
   return lum > 0.4 ? 'light' : 'dark';
 }
 
+export interface OwnAu { id: string; label: string; link?: string }
+export const ownAuKey = (id: string) => `own:${id}`;
+
+/** AU 키에 해당하는 프로필 — 직접 키가 없으면 그 자관 AU에 연결된 내 AU의 프로필 */
+export function auProfileOf(c: Character, key?: string | null): AuCharProfile | undefined {
+  if (!key) return undefined;
+  const direct = c.auProfiles?.[key];
+  if (direct) return direct;
+  const o = c.ownAus?.find(a => a.link === key);
+  return o ? c.auProfiles?.[ownAuKey(o.id)] : undefined;
+}
+
 /** AU 프로필을 합성한 표시용 캐릭터 — AU에서 지정한 필드만 대체 (상세·편집 프리필 공용) */
 export function charWithAu(c: Character, auKey?: string | null): Character {
-  const p = auKey ? c.auProfiles?.[auKey] : undefined;
+  const p = auProfileOf(c, auKey);
   if (!p) return c;
   return {
     ...c,

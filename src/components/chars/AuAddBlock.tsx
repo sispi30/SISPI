@@ -1,38 +1,35 @@
 'use client';
-// 캐릭터 수정창의 「+ ADD AU CHARACTER」 — 이 캐릭터가 멤버로 있는 자관에 AU를 만들고(또는 이미 있는 AU를 골라)
-// 그 AU 전용 캐릭터 프로필 작성 화면(/chars/[id]/edit?au=…)으로 바로 이동한다.
-import React, { useMemo, useState } from 'react';
+// 캐릭터 수정창의 「+ ADD AU CHARACTER」 — 자관과 상관없이 이 캐릭터의 AU를 직접 만든다.
+// 만들면 그 AU 전용 작성 화면(/chars/[id]/edit?au=own:…)으로 이동. 자관 AU와의 연결은 그 화면에서 검색해 건다.
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Character, Relation, REL_SEED, RelAu } from '@/lib/charStore';
+import { Character, CHAR_SEED, Relation, REL_SEED, ownAuKey } from '@/lib/charStore';
 import { newId, useLocalList } from '@/lib/postStore';
 import { KInput } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
 
-const NEW = '__new__';
-
 export function AuAddBlock({ ch }: { ch: Character }) {
   const router = useRouter();
   const toast = useToast();
-  const [rels, setRels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
+  const [chars, setChars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
   const [open, setOpen] = useState(false);
-  const [relId, setRelId] = useState('');
-  const [pick, setPick] = useState(NEW);
   const [label, setLabel] = useState('');
-
-  // 이 캐릭터가 멤버인 자관만 — 상세에서 AU 리스트가 이 자관들의 AU로 만들어지기 때문
-  const mine = useMemo(() => rels.filter(r => r.members.some(m => m.charId === ch.id)), [rels, ch.id]);
-  const rel = mine.find(r => r.id === relId) ?? mine[0];
-  const aus = (rel?.aus ?? []).filter(a => a.id !== 'base');
-  const keyOf = (r: Relation, a: RelAu) => `${r.id}:${a.id}`;
   const go = (key: string) => router.push(`/chars/${ch.id}/edit?au=${encodeURIComponent(key)}`);
 
+  // 이미 있는 AU — 내가 만든 것 + 내가 멤버인 자관의 AU
+  const mine = (ch.ownAus ?? []).map(a => ({ key: ownAuKey(a.id), label: a.label }));
+  const fromRels = rels.flatMap(r => r.members.some(m => m.charId === ch.id)
+    ? r.aus.filter(a => a.id !== 'base' && !(ch.ownAus ?? []).some(o => o.link === `${r.id}:${a.id}`))
+        .map(a => ({ key: `${r.id}:${a.id}`, label: `${r.name} · ${a.label}` }))
+    : []);
+  const all = [...mine, ...fromRels];
+
   const add = () => {
-    if (!rel) return;
-    if (pick !== NEW) { go(keyOf(rel, aus.find(a => a.id === pick)!)); return; }
     if (!label.trim()) { toast('AU 이름을 입력해 주세요'); return; }
-    const na: RelAu = { id: newId(), label: label.trim(), catchphrase: '', cp: rel.cp ?? 'ncp', timeline: [], questions: [] };
-    setRels(rels.map(r => (r.id === rel.id ? { ...r, aus: [...r.aus, na] } : r)));
-    go(`${rel.id}:${na.id}`);
+    const id = newId();
+    setChars(chars.map(x => (x.id === ch.id ? { ...x, ownAus: [...(x.ownAus ?? []), { id, label: label.trim() }] } : x)));
+    go(ownAuKey(id));
   };
 
   return (
@@ -41,31 +38,24 @@ export function AuAddBlock({ ch }: { ch: Character }) {
       <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11, justifySelf: 'center' }}
         onClick={() => setOpen(o => !o)}>＋ ADD AU CHARACTER</button>
       {open && (
-        mine.length === 0 ? (
-          <p style={{ fontSize: 12, color: 'var(--faint)', margin: 0, textAlign: 'center' }}>
-            AU는 자관에 속해 있어요. 먼저 자관에 이 캐릭터를 멤버로 넣어 주세요.
+        <div className="panel" style={{ padding: 14, display: 'grid', gap: 8, background: 'transparent' }}>
+          <KInput placeholder="새 AU 이름" value={label} onChange={e => setLabel(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') add(); }} />
+          <p style={{ fontSize: 11, color: 'var(--faint)', margin: 0, lineHeight: 1.5 }}>
+            자관이 없어도 만들 수 있어요. 나중에 자관에 같은 AU가 생기면 작성 화면에서 검색해 연결합니다.
+            누르면 이동하니, 이 화면에서 고친 내용은 먼저 SAVE 해 두세요.
           </p>
-        ) : (
-          <div className="panel" style={{ padding: 14, display: 'grid', gap: 8, background: 'transparent' }}>
-            <select className="k-input" value={rel?.id} onChange={e => { setRelId(e.target.value); setPick(NEW); }}>
-              {mine.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-            <select className="k-input" value={pick} onChange={e => setPick(e.target.value)}>
-              <option value={NEW}>＋ 새 AU 만들기</option>
-              {aus.map(a => {
-                const done = !!ch.auProfiles?.[keyOf(rel!, a)];
-                return <option key={a.id} value={a.id}>{a.label}{done ? ' (작성됨 — 수정)' : ''}</option>;
-              })}
-            </select>
-            {pick === NEW && <KInput placeholder="새 AU 이름" value={label} onChange={e => setLabel(e.target.value)} />}
-            <p style={{ fontSize: 11, color: 'var(--faint)', margin: 0, lineHeight: 1.5 }}>
-              누르면 그 AU 전용 작성 화면으로 이동합니다. 지금 이 화면에서 고친 내용은 먼저 SAVE 해 두세요.
-            </p>
-            <button type="button" className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={add}>
-              {pick === NEW ? '＋ AU 만들고 작성하기' : '작성 화면으로'}
+          <button type="button" className="btn btn-dark" style={{ justifySelf: 'end' }} onClick={add}>＋ AU 만들고 작성하기</button>
+        </div>
+      )}
+      {all.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+          {all.map(a => (
+            <button key={a.key} type="button" className="btn btn-ghost" style={{ padding: '3px 10px', fontSize: 11 }} onClick={() => go(a.key)}>
+              ✎ {a.label}
             </button>
-          </div>
-        )
+          ))}
+        </div>
       )}
     </div>
   );

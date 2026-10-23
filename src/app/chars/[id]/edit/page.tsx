@@ -6,10 +6,11 @@ import React, { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
-import { Character, CHAR_SEED, charGrant, charWithAu, Relation, REL_SEED , findByKey } from '@/lib/charStore';
+import { Character, CHAR_SEED, charGrant, charWithAu, auProfileOf, ownAuKey, Relation, REL_SEED , findByKey } from '@/lib/charStore';
 import { CharEditForm } from '@/components/chars/CharEditForm';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle, EditableDesc } from '@/components/ui/PageText';
+import { AuLinkBox } from '@/components/chars/AuLinkBox';
 
 function CharEditInner() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +38,7 @@ function CharEditInner() {
   // AU 라벨 (타이틀 표시용)
   const auLabel = (() => {
     if (!auKey) return null;
+    if (auKey.startsWith('own:')) return ch.ownAus?.find(a => ownAuKey(a.id) === auKey)?.label ?? auKey;
     const [relId, auId] = auKey.split(':');
     return rels.find(r => r.id === relId)?.aus.find(a => a.id === auId)?.label ?? auKey;
   })();
@@ -45,7 +47,7 @@ function CharEditInner() {
 
   // AU 프로필 초기값 (v1.9 사용자 확정) — 이미 등록된 AU면 그 값, 처음이면 "아예 새 등록"처럼 빈 폼
   // (이름·스펙·아트·탭 전부 비움 — 폰트·대표색 등 스타일 기본만 base에서)
-  const auProf = auKey ? ch.auProfiles?.[auKey] : undefined;
+  const auProf = auKey ? auProfileOf(ch, auKey) : undefined;
   const formInitial = auKey
     ? (auProf
       ? charWithAu(ch, auKey)
@@ -63,6 +65,11 @@ function CharEditInner() {
         <PageTitle>EDIT — {auKey ? `${ch.name} · ${auLabel}` : ch.name}</PageTitle>
         {!auKey && <EditableDesc k="chars-edit-desc" def="프로필 편집 — 변경은 [SAVE]를 눌러야 저장됩니다" />}
       </div>
+      {auKey?.startsWith('own:') && (
+        <AuLinkBox ch={ch} auKey={auKey} rels={rels} chars={chars}
+          onChange={link => setChars(chars.map(x => (x.id === ch.id
+            ? { ...x, ownAus: (x.ownAus ?? []).map(a => (ownAuKey(a.id) === auKey ? { ...a, link } : a)) } : x)))} />
+      )}
       <CharEditForm
         initial={formInitial}
         existingIds={chars.filter(c => c.id !== ch.id).flatMap(c => [c.id, ...(c.slug ? [c.slug] : [])])}

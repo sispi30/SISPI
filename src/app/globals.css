@@ -3096,3 +3096,13 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .cs-au{margin-top:18px;display:grid;gap:8px;width:100%}
 .cs-au-label{font-size:11px;font-weight:700;letter-spacing:.22em;opacity:.85}
 .cs-au-list{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+
+/* AU 선택 — 번호(01 02 03)와 그 아래 AU 이름. 고른 것만 강조색 + 밑줄 */
+.au-num{background:none;border:0;padding:0;cursor:var(--cur-pointer,pointer);color:inherit;text-align:left;display:grid;gap:5px;opacity:.5;transition:opacity .15s;font-family:inherit}
+.au-num:hover{opacity:.85}
+.au-num b{font-size:32px;line-height:1;font-weight:800;letter-spacing:.02em}
+.au-num span{font-size:11px;font-weight:700;padding-bottom:3px;border-bottom:2px solid transparent;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.au-num.on{opacity:1}
+.au-num.on b{color:var(--accent)}
+.au-num.on span{border-bottom-color:var(--accent)}
+.cs-au-list{gap:20px}
