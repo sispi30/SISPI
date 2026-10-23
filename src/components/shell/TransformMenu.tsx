@@ -210,6 +210,7 @@ export function TransformMenu() {
     ['--tf-menu-hv' as string]: cfg.menuHoverColor || 'var(--top-hv)',
     ['--tf-menu-ls' as string]: `${cfg.menuLetterSpacing}px`,
     ['--tf-sub-fs' as string]: `${cfg.subFontSize}px`,
+    ['--tf-sub-align' as string]: cfg.subAlign ?? 'left',
     ['--tf-sub-fg' as string]: cfg.subFontColor || 'var(--dd-fg)',
     ['--tf-sub-hv' as string]: cfg.subHoverColor || 'var(--accent)',
     ['--tf-sub-bg' as string]: cfg.subBgColor || 'var(--dd-bg)',

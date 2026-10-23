@@ -3019,6 +3019,14 @@ function MenuDesignPane() {
           ], v => patch({ subIconMode: v }))}
         </div>
       )}
+      {cfg.enabled && (
+        <div className="set-row">
+          <div className="l"><b>서브메뉴 글자 정렬</b><small>펼쳐지는 하위 메뉴 글자의 좌우 정렬</small></div>
+          {seg<'left' | 'center' | 'right'>(cfg.subAlign ?? 'left', [
+            { v: 'left', label: '좌측' }, { v: 'center', label: '가운데' }, { v: 'right', label: '우측' },
+          ], v => patch({ subAlign: v }))}
+        </div>
+      )}
       {cfg.enabled && cfg.iconMode === 'line' && (
         <div className="set-row" style={{ alignItems: 'flex-start' }}>
           <div className="l"><b>영문 라벨</b><small>가로선 위에 작게 보이는 영문 — 비워 두면 자동으로 채워지고, 못 찾는 항목은 비어 보입니다</small></div>
@@ -3153,7 +3161,7 @@ function MenuDesignPane() {
           </div>
 
           <div className="set-row" style={{ flexWrap: 'wrap' }}>
-            <div className="l"><b>항목 외곽선</b><small>박스가 아니라 각 아이콘·글자 자체에 두르는 윤곽선 (글자 윤곽선처럼) · 두께 0px이면 꺼짐</small></div>
+            <div className="l"><b>항목 외곽선</b><small>박스가 아니라 각 아이콘·글자 자체에 두르는 윤곽선 (글자 윤곽선처럼) · 서브메뉴 항목에도 같이 적용 · 두께 0px이면 꺼짐</small></div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <span className="cp-lb">두께</span>
               <KStep value={cfg.itemOutlineWidth} min={0} max={6} step={0.5} suffix="px" onChange={v => patch({ itemOutlineWidth: v })} />
@@ -3162,7 +3170,7 @@ function MenuDesignPane() {
           </div>
 
           <div className="set-row" style={{ flexWrap: 'wrap' }}>
-            <div className="l"><b>항목 그림자</b><small>항목 외곽선과 같은 방식 — 박스가 아니라 각 아이콘·글자 자체에 드리우는 그림자 · 강도 0%이면 꺼짐</small></div>
+            <div className="l"><b>항목 그림자</b><small>항목 외곽선과 같은 방식 — 박스가 아니라 각 아이콘·글자 자체에 드리우는 그림자 · 서브메뉴 항목에도 같이 적용 · 강도 0%이면 꺼짐</small></div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <span className="cp-lb">강도</span>
               <KStep value={cfg.itemShadow} min={0} max={100} step={5} suffix="%" onChange={v => patch({ itemShadow: v })} />

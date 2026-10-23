@@ -30,6 +30,7 @@ export interface TransformMenuSettings {
 
   // 아이콘 (커스텀 요청) — 메뉴 관리에서 항목별로 지정한 Font Awesome 아이콘을 이 위젯에 표시할지
   iconMode: TfIconMode;   // text: 글자만(기본) · icon-text: 아이콘+글자 · icon: 아이콘만 · line: 가로선 + 영문 라벨 + 현재 위치 마커(아카이브 라인)
+  subAlign: 'left' | 'center' | 'right';          // 서브메뉴 글자 정렬
   subIconMode: 'text' | 'icon-text' | 'icon';   // 서브메뉴 표시 방식 — 글자만 · 아이콘+글자(기본, 예전 동작) · 아이콘만(아이콘 없는 항목은 글자)
   lineEn: Record<string, string>;   // line 방식의 영문 라벨 — 상위 메뉴 이름 → 영문 (비우면 자동)
 
@@ -98,6 +99,7 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
   savePosition: true,
 
   iconMode: 'text',
+  subAlign: 'left',
   subIconMode: 'icon-text',
   lineEn: {},
 
