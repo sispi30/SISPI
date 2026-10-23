@@ -3141,7 +3141,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   padding:16px 8px 2px;border-radius:0;background:none;color:var(--tf-menu-fg,var(--top-fg));opacity:.78;
   transition:color .25s,opacity .25s;
 }
-.tf-line button.tf-ln .tf-en{font:600 calc(var(--tf-menu-fs,14px)*.58)/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.26em;text-indent:.26em;text-transform:uppercase;opacity:.62;transition:opacity .25s,letter-spacing .35s}
+.tf-line button.tf-ln .tf-en{font:600 max(10.5px,calc(var(--tf-menu-fs,14px)*.82))/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.26em;text-indent:.26em;text-transform:uppercase;opacity:.62;transition:opacity .25s,letter-spacing .35s}
 .tf-line button.tf-ln span{font-weight:600}
 /* 눈금 — 가로선에서 아래로 짧게 */
 .tf-fixed .tf-items.tf-line > button.tf-ln::before,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln::before,
@@ -3164,3 +3164,8 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-line button.tf-ln.on span{font-weight:800}
 .tf-line button.tf-ln.on::before{opacity:0}
 .tf-line button.tf-ln.on::after{transform:rotate(45deg) scale(1);opacity:1}
+
+/* 서브메뉴를 부모 메뉴 항목 가운데에 맞춘다 (왼쪽 끝 정렬이면 메인 메뉴와 어긋나 보였다) */
+.gnb.tf-static .tf-sub,.tf-fixed .tf-sub{left:50%;transform:translateX(-50%);width:max-content}
+.gnb.tf-static .tf-grp.open .tf-sub,.tf-fixed .tf-grp.open .tf-sub{animation:tfSubIn .15s}
+@keyframes tfSubIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translateX(-50%)}}
