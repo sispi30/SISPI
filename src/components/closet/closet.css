@@ -1,7 +1,9 @@
 /* 페어 옷장 — 원본(PHP) 스타일을 .closet 안으로 가둔 것. 사이트 다른 곳에는 영향을 주지 않는다. */
 @font-face{font-family:'KotraHope';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2110@1.0/KOTRAHOPE.woff2') format('woff2');font-weight:normal;font-display:swap}
 /* 색은 사이트 테마를 따른다 — 다른 메뉴의 버튼·제목과 같은 변수 */
-.closet{--pc:var(--btn-dark,#7b9bcc);--rm:var(--btn-dark-hv,#6a8cc2);--tc:var(--btn-dark-fg,#fff)}
+.closet{--pc:var(--btn-dark,#7b9bcc);--rm:var(--btn-dark-hv,#6a8cc2);--tc:var(--btn-dark-fg,#fff);--tch:var(--btn-dark-fg-hv,var(--btn-dark-fg,#fff));
+  /* 흰 박스 위의 글씨색 — 테마 버튼색이 밝아도 읽히도록 어둡게 섞는다 */
+  --pt:color-mix(in srgb,var(--btn-dark,#7b9bcc) 40%,#1b1d22)}
 .closet *{box-sizing:border-box}
 .closet{user-select:none;-webkit-user-select:none;font-family:'KotraHope',var(--sans,sans-serif)}
 .closet button,.closet input{font-family:inherit}
@@ -28,7 +30,7 @@
 
 /* 캐릭터 */
 .closet .dual-stage{display:flex;gap:20px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
-.closet .char-name-label{font-size:30px;color:var(--pc);font-weight:bold;letter-spacing:1px;text-align:center;margin-bottom:10px}
+.closet .char-name-label{font-size:30px;color:var(--pt);font-weight:bold;letter-spacing:1px;text-align:center;margin-bottom:10px}
 .closet .char-btn-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
 .closet .char-btn-row.below{margin:8px 0 0}
 .closet .character-stage{position:relative;z-index:5;cursor:pointer;max-width:100%}
@@ -78,10 +80,11 @@
 
 /* 버튼 */
 .closet .btn_custom{background:var(--ink,#555);color:#fff;border:none;height:30px;padding:0 12px;border-radius:15px;cursor:pointer;font-size:13px;transition:all .3s;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
-.closet .btn_custom:hover{background:var(--pc);transform:translateY(-1px)}
-.closet .btn_custom.big{height:34px;padding:0 20px;font-size:14px;background:var(--pc)}
-.closet .btn_custom.off{background:#aaa}
-.closet .btn_reset:hover{background:#d9534f!important;animation:btnStartle .4s;transform:none!important}
+.closet .btn_custom:hover{background:var(--rm);color:var(--tch);transform:translateY(-1px)}
+.closet .btn_custom.big{height:34px;padding:0 20px;font-size:14px;background:var(--pc);color:var(--tc)}
+.closet .btn_custom.big:hover{background:var(--rm);color:var(--tch)}
+.closet .btn_custom.off{background:#aaa;color:#fff}
+.closet .btn_reset:hover{background:#d9534f!important;color:#fff!important;animation:btnStartle .4s;transform:none!important}
 @keyframes btnStartle{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.15) rotate(-5deg)}60%{transform:scale(1.15) rotate(5deg)}80%{transform:scale(1.05) rotate(-2deg)}100%{transform:scale(1) rotate(0)}}
 
 /* 착용 중 패널 */
@@ -95,7 +98,7 @@
 .closet .worn-x:hover{background:#a02020}
 .closet .zi-row{display:flex;gap:2px;align-items:center;margin-top:1px}
 .closet .zi-btn{width:14px;height:14px;border:1px solid #ddd;background:#f5f5f5;border-radius:3px;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;color:#666;padding:0}
-.closet .zi-btn:hover{background:var(--pc);color:#fff;border-color:var(--pc)}
+.closet .zi-btn:hover{background:var(--pc);color:var(--tc);border-color:var(--pc)}
 .closet .zi-val{font-size:8px;color:#888;min-width:16px;text-align:center}
 .closet .worn-empty{font-size:11px;color:#ccc;padding:4px;align-self:center}
 
@@ -106,7 +109,7 @@
 .closet .tab-nav{display:flex;gap:0;margin-bottom:-2px;position:relative;z-index:5}
 .closet .tab-btn{background:#e8e8e8;border:2px solid #ccc;border-bottom:none;border-radius:9px 9px 0 0;padding:6px 3px;white-space:nowrap;font-size:12.5px;color:#999;cursor:pointer;transition:background .15s,color .15s;flex:1;text-align:center;min-width:0;overflow:hidden}
 .closet .tab-btn:hover{background:#f0f0f0;color:#666}
-.closet .tab-btn.active{background:rgba(255,255,255,.92);color:var(--pc);font-weight:bold}
+.closet .tab-btn.active{background:rgba(255,255,255,.92);color:var(--pt);font-weight:bold}
 .closet .wardrobe{background:rgba(255,255,255,.88);border:2px dashed #bbb;border-radius:0 0 12px 12px;box-shadow:0 5px 15px rgba(0,0,0,.05);height:400px;overflow-y:auto;padding:12px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
 .closet .clothes-item{width:60px;height:60px;cursor:grab;transition:transform .2s,border-color .2s;background:#fff;border:2px solid #eee;border-radius:10px;object-fit:contain;flex-shrink:0;touch-action:none;-webkit-user-drag:none}
 .closet .clothes-item:hover{transform:translateY(-3px);border-color:#bbb;box-shadow:0 4px 8px rgba(0,0,0,.1)}
@@ -120,7 +123,7 @@
 .closet .dbl-bar{display:flex;align-items:center;gap:4px;margin-top:6px;flex-wrap:wrap}
 .closet .dbl-hint{font-size:11px;color:#999;margin-right:2px}
 .closet .dbl-btn{background:#eee;border:1px solid #ddd;border-radius:11px;padding:2px 9px;font-size:11px;color:#999;cursor:pointer;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.closet .dbl-btn.active{background:var(--pc);border-color:var(--pc);color:#fff;font-weight:bold}
+.closet .dbl-btn.active{background:var(--pc);border-color:var(--pc);color:var(--tc);font-weight:bold}
 .closet .footer-credit{margin-top:8px;display:flex;align-items:center;gap:10px;font-size:11.5px;color:#aaa;flex-wrap:wrap}
 .closet .footer-credit a{color:#aaa;text-decoration:none;transition:color .2s}
 .closet .footer-credit a:hover{color:#555}
@@ -128,27 +131,28 @@
 /* 사용법 상자 — 원본 그대로: 떠 있고 제목 줄을 끌어 옮긴다 */
 .closet .guide-box{position:fixed;top:130px;left:10px;width:275px;background:rgba(255,255,255,.98);border:2px dashed var(--pc);border-radius:15px;padding:14px 17px;z-index:60;box-shadow:0 5px 15px rgba(0,0,0,.05);font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif!important;color:#666;font-size:13px;line-height:1.5;transition:opacity .5s,transform .5s}
 .closet .guide-box *{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif!important}
-.closet .guide-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px dashed #eee;padding-bottom:7px;margin-bottom:9px;font-size:16px;color:var(--pc);cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
+.closet .guide-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px dashed #eee;padding-bottom:7px;margin-bottom:9px;font-size:16px;color:var(--pt);cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
 .closet .guide-header span{font-family:'KotraHope','Malgun Gothic',sans-serif!important}
 .closet .guide-header .guide-grip{color:#ccc;font-size:12px;letter-spacing:2px;cursor:move}
 .closet .guide-box.is-dragging{transition:none!important;opacity:.9;box-shadow:0 10px 26px rgba(0,0,0,.16)}
 .closet .btn-close-guide{background:none;border:none;font-size:17px;cursor:pointer;color:#ccc}
 .closet .guide-list{list-style:none;padding:0;margin:0}
 .closet .guide-list li{margin-bottom:4px;position:relative;padding-left:14px;font-size:12px}
-.closet .guide-list li::before{content:'✔';position:absolute;left:0;top:1px;color:var(--pc);font-size:10px}
-.closet .guide-list li b{color:var(--pc)}
+.closet .guide-list li::before{content:'✔';position:absolute;left:0;top:1px;color:var(--pt);font-size:10px}
+.closet .guide-list li b{color:var(--pt)}
 .closet .guide-details{padding-top:8px;border-top:1px dashed #eee}
 .closet .btn-toggle-detail{width:100%;margin-top:6px;padding:2px 0;background:transparent;border:none;color:#aaa;cursor:pointer;font-family:'KotraHope','Malgun Gothic',sans-serif!important;font-size:12px;transition:color .3s}
-.closet .btn-toggle-detail:hover{color:var(--pc);text-decoration:underline}
+.closet .btn-toggle-detail:hover{color:var(--pt);text-decoration:underline}
 @media(max-width:1000px){.closet .guide-box,.closet .guide-reopen{display:none}}
 .closet .guide-actions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #eee}
 .closet .guide-pairs{margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #eee}
-.closet .guide-pairs-title{font-size:12px;color:var(--pc);margin-bottom:5px;font-weight:bold}
+.closet .guide-pairs-title{font-size:12px;color:var(--pt);margin-bottom:5px;font-weight:bold}
 .closet .guide-pairs-list{display:flex;flex-wrap:wrap;gap:5px;max-height:96px;overflow-y:auto;padding:2px 2px 2px 0;overscroll-behavior:contain}
 .closet .guide-pairs-list button{padding:3px 11px;border-radius:999px;border:1.5px solid #ddd;background:#fff;color:#777;font-size:12px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .closet .guide-pairs-list button:hover{border-color:var(--pc);color:#444}
 .closet .guide-pairs-list button.on{background:var(--pc);border-color:var(--pc);color:var(--tc)}
-.closet .guide-reopen{position:fixed;left:10px;top:130px;z-index:60;padding:6px 14px;border-radius:999px;border:2px dashed var(--pc);background:rgba(255,255,255,.95);color:var(--pc);font-size:13px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.closet .guide-pairs-list button.on:hover{background:var(--rm);color:var(--tch)}
+.closet .guide-reopen{position:fixed;left:10px;top:130px;z-index:60;padding:6px 14px;border-radius:999px;border:2px dashed var(--pc);background:rgba(255,255,255,.95);color:var(--pt);font-size:13px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.08)}
 /* 옷장(오른쪽 목록) — 넓은 화면에서는 떠 있는 상자로, 제목 줄을 끌어 옮긴다 */
 .closet .float-header{display:none}
 @media(min-width:1001px){
@@ -156,13 +160,13 @@
   .closet .cl-side.floating{position:fixed;left:calc(100vw - 460px);top:130px;width:440px;max-width:440px;min-width:0;flex:none;z-index:60}
   .closet .cl-side.floating.is-dragging{opacity:.92}
   .closet .cl-side.floating .wardrobe{height:min(400px,calc(100vh - 290px));min-height:180px}
-  .closet .float-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:6px 14px;font-size:15px;color:var(--pc);background:rgba(255,255,255,.92);border:2px dashed var(--pc);border-radius:14px;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
+  .closet .float-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:6px 14px;font-size:15px;color:var(--pt);background:rgba(255,255,255,.92);border:2px dashed var(--pc);border-radius:14px;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
   .closet .float-header .guide-grip{color:#bbb;font-size:12px;letter-spacing:2px}
 }
 
 /* 관리자 편집 진입 — 원본의 「관리자 페이지로 이동」 자리(맨 아래 가운데) */
-.closet .admin-link{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 24px;background:var(--pc);color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15);transition:opacity .2s}
-.closet .admin-link:hover{opacity:.8}
+.closet .admin-link{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 24px;background:var(--pc);color:var(--tc);border:none;border-radius:20px;font-size:14px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15);transition:opacity .2s}
+.closet .admin-link:hover{background:var(--rm);color:var(--tch);opacity:1}
 
 /* 툴팁 · 끌고 다니는 그림 — 원본 모양 */
 .closet-tip{position:fixed;background:rgba(255,255,255,.95);border:2px solid #888;border-radius:8px;padding:4px 10px;font-family:'KotraHope',sans-serif;font-size:14px;color:#444;pointer-events:none;z-index:10000;white-space:nowrap;box-shadow:2px 2px 5px rgba(0,0,0,.1);transition:opacity .15s}
@@ -173,6 +177,7 @@ body.closet-dragging,body.closet-dragging *{cursor:grabbing!important}
 .closet-pairs button{padding:6px 16px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--sub);font-size:13px;font-weight:600;cursor:var(--cur-pointer,pointer);transition:.15s}
 .closet-pairs button:hover{border-color:var(--btn-dark,#7b9bcc);color:var(--ink)}
 .closet-pairs button.on{background:var(--btn-dark,#7b9bcc);border-color:var(--btn-dark,#7b9bcc);color:var(--btn-dark-fg,#fff)}
+.closet-pairs button.on:hover{background:var(--btn-dark-hv,var(--btn-dark));color:var(--btn-dark-fg-hv,var(--btn-dark-fg,#fff))}
 /* 관리자 편집창 */
 .closet-adm{display:grid;gap:14px}
 .closet-adm .sec{display:grid;gap:8px}
