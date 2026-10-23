@@ -287,15 +287,25 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
   };
 
   /* ---------- 찰칵 — 두 명을 나란히 PNG 로 ---------- */
-  const loadImg = (src: string) => new Promise<HTMLImageElement | null>(resolveImg => {
+  const loadImg = async (src: string) => {
+    // 다른 주소(저장소)의 그림은 브라우저가 CORS로 막아 캔버스에 못 담는 일이 있다 —
+    // 사이트 공용 getBlob 이 직접 받고, 안 되면 같은 출처 중계로 받아 같은 출처 주소로 바꿔 그린다
     const cross = /^https?:\/\//.test(src) && !src.startsWith(window.location.origin);
-    const im = new Image();
-    if (cross) im.crossOrigin = 'anonymous';
-    im.onload = () => resolveImg(im);
-    im.onerror = () => resolveImg(null);
-    // 같은 주소를 CORS 없이 받아 둔 캐시와 섞이지 않게 구분
-    im.src = cross ? src + (src.includes('?') ? '&' : '?') + '_cors=1' : src;
-  });
+    let url = src;
+    let tmp = false;
+    if (cross) {
+      const b = await getBlob(src).catch(() => null);
+      if (b) { url = URL.createObjectURL(b); tmp = true; }
+    }
+    return new Promise<HTMLImageElement | null>(resolveImg => {
+      const im = new Image();
+      if (cross && !tmp) im.crossOrigin = 'anonymous';
+      im.onload = () => { if (tmp) URL.revokeObjectURL(url); resolveImg(im); };
+      im.onerror = () => { if (tmp) URL.revokeObjectURL(url); resolveImg(null); };
+      // 받아 오지 못해 직접 불러야 할 때는 CORS 없이 받아 둔 캐시와 섞이지 않게 구분
+      im.src = cross && !tmp ? src + (src.includes('?') ? '&' : '?') + '_cors=1' : url;
+    });
+  };
 
   const drawChar = async (cid: Cid, canvas: HTMLCanvasElement, skipped: string[]) => {
     const c = dataRef.current.chars[cid - 1];

@@ -30,7 +30,7 @@ import {
 import { FEATURES } from '@/lib/menu';
 import {
   useTransformMenuSettings, TransformMenuSettings, TfDirection, TfJustify, TfAlign,
-  TfAnchorX, TfAnchorY, TfDivider,
+  TfAnchorX, TfAnchorY, TfDivider, tfEnglishLabel,
 } from '@/lib/transformMenuStore';
 import { SectionsBlock } from '@/components/settings/SectionList';
 import { useSections, sectionsOf, sectionMenuEntries, MAIN_SEC, inSection } from '@/lib/sectionStore';
@@ -3004,10 +3004,26 @@ function MenuDesignPane() {
       </div>
       {cfg.enabled && (
         <div className="set-row">
-          <div className="l"><b>표시 방식</b><small>위젯에서 아이콘을 어떻게 보여줄지 — 「아이콘만」은 화면 2번째 사진처럼 됩니다</small></div>
-          {seg<'text' | 'icon-text' | 'icon'>(cfg.iconMode, [
+          <div className="l"><b>표시 방식</b><small>위젯에서 메뉴를 어떻게 보여줄지 — 「아이콘만」은 아이콘만, 「라인」은 가로선 위에 영문 라벨과 현재 위치 마커가 뜨는 아카이브 스타일입니다</small></div>
+          {seg<'text' | 'icon-text' | 'icon' | 'line'>(cfg.iconMode, [
             { v: 'text', label: '글자만' }, { v: 'icon-text', label: '아이콘 + 글자' }, { v: 'icon', label: '아이콘만' },
+            { v: 'line', label: '라인 (영문 라벨)' },
           ], v => patch({ iconMode: v }))}
+        </div>
+      )}
+      {cfg.enabled && cfg.iconMode === 'line' && (
+        <div className="set-row" style={{ alignItems: 'flex-start' }}>
+          <div className="l"><b>영문 라벨</b><small>가로선 위에 작게 보이는 영문 — 비워 두면 자동으로 채워지고, 못 찾는 항목은 비어 보입니다</small></div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {tree.map(g => (
+              <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                <span style={{ minWidth: 54 }}>{g.label}</span>
+                <input className="k-input" style={{ width: 120 }} placeholder={tfEnglishLabel({ label: g.label, href: g.href, children: g.items }) || 'ENGLISH'}
+                  value={cfg.lineEn?.[g.label] ?? ''}
+                  onChange={e => patch({ lineEn: { ...(cfg.lineEn ?? {}), [g.label]: e.target.value } })} />
+              </label>
+            ))}
+          </div>
         </div>
       )}
       <div style={{ marginTop: 10 }}>

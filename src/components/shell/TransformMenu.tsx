@@ -16,7 +16,7 @@ import { useMainStore } from '@/lib/mainStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { refreshPage } from '@/lib/pageRefresh';
 import {
-  loadTfPosition, saveTfPosition, useTransformMenuSettings, TransformMenuSettings,
+  loadTfPosition, saveTfPosition, useTransformMenuSettings, TransformMenuSettings, tfEnglishLabel,
 } from '@/lib/transformMenuStore';
 
 /** 고정 위치일 때 anchor 기준 초기 좌표 — 드래그로 한 번이라도 옮기면 이후엔 저장된 %가 대신 쓰인다 */
@@ -158,9 +158,15 @@ export function TransformMenu() {
 
   // 아이콘 (커스텀 요청) — 메뉴 관리에서 항목별로 지정한 Font Awesome 아이콘을 이 위젯에 표시할지.
   // text: 기존과 동일(글자만) · icon-text: 아이콘+글자 · icon: 아이콘만(아이콘이 없는 항목은 글자로 대체)
-  const showTopIcon = cfg.iconMode !== 'text';
+  const lineMode = cfg.iconMode === 'line';
+  const showTopIcon = cfg.iconMode === 'icon-text' || cfg.iconMode === 'icon';
   const topIconOnly = cfg.iconMode === 'icon';
-  const topLabel = (icon: string | undefined, label: string) => {
+  // 라인 방식 — 영문 라벨(작게) 위, 한글 이름 아래. 현재 위치 항목은 가로선 위에 마커가 뜬다
+  const pathOnly = (h?: string) => (h ?? '').split('?')[0];
+  const isOn = (item: { href?: string; children?: { href: string }[] }) =>
+    item.href ? pathOnly(item.href) === pathname : !!item.children?.some(c => pathOnly(c.href) === pathname);
+  const topLabel = (icon: string | undefined, label: string, en?: string) => {
+    if (lineMode) return <><small className="tf-en">{en || '\u00a0'}</small><span>{label}</span></>;
     const c = showTopIcon ? faClass(icon) : null;
     return (
       <>
@@ -179,8 +185,8 @@ export function TransformMenu() {
     item.children ? (
       <div className={`tf-grp${openGroup === item.label ? ' open' : ''}`} key={item.label}
         onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
-        <button onClick={() => nav(item.children![0].href)} title={topIconOnly ? item.label : undefined}>
-          {topLabel(item.icon, item.label)}
+        <button className={lineMode ? `tf-ln${isOn(item) ? ' on' : ''}` : undefined} onClick={() => nav(item.children![0].href)} title={topIconOnly ? item.label : undefined}>
+          {topLabel(item.icon, item.label, tfEnglishLabel(item, cfg.lineEn))}
         </button>
         <div className="tf-sub" onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
           {item.children.map(c => (
@@ -189,9 +195,9 @@ export function TransformMenu() {
         </div>
       </div>
     ) : (
-      <button key={item.label} className={pathname === item.href ? 'on' : ''} onClick={() => nav(item.href!)}
+      <button key={item.label} className={lineMode ? `tf-ln${isOn(item) ? ' on' : ''}` : (pathname === item.href ? 'on' : '')} onClick={() => nav(item.href!)}
         title={topIconOnly ? item.label : undefined}>
-        {topLabel(item.icon, item.label)}
+        {topLabel(item.icon, item.label, tfEnglishLabel(item, cfg.lineEn))}
       </button>
     )
   ));
@@ -218,7 +224,7 @@ export function TransformMenu() {
   if (cfg.positionType === 'static') {
     return (
       <nav
-        className="gnb tf-static"
+        className={`gnb tf-static${lineMode ? ' tf-line' : ''}`}
         style={{
           ...fontVars,
           display: 'flex', flexDirection: cfg.direction, justifyContent: cfg.justify,
@@ -266,7 +272,7 @@ export function TransformMenu() {
         <img className="tf-logo" src={logoUrl} alt="" style={{ width: cfg.logoWidth }} onClick={() => nav('/')} />
       )}
       <div
-        className="tf-items"
+        className={`tf-items${lineMode ? ' tf-line' : ''}`}
         style={{
           ...fontVars,
           display: 'flex', flexDirection: cfg.direction, justifyContent: cfg.justify,

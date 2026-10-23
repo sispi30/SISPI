@@ -3129,3 +3129,36 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   .rc-note-head span{letter-spacing:.06em;overflow-wrap:anywhere}
   .rc-note-desc{font-size:calc(12px*var(--fs,1));line-height:1.6}
 }
+
+/* ---------- 라인(아카이브) 표시 방식 — 가로선 + 눈금 + 영문 라벨 + 현재 위치 마커 ---------- */
+.tf-line{--tf-ln-c:color-mix(in srgb,var(--tf-menu-fg,var(--top-fg)) 32%,transparent)}
+.tf-fixed .tf-items.tf-line,.gnb.tf-static.tf-line{border-top:1px solid var(--tf-ln-c);padding-top:0;align-items:flex-start}
+.tf-fixed .tf-items.tf-line > button.tf-ln,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln,
+.gnb.tf-static.tf-line > button.tf-ln,.gnb.tf-static.tf-line .tf-grp > button.tf-ln{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:16px 8px 2px;border-radius:0;background:none;color:var(--tf-menu-fg,var(--top-fg));opacity:.78;
+  transition:color .25s,opacity .25s;
+}
+.tf-line button.tf-ln .tf-en{font:600 calc(var(--tf-menu-fs,14px)*.58)/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.26em;text-indent:.26em;text-transform:uppercase;opacity:.62;transition:opacity .25s,letter-spacing .35s}
+.tf-line button.tf-ln span{font-weight:600}
+/* 눈금 — 가로선에서 아래로 짧게 */
+.tf-fixed .tf-items.tf-line > button.tf-ln::before,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln::before,
+.gnb.tf-static.tf-line > button.tf-ln::before,.gnb.tf-static.tf-line .tf-grp > button.tf-ln::before{
+  content:"";position:absolute;left:50%;top:0;width:1px;height:6px;background:var(--tf-ln-c);transform:translateX(-50%);transition:height .25s,background .25s;
+}
+/* 마커 — 마름모 별. 현재 위치는 항상, 마우스를 올리면 흐리게 */
+.tf-fixed .tf-items.tf-line > button.tf-ln::after,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln::after,
+.gnb.tf-static.tf-line > button.tf-ln::after,.gnb.tf-static.tf-line .tf-grp > button.tf-ln::after{
+  content:"";position:absolute;left:50%;top:-4px;width:7px;height:7px;margin-left:-3.5px;background:var(--tf-menu-hv,var(--top-hv));
+  transform:rotate(45deg) scale(0);opacity:0;color:inherit;font-size:inherit;
+  box-shadow:0 0 8px 1px var(--tf-menu-hv,var(--top-hv));transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .25s;
+}
+.tf-line button.tf-ln:hover{color:var(--tf-menu-hv,var(--top-hv));opacity:1}
+.tf-line button.tf-ln:hover .tf-en{opacity:.9;letter-spacing:.32em}
+.tf-line button.tf-ln:hover::before{height:10px;background:var(--tf-menu-hv,var(--top-hv))}
+.tf-line button.tf-ln:hover::after{transform:rotate(45deg) scale(.6);opacity:.55}
+.tf-line button.tf-ln.on{color:var(--tf-menu-hv,var(--top-hv));opacity:1}
+.tf-line button.tf-ln.on .tf-en{opacity:1}
+.tf-line button.tf-ln.on span{font-weight:800}
+.tf-line button.tf-ln.on::before{opacity:0}
+.tf-line button.tf-ln.on::after{transform:rotate(45deg) scale(1);opacity:1}

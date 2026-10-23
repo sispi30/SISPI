@@ -11,7 +11,7 @@ export type TfAlign = 'flex-start' | 'center' | 'flex-end';
 export type TfAnchorX = 'left' | 'center' | 'right';
 export type TfAnchorY = 'top' | 'center' | 'bottom';
 export type TfDivider = 'none' | 'line' | 'dot';
-export type TfIconMode = 'text' | 'icon-text' | 'icon';
+export type TfIconMode = 'text' | 'icon-text' | 'icon' | 'line';
 
 export interface TransformMenuSettings {
   enabled: boolean;              // 켜면 기존 상단 메뉴 대신 이 위젯을 사용
@@ -29,7 +29,8 @@ export interface TransformMenuSettings {
   savePosition: boolean;            // 옮긴 위치를 이 브라우저에 기억할지
 
   // 아이콘 (커스텀 요청) — 메뉴 관리에서 항목별로 지정한 Font Awesome 아이콘을 이 위젯에 표시할지
-  iconMode: TfIconMode;   // text: 글자만(기본) · icon-text: 아이콘+글자 · icon: 아이콘만
+  iconMode: TfIconMode;   // text: 글자만(기본) · icon-text: 아이콘+글자 · icon: 아이콘만 · line: 가로선 + 영문 라벨 + 현재 위치 마커(아카이브 라인)
+  lineEn: Record<string, string>;   // line 방식의 영문 라벨 — 상위 메뉴 이름 → 영문 (비우면 자동)
 
   // 메뉴 글자
   menuFontSize: number;
@@ -96,6 +97,7 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
   savePosition: true,
 
   iconMode: 'text',
+  lineEn: {},
 
   menuFontSize: 14,
   menuFontColor: '',
@@ -192,4 +194,31 @@ export function loadTfPosition(): { x: number; y: number } | null {
 }
 export function saveTfPosition(x: number, y: number): void {
   try { localStorage.setItem(POS_KEY, JSON.stringify({ x, y })); } catch { /* 무시 */ }
+}
+
+/** line(아카이브 라인) 방식의 영문 라벨 자동 추정 — 주소·이름으로 흔한 것만. 못 맞추면 빈 글자(설정에서 직접 입력) */
+const EN_BY_PATH: Record<string, string> = {
+  '/': 'MAIN', '/chars': 'CHARACTER', '/rels': 'RELATIONS', '/rp': 'ROLEPLAY', '/board': 'BOARD', '/gallery': 'GALLERY',
+  '/loadb': 'ROADVIEW', '/myroom': 'MYROOM', '/closet': 'CLOSET', '/tchars': 'CHARACTER', '/trpg': 'LOG', '/dotori': 'DOTORI',
+  '/playlog': 'PLAYLOG', '/comm': 'COMMISSION', '/comm-apply': 'APPLICANTS', '/cal': 'SCHEDULE', '/diary': 'DIARY',
+  '/threads': 'THREADS', '/memo': 'MEMO', '/guest': 'GUESTBOOK', '/intro': 'INTRO', '/settings': 'SETTINGS',
+};
+const EN_BY_LABEL: Record<string, string> = {
+  '메인': 'MAIN', '홈': 'HOME', '공지사항': 'NOTICE', '공지': 'NOTICE', '일기장': 'DIARY', '다이어리': 'DIARY',
+  '에셋백업': 'ASSETS', '유저': 'USER', '회원': 'MEMBER', '로그백업': 'LOG', '로그': 'LOG', '프롬프트': 'ISSUANCE',
+  '배너': 'BANNER', '방명록': 'GUESTBOOK', '자놀': 'ROLEPLAY', '게시판': 'BOARD', '커미션': 'COMMISSION', '소개': 'INTRO',
+  '캐릭터': 'CHARACTER', '자관': 'RELATIONS', '역극': 'ROLEPLAY', '갤러리': 'GALLERY', '스케줄러': 'SCHEDULE',
+};
+export function tfEnglishLabel(
+  item: { label: string; href?: string; children?: { href: string }[] },
+  custom?: Record<string, string>,
+): string {
+  const own = custom?.[item.label]?.trim();
+  if (own) return own;
+  if (EN_BY_LABEL[item.label]) return EN_BY_LABEL[item.label];
+  const path = (h?: string) => (h ?? '').split('?')[0];
+  if (item.href && EN_BY_PATH[path(item.href)]) return EN_BY_PATH[path(item.href)];
+  const c = item.children?.[0];
+  if (c && EN_BY_PATH[path(c.href)]) return EN_BY_PATH[path(c.href)];
+  return '';
 }
