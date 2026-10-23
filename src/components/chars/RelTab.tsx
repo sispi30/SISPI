@@ -30,7 +30,7 @@ function Note({ c }: { c: RelCardInfo }) {
         <b>{c.name}</b>
         {c.names && <span>{c.names}</span>}
       </div>
-      {c.cpTag && <p className="rc-note-tag"><i />{c.cpTag}</p>}
+      {c.cpTag && <p className="rc-note-tag"><i /><em>TYPE</em><strong>{c.cpTag}</strong></p>}
       <p className="rc-note-desc">{c.desc}</p>
     </div>
   );
