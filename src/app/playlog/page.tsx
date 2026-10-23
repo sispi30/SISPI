@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useSectionParam, filterSection, sectionSetter, secQuery } from '@/lib/sectionStore';
 import { useLocalList } from '@/lib/postStore';
-import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
+import { PlayRecord, PLAYLOG_SEED, recordRelIds, relsLabel } from '@/lib/galleryStore';
 import { Character, CHAR_SEED, Relation, REL_SEED, relPath } from '@/lib/charStore';
 import { useMenuSettings } from '@/lib/menuStore';
 import { useMainStore } from '@/lib/mainStore';
@@ -166,10 +166,10 @@ function PlaylogPageInner() {
                 {show('rels') && (
                   <td>
                     {(() => {
-                      const rel = r.relId ? rels.find(x => x.id === r.relId) : undefined;
+                      const { rep: rel, text } = relsLabel(recordRelIds(r), rels);
                       return rel ? (
                         <a onClick={e => { e.stopPropagation(); router.push(relPath(rel)); }}
-                          style={{ cursor: 'var(--cur-pointer,pointer)' }} data-tip="자관 페이지로 이동">{rel.name}</a>
+                          style={{ cursor: 'var(--cur-pointer,pointer)' }} data-tip="자관 페이지로 이동">{text}</a>
                       ) : null;
                     })()}
                   </td>

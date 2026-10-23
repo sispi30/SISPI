@@ -23,7 +23,7 @@ import { isPlainSpec } from '@/lib/charRuleConfig';
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { putBlob } from '@/lib/blobStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
-import { TrpgLog, TRPG_SEED, PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
+import { TrpgLog, TRPG_SEED, PlayRecord, PLAYLOG_SEED, recordRelIds } from '@/lib/galleryStore';
 import { RpRoom, RP_SEED } from '@/lib/rpStore';
 import { useFonts } from '@/lib/fontStore';
 import { Tip, KInput, KTextarea, KSelect, KRadio, KCheck } from '@/components/ui/Kit';
@@ -569,7 +569,7 @@ export default function RelDetailPage() {
   // 연동된 세션 — 세션 글이 붙어 있으면 비밀글은 관리자·작성자에게만 (제목이 새지 않게),
   // 글 없이 기록만 있는 세션은 플레이기록 표로 안내
   const relSessions = useMemo(() => records
-    .filter(r => r.relId === rel?.id)
+    .filter(r => !!rel && recordRelIds(r).includes(rel.id))
     .filter(r => {
       if (!r.postId) return true;
       const p = sessionPosts.find(x => x.id === r.postId);

@@ -2,8 +2,8 @@
 // 플레이기록 입력 폼 (4.16 v1.8) — 라벨 영문 통일 · 플레이스홀더 없음 ·
 // 시나리오 자동완성(기존 기록 검색 드롭다운) · 로그 연결(외부 URL / 내 백업 로그 검색 토글)
 import React, { useState } from 'react';
-import { PlayRecord, TrpgLog, TRPG_SEED } from '@/lib/galleryStore';
-import { Character, CHAR_SEED, Relation, REL_SEED } from '@/lib/charStore';
+import { PlayRecord, TrpgLog, TRPG_SEED, recordRelIds } from '@/lib/galleryStore';
+import { CharPicker, RelMultiPicker } from '@/components/trpg/PlayPickers';
 import { useLocalList } from '@/lib/postStore';
 import { KInput, KDate } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
@@ -18,6 +18,7 @@ export interface PlaylogFormValue {
   charIds?: string[];
   /** 연동 자관 — 세션 게시판·로그 백업의 자관 연동과 같은 방식 (자관 이름 검색) */
   relId?: string;
+  relIds?: string[];
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -51,13 +52,9 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
   const [logQuery, setLogQuery] = useState('');
   const [scOpen, setScOpen] = useState(false);
   // 참여 캐릭터 (v2.8) — 캐릭터 게시판과 연동
-  const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   const [charIds, setCharIds] = useState<string[]>(initial?.charIds ?? []);
-  const [charQuery, setCharQuery] = useState('');
   // 자관 연동 — 이름을 검색해 하나를 연결한다 (세션 게시판 글쓰기와 같은 방식)
-  const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
-  const [relId, setRelId] = useState(initial?.relId ?? '');
-  const [relQuery, setRelQuery] = useState('');
+  const [relIds, setRelIds] = useState<string[]>(initial ? recordRelIds(initial) : []);
 
   // 시나리오 자동완성 — 기존 기록에서 이름 중복 제거
   const scPool = [...new Map(records.map(r => [r.scenario, r])).values()]
@@ -75,7 +72,8 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
       url: linkMode === 'url' ? (url.trim() || undefined) : undefined,
       logId: linkMode === 'log' ? (logId || undefined) : undefined,
       charIds: charIds.length ? charIds : undefined,
-      relId: relId || undefined,
+      relId: relIds[0] || undefined,
+      relIds: relIds.length ? relIds : undefined,
     });
   };
 
@@ -120,59 +118,12 @@ export function PlaylogForm({ initial, records, onSave, onCancel }: {
         </div>
         <Field label="With"><KInput value={withText} onChange={e => setWithText(e.target.value)} /></Field>
 
-        {/* 자관 연동 (optional) — 자관 이름을 검색해 연결. 연결하면 표의 RELS 열에서 자관 상세로 이동할 수 있다 */}
-        <div>
-          <label className="k-label" style={{ marginBottom: 5 }}>자관 연동 (optional)</label>
-          {relId && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', border: '1.5px solid var(--accent)', borderRadius: 8, marginBottom: 6, fontSize: 12.5 }}>
-              <b>{rels.find(r => r.id === relId)?.name ?? '(찾을 수 없음)'}</b>
-              <span style={{ marginLeft: 'auto', color: 'var(--faint)', fontSize: 11, cursor: 'var(--cur-pointer,pointer)' }}
-                onClick={() => setRelId('')}>연동 해제 ✕</span>
-            </div>
-          )}
-          <KInput placeholder="자관 이름 검색" value={relQuery} onChange={e => setRelQuery(e.target.value)} />
-          {relQuery.trim() && (() => {
-            const s = relQuery.trim().toLowerCase();
-            const found = rels.filter(r => r.id !== relId && r.name.toLowerCase().includes(s));
-            return (
-              <div style={{ marginTop: 6, maxHeight: 150, overflowY: 'auto', border: '1.5px solid var(--line)', borderRadius: 9 }}>
-                {found.map(r => (
-                  <div key={r.id} onClick={() => { setRelId(r.id); setRelQuery(''); }}
-                    style={{ padding: '7px 11px', cursor: 'var(--cur-pointer,pointer)', fontSize: 12.5, borderBottom: '1px dashed var(--line)' }}>
-                    <b>{r.name}</b> {r.catchphrase && <small style={{ color: 'var(--faint)' }}>{r.catchphrase}</small>}
-                  </div>
-                ))}
-                {found.length === 0 && <p className="hint" style={{ padding: 8, margin: 0 }}>검색 결과가 없습니다</p>}
-              </div>
-            );
-          })()}
-        </div>
+        {/* 자관 연동 (optional) — 여러 개 가능. 표의 RELS 열에는 대표 자관(2인 우선) 외 n 으로 보인다 */}
+        <RelMultiPicker ids={relIds} onChange={setRelIds} />
 
         {/* 참여 캐릭터 (v2.8) — 캐릭터 게시판(/chars)과 연동. 고른 캐릭터는 그 캐릭터의
             상세 화면 TRPG 탭에도 자동으로 나타난다(양쪽이 이 charIds 하나만 봄) */}
-        <div>
-          <label className="k-label" style={{ marginBottom: 5 }}>
-            참여 캐릭터 (optional) <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— {charIds.length}명 선택</span>
-          </label>
-          <KInput placeholder="캐릭터 검색" value={charQuery} onChange={e => setCharQuery(e.target.value)} style={{ marginBottom: 6 }} />
-          <div style={{ maxHeight: 150, overflowY: 'auto', border: '1.5px solid var(--line)', borderRadius: 9 }}>
-            {chars
-              .filter(c => { const s = charQuery.trim().toLowerCase(); return !s || c.name.toLowerCase().includes(s) || c.sub.toLowerCase().includes(s); })
-              .map(c => (
-                <div key={c.id} onClick={() => setCharIds(l => (l.includes(c.id) ? l.filter(x => x !== c.id) : [...l, c.id]))}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '7px 11px', cursor: 'var(--cur-pointer,pointer)',
-                    fontSize: 12.5, borderBottom: '1px dashed var(--line)',
-                    background: charIds.includes(c.id) ? 'rgba(127,127,127,.12)' : undefined,
-                  }}>
-                  <i style={{ width: 10, height: 10, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
-                  <b>{c.name}</b> <small style={{ color: 'var(--faint)' }}>{c.sub}</small>
-                  {charIds.includes(c.id) && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 700 }}>✓</span>}
-                </div>
-              ))}
-            {chars.length === 0 && <p className="hint" style={{ padding: 10 }}>등록된 캐릭터가 없습니다</p>}
-          </div>
-        </div>
+        <CharPicker ids={charIds} onChange={setCharIds} />
 
         {/* 로그 연결 — 외부 URL 또는 내 홈 백업 로그 검색 (4.16) */}
         <div>

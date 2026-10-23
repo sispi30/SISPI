@@ -6,7 +6,7 @@
 //     각 게시판 쪽에서 고른 자관과 서로 즉시 반영된다.
 import React, { useState } from 'react';
 import { useLocalList } from '@/lib/postStore';
-import { PlayRecord, PLAYLOG_SEED, TrpgLog, TRPG_SEED, logNo } from '@/lib/galleryStore';
+import { PlayRecord, PLAYLOG_SEED, TrpgLog, TRPG_SEED, logNo, recordRelIds } from '@/lib/galleryStore';
 import { Relation, REL_SEED } from '@/lib/charStore';
 import { KInput } from '@/components/ui/Kit';
 
@@ -24,7 +24,7 @@ export function RelLinkBoard({ relId, mode, onMode }: {
 
   const isSession = mode === 'session';
   const items: Item[] = isSession
-    ? records.map(r => ({ id: r.id, title: r.scenario, sub: r.date ?? '', relId: r.relId }))
+    ? records.map(r => ({ id: r.id, title: r.scenario, sub: r.date ?? '', relId: relId && recordRelIds(r).includes(relId) ? relId : recordRelIds(r)[0] }))
     : logs.map(l => ({ id: l.id, title: l.title, sub: logNo(l), relId: l.relId }));
 
   const query = q.trim().toLowerCase();
@@ -37,7 +37,15 @@ export function RelLinkBoard({ relId, mode, onMode }: {
 
   const toggle = (it: Item) => {
     const next = it.relId === relId ? undefined : relId;
-    if (isSession) setRecords(records.map(r => (r.id === it.id ? { ...r, relId: next } : r)));
+    if (isSession) {
+      // 세션은 자관 여러 개 연동 — 이 자관만 넣고 빼고, 다른 자관 연동은 그대로 둔다
+      setRecords(records.map(r => {
+        if (r.id !== it.id) return r;
+        const cur = recordRelIds(r);
+        const ids = next ? [...cur.filter(x => x !== relId), relId!] : cur.filter(x => x !== relId);
+        return { ...r, relIds: ids.length ? ids : undefined, relId: ids[0] };
+      }));
+    }
     else setLogs(logs.map(l => (l.id === it.id ? { ...l, relId: next } : l)));
   };
 

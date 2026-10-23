@@ -12,7 +12,7 @@ import {
 } from '@/lib/postStore';
 import { useBoards, boardHref, MAIN_BOARD_ID, BoardPerm } from '@/lib/boardStore';
 import { renderBody } from '@/lib/sanitize';
-import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
+import { PlayRecord, PLAYLOG_SEED, recordRelIds, relsLabel } from '@/lib/galleryStore';
 import { Relation, REL_SEED, relPath } from '@/lib/charStore';
 import { putBlob, BlobImg, useBlobUrl } from '@/lib/blobStore';
 import { KInput, KSelect, KTextarea } from '@/components/ui/Kit';
@@ -150,8 +150,8 @@ export default function BoardDetailPage() {
   const canComment = allow(board.permComment) && (!!user || guestMode);
 
   const canManage = isAdmin || isAuthor;
-  const linkedRelId = post.session?.recordId ? records.find(r => r.id === post.session!.recordId)?.relId : undefined;
-  const linkedRel = linkedRelId ? rels.find(r => r.id === linkedRelId) : undefined;
+  const linkedRec = post.session?.recordId ? records.find(r => r.id === post.session!.recordId) : undefined;
+  const { rep: linkedRel, text: linkedRelText } = relsLabel(linkedRec ? recordRelIds(linkedRec) : [], rels);
   const update = (patch: Partial<Post>) =>
     setPosts(posts.map(p => (p.id === post.id ? { ...p, ...patch } : p)));
 
@@ -344,7 +344,7 @@ export default function BoardDetailPage() {
         <div className="head-actions">
           {/* 자관이 연동된 세션이면 그 자관 페이지로 가는 버튼 (연동 전에는 나타나지 않음) */}
           {linkedRel && (
-            <button className="btn btn-dark" onClick={() => router.push(relPath(linkedRel))}>{linkedRel.name} ›</button>
+            <button className="btn btn-dark" onClick={() => router.push(relPath(linkedRel))}>{linkedRelText} ›</button>
           )}
           {/* 수정은 작성자 본인만 — 관리자도 타인 글은 삭제만 (v1.9) */}
           {isAuthor && (
