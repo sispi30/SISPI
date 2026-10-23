@@ -22,6 +22,20 @@ function Card({ c, no }: { c: RelCardInfo; no: number }) {
   );
 }
 
+/** 카드 옆 설명 박스 — 관계명 · 관계 캐릭터 이름 · CP/NCP · 간단한 관계 설명 */
+function Note({ c }: { c: RelCardInfo }) {
+  return (
+    <div className="rc-note" style={{ '--rn': c.themeColor ?? 'var(--accent,#7fd6d0)' } as React.CSSProperties}>
+      <div className="rc-note-head">
+        <b>{c.name}</b>
+        {c.names && <span>{c.names}</span>}
+      </div>
+      {c.cpTag && <p className="rc-note-tag"><i />{c.cpTag}</p>}
+      <p className="rc-note-desc">{c.desc}</p>
+    </div>
+  );
+}
+
 /** 마우스 휠을 굴리면 가로로 넘어가게 (끝에 닿으면 원래대로 세로 스크롤) */
 function Row({ cards }: { cards: RelCardInfo[] }) {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -40,7 +54,12 @@ function Row({ cards }: { cards: RelCardInfo[] }) {
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
-  return <div className="rc-row" ref={ref}>{cards.map((c, i) => <Card key={c.key} c={c} no={i + 1} />)}</div>;
+  return <div className="rc-row" ref={ref}>{cards.map((c, i) => (
+    <React.Fragment key={c.key}>
+      <Card c={c} no={i + 1} />
+      {c.desc && <Note c={c} />}
+    </React.Fragment>
+  ))}</div>;
 }
 
 export function RelTab({ groups }: { groups: RelGroupInfo[] }) {

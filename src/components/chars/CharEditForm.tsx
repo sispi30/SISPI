@@ -14,7 +14,7 @@ import { newId, useLocalList, FoldType } from '@/lib/postStore';
 import { PlayRecord, PLAYLOG_SEED } from '@/lib/galleryStore';
 import { putBlob, getBlob, useBlobUrl } from '@/lib/blobStore';
 import { useFonts, deVarFamily } from '@/lib/fontStore';
-import { KInput, KSelect, KStep, KCheck, KRadio, KDate } from '@/components/ui/Kit';
+import { KInput, KTextarea, KSelect, KStep, KCheck, KRadio, KDate } from '@/components/ui/Kit';
 import { RichEditor } from '@/components/ui/RichEditor';
 import { ColorField } from '@/components/ui/ColorField';
 import { CropEditor, CropValue, CropImg } from '@/components/ui/CropEditor';
@@ -176,6 +176,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // 상세 화면 레이아웃 (v7.0) — 스테이지(기본) / 클래식
   const [detailLayout, setDetailLayout] = useState<'stage' | 'classic'>(initial?.detailLayout === 'classic' ? 'classic' : 'stage');
   const [relOn, setRelOn] = useState<boolean>(!!initial?.relEnabled);
+  const [relNotes, setRelNotes] = useState<Record<string, string>>(initial?.relNotes ?? {});
   const [relLinks, setRelLinks] = useState<{ charId: string; label?: string }[]>(initial?.relLinks ?? []);
   const [allChars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   // 자관 갤러리 연동 태그 (v6.3) — 이 캐릭터가 멤버인 자관 갤러리의 태그 중 이 캐릭터 갤러리에도 보일 것
@@ -268,6 +269,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       detailLayout: auMode ? initial?.detailLayout : (detailLayout === 'classic' ? 'classic' : undefined),
       // REL 탭 — AU 편집은 base 소관이라 건드리지 않는다
       relEnabled: auMode ? initial?.relEnabled : (relOn || undefined),
+      relNotes: auMode ? initial?.relNotes : (relOn && Object.values(relNotes).some(v => v.trim()) ? Object.fromEntries(Object.entries(relNotes).filter(([, v]) => v.trim())) : undefined),
       relLinks: auMode ? initial?.relLinks : (relOn && relLinks.some(l => l.charId) ? relLinks.filter(l => l.charId) : undefined),
     });
   };
@@ -302,6 +304,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   /* ---------- REL(관계) 탭 전용 편집 화면 (v6.8) ---------- */
   if (view === REL_VIEW && relOn && !auMode) {
     const others = allChars.filter(c => c.id !== initial?.id);
+    const myRels = initial?.id ? rels.filter(r => r.members.some(m => m.charId === initial.id)) : [];
+    const setNote = (k: string, v: string) => setRelNotes(n => ({ ...n, [k]: v }));
     const patchLink = (i: number, p: Partial<{ charId: string; label?: string }>) => setRelLinks(l => l.map((x, k) => (k === i ? { ...x, ...p } : x)));
     return (
       <div className="panel" style={{ padding: 24, display: 'grid', gap: 16 }}>
@@ -317,6 +321,23 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           아래에서 <b>직접 지정하는 관계</b>를 더할 수 있습니다.
         </p>
 
+        {/* 자관 설명 박스 — 관계 카드 옆에 붙는 간단한 설명. 비워 두면 박스가 붙지 않는다 */}
+        <div style={{ display: 'grid', gap: 8 }}>
+          <label className="k-label" style={{ margin: 0 }}>
+            자관 설명 박스 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 카드 옆에 관계명·캐릭터 이름·CP/NCP와 함께 보입니다 (비우면 박스 없음)</span>
+          </label>
+          {myRels.length === 0 && <p className="hint" style={{ margin: 0 }}>이 캐릭터가 멤버인 자관이 아직 없습니다</p>}
+          {myRels.map(r => (
+            <div key={r.id} style={{ display: 'grid', gap: 5 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700 }}>
+                {r.name} <small style={{ fontWeight: 400, color: 'var(--faint)' }}>{r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : ''}</small>
+              </span>
+              <KTextarea rows={2} placeholder="간단한 관계 설명" value={relNotes[`rel:${r.id}`] ?? ''}
+                onChange={e => setNote(`rel:${r.id}`, e.target.value)} />
+            </div>
+          ))}
+        </div>
+
         <div style={{ display: 'grid', gap: 8 }}>
           <label className="k-label" style={{ margin: 0 }}>
             직접 지정한 관계 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 상대 캐릭터와 꼬리표(카드 왼쪽 위에 표시, 예: 라이벌)</span>
@@ -325,7 +346,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
             <DragList items={relLinks.map((l, i) => ({ ...l, _k: i }))} keyOf={l => `${l.charId}:${l._k}`}
               onReorder={list => setRelLinks(list.map(({ _k, ...l }) => l))}
               render={(l, i) => (
-                <div className="upfile-row" style={{ width: '100%' }}>
+                <div className="upfile-row" style={{ width: '100%', flexWrap: 'wrap' }}>
                   <span className="drag-h">⠿</span>
                   <KSelect minWidth={170} placeholder="상대 캐릭터 선택" value={l.charId}
                     options={others.map(c => ({ value: c.id, label: c.name }))}
@@ -333,6 +354,10 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
                   <KInput placeholder="관계 꼬리표 (선택)" value={l.label ?? ''} style={{ flex: 1, minWidth: 120 }}
                     onChange={e => patchLink(i, { label: e.target.value })} />
                   <span className="fx" data-tip="제거" onClick={() => setRelLinks(list => list.filter((_, k) => k !== i))}>✕</span>
+                  {l.charId && (
+                    <KTextarea rows={2} placeholder="간단한 관계 설명 (선택 — 카드 옆 박스)" style={{ flexBasis: '100%' }}
+                      value={relNotes[`link:${l.charId}`] ?? ''} onChange={e => setNote(`link:${l.charId}`, e.target.value)} />
+                  )}
                 </div>
               )} />
           )}

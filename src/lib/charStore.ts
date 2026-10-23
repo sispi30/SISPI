@@ -133,7 +133,9 @@ export interface Character {
   /** 상세 화면 레이아웃 (v7.0) — 비우면 스테이지(등록한 그림 배경 + 좌 정보 · 우 소개/항목 창), 'classic'이면 예전 좌 아이콘탭·중앙 아트·우 패널 */
   detailLayout?: 'stage' | 'classic';
   relEnabled?: boolean;
-  relLinks?: { charId: string; label?: string }[];   // 직접 지정한 관계 — 상대 캐릭터 + 꼬리표(예: 라이벌)
+  relLinks?: { charId: string; label?: string }[];
+  /** 관계 카드 옆 설명 박스의 글 — 키는 카드 키(자관 `rel:<id>` · 직접 지정 `link:<charId>`). RELATIONS 편집 화면에서 고친다 */
+  relNotes?: Record<string, string>;   // 직접 지정한 관계 — 상대 캐릭터 + 꼬리표(예: 라이벌)
   /** 이 캐릭터 상세 페이지에서만 나오는 BGM (v5.9) — 환경설정 BGM과 같은 구조, 페이지를 나가면 홈페이지 BGM으로 복귀 */
   bgm?: import('./bgmStore').PageBgm;
   /** TRPG 참여 세션 탭 (v2.8) — 켜져 있으면 상세 화면에 TRPG 버튼이 보인다.
@@ -776,6 +778,8 @@ export interface RelCardInfo {
   who?: { name: string; color: string }[];
   /** 'char' = 직접 지정한 관계(캐릭터) — 캐릭터 목록 썸네일과 같은 3:4 비율로 보인다. 페어·그룹(자관)은 기존 세로로 긴 카드 */
   shape?: 'char';
+  /** 카드 옆 설명 박스 — 관계 설명(있을 때만 박스가 붙는다) · 관계 캐릭터 이름들 · CP/NCP(또는 직접 지정 꼬리표) */
+  desc?: string; names?: string; cpTag?: string;
 }
 export interface RelGroupInfo { name: string; cards: RelCardInfo[] }
 
@@ -802,6 +806,9 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
       tag: r.cp === 'ncp' ? 'NCP' : r.cp === 'cp' ? 'CP' : r.kind === 'multi' ? 'MULTI' : 'PAIR',
       memberCount: r.members.length, catchphrase: r.catchphrase,
       who: r.members.map(m => ({ name: charOf(m.charId)?.name || '—', color: charOf(m.charId)?.color ?? '#666' })),
+      desc: ch.relNotes?.[`rel:${r.id}`]?.trim() || undefined,
+      names: r.members.map(m => charOf(m.charId)?.name).filter(Boolean).join(' × '),
+      cpTag: r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : undefined,
     };
     (isPair ? pairs : groups).push(card);
   }
@@ -814,7 +821,8 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
     const c = charOf(l.charId);
     if (!c || c.id === ch.id || !ok(c.visibility)) continue;
     manual.push({ key: `link:${c.id}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass, href: charHref(c), shape: 'char',
-      who: [{ name: c.name, color: c.color }], themeColor: c.color });
+      who: [{ name: c.name, color: c.color }], themeColor: c.color,
+      desc: ch.relNotes?.[`link:${c.id}`]?.trim() || undefined, names: `${ch.name} × ${c.name}`, cpTag: l.label || undefined });
   }
   if (manual.length) out.push({ name: '관계', cards: manual });
 
