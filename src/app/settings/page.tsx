@@ -3011,6 +3011,14 @@ function MenuDesignPane() {
           ], v => patch({ iconMode: v }))}
         </div>
       )}
+      {cfg.enabled && (
+        <div className="set-row">
+          <div className="l"><b>서브메뉴 표시 방식</b><small>펼쳐지는 하위 메뉴를 어떻게 보여줄지 — 「아이콘만」일 때 아이콘이 없는 항목은 글자로 보입니다</small></div>
+          {seg<'text' | 'icon-text' | 'icon'>(cfg.subIconMode ?? 'icon-text', [
+            { v: 'text', label: '글자만' }, { v: 'icon-text', label: '아이콘 + 글자' }, { v: 'icon', label: '아이콘만' },
+          ], v => patch({ subIconMode: v }))}
+        </div>
+      )}
       {cfg.enabled && cfg.iconMode === 'line' && (
         <div className="set-row" style={{ alignItems: 'flex-start' }}>
           <div className="l"><b>영문 라벨</b><small>가로선 위에 작게 보이는 영문 — 비워 두면 자동으로 채워지고, 못 찾는 항목은 비어 보입니다</small></div>

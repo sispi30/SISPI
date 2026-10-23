@@ -176,8 +176,10 @@ export function TransformMenu() {
     );
   };
   // 서브메뉴(드롭다운)는 공간이 넉넉하므로 아이콘이 있으면 항상 아이콘+글자로 표시
+  const subMode = cfg.subIconMode ?? 'icon-text';
   const subLabel = (icon: string | undefined, label: string) => {
-    const c = faClass(icon);
+    const c = subMode === 'text' ? null : faClass(icon);
+    if (subMode === 'icon' && c) return <i className={c} aria-hidden />;
     return <>{c && <i className={c} aria-hidden style={{ marginRight: 6 }} />}{label}</>;
   };
 
@@ -190,7 +192,7 @@ export function TransformMenu() {
         </button>
         <div className="tf-sub" onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
           {item.children.map(c => (
-            <button key={c.href} onClick={() => nav(c.href)}>{subLabel(c.icon, c.label)}</button>
+            <button key={c.href} onClick={() => nav(c.href)} title={subMode === 'icon' ? c.label : undefined}>{subLabel(c.icon, c.label)}</button>
           ))}
         </div>
       </div>
