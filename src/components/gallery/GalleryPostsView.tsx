@@ -69,7 +69,7 @@ export function GalleryPanel({ posts, ph, canSeePrivate, loggedIn, accent }: {
             const folded = !!p.fold && !unveiled[p.id];
             const small = [dateOf(p), p.from].filter(Boolean).join(' · ');
             return (
-              <RxCard key={p.id} drawer no={i + 1} fileRef={p.images[0]?.ref} crop={p.images[0]?.crop} ph={ph}
+              <RxCard adaptive key={p.id} drawer no={i + 1} fileRef={p.images[0]?.ref} crop={p.images[0]?.crop} ph={ph}
                 tc={accent} tag="PHOTO" meta={`${String(p.images.length).padStart(2, '0')} IMAGES`} fileText={'GALLERY\nFILE'}
                 small={small} title={p.title}
                 who={(p.tags ?? []).slice(0, 3).map(t => ({ name: t, color: accent }))}

@@ -3172,3 +3172,9 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 
 /* 메뉴 위젯 글꼴 (아이콘 <i>는 제외) */
 .tf-fixed button,.gnb.tf-static button,.tf-sub button{font-family:var(--tf-font,inherit)}
+
+/* 갤러리 썸네일 — 그림 아래쪽이 밝으면 밝은 그라데이션 + 어두운 글자 (캐릭터 목록 제외) */
+.rx-card.rx-lt .rx-shade{background:linear-gradient(180deg,rgba(255,255,255,0) 45%,rgba(255,255,255,.9) 100%)}
+.rx-card.rx-lt .rx-bot h3{color:#16191f;text-shadow:none;border-bottom-color:rgba(20,24,32,.22)}
+.rx-card.rx-lt .rx-bot small{color:rgba(20,24,32,.62)}
+.rx-card.rx-lt .rx-who{color:rgba(20,24,32,.82)}

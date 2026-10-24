@@ -114,7 +114,7 @@ function BackupPageInner() {
             const i = start + si;   // 정렬은 전체 기준 위치로
             const folded = p.fold && !unveiled[p.id];
             return (
-              <RxCard key={p.id} {...(sort(i) as Record<string, unknown>)} no={i + 1} anim={si % 6}
+              <RxCard adaptive key={p.id} {...(sort(i) as Record<string, unknown>)} no={i + 1} anim={si % 6}
                 fileRef={p.images[0]} crop={p.thumbCrop} ph={p.phList[0] ?? 'cool'}
                 tc="var(--accent,#7fd6d0)" tag={p.type === 'single' ? 'SINGLE' : 'LOG'}
                 meta={`${String(count(p)).padStart(2, '0')} IMAGES`} fileText={'GALLERY\nFILE'}

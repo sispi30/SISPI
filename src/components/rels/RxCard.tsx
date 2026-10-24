@@ -4,6 +4,7 @@
 // 크기는 카드 폭(cqw)을 따라가서 어디에 놓아도 같은 모양으로 줄고 늘어난다.
 import React from 'react';
 import { PairThumb } from '@/components/rels/PairThumb';
+import { useBottomLight } from '@/lib/useImgLight';
 import type { CropValue } from '@/components/ui/CropEditor';
 
 export interface RxWho { name: string; color: string }
@@ -11,7 +12,7 @@ export interface RxWho { name: string; color: string }
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
 export function RxCard({ no, fileRef, crop, ph, phLabel, tc, tag, meta, fileText = 'PAIR\nFILE', small, title, titleExtra, who, whoMore,
-  priv, tall, drawer, anim, onClick, style, children, ...rest }: {
+  priv, tall, drawer, adaptive, anim, onClick, style, children, ...rest }: {
   no: number; fileRef?: string; crop?: CropValue; ph?: string; phLabel?: string;
   /** 테마색 — 대각선·꼬리표·테두리 */
   tc: string;
@@ -19,6 +20,8 @@ export function RxCard({ no, fileRef, crop, ph, phLabel, tc, tag, meta, fileText
   small?: string; title: string; titleExtra?: React.ReactNode;
   who: RxWho[]; whoMore?: number;
   priv?: boolean; tall?: boolean; drawer?: boolean;
+  /** 그림 아래쪽이 밝으면 밝은 그라데이션 + 어두운 글자 (갤러리 썸네일 전용) */
+  adaptive?: boolean;
   /** 등장 애니메이션 순서(0부터) — 줄이 긴 목록에서 뒤쪽 카드가 너무 늦게 뜨지 않게 따로 줄 때. 기본은 번호-1 */
   anim?: number;
   onClick?: () => void;
@@ -26,8 +29,9 @@ export function RxCard({ no, fileRef, crop, ph, phLabel, tc, tag, meta, fileText
   /** 카드 위에 덮는 것 (접힘 가리개 등) */
   children?: React.ReactNode;
 } & Record<string, unknown>) {
+  const light = useBottomLight(fileRef, !!adaptive);
   return (
-    <div className={`rx-card${priv ? ' priv' : ''}${tall ? ' rx-tall' : ''}${drawer ? ' rx-d' : ''}`} {...rest} onClick={onClick}
+    <div className={`rx-card${light ? ' rx-lt' : ''}${priv ? ' priv' : ''}${tall ? ' rx-tall' : ''}${drawer ? ' rx-d' : ''}`} {...rest} onClick={onClick}
       role={onClick ? 'link' : undefined}
       style={{ ['--i' as string]: anim ?? no - 1, ['--c1' as string]: tc, ...(style ?? {}) } as React.CSSProperties}>
       <div className="rx-art">
