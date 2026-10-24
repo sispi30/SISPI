@@ -3252,8 +3252,8 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   position:sticky;top:0;height:100vh;overflow:hidden;color:#fff;
   background:radial-gradient(120% 90% at 50% 40%,color-mix(in srgb,var(--rs-c) 22%,#14171d),#08090c 78%)}
 .rs-ring{position:absolute;left:50%;top:52%;width:64vh;height:64vh;border-radius:50%;background:var(--rs-c);opacity:calc(.9 - var(--k2)*1.1);transform:translate(-50%,-50%) scale(calc(1 - var(--k2)*.25));z-index:1}
-.rs-title{position:absolute;left:0;right:0;top:27vh;z-index:2;margin:0;text-align:center;white-space:nowrap;font-weight:900;font-size:var(--rs-fs);line-height:1;letter-spacing:-.02em;color:#fff;text-transform:uppercase;
-  transform:translateY(calc(var(--k1)*-64vh));text-shadow:none}
+.rs-title{position:absolute;left:0;right:0;top:24vh;z-index:2;margin:0;text-align:center;white-space:nowrap;font-weight:900;font-size:var(--rs-fs);line-height:.95;letter-spacing:-.02em;color:#fff;text-transform:uppercase;
+  transform:translateY(calc(var(--k1)*-64vh)) scaleY(1.14);text-shadow:none}
 .rs-figs{position:absolute;left:0;right:0;bottom:0;height:88vh;z-index:3;display:flex;justify-content:center;align-items:flex-end;pointer-events:none;transform-origin:50% 100%;
   transform:translateY(calc(var(--k2)*24vh)) scale(calc(1 - var(--k2)*.42));opacity:calc(1 - var(--k4)*1.4)}
 .rs-fig{height:100%;max-width:52vw;object-fit:contain;object-position:50% 100%;margin:0 -3vw;filter:drop-shadow(0 18px 30px rgba(0,0,0,.45))}
@@ -3264,7 +3264,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .rs-cp{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.2em;padding:4px 10px;border:1px solid currentColor;border-radius:999px;margin-bottom:10px}
 .rs-info p{font-size:clamp(11px,1.1vw,14px);line-height:1.7;opacity:.82;word-break:keep-all}
 .rs-hint{position:absolute;right:6vw;bottom:7vh;z-index:4;display:flex;align-items:center;gap:10px;font-size:10.5px;font-weight:800;letter-spacing:.24em;opacity:calc(1 - var(--k1)*2.4)}
-.rs-hint i{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#fff;color:#111;font-style:normal;font-size:16px;animation:rsBob 1.6s ease-in-out infinite}
+.rs-hint i{display:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#fff;color:#111;font-style:normal;font-size:16px;animation:rsBob 1.6s ease-in-out infinite}
 @keyframes rsBob{50%{transform:translateY(5px)}}
 .rs-band{position:absolute;left:-2%;right:-2%;top:0;height:44px;z-index:2;background:var(--rs-c);transform:translateY(calc(100vh - var(--k1)*50vh)) rotate(-1.2deg);
   -webkit-mask:radial-gradient(circle 4.5px at 14px 50%,transparent 98%,#000) 0 0/28px 100%;mask:radial-gradient(circle 4.5px at 14px 50%,transparent 98%,#000) 0 0/28px 100%;opacity:calc(var(--k1)*1.2 - var(--k4)*1.4)}
@@ -3292,3 +3292,14 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   .rs-info{max-width:46vw}.rs-fig{max-width:64vw;margin:0 -8vw}
   .rs-title{top:24vh}
 }
+
+/* 첫 화면 보강 — 로마숫자·세로 표기·점선·이야기 라벨·버튼·원형 배지 */
+.rs-rn{position:absolute;left:0;right:0;top:12vh;z-index:2;text-align:center;font-size:clamp(20px,3.2vw,44px);font-weight:900;letter-spacing:.06em;opacity:calc(1 - var(--k1)*2.4);transform:translateY(calc(var(--k1)*-30px))}
+.rs-year{position:absolute;right:1.2vw;top:9vh;z-index:4;writing-mode:vertical-rl;font-size:clamp(9px,1vw,13px);font-weight:800;letter-spacing:.3em;opacity:calc(.8 - var(--k1)*2.4)}
+.rs-dots{position:absolute;left:3vw;right:3vw;bottom:24vh;z-index:2;border-top:2px dotted color-mix(in srgb,var(--rs-c) 80%,#fff);opacity:calc(.9 - var(--k1)*2.4)}
+.rs-lab{display:block;font-size:9.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;opacity:.65;margin-bottom:8px}
+.rs-hint{gap:14px}
+.rs-pill{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 20px;border-radius:999px;border:1px solid rgba(255,255,255,.7);color:#fff;font-size:11px;font-weight:800;letter-spacing:.14em;cursor:var(--cur-pointer,pointer);transition:.2s}
+.rs-pill:hover{background:#fff;color:#111}
+.rs-badge{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--rs-c);color:#fff;font-style:normal;box-shadow:0 0 0 4px rgba(255,255,255,.18)}
+.rs-badge em{font-style:normal;font-size:10px;font-weight:900;letter-spacing:.08em}

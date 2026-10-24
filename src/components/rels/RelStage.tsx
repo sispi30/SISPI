@@ -14,7 +14,7 @@ export interface RsStat { n: number; label: string }
 /** 글자 폭 추정 — 한글·한자는 1em, 나머지는 0.62em. 줄 바꿈 없이 한 줄에 들어가는 글자 크기(vw)를 구한다 */
 function fitVw(text: string, maxVw: number, widthVw: number): number {
   let w = 0;
-  for (const ch of text) w += /[ᄀ-ᇿ㄰-㆏가-힯぀-ヿ一-鿿]/.test(ch) ? 1 : 0.62;
+  for (const ch of text) w += /[ᄀ-ᇿ㄰-㆏가-힯぀-ヿ一-鿿]/.test(ch) ? 1 : 0.74;
   return Math.max(4, Math.min(maxVw, widthVw / Math.max(w, 2)));
 }
 
@@ -54,7 +54,10 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
   }, []);
 
   const pair = members.map(m => m.name).join(' × ');
-  const titleVw = fitVw(name, 19, 90);
+  const titleVw = fitVw(name, 24, 90);
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  const roman = ROMAN[members.length] ?? String(members.length);
+  const goDown = () => (document.getElementById('appMain') ?? window).scrollBy({ top: window.innerHeight * 1.7, behavior: 'smooth' });
   const pairVw = fitVw(pair || name, 11, 84);
 
   return (
@@ -66,14 +69,21 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
             <button key={m.id} type="button" onClick={() => onGo(m.href)}>{m.name}</button>
           ))}
         </div>
+        <div className="rs-rn" aria-hidden="true">{roman}</div>
+        <div className="rs-year" aria-hidden="true">[ {String(members.length).padStart(2, '0')} MEMBERS ]</div>
+        <div className="rs-dots" aria-hidden="true" />
         <h1 className="rs-title" style={{ fontFamily }}>{name}</h1>
         <div className="rs-band" aria-hidden="true" />
         {figs.length > 0 && <div className="rs-figs">{figs.slice(0, 2).map(f => <Fig key={f} refId={f} />)}</div>}
         <div className="rs-info">
+          <small className="rs-lab">{name} // STORY</small>
           {cpLabel && <span className="rs-cp">{cpLabel}</span>}
           {catchphrase && <p>{catchphrase}</p>}
         </div>
-        <div className="rs-hint" aria-hidden="true"><span>SCROLL</span><i>↓</i></div>
+        <div className="rs-hint">
+          <button type="button" className="rs-pill" onClick={goDown}>VIEW STORY <b>↗</b></button>
+          <span className="rs-badge" aria-hidden="true"><em>{cpLabel || 'PAIR'}</em></span>
+        </div>
         <div className="rs-stats">
           {stats.map((s, i) => (
             <div key={s.label} className={`rs-stat s${i % 3}`}><small>{s.label}</small><b>{s.n}</b></div>
