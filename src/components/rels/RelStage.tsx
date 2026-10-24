@@ -7,7 +7,8 @@
 // 스크롤은 #appMain 이 한다 — 진행도(0~1)를 --p 로 내려 주고, 움직임은 전부 CSS 가 계산한다.
 import React, { useEffect, useRef } from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
-import { StageDeco } from '@/components/chars/StageDeco';
+import { StageDeco, ScriptWrite } from '@/components/chars/StageDeco';
+import type { DecoGhost } from '@/lib/charStore';
 
 export interface RsMember {
   id: string; name: string; color: string; href: string;
@@ -18,7 +19,7 @@ export interface RsMember {
 export interface RsStat { n: number; label: string }
 
 /** 글자 폭 추정 — 한글·한자는 1em, 나머지는 0.62em. 줄 바꿈 없이 한 줄에 들어가는 글자 크기(vw)를 구한다 */
-function fitVw(text: string, maxVw: number, widthVw: number): number {
+export function fitVw(text: string, maxVw: number, widthVw: number): number {
   let w = 0;
   for (const ch of text) w += /[ᄀ-ᇿ㄰-㆏가-힯぀-ヿ一-鿿]/.test(ch) ? 1 : 0.74;
   return Math.max(4, Math.min(maxVw, widthVw / Math.max(w, 2)));
@@ -31,12 +32,27 @@ function Fig({ refId }: { refId: string }) {
   return <img className="rs-fig" src={url} alt="" draggable={false} />;
 }
 
-export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs, stats, tc, onGo, auSlot, admin }: {
+/** 자관명 큰 글씨의 기본 크기(vw) — 설정 화면의 위치 미리보기와 같은 값을 쓰도록 내보낸다 */
+export function relTitleVw(name: string): number {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const lines = words.length <= 1 ? [name] : words.length === 2 ? words : [words[0], words.slice(1, -1).join(' '), words[words.length - 1]];
+  return fitVw(lines.reduce((a, b) => (b.length > a.length ? b : a), ''), 24, 86);
+}
+
+export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs, stats, tc, onGo, auSlot, admin, deco }: {
   name: string; fontFamily?: string; catchphrase?: string; cpLabel?: string;
   members: RsMember[]; figs: string[]; stats: RsStat[]; tc: string;
   onGo: (href: string) => void; auSlot?: React.ReactNode;
   /** 관리 글씨(EDIT/DELETE) — 캐릭터 스테이지와 같은 작은 글씨 형태. 권한이 없으면 안 넘긴다 */
   admin?: { editLabel: string; onEdit: () => void; deleteLabel?: string; onDelete?: () => void };
+  /** 배경 장식 설정 — 캐릭터 상세와 같은 항목. off면 장식을 그리지 않는다 */
+  deco?: {
+    off?: boolean;
+    image?: string; band?: boolean; blur?: number;
+    /** 큰 글씨(자관명) 폰트·위치·크기 */
+    titleFont?: string; ghostPos?: DecoGhost;
+    script?: { text: string; font?: string; color?: string; size: number; x: number; y: number; rot: number };
+  };
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const stk = useRef<HTMLDivElement>(null);
@@ -82,9 +98,15 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
     <div className="rs" ref={wrap} style={{ ['--rs-c' as string]: tc, ['--rs-fs' as string]: `${titleVw}vw`, ['--rs-pfs' as string]: `${pairVw}vw` } as React.CSSProperties}>
       <div className="rs-sticky" ref={stk}>
         {/* 캐릭터 스테이지와 같은 배경 장식 — 가는 선·눈금·라벨·반짝이·뒤쪽 큰 반원 */}
-        <div className="rs-deco" style={{ ['--accent' as string]: tc } as React.CSSProperties}>
-          <StageDeco mode="accent" tone="dark" ink="light" name={name} colorHex={tc} />
-        </div>
+        {!deco?.off && deco?.image && !deco.band && (
+          <div className="rs-bgimg" aria-hidden="true" style={{ backgroundImage: `url("${deco.image}")`, filter: deco.blur ? `blur(${deco.blur}px)` : undefined }} />
+        )}
+        {!deco?.off && (
+          <div className="rs-deco" style={{ ['--accent' as string]: tc } as React.CSSProperties}>
+            <StageDeco mode={deco?.image && !deco.band ? 'mono' : 'accent'} shape="tile" tone="dark" ink="light" name={name} colorHex={tc}
+              image={deco?.band ? deco.image : undefined} blur={deco?.blur ?? 0} />
+          </div>
+        )}
         <div className="rs-ring" />
         <i className="rs-bar t" aria-hidden="true" /><i className="rs-bar b" aria-hidden="true" />
         <i className="rs-crn tl" aria-hidden="true" /><i className="rs-crn tr" aria-hidden="true" /><i className="rs-crn bl" aria-hidden="true" /><i className="rs-crn br" aria-hidden="true" />
@@ -118,7 +140,16 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
           <div className="rs-mt">[ {members.slice(0, 2).map(m => m.name).join(' × ') || name} ]</div>
           {catchphrase && <p>{catchphrase}</p>}
         </div>
-        <h1 className="rs-title" style={{ fontFamily, ['--rs-ln' as string]: lines.length } as React.CSSProperties}>{lines.map((l, i) => <span key={i}>{l}</span>)}</h1>
+        <h1 className={`rs-title${deco?.ghostPos ? ' is-pos' : ''}`}
+          style={{ fontFamily: deco?.titleFont ?? fontFamily, ['--rs-ln' as string]: lines.length,
+            ...(deco?.ghostPos ? { ['--rs-gx' as string]: `${deco.ghostPos.x}%`, ['--rs-gy' as string]: `${deco.ghostPos.y}%`, ['--rs-gs' as string]: deco.ghostPos.scale / 100 } : {}) } as React.CSSProperties}>
+          {lines.map((l, i) => <span key={i}>{l}</span>)}
+        </h1>
+        {!deco?.off && deco?.script && deco.script.text && (
+          <div className="cs-deco rs-scr" style={{ ['--d-acc' as string]: tc } as React.CSSProperties} aria-hidden="true">
+            <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" width="100%" height="100%"><ScriptWrite t={deco.script} /></svg>
+          </div>
+        )}
         <div className="rs-band" aria-hidden="true" />
         {figs.length > 0 && <div className="rs-figs">{figs.slice(0, 2).map(f => <Fig key={f} refId={f} />)}</div>}
         <div className="rs-hint">

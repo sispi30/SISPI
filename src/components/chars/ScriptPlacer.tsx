@@ -12,12 +12,14 @@ interface Props {
   ghost: string;
   ghostPos: DecoGhost;
   ghostFont?: string;
+  /** 큰 글씨 기본 크기(vw) — 자관 상세처럼 크기 식이 다르면 넘긴다. 비우면 캐릭터 상세와 같은 식 */
+  ghostVw?: number;
   accent: string;
   onMoveScript: (x: number, y: number) => void;
   onMoveGhost: (x: number, y: number) => void;
 }
 
-export function ScriptPlacer({ script, scriptText, scriptFont, ghost, ghostPos, ghostFont, accent, onMoveScript, onMoveGhost }: Props) {
+export function ScriptPlacer({ script, scriptText, scriptFont, ghost, ghostPos, ghostFont, ghostVw, accent, onMoveScript, onMoveGhost }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [pick, setPick] = useState<'ghost' | 'script'>(ghost ? 'ghost' : 'script');
   const target: 'ghost' | 'script' = !script ? 'ghost' : !ghost ? 'script' : pick;
@@ -47,7 +49,7 @@ export function ScriptPlacer({ script, scriptText, scriptFont, ghost, ghostPos, 
           <div style={{ position: 'absolute', left: `${ghostPos.x}%`, top: `${ghostPos.y}%`, transform: 'translate(-50%,-50%)', width: 'max-content',
             textAlign: 'center', whiteSpace: 'nowrap', lineHeight: 1.35, padding: '.05em .1em', fontWeight: 800, letterSpacing: '-.02em',
             color: target === 'ghost' ? 'rgba(0,0,0,.16)' : 'rgba(0,0,0,.09)', fontFamily: ghostFont ?? 'var(--serif)',
-            fontSize: `${ghostSizeVw(ghost) * ghostPos.scale / 100}cqw` }}>{ghost}</div>
+            fontSize: `${(ghostVw ?? ghostSizeVw(ghost)) * ghostPos.scale / 100}cqw` }}>{ghost}</div>
         )}
         {script && (
           <div style={{ position: 'absolute', left: `${script.x}%`, top: `${script.y}%`, transform: `translate(-50%,-50%) rotate(${script.rot}deg)`,

@@ -56,6 +56,8 @@ export default function RelNewPage() {
             linkBoard: v.linkBoard,
             bgm: v.bgm,
             leftBoard: v.leftBoard,
+            detailLayout: v.detailLayout,
+            deco: v.deco, decoBg: v.decoBg, decoFontId: v.decoFontId, decoScript: v.decoScript, decoGhost: v.decoGhost,
             members, thumbClass: '',
             illustMode: v.kind === 'pair' ? 'duo' : 'one',
             aus: [{ id: 'base', label: '원본', catchphrase: v.catchphrase }],

@@ -76,9 +76,13 @@ function TagText({ text }: { text: string }) {
 const I = (d: number, dx = 0, dy = 0) => ({ '--d': `${d}s`, '--dx': `${dx}px`, '--dy': `${dy}px` }) as React.CSSProperties;
 
 export type DecoMode = 'accent' | 'mono';
+/** 뒤쪽 큰 도형 — 'fan'(기본, 캐릭터 상세의 큰 반원) · 'tile'(왼쪽 위만 크게 둥근 사각 판, 자관 상세) */
+export type DecoShape = 'fan' | 'tile';
 
 interface Props {
   mode: DecoMode;
+  /** 뒤쪽 큰 도형 모양 — 비우면 반원 */
+  shape?: DecoShape;
   /** 장식 바탕·선의 계열 — 'light'=밝은(흰색 계열) 테마 · 'dark'=어두운(검은색 계열) 테마 */
   tone: 'light' | 'dark';
   /** mode='mono'일 때 장식 색 — 'dark'=검정 · 'light'=흰색 (이미지 밝기에 맞춘 값) */
@@ -105,7 +109,7 @@ export function ghostSizeVw(g: string): number {
 }
 
 /** 필기체 글씨 — 글자를 지그재그 붓질 마스크로 왼쪽부터 쓸어 드러내, 쓰는 것처럼 나타낸다 */
-function ScriptWrite({ t }: { t: NonNullable<Props['script']> }) {
+export function ScriptWrite({ t }: { t: NonNullable<Props['script']> }) {
   const ref = useRef<SVGTextElement>(null);
   const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const fs = t.size * 10.8, cx = t.x * 19.2, cy = t.y * 10.8;
@@ -144,9 +148,11 @@ function ScriptWrite({ t }: { t: NonNullable<Props['script']> }) {
 }
 
 // 뒤쪽 큰 반원 (부채꼴) — 중심 (960,바닥선) · 반지름 610. 바닥선은 화면 아래에서 --cs-floor 만큼 위 (그림 하단도 같은 선에 선다)
+// 판(tile) — 왼쪽 위만 크게 둥근 사각형 (가로 636 · 세로 640, 모서리 반지름 290). 화면 가운데 위쪽, 전신 뒤에 선다
+const TILE = 'M636 440 A290 290 0 0 1 926 150 H1272 V790 H636 Z';
 const fanPath = (fy: number) => `M350 ${fy} A610 610 0 0 1 1570 ${fy} Z`;
 
-export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
+export function StageDeco({ mode, shape = 'fan', tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
   const [geo, setGeo] = useState({ fy: 1015, sc: 1, ox: 0, oy: 0, W: 1920, H: 1080 });
@@ -165,7 +171,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
     const ro = new ResizeObserver(calc); ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const FAN = fanPath(fy);
+  const tile = shape === 'tile';
+  const FAN = tile ? TILE : fanPath(fy);
   const mono = mode === 'mono';
   const band = mode === 'accent' && !!image;
   // 포인트색으로 칠하는 장식의 칠 — 「장식 안에 이미지」면 같은 이미지를 화면 좌표 그대로 깔아, 반원과 이어지는 한 장의 배경처럼 보이게 한다
@@ -198,6 +205,10 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           <pattern id="dc-dots" width="12" height="12" patternUnits="userSpaceOnUse">
             <circle cx="1.5" cy="1.5" r="1.1" fill="var(--d-line)" />
           </pattern>
+          <linearGradient id="dc-tile" x1=".12" y1="0" x2=".55" y2="1">
+            <stop offset="0" style={{ stopColor: 'color-mix(in srgb,var(--accent,#7fd6d0) 70%,#fff)' }} />
+            <stop offset="1" style={{ stopColor: 'color-mix(in srgb,var(--accent,#7fd6d0) 88%,#000)' }} />
+          </linearGradient>
           <linearGradient id="dc-tag" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0" stopColor="var(--d-acc)" stopOpacity=".9" />
             <stop offset="1" stopColor="var(--d-acc)" stopOpacity=".08" />
@@ -244,6 +255,8 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
               filter={blur > 0 ? 'url(#dc-blur)' : undefined} />
             <rect width="1920" height="1080" fill="var(--d-acc)" opacity=".35" />
           </g>
+        ) : tile ? (
+          <path d={FAN} fill="url(#dc-tile)" opacity=".96" />
         ) : (
           <path d={FAN} fill="var(--d-acc)" opacity={mono ? 0.1 : tone === 'light' ? 0.1 : 0.16} />
         )}
@@ -258,9 +271,16 @@ export function StageDeco({ mode, tone, ink, image, blur = 0, ghost, ghostFont, 
           </g>
         )}
         <g className="dc-i" style={I(0.25, 0, 40)}>
-          <path d={FAN} fill="none" stroke="var(--d-acc)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".75" />
-          <path d={`M312 ${fy} A648 648 0 0 1 1608 ${fy}`} fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
-          <line x1="230" y1={fy} x2="1690" y2={fy} stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+          {!tile && <path d={FAN} fill="none" stroke="var(--d-acc)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".75" />}
+          {tile ? (
+            /* 판 바깥쪽에 한 칸 어긋난 가는 윤곽선 — 도형이 떠 있는 느낌 */
+            <path d="M610 440 A316 316 0 0 1 926 124 H1298 V816 H610 Z" fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".55" />
+          ) : (
+            <>
+              <path d={`M312 ${fy} A648 648 0 0 1 1608 ${fy}`} fill="none" stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+              <line x1="230" y1={fy} x2="1690" y2={fy} stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
+            </>
+          )}
         </g>
 
         {script && script.text && <ScriptWrite t={script} />}

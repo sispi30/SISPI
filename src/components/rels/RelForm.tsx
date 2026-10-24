@@ -3,6 +3,9 @@
 // 아트 다중 등록(첫 장 = 대표 · 리스트 썸네일 4:3 크롭) · 등록 시 내 캐릭터 연동
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { DecoScript, DecoGhost, DEFAULT_DECO_SCRIPT, DEFAULT_DECO_GHOST } from '@/lib/charStore';
+import { ScriptPlacer } from '@/components/chars/ScriptPlacer';
+import { relTitleVw } from '@/components/rels/RelStage';
 import { Character, Relation, Visibility, RelCpTag, RelMember, auMember, auStyle, fullShadow,
   HeroLayout, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID } from '@/lib/charStore';
 import { ColorField } from '@/components/ui/ColorField';
@@ -26,6 +29,7 @@ import type { PageBgm } from '@/lib/bgmStore';
 export interface RelFormValue {
   memberOrder?: string[];         // 다인관 멤버 순서(charId 순) — 상세 페이지에 이 순서로 보인다 (v6.7)
   detailLayout?: 'stage' | 'classic';
+  deco?: 'off'; decoBg?: 'band'; decoFontId?: string; decoScript?: DecoScript; decoGhost?: DecoGhost;   // 스테이지 배경 장식 (캐릭터 상세와 같은 설정)
   leftBoard?: 'rp' | 'gallery';   // 상세 하단 좌측 칸 — 역극(기본) / 갤러리 (v6.0)
   bgm?: PageBgm;             // 이 자관 페이지 전용 BGM (v5.9) — 없으면 홈페이지 BGM
   slug?: string;             // 페이지 주소 /rels/{slug} (v1.9 — 신규 등록 시, 비우면 자동 id)
@@ -350,6 +354,11 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const isMultiRel = kind === 'multi' || (!!initial && !initial.kind && initial.members.length > 2);   // kind가 없는 옛 자관은 인원수로 판단
   const [memberOrder, setMemberOrder] = useState<string[]>(() => (initial?.members ?? []).map(m => m.charId));
   const [detailLayout, setDetailLayout] = useState<'stage' | 'classic'>(initial?.detailLayout === 'classic' ? 'classic' : 'stage');
+  const [deco, setDeco] = useState<'on' | 'off'>(initial?.deco ?? 'on');
+  const [decoScript, setDecoScript] = useState<DecoScript | null>(initial?.decoScript ?? null);
+  const [decoGhost, setDecoGhost] = useState<DecoGhost>(initial?.decoGhost ?? { ...DEFAULT_DECO_GHOST });
+  const [decoFontId, setDecoFontId] = useState(initial?.decoFontId ?? '');
+  const [decoBg, setDecoBg] = useState<'full' | 'band'>(initial?.decoBg ?? 'full');
   const [leftBoard, setLeftBoard] = useState<'rp' | 'gallery'>(initial?.leftBoard === 'gallery' ? 'gallery' : 'rp');
   const [name, setName] = useState(initial?.name ?? '');
   // 페이지 주소 /rels/{slug} — 신규는 비우면 자동(id). 수정에서도 바꿀 수 있다 (v2.0 사용자 요청)
@@ -600,6 +609,11 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       linkBoard: linkBoard === 'session' ? 'session' : undefined,
       bgm: bgm && bgm.playlists.length ? bgm : undefined,
       detailLayout: detailLayout === 'classic' ? 'classic' : undefined,
+      deco: deco === 'on' ? undefined : 'off',
+      decoBg: decoBg === 'full' ? undefined : 'band',
+      decoFontId: decoFontId || undefined,
+      decoGhost: decoGhost.x === DEFAULT_DECO_GHOST.x && decoGhost.y === DEFAULT_DECO_GHOST.y && decoGhost.scale === DEFAULT_DECO_GHOST.scale ? undefined : decoGhost,
+      decoScript: decoScript ? { ...decoScript, text: decoScript.text?.trim() || undefined, fontId: decoScript.fontId || undefined, color: decoScript.color || undefined } : undefined,
       leftBoard: leftBoard === 'gallery' ? 'gallery' : undefined,
       memberOrder: !isNew && !auId && isMultiRel ? memberOrder : undefined,
       fulls: pairMembers.length
@@ -1183,6 +1197,71 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 ? '캐릭터 스테이지처럼 큰 자관명 앞에 전신이 서고, 스크롤을 내리면 장면이 이어서 바뀝니다'
                 : '예전 구성 — 좌우 카드와 중앙 일러가 한 화면에 보입니다'}
             </p>
+          </div>
+        )}
+
+        {/* 스테이지 배경 장식 — 캐릭터 상세와 같은 설정(큰 글씨 위치·크기·폰트, 필기체 겹치기, 이미지 쓸 곳). 자관 전체 설정 */}
+        {!auObj && detailLayout === 'stage' && (
+          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+            <label className="k-label" style={{ margin: 0 }}>배경 장식</label>
+            <p className="hint" style={{ margin: 0 }}>
+              스테이지 배경에 얇은 선·눈금·라벨과 뒤쪽 큰 판(왼쪽 위가 둥근 사각형)을 깝니다. 가운데 큰 글씨는 자관명입니다
+            </p>
+            <div className="mini-seg" style={{ justifySelf: 'start' }}>
+              <button type="button" className={deco === 'on' ? 'on' : ''} onClick={() => setDeco('on')}>켜기 (기본)</button>
+              <button type="button" className={deco === 'off' ? 'on' : ''} onClick={() => setDeco('off')}>끄기</button>
+            </div>
+            {deco === 'on' && (
+              <>
+                <p className="hint" style={{ margin: 0 }}>큰 글씨(자관명) 폰트 — 비우면 자관 이름 폰트와 같게</p>
+                <KSelect value={decoFontId} onChange={setDecoFontId}
+                  options={[{ value: '', label: '이름 폰트와 같게 (기본)' },
+                    ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
+                <KCheck label="필기체 글씨 겹치기 — 큰 글씨 위에 다른 색·필기체로 한 번 더 쓰고, 처음 나타날 때 써 내려가는 효과로 등장"
+                  checked={!!decoScript} onChange={v => setDecoScript(v ? { ...DEFAULT_DECO_SCRIPT } : null)} />
+                {decoScript && (
+                  <>
+                    <KInput placeholder="필기체로 쓸 글씨 (비우면 자관명)" value={decoScript.text ?? ''}
+                      onChange={e => setDecoScript({ ...decoScript, text: e.target.value })} />
+                    <KSelect value={decoScript.fontId ?? ''} onChange={v => setDecoScript({ ...decoScript, fontId: v })}
+                      options={[{ value: '', label: '이름 폰트와 같게 (필기체 폰트를 고르세요)' },
+                        ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span className="cp-lb">색</span>
+                      <ColorField value={decoScript.color || '#ff6a00'} onChange={hex => setDecoScript({ ...decoScript, color: hex })} />
+                      <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+                        onClick={() => setDecoScript({ ...decoScript, color: undefined })}>포인트색</button>
+                      <span className="cp-lb">크기</span>
+                      <KStep value={decoScript.size} min={6} max={50} step={1} onChange={v => setDecoScript({ ...decoScript, size: v })} />
+                      <span className="cp-lb">기울기</span>
+                      <KStep value={decoScript.rot} min={-30} max={30} step={1} suffix="°" onChange={v => setDecoScript({ ...decoScript, rot: v })} />
+                    </div>
+                  </>
+                )}
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span className="cp-lb">큰 자관명 크기</span>
+                  <KStep value={decoGhost.scale} min={30} max={200} step={5} suffix="%" onChange={v => setDecoGhost({ ...decoGhost, scale: v })} />
+                  <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+                    onClick={() => setDecoGhost({ ...DEFAULT_DECO_GHOST })}>위치·크기 처음대로</button>
+                </div>
+                <ScriptPlacer script={decoScript} scriptText={decoScript?.text?.trim() || name.trim()}
+                  scriptFont={decoScript?.fontId ? deVarFamily(familyOf(decoScript.fontId) ?? '') : deVarFamily(familyOf(fontId) ?? '')}
+                  ghost={name.trim().toUpperCase()} ghostPos={decoGhost} ghostFont={deVarFamily(familyOf(decoFontId || fontId) ?? '')}
+                  ghostVw={relTitleVw(name.trim().toUpperCase())}
+                  accent={themeMode === 'custom' ? themeColor : '#7fd6d0'}
+                  onMoveGhost={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
+                  onMoveScript={(x, y) => decoScript && setDecoScript({ ...decoScript, x, y })} />
+                {(headerUrl || (!headerRemoved && initHeaderId)) && (
+                  <>
+                    <p className="hint" style={{ margin: 0 }}>배경 이미지를 등록했을 때 — 이미지를 어디에 쓸지 고릅니다</p>
+                    <div className="mini-seg">
+                      <button type="button" className={decoBg === 'full' ? 'on' : ''} onClick={() => setDecoBg('full')}>이미지 전체 배경 + 흰색 장식 (기본)</button>
+                      <button type="button" className={decoBg === 'band' ? 'on' : ''} onClick={() => setDecoBg('band')}>큰 판 안에 이미지 + 포인트색 장식</button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
         )}
 

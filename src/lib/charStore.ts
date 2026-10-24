@@ -596,6 +596,16 @@ export interface Relation {
   /** 상세 하단 좌측 칸 — 역극 목록(기본) / 갤러리 (v6.0). 갤러리면 작은 썸네일로 보이고 더보기에서 보기·편집 */
   /** 상세 화면 구성 — 스테이지(스크롤 인터랙티브, 기본) / 클래식(예전 구성) */
   detailLayout?: 'stage' | 'classic';
+  /** 스테이지 배경 장식 (캐릭터 상세와 같은 설정) — 'off'면 끔. 큰 도형은 왼쪽 위가 둥근 판 */
+  deco?: 'off';
+  /** 배경 이미지를 등록했을 때 어디에 쓸지 — 비우면 전체 배경, 'band'면 큰 도형 안 */
+  decoBg?: 'band';
+  /** 가운데 자관명(큰 글씨) 폰트 — 비우면 자관 이름 폰트 */
+  decoFontId?: string;
+  /** 필기체 글씨 겹치기 */
+  decoScript?: DecoScript;
+  /** 가운데 자관명(큰 글씨) 위치·크기 — 비우면 기본 배치 */
+  decoGhost?: DecoGhost;
   leftBoard?: 'rp' | 'gallery';
   /** 자관 갤러리에 연동해 보일 캐릭터 갤러리 태그 (v6.2) — 이 자관 멤버 캐릭터의 갤러리 묶음 중 이 태그가 달린 것이 함께 보인다 */
   galleryTagLinks?: string[];

@@ -472,10 +472,12 @@ export default function RelDetailPage() {
   const hdrIdForBg = (isBaseAu ? rel?.headerImgId : au?.headerImgId) ?? undefined;
   const hdrBlurForBg = (isBaseAu ? rel?.headerBlur : au?.headerBlur) ?? 16;
   const hdrBgUrl = useBlobUrl(hdrIdForBg);
+  // 「장식 안에 이미지」를 고르면 이미지는 스테이지의 큰 도형 안에만 쓰고 페이지 전체 배경은 깔지 않는다
+  const decoBand = stageOn && rel?.deco !== 'off' && rel?.decoBg === 'band' && !!hdrBgUrl;
   useEffect(() => {
-    setPageBgImage(hdrBgUrl ?? null, hdrBlurForBg);
+    setPageBgImage(decoBand ? null : (hdrBgUrl ?? null), hdrBlurForBg);
     return () => setPageBgImage(null);
-  }, [hdrBgUrl, hdrBlurForBg, setPageBgImage]);
+  }, [hdrBgUrl, hdrBlurForBg, decoBand, setPageBgImage]);
 
   const auArts = (isBaseAu ? rel?.arts : au?.arts) ?? [];
   // AU별 이름/본문 폰트·전신 앞뒤 (v2.0 사용자 제보 — 분리가 안 되던 것) — 미지정이면 자관 기본
@@ -1016,6 +1018,15 @@ export default function RelDetailPage() {
           tc={effThemeColor || 'var(--accent,#7fd6d0)'}
           onGo={href => router.push(href)}
           auSlot={showAuList ? auListEl(false) : undefined}
+          deco={{
+            off: rel.deco === 'off',
+            image: hdrBgUrl ?? undefined, band: rel.decoBg === 'band', blur: hdrBlurForBg,
+            titleFont: rel.decoFontId ? familyOf(rel.decoFontId) : undefined,
+            ghostPos: rel.decoGhost,
+            script: rel.decoScript
+              ? { ...rel.decoScript, text: rel.decoScript.text?.trim() || ((!isBaseAu && au?.name?.trim()) || rel.name), font: familyOf(rel.decoScript.fontId) ?? undefined }
+              : undefined,
+          }}
           admin={isAdmin ? {
             editLabel: isBaseAu ? 'EDIT' : `EDIT ${au!.label}`,
             onEdit: () => router.push(`/rels/${rel.id}/edit${isBaseAu ? '' : `?au=${au!.id}`}`),

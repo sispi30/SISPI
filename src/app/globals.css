@@ -3381,3 +3381,12 @@ body.rs-full .rs-sticky{top:-58px}
 .rs-ring{display:none}
 .rs-adm{position:absolute;right:3.4vw;top:calc(11.5vh + 30px);z-index:6;width:auto;margin:0;justify-content:flex-end;color:#fff;--sub:rgba(255,255,255,.7);--ink:#fff;opacity:calc(1 - var(--k1)*2.4)}
 .rs-mid{width:min(30vw,400px)}
+
+/* 자관 스테이지 — 배경 장식 설정(큰 글씨 위치·필기체·이미지 전체 배경) */
+.rs-title.is-pos{left:var(--rs-gx,50%);right:auto;top:var(--rs-gy,30%);width:max-content;
+  font-size:calc(min(var(--rs-fs),calc(64vh / var(--rs-ln,1) * 1.05)) * var(--rs-gs,1));
+  transform:translate(-50%,calc(-50% + var(--k1)*-64vh))}
+.rs-bgimg{position:absolute;inset:-24px;z-index:0;background-size:cover;background-position:center;pointer-events:none}
+.rs-bgimg::after{content:"";position:absolute;inset:0;background:rgba(6,8,12,.45)}
+.rs-scr{z-index:2;opacity:calc(1 - var(--k1)*1.6)}
+@media (max-width:960px){.rs-scr{display:block}}
