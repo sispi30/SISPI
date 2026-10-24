@@ -359,6 +359,19 @@ function DesignPane() {
         <div className="l"><b>배경 혜성 파티클</b><small>배경 위로 혜성이 지나가고 별이 반짝입니다 — 콘텐츠 뒤에서만 움직입니다</small></div>
         <KToggle checked={!!state.vars.bgComet} onChange={v => setVar('bgComet', v)} />
       </div>
+      {state.vars.bgComet && (
+        <div className="set-row" style={{ flexWrap: 'wrap' }}>
+          <div className="l"><b>혜성 색</b><small>메인과 메인 외 화면의 색을 따로 — 비우면 기본 흰빛, 메인 외 화면은 비우면 메인 색을 따라갑니다</small></div>
+          <div className="cp-group" style={{ alignItems: 'center' }}>
+            <CP label="메인" k="cometColor" def="#ffffff" />
+            {state.vars.cometColor && <button className="btn btn-ghost" style={{ height: 30, padding: '0 10px', fontSize: 10.5 }}
+              onClick={() => setVar('cometColor', undefined)}>초기화</button>}
+            <CP label="메인 외" k="cometSubColor" def={state.vars.cometColor || '#ffffff'} />
+            {state.vars.cometSubColor && <button className="btn btn-ghost" style={{ height: 30, padding: '0 10px', fontSize: 10.5 }}
+              onClick={() => setVar('cometSubColor', undefined)}>초기화</button>}
+          </div>
+        </div>
+      )}
 
       {/* 카드 색 — 패널·게시판 리스트·필터 등 공통 (v1.9) */}
       <div className="set-row">

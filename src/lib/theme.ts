@@ -21,6 +21,8 @@ export interface ThemeVars {
   subBgG1?: string; subBgG2?: string; subBgAngle?: number;
   subBgImageId?: string;
   bgBlurSub?: number;        // 메인 외 화면의 배경 블러 px — 없으면 bgBlur와 같다
+  cometColor?: string;       // 혜성 파티클 색 (메인) — 비우면 기본 흰빛
+  cometSubColor?: string;    // 메인 외 화면의 혜성 색 — 비우면 메인과 같음
   bgComet?: boolean;         // 배경 혜성 파티클 켜기 (기본 꺼짐)
   // 카드(패널·게시판 리스트·필터 등) 배경/글씨 (v1.9) — 보조 글씨색은 글씨색에서 자동 파생
   cardBg?: string; cardFg?: string;

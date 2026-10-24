@@ -4,6 +4,7 @@
 // 캔버스 하나만 쓰고 pointer-events:none · 탭이 숨겨지면 rAF가 멈춰 부담이 없다.
 // 시스템의 「동작 줄이기」 설정에서는 그리지 않는다.
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '@/lib/ThemeProvider';
 
 interface Comet { x: number; y: number; vx: number; vy: number; ang: number; tail: number; age: number; life: number; head: number }
@@ -15,6 +16,16 @@ const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 export function CometLayer() {
   const { state } = useTheme();
   const on = !!state.vars.bgComet;
+  const pathname = usePathname();
+  // 메인(/)과 메인 외 화면의 색을 따로 — 비워 두면 기본 흰빛 (메인 외는 메인 색을 따른다)
+  const wantHex = pathname === '/' ? state.vars.cometColor : (state.vars.cometSubColor || state.vars.cometColor);
+  const tint = useRef<[number, number, number] | null>(null);
+  tint.current = (() => {
+    const m = /^#?([0-9a-f]{6})$/i.exec((wantHex ?? '').trim());
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  })();
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -25,6 +36,11 @@ export function CometLayer() {
     const ctx = cv.getContext('2d');
     if (!ctx) return;
 
+    // 지정한 색이 있으면 모든 빛에 그 색을, 없으면 원래의 흰빛
+    const P = (r: number, g: number, b: number, al: number) => {
+      const t = tint.current;
+      return t ? `rgba(${t[0]},${t[1]},${t[2]},${al})` : `rgba(${r},${g},${b},${al})`;
+    };
     let W = 0, H = 0, dpr = 1;
     const comets: Comet[] = [];
     let glints: Glint[] = [];
@@ -64,16 +80,16 @@ export function CometLayer() {
       const ux = Math.cos(c.ang), uy = Math.sin(c.ang);
       const tx = c.x - ux * c.tail, ty = c.y - uy * c.tail;
       const g = ctx.createLinearGradient(tx, ty, c.x, c.y);
-      g.addColorStop(0, 'rgba(235,240,255,0)');
-      g.addColorStop(1, `rgba(235,242,255,${0.5 * a})`);
+      g.addColorStop(0, P(235,240,255,0));
+      g.addColorStop(1, P(235,242,255,0.5 * a));
       ctx.strokeStyle = g; ctx.lineWidth = 1; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(c.x, c.y); ctx.stroke();
       // 머리 — 작은 빛무리
       const r = c.head * 5;
       const h = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r);
-      h.addColorStop(0, `rgba(255,255,255,${0.95 * a})`);
-      h.addColorStop(0.35, `rgba(220,232,255,${0.45 * a})`);
-      h.addColorStop(1, 'rgba(220,232,255,0)');
+      h.addColorStop(0, P(255,255,255,0.95 * a));
+      h.addColorStop(0.35, P(220,232,255,0.45 * a));
+      h.addColorStop(1, P(220,232,255,0));
       ctx.fillStyle = h; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, 6.283); ctx.fill();
     };
 
@@ -86,7 +102,7 @@ export function CometLayer() {
       for (const d of dots) {
         d.ph += d.sp * dt;
         const a = 0.15 + 0.6 * (0.5 + 0.5 * Math.sin(d.ph * 2));
-        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.fillStyle = P(255,255,255,a);
         ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283); ctx.fill();
       }
 
@@ -99,9 +115,9 @@ export function CometLayer() {
         if (a < 0.02) continue;
         ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(-0.55);
         const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, g.len);
-        gr.addColorStop(0, `rgba(255,255,255,${a})`);
-        gr.addColorStop(0.4, `rgba(225,235,255,${a * 0.4})`);
-        gr.addColorStop(1, 'rgba(225,235,255,0)');
+        gr.addColorStop(0, P(255,255,255,a));
+        gr.addColorStop(0.4, P(225,235,255,a * 0.4));
+        gr.addColorStop(1, P(225,235,255,0));
         ctx.fillStyle = gr; ctx.scale(1, 0.32);
         ctx.beginPath(); ctx.arc(0, 0, g.len, 0, 6.283); ctx.fill();
         ctx.restore();
