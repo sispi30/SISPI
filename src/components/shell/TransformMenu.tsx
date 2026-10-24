@@ -209,11 +209,12 @@ export function TransformMenu() {
   const menuFam = cfg.menuFontId ? familyOf(cfg.menuFontId) : undefined;
   const fontVars: React.CSSProperties = {
     ...(menuFam ? { ['--tf-font' as string]: deVarFamily(menuFam) } : {}),
-    ['--tf-menu-fs' as string]: `${cfg.menuFontSize}px`,
+    ...(cfg.menuFontWeight ? { ['--tf-fw' as string]: String(cfg.menuFontWeight) } : {}),
+    ['--tf-menu-fs' as string]: `${+(cfg.menuFontSize * (cfg.menuFontScale ?? 100) / 100).toFixed(2)}px`,
     ['--tf-menu-fg' as string]: cfg.menuFontColor || 'var(--top-fg)',
     ['--tf-menu-hv' as string]: cfg.menuHoverColor || 'var(--top-hv)',
     ['--tf-menu-ls' as string]: `${cfg.menuLetterSpacing}px`,
-    ['--tf-sub-fs' as string]: `${cfg.subFontSize}px`,
+    ['--tf-sub-fs' as string]: `${+(cfg.subFontSize * (cfg.menuFontScale ?? 100) / 100).toFixed(2)}px`,
     ['--tf-sub-align' as string]: cfg.subAlign ?? 'left',
     ['--tf-sub-fg' as string]: cfg.subFontColor || 'var(--dd-fg)',
     ['--tf-sub-hv' as string]: cfg.subHoverColor || 'var(--accent)',
@@ -231,7 +232,7 @@ export function TransformMenu() {
   if (cfg.positionType === 'static') {
     return (
       <nav
-        className={`gnb tf-static${lineMode ? ' tf-line' : ''}`}
+        className={`gnb tf-static${lineMode ? ' tf-line' : ''}${cfg.menuFontWeight ? ' tf-fw' : ''}`}
         style={{
           ...fontVars,
           display: 'flex', flexDirection: cfg.direction, justifyContent: cfg.justify,
@@ -279,7 +280,7 @@ export function TransformMenu() {
         <img className="tf-logo" src={logoUrl} alt="" style={{ width: cfg.logoWidth }} onClick={() => nav('/')} />
       )}
       <div
-        className={`tf-items${lineMode ? ' tf-line' : ''}`}
+        className={`tf-items${lineMode ? ' tf-line' : ''}${cfg.menuFontWeight ? ' tf-fw' : ''}`}
         style={{
           ...fontVars,
           display: 'flex', flexDirection: cfg.direction, justifyContent: cfg.justify,

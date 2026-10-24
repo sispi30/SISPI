@@ -3184,6 +3184,12 @@ function MenuDesignPane() {
               <KSelect minWidth={140} value={cfg.menuFontId || ''} onChange={v => patch({ menuFontId: v })}
                 options={[{ value: '', label: '기본 글꼴' },
                   ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
+              <div className="mini-seg">
+                {([[undefined, '기본'], [300, '가늘게'], [400, '보통'], [700, '굵게']] as [number | undefined, string][]).map(([w, lb]) => (
+                  <button key={lb} className={cfg.menuFontWeight === w ? 'on' : ''} onClick={() => patch({ menuFontWeight: w })}>{lb}</button>
+                ))}
+              </div>
+              <KStep value={cfg.menuFontScale ?? 100} min={80} max={130} step={5} suffix="%" onChange={v => patch({ menuFontScale: v })} />
               <span className="cp-lb">자간</span>
               <KStep value={cfg.menuLetterSpacing} min={-2} max={6} step={0.5} suffix="px" onChange={v => patch({ menuLetterSpacing: v })} />
               <TfColor label="글자색" value={cfg.menuFontColor} fallback="#aab0ba" patch={patch} k="menuFontColor" />

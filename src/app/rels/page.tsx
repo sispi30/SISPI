@@ -27,7 +27,7 @@ function PairCard({ rel, no, locked, priv, members, onOpen, dragProps }: {
   const ref = locked ? undefined : (rel.thumbId ?? rel.arts?.[0]);
   const tag = rel.cp === 'ncp' ? 'NCP' : rel.cp === 'cp' ? 'CP' : rel.kind === 'multi' ? 'MULTI' : 'PAIR';
   return (
-    <RxCard no={no} fileRef={ref} crop={rel.thumbId ? rel.thumbCrop : undefined} ph={rel.thumbClass}
+    <RxCard adaptive no={no} fileRef={ref} crop={rel.thumbId ? rel.thumbCrop : undefined} ph={rel.thumbClass}
       phLabel={priv ? '나만보기' : locked ? '멤버공개' : 'NO ART'} tc={relThemeColor(rel, c1)}
       tag={tag} meta={`${pad2(rel.members.length)} MEMBERS`}
       small={locked ? '' : rel.catchphrase.replace(/ /g, '')} title={rel.name}

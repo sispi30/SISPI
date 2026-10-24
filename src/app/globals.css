@@ -3178,3 +3178,22 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .rx-card.rx-lt .rx-bot h3{color:#16191f;text-shadow:none;border-bottom-color:rgba(20,24,32,.22)}
 .rx-card.rx-lt .rx-bot small{color:rgba(20,24,32,.62)}
 .rx-card.rx-lt .rx-who{color:rgba(20,24,32,.82)}
+
+/* 메뉴 위젯 글자 굵기 (지정했을 때만) */
+.tf-fw button,.tf-fw button span,.tf-fw .tf-sub button{font-weight:var(--tf-fw)!important}
+
+/* 감상 리스트 카드 (.rv-card) — 전체 그림 + 오른쪽 아래 글자 */
+.rv-card{position:relative;container-type:inline-size;overflow:hidden;aspect-ratio:3/4;cursor:var(--cur-pointer,pointer);color:#fff;transition:transform .25s;animation:rxFade .6s ease calc(var(--i)*.07s) both}
+.rv-card:hover{transform:translateY(-4px)}
+.rv-art{position:absolute;inset:0;overflow:hidden}
+.rv-art .ph{position:absolute;inset:0}
+.rv-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 42%,rgba(6,8,11,.88) 100%)}
+.rv-txt{position:absolute;left:6cqw;right:6cqw;bottom:6cqw;display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:0}
+.rv-no{font-family:var(--serif,Georgia,serif);font-weight:400;font-size:max(26px,16cqw);line-height:1;letter-spacing:-.01em;margin-bottom:2.5cqw}
+.rv-txt h3{font-size:max(13px,6.4cqw);font-weight:800;line-height:1.2;word-break:keep-all;margin-bottom:2cqw}
+.rv-tags{display:flex;flex-direction:column;align-items:flex-end;font-size:max(10px,3.6cqw);line-height:1.5;opacity:.8}
+.rv-lb{display:block;margin-top:9cqw;font-weight:700;font-size:max(8.5px,3cqw);letter-spacing:.14em;text-transform:uppercase;opacity:.55}
+.rv-sub{display:block;font-size:max(9.5px,3.3cqw);opacity:.7;margin-top:1cqw}
+.rv-ic{display:flex;gap:4cqw;margin-top:4cqw;opacity:.75}
+.rv-card.rv-lt{color:#16191f}
+.rv-card.rv-lt .rv-shade{background:linear-gradient(180deg,rgba(255,255,255,0) 42%,rgba(255,255,255,.92) 100%)}

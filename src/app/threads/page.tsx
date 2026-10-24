@@ -16,7 +16,7 @@ import {
 import { useFonts } from '@/lib/fontStore';
 import { putBlob, BlobImg, useBlobUrl } from '@/lib/blobStore';
 import { CroppedBlobImg } from '@/components/ui/CropEditor';
-import { RxCard } from '@/components/rels/RxCard';
+import { RvCard } from '@/components/threads/RvCard';
 import { SearchBar, KTextarea, KInput, KSelect } from '@/components/ui/Kit';
 import { GuestIdBar } from '@/components/ui/GuestId';
 import { Modal, useConfirmDelete } from '@/components/ui/Modal';
@@ -298,12 +298,11 @@ function ThreadsPageInner() {
         /* 리스트 보기 — 포스터 카드 그리드 (한 줄 5개, 3:4) */
         <div className="g5">
           {visible.map((w, i) => (
-            <RxCard key={w.id} no={i + 1} anim={i % 10}
+            <RvCard key={w.id} no={i + 1} anim={i % 10}
               fileRef={w.posterId} crop={w.posterCrop} ph={w.ph}
-              tc="var(--accent,#7fd6d0)" tag={catLabel(cats, w.catId)} meta={`글 ${String(w.posts.length).padStart(2, '0')}`}
-              fileText={'REVIEW\nFILE'} small={fmtMD(lastDate(w))} title={w.title}
-              who={w.author ? [{ name: `${w.author}${w.authorRole ? ' ' + w.authorRole : ''}`, color: 'var(--accent,#7fd6d0)' }] : []}
-              style={{ aspectRatio: '3/4' }}
+              title={w.title}
+              tags={[catLabel(cats, w.catId), w.author].filter(Boolean) as string[]}
+              label={`${catLabel(cats, w.catId)} · REVIEW`} sub={`글 ${w.posts.length}개 · ${fmtMD(lastDate(w))}`}
               onClick={() => { setSelId(w.id); setView('thread'); }}
               /* 우클릭 → 메뉴 → 삭제 확인 모달 (v2.0 사용자 요청) — 리스트 보기에는 삭제 버튼이 없었다 */
               onContextMenu={(e: React.MouseEvent) => { if (!isAdmin) return; e.preventDefault(); setWCtx({ x: e.clientX, y: e.clientY, id: w.id }); }} />
