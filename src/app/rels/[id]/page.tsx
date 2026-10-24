@@ -937,7 +937,7 @@ export default function RelDetailPage() {
       {showAuList && !heroDuo && !stageOn && auListEl(false)}
 
       {/* 관리자 액션 — 기본은 좌상단, 2인 전신 히어로에서는 BGM 플레이어 위 우하단으로 (v4.6 사용자 요청) */}
-      {isAdmin && (
+      {isAdmin && !stageOn && (
         <div className={`rel-admin-actions ${heroDuo && !stageOn ? 'rel-admin-hero' : ''}`}>
           {/* AU 선택 중이면 그 AU의 일러·캐치프레이즈를 편집 (v1.9) */}
           <button className="btn btn-dark" style={{ height: 30, padding: '0 13px', fontSize: 11 }}
@@ -1016,6 +1016,12 @@ export default function RelDetailPage() {
           tc={effThemeColor || 'var(--accent,#7fd6d0)'}
           onGo={href => router.push(href)}
           auSlot={showAuList ? auListEl(false) : undefined}
+          admin={isAdmin ? {
+            editLabel: isBaseAu ? 'EDIT' : `EDIT ${au!.label}`,
+            onEdit: () => router.push(`/rels/${rel.id}/edit${isBaseAu ? '' : `?au=${au!.id}`}`),
+            deleteLabel: isBaseAu ? 'DELETE' : `DELETE ${au!.label}`,
+            onDelete: () => (isBaseAu ? setDelAsk(true) : setAuDelAsk(au!.id)),
+          } : undefined}
         />
       )}
 

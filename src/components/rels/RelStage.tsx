@@ -7,6 +7,7 @@
 // 스크롤은 #appMain 이 한다 — 진행도(0~1)를 --p 로 내려 주고, 움직임은 전부 CSS 가 계산한다.
 import React, { useEffect, useRef } from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
+import { StageDeco } from '@/components/chars/StageDeco';
 
 export interface RsMember {
   id: string; name: string; color: string; href: string;
@@ -30,10 +31,12 @@ function Fig({ refId }: { refId: string }) {
   return <img className="rs-fig" src={url} alt="" draggable={false} />;
 }
 
-export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs, stats, tc, onGo, auSlot }: {
+export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs, stats, tc, onGo, auSlot, admin }: {
   name: string; fontFamily?: string; catchphrase?: string; cpLabel?: string;
   members: RsMember[]; figs: string[]; stats: RsStat[]; tc: string;
   onGo: (href: string) => void; auSlot?: React.ReactNode;
+  /** 관리 글씨(EDIT/DELETE) — 캐릭터 스테이지와 같은 작은 글씨 형태. 권한이 없으면 안 넘긴다 */
+  admin?: { editLabel: string; onEdit: () => void; deleteLabel?: string; onDelete?: () => void };
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const stk = useRef<HTMLDivElement>(null);
@@ -78,6 +81,10 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
   return (
     <div className="rs" ref={wrap} style={{ ['--rs-c' as string]: tc, ['--rs-fs' as string]: `${titleVw}vw`, ['--rs-pfs' as string]: `${pairVw}vw` } as React.CSSProperties}>
       <div className="rs-sticky" ref={stk}>
+        {/* 캐릭터 스테이지와 같은 배경 장식 — 가는 선·눈금·라벨·반짝이·뒤쪽 큰 반원 */}
+        <div className="rs-deco" style={{ ['--accent' as string]: tc } as React.CSSProperties}>
+          <StageDeco mode="accent" tone="dark" ink="light" name={name} colorHex={tc} />
+        </div>
         <div className="rs-ring" />
         <i className="rs-bar t" aria-hidden="true" /><i className="rs-bar b" aria-hidden="true" />
         <i className="rs-crn tl" aria-hidden="true" /><i className="rs-crn tr" aria-hidden="true" /><i className="rs-crn bl" aria-hidden="true" /><i className="rs-crn br" aria-hidden="true" />
@@ -99,6 +106,12 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
             <button type="button" className="rs-go" onClick={() => onGo(m.href)}>PROFILE →</button>
           </div>
         ))}
+        {admin && (
+          <div className="cs-tabs cs-admin rs-adm">
+            <button type="button" onClick={admin.onEdit}><b>{admin.editLabel}</b></button>
+            {admin.onDelete && <button type="button" onClick={admin.onDelete}><b>{admin.deleteLabel ?? 'DELETE'}</b></button>}
+          </div>
+        )}
         <div className="rs-mid">
           <small>INFO.</small><i />
           <b>{cpLabel ? `PAIR · ${cpLabel}` : 'PAIR'}</b>

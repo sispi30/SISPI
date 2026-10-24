@@ -3375,3 +3375,9 @@ body.rs-full .rs-sticky{top:-58px}
 .rs-mid p{font-size:clamp(10px,.85vw,12px);line-height:1.8;letter-spacing:.1em;opacity:.8;word-break:keep-all}
 .rs-hint{left:50%;right:auto;transform:translateX(-50%);bottom:5vh}
 @media (max-width:900px){.rs-side{width:36vw}.rs-spec,.rs-kw{display:none}.rs-mid{top:52vh;width:44vw}.rs-figs{gap:8vw}.rs-fig{max-width:44vw}}
+
+/* 스테이지 배경 장식(StageDeco)과 관리 글씨 자리 */
+.rs-deco{position:absolute;inset:0;z-index:0;pointer-events:none;--cs-px:clamp(32px,4vw,96px);--cs-top:clamp(128px,12.5vh,150px);--cs-floor:clamp(36px,6vh,64px);opacity:calc(1 - var(--k4)*1.2)}
+.rs-ring{display:none}
+.rs-adm{position:absolute;right:3.4vw;top:calc(11.5vh + 30px);z-index:6;width:auto;margin:0;justify-content:flex-end;color:#fff;--sub:rgba(255,255,255,.7);--ink:#fff;opacity:calc(1 - var(--k1)*2.4)}
+.rs-mid{width:min(30vw,400px)}
