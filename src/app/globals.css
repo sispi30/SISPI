@@ -3233,3 +3233,11 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 /* 캐릭터 목록 — 서브텍스트는 호버했을 때만 (자리는 그대로 두어 글자가 밀리지 않게) */
 .chars-grid .rx-bot small{opacity:0;transform:translateY(4px);transition:opacity .3s,transform .3s}
 .chars-grid .rx-card:hover .rx-bot small{opacity:1;transform:none}
+
+/* 캐릭터 목록 — 상단 글자(FILE 표기·보조 글씨)도 밝은 배경이면 어둡게 (그림자 없음), 호버 중엔 다시 흰색 */
+.chars-grid .rx-card.rx-lt .rx-file{color:rgba(20,24,32,.7)}
+.chars-grid .rx-card.rx-lt .rx-meta em{color:rgba(20,24,32,.6)}
+.chars-grid .rx-card.rx-lt:hover .rx-no{color:#fff;text-shadow:0 2px 2px rgba(0,0,0,.5)}
+.chars-grid .rx-card.rx-lt:hover .rx-file{color:rgba(255,255,255,.75)}
+.chars-grid .rx-card.rx-lt:hover .rx-meta em{color:rgba(255,255,255,.6)}
+.chars-grid .rx-card.rx-lt .rx-no,.chars-grid .rx-card.rx-lt .rx-file,.chars-grid .rx-card.rx-lt .rx-meta em{transition:color .3s,text-shadow .3s}
