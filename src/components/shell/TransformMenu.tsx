@@ -218,6 +218,7 @@ export function TransformMenu() {
     ['--tf-sub-align' as string]: cfg.subAlign ?? 'left',
     ['--tf-sub-fg' as string]: cfg.subFontColor || 'var(--dd-fg)',
     ['--tf-sub-hv' as string]: cfg.subHoverColor || 'var(--accent)',
+    ['--tf-sub-hvbg' as string]: cfg.subHoverBg || 'var(--dd-hv)',
     ['--tf-sub-bg' as string]: cfg.subBgColor || 'var(--dd-bg)',
     ['--tf-sub-radius' as string]: `${cfg.subBorderRadius}px`,
     ['--tf-sub-shadow' as string]: cfg.subShadow ? 'var(--sh-dd)' : 'none',

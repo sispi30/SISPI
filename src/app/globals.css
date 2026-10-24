@@ -2213,7 +2213,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .gnb.tf-static .tf-grp.open .tf-sub{display:block;animation:fade .15s}
 .gnb.tf-static .tf-sub button{display:block;width:100%;text-align:var(--tf-sub-align,left);padding:8px 12px;border-radius:7px;transition:.13s;color:var(--tf-sub-fg);font-size:var(--tf-sub-fs);
   -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;text-shadow:var(--tf-item-sh,none)}   /* 메인 메뉴와 같은 항목 외곽선·그림자 */
-.gnb.tf-static .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--dd-hv)}
+.gnb.tf-static .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--tf-sub-hvbg,var(--dd-hv))}
 
 /* fixed: 화면에 고정된 독립 캡슐 — 드래그로 이동, 자체 배경/로고/버튼 */
 .tf-fixed{display:flex;align-items:center;gap:8px;z-index:65}
@@ -2240,7 +2240,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-fixed .tf-grp.open .tf-sub{display:block;animation:fade .15s}
 .tf-fixed .tf-sub button{display:block;width:100%;text-align:var(--tf-sub-align,left);padding:7px 10px;border-radius:7px;color:var(--tf-sub-fg);font-size:var(--tf-sub-fs);
   -webkit-text-stroke:var(--tf-item-ol,0px) var(--tf-item-olc,transparent);paint-order:stroke fill;stroke-linejoin:round;text-shadow:var(--tf-item-sh,none)}   /* 메인 메뉴와 같은 항목 외곽선·그림자 */
-.tf-fixed .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--dd-hv)}
+.tf-fixed .tf-sub button:hover{color:var(--tf-sub-hv);background:var(--tf-sub-hvbg,var(--dd-hv))}
 .tf-fixed .tf-login{font-size:11.5px;color:var(--tf-menu-fg,var(--top-fg));padding:6px 14px;border:1px solid var(--line-dark);border-radius:999px;white-space:nowrap;flex-shrink:0}
 .tf-fixed .tf-login:hover{color:var(--tf-menu-hv,var(--top-hv))}
 .tf-fixed .tf-admin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--tf-menu-fg,var(--top-fg));flex-shrink:0}

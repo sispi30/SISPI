@@ -3274,6 +3274,7 @@ function MenuDesignPane() {
                 <div className="l"><b>서브메뉴 배경</b></div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <TfColor label="배경색" value={cfg.subBgColor} fallback="#1c1f25" patch={patch} k="subBgColor" />
+                  <TfColor label="호버 박스" value={cfg.subHoverBg} fallback="#e3e7f3" patch={patch} k="subHoverBg" />
                   <span className="cp-lb">모서리</span>
                   <KStep value={cfg.subBorderRadius} min={0} max={30} step={1} suffix="px" onChange={v => patch({ subBorderRadius: v })} />
                   <KCheck label="그림자" checked={cfg.subShadow} onChange={v => patch({ subShadow: v })} />

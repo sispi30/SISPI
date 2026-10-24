@@ -79,6 +79,7 @@ export interface TransformMenuSettings {
   itemShadowColor: string;     // 비우면 검정
 
   // 서브메뉴 배경
+  subHoverBg: string;      // 서브메뉴 항목 호버 박스색 — 비우면 기존 연한 색
   subBgColor: string;      // 비우면 --dd-bg
   subBorderRadius: number;
   subShadow: boolean;
@@ -142,6 +143,7 @@ export const DEFAULT_TRANSFORM_MENU: TransformMenuSettings = {
   itemShadowColor: '',
 
   subBgColor: '',
+  subHoverBg: '',
   subBorderRadius: 10,
   subShadow: true,
 
