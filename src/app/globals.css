@@ -3184,10 +3184,9 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 
 /* 감상 리스트 카드 (.rv-card) — 전체 그림 + 오른쪽 아래 글자 */
 .rv-card{position:relative;container-type:inline-size;overflow:hidden;aspect-ratio:3/4;cursor:var(--cur-pointer,pointer);color:#fff;transition:transform .25s;animation:rxFade .6s ease calc(var(--i)*.07s) both}
-.rv-card:hover{transform:translateY(-4px)}
 .rv-art{position:absolute;inset:0;overflow:hidden}
 .rv-art .ph{position:absolute;inset:0}
-.rv-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 42%,rgba(6,8,11,.88) 100%)}
+.rv-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,8,11,0) 30%,rgba(6,8,11,.4) 52%,rgba(6,8,11,.88) 100%)}
 .rv-txt{position:absolute;left:6cqw;right:6cqw;bottom:6cqw;display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:0}
 .rv-no{font-family:var(--serif,Georgia,serif);font-weight:400;font-size:max(26px,16cqw);line-height:1;letter-spacing:-.01em;margin-bottom:2.5cqw}
 .rv-txt h3{font-size:max(13px,6.4cqw);font-weight:800;line-height:1.2;word-break:keep-all;margin-bottom:2cqw}
@@ -3196,4 +3195,18 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .rv-sub{display:block;font-size:max(9.5px,3.3cqw);opacity:.7;margin-top:1cqw}
 .rv-ic{display:flex;gap:4cqw;margin-top:4cqw;opacity:.75}
 .rv-card.rv-lt{color:#16191f}
-.rv-card.rv-lt .rv-shade{background:linear-gradient(180deg,rgba(255,255,255,0) 42%,rgba(255,255,255,.92) 100%)}
+.rv-card.rv-lt .rv-shade{background:linear-gradient(180deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.45) 52%,rgba(255,255,255,.92) 100%)}
+
+/* 감상 리스트 카드 호버 — 테두리가 그려지고, 그림이 천천히 확대·이동하며, 대각선이 한 번 지나간다 */
+.rv-card::before{content:"";position:absolute;inset:0;border:1px solid currentColor;opacity:0;z-index:3;pointer-events:none;transition:opacity .3s}
+.rv-card::after{content:"";position:absolute;top:-10%;bottom:-10%;left:-30%;width:1px;background:currentColor;opacity:0;z-index:3;pointer-events:none;transform:rotate(14deg)}
+.rv-card:hover::before{opacity:.85}
+.rv-card:hover::after{animation:rvSweep 1.1s cubic-bezier(.3,.6,.2,1) forwards}
+.rv-art > div:first-child{transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
+.rv-card:hover .rv-art > div:first-child{transform:scale(1.07) translateX(-1.5%)}
+.rv-txt{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.rv-card:hover .rv-txt{transform:translateY(-6px)}
+.rv-ic{transition:opacity .3s,transform .4s}
+.rv-card:hover .rv-ic{opacity:1;transform:translateY(-2px)}
+@keyframes rvSweep{0%{left:-30%;opacity:.7}100%{left:130%;opacity:0}}
+@media (prefers-reduced-motion:reduce){.rv-card,.rv-card *{transition:none!important;animation:none!important}}
