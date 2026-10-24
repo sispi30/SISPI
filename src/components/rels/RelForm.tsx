@@ -25,6 +25,7 @@ import type { PageBgm } from '@/lib/bgmStore';
 
 export interface RelFormValue {
   memberOrder?: string[];         // 다인관 멤버 순서(charId 순) — 상세 페이지에 이 순서로 보인다 (v6.7)
+  detailLayout?: 'stage' | 'classic';
   leftBoard?: 'rp' | 'gallery';   // 상세 하단 좌측 칸 — 역극(기본) / 갤러리 (v6.0)
   bgm?: PageBgm;             // 이 자관 페이지 전용 BGM (v5.9) — 없으면 홈페이지 BGM
   slug?: string;             // 페이지 주소 /rels/{slug} (v1.9 — 신규 등록 시, 비우면 자동 id)
@@ -348,6 +349,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   // 다인관 멤버 순서 (v6.7) — 설정 화면에서 드래그로 바꾼다. 상세 페이지에서는 직접 옮기지 않는다
   const isMultiRel = kind === 'multi' || (!!initial && !initial.kind && initial.members.length > 2);   // kind가 없는 옛 자관은 인원수로 판단
   const [memberOrder, setMemberOrder] = useState<string[]>(() => (initial?.members ?? []).map(m => m.charId));
+  const [detailLayout, setDetailLayout] = useState<'stage' | 'classic'>(initial?.detailLayout === 'classic' ? 'classic' : 'stage');
   const [leftBoard, setLeftBoard] = useState<'rp' | 'gallery'>(initial?.leftBoard === 'gallery' ? 'gallery' : 'rp');
   const [name, setName] = useState(initial?.name ?? '');
   // 페이지 주소 /rels/{slug} — 신규는 비우면 자동(id). 수정에서도 바꿀 수 있다 (v2.0 사용자 요청)
@@ -597,6 +599,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       qaHide: qaHide || undefined,
       linkBoard: linkBoard === 'session' ? 'session' : undefined,
       bgm: bgm && bgm.playlists.length ? bgm : undefined,
+      detailLayout: detailLayout === 'classic' ? 'classic' : undefined,
       leftBoard: leftBoard === 'gallery' ? 'gallery' : undefined,
       memberOrder: !isNew && !auId && isMultiRel ? memberOrder : undefined,
       fulls: pairMembers.length
@@ -1164,6 +1167,22 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   <div className="nm"><b>{memberNames?.[id] ?? id}</b></div>
                 </div>
               )} />
+          </div>
+        )}
+
+        {/* 상세 화면 구성 — 스테이지(스크롤 인터랙티브, 기본) / 클래식(예전 구성). 자관 전체 설정 */}
+        {!auObj && (
+          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+            <label className="k-label" style={{ margin: 0 }}>상세 페이지 구성</label>
+            <div className="mini-seg" style={{ justifySelf: 'start' }}>
+              <button type="button" className={detailLayout === 'stage' ? 'on' : ''} onClick={() => setDetailLayout('stage')}>스테이지</button>
+              <button type="button" className={detailLayout === 'classic' ? 'on' : ''} onClick={() => setDetailLayout('classic')}>클래식</button>
+            </div>
+            <p className="hint" style={{ margin: 0 }}>
+              {detailLayout === 'stage'
+                ? '캐릭터 스테이지처럼 큰 자관명 앞에 전신이 서고, 스크롤을 내리면 장면이 이어서 바뀝니다'
+                : '예전 구성 — 좌우 카드와 중앙 일러가 한 화면에 보입니다'}
+            </p>
           </div>
         )}
 

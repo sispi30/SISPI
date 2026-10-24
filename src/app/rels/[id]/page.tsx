@@ -23,6 +23,7 @@ import { isPlainSpec } from '@/lib/charRuleConfig';
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { putBlob } from '@/lib/blobStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
+import { RelStage } from '@/components/rels/RelStage';
 import { TrpgLog, TRPG_SEED, PlayRecord, PLAYLOG_SEED, recordRelIds } from '@/lib/galleryStore';
 import { RpRoom, RP_SEED } from '@/lib/rpStore';
 import { useFonts } from '@/lib/fontStore';
@@ -459,6 +460,8 @@ export default function RelDetailPage() {
   const isDuo = rel ? (rel.kind ? rel.kind === 'pair' : rel.members.length === 2) : false;
   // PC의 2인 전신 히어로(v4.x)는 PC에서만 — 모바일은 main의 카드형 구성 (v5.5)
   const heroDuo = isDuo && !isMob;
+  // 상세 화면 구성 — 기본은 스테이지(스크롤 인터랙티브 히어로), 자관 수정에서 클래식으로 되돌릴 수 있다
+  const stageOn = !!rel && rel.detailLayout !== 'classic';
   const au = rel?.aus.find(a => a.id === auId) ?? rel?.aus[0];
   // AU별 프로필 데이터 (v1.9) — base(원본)는 Relation 최상위, 그 외 AU는 aus 항목에 저장
   const isBaseAu = (au?.id ?? 'base') === 'base';
@@ -913,7 +916,7 @@ export default function RelDetailPage() {
   };
 
   return (
-    <section className="page page-rel-detail">
+    <section className={`page page-rel-detail${stageOn ? ' rs-on' : ''}`}>
       {/* 배경 이미지는 위(useEffect)에서 페이지 전체 배경으로 깐다 (v5.1) — 여기엔 배너가 없다.
           AU별 완전 분리 (v1.9 사용자 확정): AU는 자기 배경만 — base 것을 물려받지 않음.
           이미지가 없으면 아무것도 안 그리는 게 기본(v2.0) — 다만 자관 수정에서 배경 그라데이션을
@@ -931,11 +934,11 @@ export default function RelDetailPage() {
         );
       })()}
 
-      {showAuList && !heroDuo && auListEl(false)}
+      {showAuList && !heroDuo && !stageOn && auListEl(false)}
 
       {/* 관리자 액션 — 기본은 좌상단, 2인 전신 히어로에서는 BGM 플레이어 위 우하단으로 (v4.6 사용자 요청) */}
       {isAdmin && (
-        <div className={`rel-admin-actions ${heroDuo ? 'rel-admin-hero' : ''}`}>
+        <div className={`rel-admin-actions ${heroDuo && !stageOn ? 'rel-admin-hero' : ''}`}>
           {/* AU 선택 중이면 그 AU의 일러·캐치프레이즈를 편집 (v1.9) */}
           <button className="btn btn-dark" style={{ height: 30, padding: '0 13px', fontSize: 11 }}
             onClick={() => router.push(`/rels/${rel.id}/edit${isBaseAu ? '' : `?au=${au!.id}`}`)}>
@@ -980,6 +983,33 @@ export default function RelDetailPage() {
           } },
           { label: 'CANCEL', kind: 'ghost', onClick: () => setDelAsk(false) },
         ]} />
+
+      {/* 스테이지 — 큰 자관명 뒤 전신 → 스크롤하면 필름 띠·숫자 → 흰 패널(멤버·AU). 이어서 아래 기존 상세 내용 */}
+      {stageOn && (
+        <RelStage
+          name={(!isBaseAu && au?.name?.trim()) || rel.name}
+          fontFamily={familyOf(auFont)}
+          catchphrase={au?.catchphrase || rel.catchphrase}
+          cpLabel={auCpTag ? CP_LABEL[auCpTag] : undefined}
+          members={rel.members.map(m => {
+            const c = charOf(m.charId);
+            return { id: m.charId, name: c?.name ?? '—', color: c?.color ?? '#888', href: charHref(m.charId) };
+          })}
+          figs={(() => {
+            const fulls = (isDuo ? pairSlots.map(sl => sl?.charId) : rel.members.map(m => m.charId))
+              .map(cid => (cid ? fullRefOf(cid) : undefined)).filter((r): r is string => !!r);
+            return fulls.length ? fulls : auArts.slice(0, 1);
+          })()}
+          stats={[
+            { n: rel.members.length, label: 'MEMBERS' },
+            { n: auTimeline.length, label: 'TIMELINE' },
+            { n: rel.aus.length, label: 'AU' },
+          ]}
+          tc={effThemeColor || 'var(--accent,#7fd6d0)'}
+          onGo={href => router.push(href)}
+          auSlot={showAuList ? auListEl(false) : undefined}
+        />
+      )}
 
       <div className={`rel-hero ${heroDuo ? 'rel-hero-flat' : ''}`}>
         {isDuo && pairSlots[0] && (

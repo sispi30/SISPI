@@ -594,6 +594,8 @@ export interface Relation {
   /** 이 자관 페이지에서만 나오는 BGM (v5.9) — 캐릭터와 같은 방식 */
   bgm?: import('./bgmStore').PageBgm;
   /** 상세 하단 좌측 칸 — 역극 목록(기본) / 갤러리 (v6.0). 갤러리면 작은 썸네일로 보이고 더보기에서 보기·편집 */
+  /** 상세 화면 구성 — 스테이지(스크롤 인터랙티브, 기본) / 클래식(예전 구성) */
+  detailLayout?: 'stage' | 'classic';
   leftBoard?: 'rp' | 'gallery';
   /** 자관 갤러리에 연동해 보일 캐릭터 갤러리 태그 (v6.2) — 이 자관 멤버 캐릭터의 갤러리 묶음 중 이 태그가 달린 것이 함께 보인다 */
   galleryTagLinks?: string[];
