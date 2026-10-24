@@ -3241,3 +3241,6 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .chars-grid .rx-card.rx-lt:hover .rx-file{color:rgba(255,255,255,.75)}
 .chars-grid .rx-card.rx-lt:hover .rx-meta em{color:rgba(255,255,255,.6)}
 .chars-grid .rx-card.rx-lt .rx-no,.chars-grid .rx-card.rx-lt .rx-file,.chars-grid .rx-card.rx-lt .rx-meta em{transition:color .3s,text-shadow .3s}
+
+/* 갤러리·관계 썸네일 — 밝은 배경이면 상단 큰 숫자도 어둡게 + 흰 그림자 */
+.rx-card.rx-lt .rx-no{color:#16191f;text-shadow:0 2px 2px rgba(255,255,255,.7),0 0 8px rgba(255,255,255,.55)}
