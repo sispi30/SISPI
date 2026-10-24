@@ -8,7 +8,12 @@
 import React, { useEffect, useRef } from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
 
-export interface RsMember { id: string; name: string; color: string; href: string }
+export interface RsMember {
+  id: string; name: string; color: string; href: string;
+  /** 부제(이름 위 작은 글씨) · 키워드 배지 · 기본 정보 항목 · 컬러 팔레트 — 자관 수정/캐릭터 설정에서 정한 그대로 */
+  role?: string; kws?: string[]; specs?: { label: string; value: string }[]; gems?: { hex: string; label: string }[];
+  ta?: 'l' | 'c' | 'r';
+}
 export interface RsStat { n: number; label: string }
 
 /** 글자 폭 추정 — 한글·한자는 1em, 나머지는 0.62em. 줄 바꿈 없이 한 줄에 들어가는 글자 크기(vw)를 구한다 */
@@ -75,26 +80,34 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
       <div className="rs-sticky" ref={stk}>
         <div className="rs-ring" />
         <i className="rs-bar t" aria-hidden="true" /><i className="rs-bar b" aria-hidden="true" />
-        <ol className="rs-idx" aria-hidden="true">{['01', '02', '03', '04', '05', '06'].map((n, i) => <li key={n} className={i === 0 ? 'on' : ''}>{n}</li>)}</ol>
-        <div className="rs-tl" aria-hidden="true"><b>PAIR FILE</b><span>{cpLabel || 'RELATION'}</span><span>NO. {String(members.length).padStart(2, '0')}</span></div>
-        {catchphrase && <p className="rs-tp">{catchphrase}</p>}
-        <div className="rs-who">
-          {members.slice(0, 2).map((m, i) => (
-            <button key={m.id} type="button" className={i === 0 ? 'l' : 'r'} onClick={() => onGo(m.href)}>
-              <small>MEMBER {String(i + 1).padStart(2, '0')}</small><b>{m.name}</b><i style={{ background: m.color }} />
-            </button>
-          ))}
+        <i className="rs-crn tl" aria-hidden="true" /><i className="rs-crn tr" aria-hidden="true" /><i className="rs-crn bl" aria-hidden="true" /><i className="rs-crn br" aria-hidden="true" />
+        <div className="rs-head" aria-hidden="true"><span>{name} // PAIR FILE</span><span>{members.slice(0, 2).map(m => m.name).join(' × ')}</span></div>
+        {members.slice(0, 2).map((m, i) => (
+          <div key={m.id} className={`rs-side ${i === 0 ? 'l' : 'r'}${m.ta ? ` ta-${m.ta}` : ''}`}>
+            <small className="rs-role">{m.role || 'MEMBER'}</small>
+            <button type="button" className="rs-nm" onClick={() => onGo(m.href)}>{m.name}</button>
+            <div className="rs-meta">
+              {(m.gems ?? []).slice(0, 5).map((g, k) => <i key={k} className="rs-gem" title={g.label} style={{ background: g.hex }} />)}
+              <span>No./{String(i + 1).padStart(2, '0')}</span>
+            </div>
+            {!!m.specs?.length && (
+              <dl className="rs-spec">
+                {m.specs.slice(0, 4).map(sp => <React.Fragment key={sp.label}><dt>{sp.label}</dt><dd>{sp.value}</dd></React.Fragment>)}
+              </dl>
+            )}
+            {!!m.kws?.length && <div className="rs-kw">{m.kws.slice(0, 5).map(k => <span key={k}>{k}</span>)}</div>}
+            <button type="button" className="rs-go" onClick={() => onGo(m.href)}>PROFILE →</button>
+          </div>
+        ))}
+        <div className="rs-mid">
+          <small>INFO.</small><i />
+          <b>{cpLabel ? `PAIR · ${cpLabel}` : 'PAIR'}</b>
+          <div className="rs-mt">[ {members.slice(0, 2).map(m => m.name).join(' × ') || name} ]</div>
+          {catchphrase && <p>{catchphrase}</p>}
         </div>
-        <div className="rs-rn" aria-hidden="true">{roman}</div>
-        <div className="rs-year" aria-hidden="true">[ {String(members.length).padStart(2, '0')} MEMBERS ]</div>
-        <div className="rs-dots" aria-hidden="true" />
         <h1 className="rs-title" style={{ fontFamily, ['--rs-ln' as string]: lines.length } as React.CSSProperties}>{lines.map((l, i) => <span key={i}>{l}</span>)}</h1>
         <div className="rs-band" aria-hidden="true" />
         {figs.length > 0 && <div className="rs-figs">{figs.slice(0, 2).map(f => <Fig key={f} refId={f} />)}</div>}
-        <div className="rs-info">
-          <small className="rs-lab">{name} // STORY</small>
-          {cpLabel && <span className="rs-cp">{cpLabel}</span>}
-        </div>
         <div className="rs-hint">
           <button type="button" className="rs-pill" onClick={goDown}>VIEW STORY <b>↗</b></button>
           <span className="rs-badge" aria-hidden="true"><em>{cpLabel || 'PAIR'}</em></span>

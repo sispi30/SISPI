@@ -991,9 +991,17 @@ export default function RelDetailPage() {
           fontFamily={familyOf(auFont)}
           catchphrase={au?.catchphrase || rel.catchphrase}
           cpLabel={auCpTag ? CP_LABEL[auCpTag] : undefined}
-          members={rel.members.map(m => {
+          members={(isDuo ? pairSlots.filter((x): x is RelMember => !!x) : rel.members).map(m => {
             const c = charOf(m.charId);
-            return { id: m.charId, name: c?.name ?? '—', color: c?.color ?? '#888', href: charHref(m.charId) };
+            return {
+              id: m.charId, name: c?.name ?? '—', color: c?.color ?? '#888', href: charHref(m.charId),
+              // 전신 위 배지와 같은 자료 — 부제·키워드·기본 정보 항목·컬러 팔레트 (자관/캐릭터 설정 그대로)
+              role: c?.sub || undefined,
+              kws: m.keywords,
+              specs: (c?.specs ?? []).filter(isPlainSpec).map(sp => ({ label: sp.label, value: sp.value })),
+              gems: (c?.colors ?? m.palette ?? []).map(g => ({ hex: g.hex, label: g.label })),
+              ta: (m.badgeTextAlign ? m.badgeTextAlign[0] : undefined) as 'l' | 'c' | 'r' | undefined,
+            };
           })}
           figs={(() => {
             const fulls = (isDuo ? pairSlots.map(sl => sl?.charId) : rel.members.map(m => m.charId))
