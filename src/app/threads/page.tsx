@@ -3,9 +3,9 @@
 // 보기 2종(타래/리스트, 기본 보기는 환경설정) · 분류 필터 · 작품명 검색 · 이어쓰기 컴포저
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { useSectionParam, filterSection, sectionSetter, secQuery, sectionHref } from '@/lib/sectionStore';
+import { MAIN_SEC, useSectionParam, filterSection, sectionSetter, secQuery, sectionHref } from '@/lib/sectionStore';
 import {
   useLocalList, newId, fmtDate, Comment,
   CommentRow, COMMENT_KEY, COMMENT_SEED, commentsFor,
@@ -94,6 +94,17 @@ function ThreadsPageInner() {
   const [cat, setCat] = useState('all');
   const [q, setQ] = useState('');
   const [selId, setSelId] = useState<string | null>(null);
+  // 공유 링크(?w=게시물id)로 들어오면 그 타래를 연다
+  const sp = useSearchParams();
+  const wantW = sp.get('w');
+  useEffect(() => { if (wantW) { setSelId(wantW); setView('thread'); setViewInit(true); } }, [wantW]);
+  const copyLink = (id: string) => {
+    const u = new URL(window.location.href);
+    u.search = '';
+    if (sec.id !== MAIN_SEC) u.searchParams.set('s', sec.id);
+    u.searchParams.set('w', id);
+    navigator.clipboard.writeText(u.toString()).then(() => toast('링크를 복사했어요'), () => toast('링크를 복사하지 못했어요'));
+  };
 
   // 기본 보기 — 환경설정값 로드 후 1회 적용 (v1.8 확정)
   useEffect(() => {
@@ -304,6 +315,7 @@ function ThreadsPageInner() {
               tags={[catLabel(cats, w.catId), w.author].filter(Boolean) as string[]}
               label={`${catLabel(cats, w.catId)} · REVIEW`} sub={`글 ${w.posts.length}개 · ${fmtMD(lastDate(w))}`}
               onClick={() => { setSelId(w.id); setView('thread'); }}
+              onLink={() => copyLink(w.id)}
               /* 우클릭 → 메뉴 → 삭제 확인 모달 (v2.0 사용자 요청) — 리스트 보기에는 삭제 버튼이 없었다 */
               onContextMenu={(e: React.MouseEvent) => { if (!isAdmin) return; e.preventDefault(); setWCtx({ x: e.clientX, y: e.clientY, id: w.id }); }} />
           ))}

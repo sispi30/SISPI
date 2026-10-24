@@ -551,10 +551,12 @@ function DesignPane() {
       </div>
 
       <div className="set-row">
-        <div className="l"><b>스위치 탭</b><small>게시판 말머리·갤러리 보기 전환 등 — 고른 쪽은 아래 진한 버튼색을 그대로 따라갑니다</small></div>
+        <div className="l"><b>스위치 탭</b><small>게시판 말머리·갤러리 보기 전환 등 — 고른 쪽은 따로 정하지 않으면 아래 진한 버튼색을 따라갑니다</small></div>
         <div className="cp-group">
           <CP label="배경" k="segBg" />
           <CP label="글씨" k="segFg" />
+          <CP label="선택 배경" k="segOnBg" defKey="btnDark" />
+          <CP label="선택 글씨" k="segOnFg" defKey="btnDarkFg" />
         </div>
       </div>
 

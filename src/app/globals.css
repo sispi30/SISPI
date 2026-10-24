@@ -2049,7 +2049,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .seg{display:inline-flex;background:var(--seg-bg,#f0f1f3);border:1px solid var(--line-dark);border-radius:9px;padding:3px}
 .seg button{padding:6px 14px;font-size:calc(11.5px*var(--fs,1));color:var(--seg-fg,#8a8f98);border-radius:7px;transition:.15s}
 /* 선택 칩 = 진한 버튼 3색 연동 (v1.9 사용자 확정 — 체크박스와 동일 토큰) */
-.seg button.on{background:var(--btn-dark,var(--panel-solid));color:var(--btn-dark-fg,var(--ink))}
+.seg button.on{background:var(--seg-on-bg,var(--btn-dark,var(--panel-solid)));color:var(--seg-on-fg,var(--btn-dark-fg,var(--ink)))}
 .seg.in-panel{border-color:transparent}
 .mini-seg{display:inline-flex;background:var(--seg-bg,#f0f1f3);border-radius:7px;padding:2px}
 .mini-seg button{padding:4px 9px;font-size:calc(10px*var(--fs,1));border-radius:5px;color:var(--seg-fg,#8a8f98);transition:.13s}
@@ -3198,8 +3198,8 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .rv-card.rv-lt .rv-shade{background:linear-gradient(180deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.45) 52%,rgba(255,255,255,.92) 100%)}
 
 /* 감상 리스트 카드 호버 — 테두리가 그려지고, 그림이 천천히 확대·이동하며, 대각선이 한 번 지나간다 */
-.rv-card::before{content:"";position:absolute;inset:0;border:1px solid currentColor;opacity:0;z-index:3;pointer-events:none;transition:opacity .3s}
-.rv-card::after{content:"";position:absolute;top:-10%;bottom:-10%;left:-30%;width:1px;background:currentColor;opacity:0;z-index:3;pointer-events:none;transform:rotate(14deg)}
+.rv-card::before{content:"";position:absolute;inset:0;border:1px solid var(--accent,currentColor);opacity:0;z-index:3;pointer-events:none;transition:opacity .3s}
+.rv-card::after{content:"";position:absolute;top:-10%;bottom:-10%;left:-30%;width:1px;background:var(--accent,currentColor);opacity:0;z-index:3;pointer-events:none;transform:rotate(14deg)}
 .rv-card:hover::before{opacity:.85}
 .rv-card:hover::after{animation:rvSweep 1.1s cubic-bezier(.3,.6,.2,1) forwards}
 .rv-art > div:first-child{transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
@@ -3210,3 +3210,6 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .rv-card:hover .rv-ic{opacity:1;transform:translateY(-2px)}
 @keyframes rvSweep{0%{left:-30%;opacity:.7}100%{left:130%;opacity:0}}
 @media (prefers-reduced-motion:reduce){.rv-card,.rv-card *{transition:none!important;animation:none!important}}
+
+.rv-ic button{display:inline-flex;padding:4px;margin:-4px;color:inherit;border-radius:4px;transition:transform .2s}
+.rv-ic button:hover{transform:scale(1.2);color:var(--accent,inherit)}

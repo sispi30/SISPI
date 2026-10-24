@@ -9,10 +9,10 @@ import { useBgLight } from '@/lib/useImgLight';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-export function RvCard({ no, fileRef, crop, ph, title, tags, label, sub, anim, style, onClick, ...rest }: {
+export function RvCard({ no, fileRef, crop, ph, title, tags, label, sub, anim, style, onClick, onLink, ...rest }: {
   no: number; fileRef?: string; crop?: CropValue; ph?: string;
   title: string; tags: string[]; label: string; sub: string; anim?: number;
-  style?: React.CSSProperties; onClick?: () => void;
+  style?: React.CSSProperties; onClick?: () => void; onLink?: () => void;
 } & Record<string, unknown>) {
   const url = useBlobUrl(fileRef);
   const light = useBgLight(true);
@@ -30,10 +30,10 @@ export function RvCard({ no, fileRef, crop, ph, title, tags, label, sub, anim, s
         <div className="rv-tags">{tags.map((t, i) => <span key={i}>#{t}</span>)}</div>
         <small className="rv-lb">{label}</small>
         <small className="rv-sub">{sub}</small>
-        <div className="rv-ic" aria-hidden="true">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="5" y="5" width="8" height="8" /><path d="M3 11V3h8" /></svg>
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.2"><path d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2a2.5 2.5 0 0 0-3.5-3.5l-.8.8M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.500l.8-.8" /></svg>
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.2"><path d="M8 2v9M4.500 7.500 8 11l3.500-3.500M3 14h10" /></svg>
+        <div className="rv-ic">
+          <button type="button" title="링크 복사" aria-label="링크 복사" onClick={e => { e.stopPropagation(); onLink?.(); }}>
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.2"><path d="M7 9a2.5 2.5 0 0 0 3.5 0l2-2a2.5 2.5 0 0 0-3.5-3.5l-.8.8M9 7a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 7 12.5l.8-.8" /></svg>
+          </button>
         </div>
       </div>
     </div>
