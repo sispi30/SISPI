@@ -3303,3 +3303,36 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .rs-pill:hover{background:#fff;color:#111}
 .rs-badge{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--rs-c);color:#fff;font-style:normal;box-shadow:0 0 0 4px rgba(255,255,255,.18)}
 .rs-badge em{font-style:normal;font-size:10px;font-weight:900;letter-spacing:.08em}
+
+/* ───── 첫 화면 포스터 구성 (참고 이미지 스타일) — 화면 맨 위까지 꽉 채우고, 위·아래 띠 + 큰 세리프 제목 + 번호 열 + 멤버 라벨 ───── */
+body.rs-full #appMain{margin-top:-58px;padding-top:58px}
+body.rs-full .page-rel-detail.rs-on{padding-top:0}
+body.rs-full .page-rel-detail.rs-on .rs{margin-top:-58px}
+.rs-title{font-family:var(--serif,Georgia,'Times New Roman',serif);font-weight:800;line-height:.9;letter-spacing:-.025em;top:18vh;
+  font-size:min(var(--rs-fs),calc(64vh / var(--rs-ln,1) * 1.05))}
+.rs-title span{display:block}
+.rs-bar{position:absolute;left:0;right:0;height:1.6vh;background:var(--rs-c);z-index:5;opacity:calc(1 - var(--k4)*1.4)}
+.rs-bar.t{top:0}.rs-bar.b{bottom:0}
+.rs-idx{position:absolute;left:2.4vw;top:20vh;bottom:12vh;z-index:4;display:flex;flex-direction:column;justify-content:space-between;list-style:none;margin:0;padding:0;font-size:clamp(9px,.9vw,12px);font-weight:800;letter-spacing:.14em;opacity:calc(.75 - var(--k1)*2.4)}
+.rs-idx li.on{color:var(--rs-c);filter:brightness(1.4)}
+.rs-tl{position:absolute;left:2.4vw;top:11vh;z-index:4;display:flex;flex-direction:column;gap:3px;font-size:clamp(9px,.9vw,12px);letter-spacing:.2em;font-weight:700;opacity:calc(.85 - var(--k1)*2.4)}
+.rs-tl b{font-size:clamp(11px,1.1vw,15px);letter-spacing:.16em}
+.rs-tp{position:absolute;left:50%;top:10.5vh;z-index:4;margin:0;width:min(44vw,520px);transform:translateX(-50%) translateY(calc(var(--k1)*-30px));text-align:center;font-size:clamp(10.5px,1vw,13px);line-height:1.7;opacity:calc(.85 - var(--k1)*2.4);word-break:keep-all}
+.rs-who{position:absolute;left:0;right:0;bottom:8vh;z-index:4;pointer-events:none;opacity:calc(1 - var(--k1)*2.4)}
+.rs-who button{position:absolute;bottom:0;display:flex;flex-direction:column;gap:5px;color:#fff;pointer-events:auto;cursor:var(--cur-pointer,pointer);text-align:left}
+.rs-who button.l{left:calc(50% - min(30vw,330px))}
+.rs-who button.r{right:calc(50% - min(30vw,330px));text-align:right;align-items:flex-end}
+.rs-who small{font-size:clamp(8px,.8vw,10.5px);letter-spacing:.22em;opacity:.7;font-weight:800}
+.rs-who b{font-size:clamp(14px,1.7vw,24px);font-weight:900;letter-spacing:.02em}
+.rs-who i{display:block;width:26px;height:3px}
+.rs-who button:hover b{color:var(--rs-c);filter:brightness(1.5)}
+.rs-year{top:20vh}
+.rs-rn{top:8vh}
+.rs-dots{display:none}
+.rs-info{bottom:8vh;left:2.4vw}
+.rs-hint{bottom:8vh;right:2.4vw}
+@media (max-width:760px){.rs-idx,.rs-tl{display:none}.rs-who button.l{left:6vw}.rs-who button.r{right:6vw}.rs-tp{width:80vw}}
+.rs-title{transform:translateY(calc(var(--k1)*-64vh))}
+.rs-rn{top:4.5vh}
+.rs-tp{top:11vh}
+.rs-idx{bottom:24vh;top:26vh}

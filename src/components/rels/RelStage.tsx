@@ -33,6 +33,12 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
   const wrap = useRef<HTMLDivElement>(null);
   const stk = useRef<HTMLDivElement>(null);
 
+  // 화면 맨 위(메뉴 줄 뒤)까지 꽉 채운다 — 스크롤 영역을 메뉴 줄 뒤로 끌어올리는 클래스
+  useEffect(() => {
+    document.body.classList.add('rs-full');
+    return () => document.body.classList.remove('rs-full');
+  }, []);
+
   useEffect(() => {
     const sc = document.getElementById('appMain');
     const target: HTMLElement | Window = sc ?? window;
@@ -54,7 +60,11 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
   }, []);
 
   const pair = members.map(m => m.name).join(' × ');
-  const titleVw = fitVw(name, 24, 90);
+  // 제목은 띄어쓰기 기준으로 최대 3줄 — 줄이 늘면 글자가 줄어든다
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const lines = words.length <= 1 ? [name] : words.length === 2 ? words : [words[0], words.slice(1, -1).join(' '), words[words.length - 1]];
+  const longest = lines.reduce((a, b) => (b.length > a.length ? b : a), '');
+  const titleVw = fitVw(longest, 24, 86);
   const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
   const roman = ROMAN[members.length] ?? String(members.length);
   const goDown = () => (document.getElementById('appMain') ?? window).scrollBy({ top: window.innerHeight * 1.7, behavior: 'smooth' });
@@ -64,21 +74,26 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
     <div className="rs" ref={wrap} style={{ ['--rs-c' as string]: tc, ['--rs-fs' as string]: `${titleVw}vw`, ['--rs-pfs' as string]: `${pairVw}vw` } as React.CSSProperties}>
       <div className="rs-sticky" ref={stk}>
         <div className="rs-ring" />
-        <div className="rs-cast">
-          {members.slice(0, 6).map(m => (
-            <button key={m.id} type="button" onClick={() => onGo(m.href)}>{m.name}</button>
+        <i className="rs-bar t" aria-hidden="true" /><i className="rs-bar b" aria-hidden="true" />
+        <ol className="rs-idx" aria-hidden="true">{['01', '02', '03', '04', '05', '06'].map((n, i) => <li key={n} className={i === 0 ? 'on' : ''}>{n}</li>)}</ol>
+        <div className="rs-tl" aria-hidden="true"><b>PAIR FILE</b><span>{cpLabel || 'RELATION'}</span><span>NO. {String(members.length).padStart(2, '0')}</span></div>
+        {catchphrase && <p className="rs-tp">{catchphrase}</p>}
+        <div className="rs-who">
+          {members.slice(0, 2).map((m, i) => (
+            <button key={m.id} type="button" className={i === 0 ? 'l' : 'r'} onClick={() => onGo(m.href)}>
+              <small>MEMBER {String(i + 1).padStart(2, '0')}</small><b>{m.name}</b><i style={{ background: m.color }} />
+            </button>
           ))}
         </div>
         <div className="rs-rn" aria-hidden="true">{roman}</div>
         <div className="rs-year" aria-hidden="true">[ {String(members.length).padStart(2, '0')} MEMBERS ]</div>
         <div className="rs-dots" aria-hidden="true" />
-        <h1 className="rs-title" style={{ fontFamily }}>{name}</h1>
+        <h1 className="rs-title" style={{ fontFamily, ['--rs-ln' as string]: lines.length } as React.CSSProperties}>{lines.map((l, i) => <span key={i}>{l}</span>)}</h1>
         <div className="rs-band" aria-hidden="true" />
         {figs.length > 0 && <div className="rs-figs">{figs.slice(0, 2).map(f => <Fig key={f} refId={f} />)}</div>}
         <div className="rs-info">
           <small className="rs-lab">{name} // STORY</small>
           {cpLabel && <span className="rs-cp">{cpLabel}</span>}
-          {catchphrase && <p>{catchphrase}</p>}
         </div>
         <div className="rs-hint">
           <button type="button" className="rs-pill" onClick={goDown}>VIEW STORY <b>↗</b></button>
