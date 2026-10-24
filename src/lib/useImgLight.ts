@@ -1,52 +1,49 @@
 'use client';
-// 썸네일 아래쪽이 밝은지 재서 알려 준다 — 밝은 그림이면 어두운 글자·밝은 그라데이션을 쓰기 위함.
-// 캔버스에 작게 그려 평균 밝기를 구한다. 다른 출처 그림은 getBlob 으로 받아 같은 출처 주소로 그린다.
+// 홈페이지 배경색이 밝은지 알려 준다 — 갤러리 썸네일의 아래 그라데이션·글자색을 배경에 맞추기 위함.
+// 배경 그라데이션 두 색(--bg-g1, --bg-g2)의 평균 밝기를 보고, 테마·화면이 바뀌면 다시 잰다.
 import { useEffect, useState } from 'react';
-import { getBlob } from '@/lib/blobStore';
 
-const cache = new Map<string, boolean>();
+function lumaOf(css: string, cx: CanvasRenderingContext2D): number | null {
+  const s = css.trim();
+  if (!s) return null;
+  cx.fillStyle = '#000';
+  cx.fillStyle = s;
+  const v = cx.fillStyle as string;   // 정규화: #rrggbb 또는 rgba(...)
+  let r: number, g: number, b: number;
+  if (v.startsWith('#')) {
+    const h = v.length === 4 ? v.replace(/./g, (c, i) => (i ? c + c : c)) : v;
+    r = parseInt(h.slice(1, 3), 16); g = parseInt(h.slice(3, 5), 16); b = parseInt(h.slice(5, 7), 16);
+  } else {
+    const m = v.match(/[\d.]+/g);
+    if (!m || m.length < 3) return null;
+    [r, g, b] = m.map(Number);
+  }
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
 
-export function useBottomLight(ref: string | undefined, enabled: boolean): boolean {
-  const [light, setLight] = useState<boolean>(() => (ref ? cache.get(ref) ?? false : false));
+function measure(): boolean {
+  try {
+    const cx = document.createElement('canvas').getContext('2d');
+    if (!cx) return false;
+    const cs = getComputedStyle(document.documentElement);
+    const a = lumaOf(cs.getPropertyValue('--bg-g1'), cx);
+    const b = lumaOf(cs.getPropertyValue('--bg-g2'), cx);
+    const xs = [a, b].filter((x): x is number => x != null);
+    if (!xs.length) return false;
+    return xs.reduce((p, c) => p + c, 0) / xs.length > 0.55;
+  } catch { return false; }
+}
+
+export function useBgLight(enabled: boolean): boolean {
+  const [light, setLight] = useState(false);
   useEffect(() => {
-    if (!enabled || !ref) { setLight(false); return; }
-    const hit = cache.get(ref);
-    if (hit != null) { setLight(hit); return; }
-    let dead = false;
-    let obj: string | null = null;
-    (async () => {
-      try {
-        const b = await getBlob(ref);
-        if (!b || dead) return;
-        obj = URL.createObjectURL(b);
-        const im = new Image();
-        im.onload = () => {
-          if (dead) return;
-          try {
-            const W = 24, H = 24;
-            const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-            const cx = cv.getContext('2d', { willReadFrequently: true });
-            if (!cx) return;
-            cx.drawImage(im, 0, 0, W, H);
-            // 글자가 놓이는 아래쪽 약 45% 구간의 평균 밝기 (투명은 흰 바탕으로 본다)
-            const y0 = Math.floor(H * 0.55);
-            const d = cx.getImageData(0, y0, W, H - y0).data;
-            let sum = 0, n = 0;
-            for (let i = 0; i < d.length; i += 4) {
-              const a = d[i + 3] / 255;
-              const r = d[i] * a + 255 * (1 - a), g = d[i + 1] * a + 255 * (1 - a), bl = d[i + 2] * a + 255 * (1 - a);
-              sum += 0.2126 * r + 0.7152 * g + 0.0722 * bl; n++;
-            }
-            const v = n ? sum / n / 255 : 0;
-            const res = v > 0.6;
-            cache.set(ref, res);
-            setLight(res);
-          } catch { /* 읽기 실패 — 기존 어두운 디자인 유지 */ }
-        };
-        im.src = obj;
-      } catch { /* 무시 */ }
-    })();
-    return () => { dead = true; if (obj) setTimeout(() => URL.revokeObjectURL(obj!), 1000); };
-  }, [ref, enabled]);
+    if (!enabled) { setLight(false); return; }
+    const run = () => setLight(measure());
+    run();
+    const root = document.documentElement;
+    const mo = new MutationObserver(run);
+    mo.observe(root, { attributes: true, attributeFilter: ['style', 'class', 'data-theme'] });
+    return () => mo.disconnect();
+  }, [enabled]);
   return light;
 }
