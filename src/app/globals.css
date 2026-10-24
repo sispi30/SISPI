@@ -732,7 +732,7 @@ a{color:inherit;text-decoration:none}
    색을 바꿔도 여기만 그대로였다. 선택 안 된 것은 --seg-bg/--seg-fg,
    선택된 것은 --btn-dark/--btn-dark-fg — 탭(.mini-seg)이 쓰는 바로 그 값들이다 */
 .pager button{min-width:30px;height:30px;border-radius:8px;font-size:calc(11.5px*var(--fs,1));color:var(--seg-fg,#8a8f98);background:var(--seg-bg,#f0f1f3);border:1px solid transparent;transition:.15s;padding:0 8px}
-.pager button:hover{color:var(--btn-dark,var(--ink))}
+.pager button:hover{color:var(--seg-hv-fg,var(--btn-dark,var(--ink)))}
 .pager button.on{background:var(--btn-dark,var(--ink));color:var(--btn-dark-fg,#fff);border-color:transparent}
 .pager button:disabled{opacity:.35;pointer-events:none}
 
@@ -3213,3 +3213,11 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 
 .rv-ic button{display:inline-flex;padding:4px;margin:-4px;color:inherit;border-radius:4px;transition:transform .2s}
 .rv-ic button:hover{transform:scale(1.2);color:var(--accent,inherit)}
+
+/* 스위치 탭 호버 글씨 (환경설정에서 지정했을 때만) */
+.seg button:not(.on):hover,.mini-seg button:not(.on):hover{color:var(--seg-hv-fg,var(--seg-fg,#8a8f98))}
+/* 캐릭터 목록 — 배경이 밝으면 글자만 어둡게 (그라데이션은 호버 때 나오는 원래 것 유지, 호버 중엔 다시 흰 글자) */
+.chars-grid .rx-card.rx-lt .rx-shade{background:linear-gradient(180deg,transparent 45%,color-mix(in srgb,var(--c1) 88%,#000) 100%)}
+.chars-grid .rx-card.rx-lt:hover .rx-bot h3{color:#fff;text-shadow:0 2px 2px rgba(0,0,0,.5);border-bottom-color:rgba(255,255,255,.22)}
+.chars-grid .rx-card.rx-lt:hover .rx-bot small{color:rgba(255,255,255,.7)}
+.chars-grid .rx-card.rx-lt:hover .rx-who{color:rgba(255,255,255,.88)}

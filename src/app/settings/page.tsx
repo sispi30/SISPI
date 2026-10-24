@@ -557,6 +557,7 @@ function DesignPane() {
           <CP label="글씨" k="segFg" />
           <CP label="선택 배경" k="segOnBg" defKey="btnDark" />
           <CP label="선택 글씨" k="segOnFg" defKey="btnDarkFg" />
+          <CP label="호버 글씨" k="segHvFg" defKey="segFg" />
         </div>
       </div>
 
