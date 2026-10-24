@@ -3221,3 +3221,15 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .chars-grid .rx-card.rx-lt:hover .rx-bot h3{color:#fff;text-shadow:0 2px 2px rgba(0,0,0,.5);border-bottom-color:rgba(255,255,255,.22)}
 .chars-grid .rx-card.rx-lt:hover .rx-bot small{color:rgba(255,255,255,.7)}
 .chars-grid .rx-card.rx-lt:hover .rx-who{color:rgba(255,255,255,.88)}
+
+/* 검은 글씨일 때는 흰 글씨의 검은 그림자처럼 흰 그림자를 깐다 */
+.rx-card.rx-lt .rx-bot h3{text-shadow:0 2px 2px rgba(255,255,255,.7),0 0 8px rgba(255,255,255,.55)}
+.rx-card.rx-lt .rx-bot small,.rx-card.rx-lt .rx-who{text-shadow:0 1px 2px rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.5)}
+.rv-card.rv-lt .rv-txt h3,.rv-card.rv-lt .rv-no{text-shadow:0 2px 2px rgba(255,255,255,.7),0 0 8px rgba(255,255,255,.55)}
+.rv-card.rv-lt .rv-tags,.rv-card.rv-lt .rv-lb,.rv-card.rv-lt .rv-sub{text-shadow:0 1px 2px rgba(255,255,255,.75),0 0 6px rgba(255,255,255,.5)}
+/* 캐릭터 목록 — 밝은 배경이면 큰 숫자도 어둡게 + 흰 그림자 */
+.chars-grid .rx-card.rx-lt .rx-no{color:#16191f;text-shadow:0 2px 2px rgba(255,255,255,.7),0 0 8px rgba(255,255,255,.55)}
+.chars-grid .rx-card.rx-lt:hover .rx-bot small,.chars-grid .rx-card.rx-lt:hover .rx-who{text-shadow:none}
+/* 캐릭터 목록 — 서브텍스트는 호버했을 때만 (자리는 그대로 두어 글자가 밀리지 않게) */
+.chars-grid .rx-bot small{opacity:0;transform:translateY(4px);transition:opacity .3s,transform .3s}
+.chars-grid .rx-card:hover .rx-bot small{opacity:1;transform:none}
