@@ -1620,10 +1620,6 @@ export default function RelDetailPage() {
           items={drawerItems} current={win} onSelect={pickWin} onClose={() => setWin(null)}>
           {win === 'timeline' || win === 'qa' ? timelinePanel : win === 'gallery' ? (
             <>
-              {isAdmin && (
-                <button type="button" className="btn btn-ghost" style={{ padding: '4px 12px', fontSize: 11, marginBottom: 12 }}
-                  onClick={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}>갤러리 편집 · 연동 ›</button>
-              )}
               <GalleryPanel ph={rel.thumbClass} loggedIn={!!user} posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} canSeePrivate={isAdmin} accent={effThemeColor || undefined} />
             </>
           ) : win === 'rp' ? (
