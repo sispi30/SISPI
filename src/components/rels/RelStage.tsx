@@ -62,12 +62,14 @@ function Sticker({ s }: { s: RsSticker }) {
   return url ? <img className="rs-stk" src={url} alt="" draggable={false} style={{ left: `${s.x}%`, top: `${s.y}%`, width: `${s.w}%`, zIndex: s.z }} /> : null;
 }
 
-export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero, tc, onGo, auSlot, admin, deco, links, light }: {
+export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero, tc, onGo, auSlot, admin, deco, links, light, onBack }: {
   name: string; fontFamily?: string; catchphrase?: string; cpLabel?: string;
   members: RsMember[]; hero: RsHero; tc: string;
   onGo: (href: string) => void; auSlot?: React.ReactNode;
   /** 관리 글씨(EDIT/DELETE) — 캐릭터 스테이지와 같은 작은 글씨 형태. 권한이 없으면 안 넘긴다 */
   admin?: { editLabel: string; onEdit: () => void; deleteLabel?: string; onDelete?: () => void };
+  /** BACK — 자관 목록으로 */
+  onBack?: () => void;
   /** 서랍(창)을 여는 바로가기 */
   links?: { key: string; title: string; sub: string; onClick: () => void }[];
   /** 배경이 밝으면 true — 장식·글자를 어두운 쪽으로 (캐릭터 상세와 같은 규칙) */
@@ -160,10 +162,11 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
           </div>
         </div>
 
-        {admin && (
+        {(admin || onBack) && (
           <div className="cs-tabs cs-admin rs-adm">
-            <button type="button" onClick={admin.onEdit}><b>{admin.editLabel}</b></button>
-            {admin.onDelete && <button type="button" onClick={admin.onDelete}><b>{admin.deleteLabel ?? 'DELETE'}</b></button>}
+            {onBack && <button type="button" onClick={onBack}><b>BACK</b></button>}
+            {admin && <button type="button" onClick={admin.onEdit}><b>{admin.editLabel}</b></button>}
+            {admin?.onDelete && <button type="button" onClick={admin.onDelete}><b>{admin.deleteLabel ?? 'DELETE'}</b></button>}
           </div>
         )}
 

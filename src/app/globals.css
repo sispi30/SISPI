@@ -3450,3 +3450,12 @@ body.rs-full .rs-sticky{top:0!important}
 .rs-nb .rs-kw span{padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.4);font-size:clamp(9px,.8vw,11px);font-weight:700;background:none}
 .rs[data-lt] .rs-nb .rs-kw span{border-color:rgba(0,0,0,.35)}
 .rs-nb .rs-go{pointer-events:auto;align-self:inherit;text-shadow:none}
+
+/* 스테이지는 화면에 고정 — 아래 여백·스크롤이 생기지 않는다 (캐릭터 상세와 같은 방식). 선·모서리 장식은 전신 뒤로 */
+.rs{position:fixed!important;inset:0;width:auto!important;height:auto!important;margin:0!important;z-index:1}
+body.rs-full .page-rel-detail.rs-on .rs{margin-top:0!important}
+body.rs-full #appMain{overflow:hidden}
+.page-rel-detail.rs-on{padding:0!important;min-height:0}
+.rs-sticky{height:100%!important}
+.rs-head,.rs-crn{z-index:1!important}
+.page-rel-detail.rs-on{animation:none!important}.page-rel-detail.rs-on>*{animation:none}

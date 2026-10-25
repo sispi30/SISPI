@@ -1227,6 +1227,7 @@ export default function RelDetailPage() {
           cpLabel={auCpTag ? CP_LABEL[auCpTag] : undefined}
           members={stageSlots.map(m => ({ id: m.charId, name: charOf(m.charId)?.name ?? '—', href: charHref(m.charId) }))}
           light={bgInk === 'dark'}
+          onBack={() => router.push('/rels')}
           hero={{
             uiZ,
             fulls: stageSlots.map(m => {
