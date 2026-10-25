@@ -207,6 +207,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
         {!hid('info') && <div className="rs-mid" style={{ translate: `${hero.info.x / 100 * box.w}px ${hero.info.y / 100 * box.h}px` }}>
           <small>INFO.</small><i />
           <b>{cpLabel ? `PAIR · ${cpLabel}` : 'PAIR'}</b>
+          <div className="rs-col">
           <div className="rs-mt" style={{ fontSize: `${Math.min(24, Math.max(11, Math.min(0.3 * box.w, 400) / (emWidth(`[ ${pair || name} ]`) + 1)))}px` }}>[ {pair || name} ]</div>
           {catchphrase && <p>{catchphrase}</p>}
           {links && links.length > 0 && (
@@ -220,6 +221,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
               ))}
             </div>
           )}
+          </div>
           {auSlot && <div className="rs-au">{auSlot}</div>}
         </div>}
       </div>

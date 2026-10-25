@@ -3466,5 +3466,8 @@ body.rs-full #appMain{overflow:hidden}
 .rs-mid .cs-link-k{font-size:10.5px}
 .rs-mid .cs-link-s{font-size:10.5px}
 .rs-mid .rs-mt{white-space:nowrap}
-.rs-mid .cs-link{padding:0 2px!important;line-height:1.3}
-.rs-mid .rs-links{margin-top:4px}
+/* 서랍 바로가기 가로폭 = 자관 이름 줄 폭 (위아래 간격은 그대로) */
+.rs-mid .rs-col{display:flex;flex-direction:column;align-items:stretch;width:fit-content;max-width:100%}
+.rs-mid .rs-col .rs-links{width:0;min-width:100%}
+.rs-mid .cs-link{padding:6px 2px!important;line-height:normal}
+.rs-mid .rs-links{margin-top:8px}
