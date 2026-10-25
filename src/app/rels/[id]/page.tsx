@@ -596,18 +596,18 @@ export default function RelDetailPage() {
   // 서랍 항목을 고르면 타임라인/문답 탭도 같이 바뀐다
   const selTab = (t: 'tl' | 'qa') => { setTab(t); if (win === 'timeline' || win === 'qa') setWin(t === 'tl' ? 'timeline' : 'qa'); };
   const pickWin = (k: string | null) => { if (k === 'timeline') setTab('tl'); else if (k === 'qa') setTab('qa'); setWin(k); };
-  const drawerItems: (StageWindowItem & { count: string })[] = rel ? [
-    { key: 'timeline', title: 'Timeline', sub: 'TIMELINE', count: auTimeline.length ? `기록 ${auTimeline.length}개` : '아직 없음' },
-    ...(qaOn ? [{ key: 'qa', title: 'Questions', sub: 'QUESTIONS', count: `질문 ${auQuestions.length}개` }] : []),
+  const drawerItems: (StageWindowItem & { count: string; n: number })[] = rel ? [
+    { key: 'timeline', title: 'Timeline', sub: 'TIMELINE', n: auTimeline.length || (isAdmin ? 1 : 0), count: auTimeline.length ? `기록 ${auTimeline.length}개` : '아직 없음' },
+    ...(qaOn ? [{ key: 'qa', title: 'Questions', sub: 'QUESTIONS', n: auQuestions.length || (isAdmin ? 1 : 0), count: `질문 ${auQuestions.length}개` }] : []),
     ...(!au?.hideLog ? [
-      { key: 'log', title: 'Log Backup', sub: 'LOG BACKUP', count: relLogs.length ? `로그 ${relLogs.length}개` : '아직 없음' },
-      { key: 'session', title: 'Session Board', sub: 'SESSIONS', count: relSessions.length ? `세션 ${relSessions.length}개` : '아직 없음' },
+      { key: 'log', title: 'Log Backup', sub: 'LOG BACKUP', n: relLogs.length, count: relLogs.length ? `로그 ${relLogs.length}개` : '아직 없음' },
+      { key: 'session', title: 'Session Board', sub: 'SESSIONS', n: relSessions.length, count: relSessions.length ? `세션 ${relSessions.length}개` : '아직 없음' },
     ] : []),
     ...(!au?.hideRp ? [
-      { key: 'gallery', title: 'Gallery', sub: 'GALLERY', count: (() => { const n = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }).length; return n ? `사진 묶음 ${n}개` : '아직 없음'; })() },
-      { key: 'rp', title: 'Role Play', sub: 'ROLE PLAY', count: relRooms.length ? `역극 ${relRooms.length}개` : '아직 없음' },
+      { key: 'gallery', title: 'Gallery', sub: 'GALLERY', ...(() => { const n = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }).length; return { n, count: n ? `사진 묶음 ${n}개` : '아직 없음' }; })() },
+      { key: 'rp', title: 'Role Play', sub: 'ROLE PLAY', n: relRooms.length, count: relRooms.length ? `역극 ${relRooms.length}개` : '아직 없음' },
     ] : []),
-  ] : [];
+  ].filter(d => d.n > 0) : [];   // 아직 넣지 않은 항목은 목록에서 뺀다 (관리자는 타임라인·문답만 남겨 추가할 수 있게)
 
   if (!loaded) return <section className="page" />;
   if (!rel || (rel.visibility === 'private' && !isAdmin) || (rel.visibility === 'member' && !user)) {
@@ -1233,6 +1233,7 @@ export default function RelDetailPage() {
             count: stageSlots.length,
             info: heroLayout?.info ?? { x: 0, y: 0 },
             hidden: heroLayout?.hidden ?? [],
+            badges: heroLayout?.badgeOff !== true,
             fulls: stageSlots.map((m, i) => {
               const ref = isBaseAu ? m.fullImgId : au?.fulls?.[m.charId];
               return ref ? { i, id: m.charId, ref, scale: m.fullScale ?? 90, offX: m.fullOffX ?? 0, offY: m.fullOffY ?? 0,

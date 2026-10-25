@@ -27,6 +27,8 @@ export interface RsHero {
   info: { x: number; y: number };
   /** 눈 버튼으로 숨긴 레이어 id */
   hidden: string[];
+  /** 배지 하위 항목(키워드·기본 정보·컬러) 표시 여부 */
+  badges: boolean;
 }
 
 /** 전신 한 칸의 가로 자리(상자 대비 %) — 2명은 예전처럼 좌·우 44%, 3명 이상은 고르게 나눈다. c = 칸 가운데 */
@@ -144,7 +146,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
           </div>
         )}
         <i className="rs-crn tl" aria-hidden="true" /><i className="rs-crn tr" aria-hidden="true" /><i className="rs-crn bl" aria-hidden="true" /><i className="rs-crn br" aria-hidden="true" />
-        <div className="rs-head" aria-hidden="true"><span>{name} // PAIR FILE</span><span>{members.slice(0, 2).map(m => m.name).join(' × ')}</span></div>
+        <div className="rs-head" aria-hidden="true"><span>{name} // PAIR FILE</span><span>{members.map(m => m.name).join(' × ')}</span></div>
 
         {/* 메인 이미지 레이어 — 큰 자관명 · 필기체 · 전신 · 이름 · 스티커 (수정 화면 미리보기와 같은 상자) */}
         <div className="rs-hero" ref={heroRef}>
@@ -177,15 +179,15 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
                   <button type="button" className="rs-nm" onClick={() => onGo(n.href)}
                     style={{ fontSize: `${fs}px`, fontWeight: n.bold ? 800 : 400 }}>{n.name}</button>
                   <div className="rs-meta">
-                    {n.gems.slice(0, 5).map(g => <i key={g.hex + g.label} className="rs-gem" title={g.label} style={{ background: g.hex }} />)}
+                    {hero.badges && n.gems.slice(0, 5).map(g => <i key={g.hex + g.label} className="rs-gem" title={g.label} style={{ background: g.hex }} />)}
                     <span>No./{String(i + 1).padStart(2, '0')}</span>
                   </div>
-                  {n.specs.length > 0 && (
+                  {hero.badges && n.specs.length > 0 && (
                     <dl className="rs-spec">
                       {n.specs.slice(0, 4).map(sp => <React.Fragment key={sp.label}><dt>{sp.label}</dt><dd>{sp.value}</dd></React.Fragment>)}
                     </dl>
                   )}
-                  {n.kws.length > 0 && <div className="rs-kw">{n.kws.slice(0, 5).map(k => <span key={k}>{k}</span>)}</div>}
+                  {hero.badges && n.kws.length > 0 && <div className="rs-kw">{n.kws.slice(0, 5).map(k => <span key={k}>{k}</span>)}</div>}
                   <button type="button" className="rs-go" onClick={() => onGo(n.href)}>PROFILE →</button>
                 </div>
               );

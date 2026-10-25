@@ -143,10 +143,10 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelec
       const { scale: s, onScale: fn, scaleStep: st } = wheelState.current;
       if (st) {
         const v = Math.round((s - Math.sign(e.deltaY) * st) / st) * st;
-        fn(Math.max(40, Math.min(160, Math.round(v * 100) / 100)));
+        fn(Math.max(15, Math.min(160, Math.round(v * 100) / 100)));
         return;
       }
-      fn(Math.max(40, Math.min(160, Math.round(s - Math.sign(e.deltaY) * 4))));
+      fn(Math.max(15, Math.min(160, Math.round(s - Math.sign(e.deltaY) * 4))));
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
@@ -518,6 +518,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   // 눈 버튼으로 숨긴 레이어 · 가운데 정보(INFO·서랍) 위치
   const [hiddenLayers, setHiddenLayers] = useState<string[]>(initLayout?.hidden ?? []);
   const [uiInfo, setUiInfo] = useState<{ x: number; y: number }>(initLayout?.info ?? { x: 0, y: 0 });
+  const [badgesOn, setBadgesOn] = useState<boolean>(initLayout?.badgeOff !== true);   // 이름 밑 배지 하위 항목(키워드·기본 정보·컬러) 표시
   const isHid = (id: string) => hiddenLayers.includes(id);
   const toggleHid = (id: string) => setHiddenLayers(h => (h.includes(id) ? h.filter(x => x !== id) : [...h, id]));
   // 그리드 on/off (v5.7 사용자 요청) — 메인 편집모드와 같은 10px 격자. 편집을 열 때마다 꺼진 상태로 시작
@@ -659,7 +660,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       heroLayout: pairMembers.length
         ? { order: orderSaved, stickers: stickerSaved, title: uiTitle, names: uiNames,
           info: uiInfo.x || uiInfo.y ? uiInfo : undefined,
-          hidden: hiddenLayers.length ? hiddenLayers : undefined } : undefined,
+          hidden: hiddenLayers.length ? hiddenLayers : undefined,
+          badgeOff: badgesOn ? undefined : true } : undefined,
       pickedCharIds: picked,
     });
   };
@@ -1009,7 +1011,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         </b>
                         {ch?.sub && <small style={{ fontSize: cq(12.5), opacity: .85, letterSpacing: '.04em', fontWeight: 400 }}>{ch.sub}</small>}
                         {/* 이름 밑 배지 줄 — 상세 화면(.fb-kw-row)과 같은 구성: 키워드 · 스펙 · 컬러 팔레트 */}
-                        {(m.keywords.length > 0 || specPills.length > 0 || gems.length > 0) && (
+                        {badgesOn && (m.keywords.length > 0 || specPills.length > 0 || gems.length > 0) && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: cq(6), marginTop: cq(8), alignItems: left ? 'flex-start' : 'flex-end' }}>
                             {m.keywords.map(k => <span key={k} style={pillCss(12)}>{k}</span>)}
                             {specPills.map(sp => <span key={sp.label} style={pillCss(12)}>{sp.label} {sp.value}</span>)}
@@ -1050,6 +1052,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 <p className="hint" style={{ margin: 0 }}>
                   UI(제목·이름·배지 글자)보다 위에 두면 글자 앞에, 아래에 두면 글자 뒤에 그려집니다. 👁 눈 버튼으로 각 레이어를 보이게/숨기게 할 수 있습니다. 스티커·가운데 정보 위치와 크기는 위 미리보기에서 직접 끌어 조절합니다.
                 </p>
+                <KToggle label={badgesOn ? '배지 하위 항목 표시 — 키워드·기본 정보·컬러 모두' : '배지 하위 항목 숨김 — 이름·프로필 이동만'} checked={badgesOn} onChange={setBadgesOn} />
                 {/* 자리가 정해진 레이어 — 순서는 없고 눈 버튼으로 켜고 끈다 */}
                 <div style={{ display: 'grid', gap: 6 }}>
                   {([

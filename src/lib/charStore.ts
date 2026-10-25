@@ -528,6 +528,8 @@ export interface HeroLayout {
   info?: { x: number; y: number };
   /** 눈 버튼으로 숨긴 레이어 — 'ui' · 'full:{charId}' · 'st:{id}' · 'tile'(장식 판) · 'ghost'(큰 자관명) · 'script'(필기체) · 'info'(가운데 INFO·서랍) */
   hidden?: string[];
+  /** true면 이름 밑 배지 하위 항목(키워드·기본 정보·컬러 점)을 숨기고 이름·프로필 이동만 보인다 (스테이지) */
+  badgeOff?: boolean;
 }
 
 export const HERO_UI_ID = 'ui';
