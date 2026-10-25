@@ -354,7 +354,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   myChars: Character[];
   memberNames?: Record<string, string>;  // 멤버 charId → 이름 (전신 섹션 표기)
   existingIds?: string[];            // 페이지 주소 중복 검사용 (v1.9 — 신규 등록)
-  onSave: (v: RelFormValue) => void;
+  onSave: (v: RelFormValue, dest?: string) => void;   // dest: 저장 뒤 이동할 주소(갤러리·역극 연동 버튼)
   onCancel: () => void;
 }) {
   const toast = useToast();
@@ -582,7 +582,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     });
   };
 
-  const save = async () => {
+  const save = async (go?: 'gallery' | 'rp') => {
     if (!name.trim()) { toast('자관 이름을 입력해 주세요'); return; }
     // 페이지 주소 (v1.9 / 수정도 가능 v2.0) — 유효성·중복 검사
     if (slug && slug !== (initial?.slug ?? '')) {
@@ -664,7 +664,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
           hidden: hiddenLayers.length ? hiddenLayers : undefined,
           badgeOff: badgesOn ? undefined : true } : undefined,
       pickedCharIds: picked,
-    });
+    }, go === 'gallery' && initial ? `/rels/${encodeURIComponent(slug.trim() || initial.slug || initial.id)}/gallery` : go === 'rp' ? '/rp' : undefined);
   };
 
   return (
@@ -1285,16 +1285,13 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
             <div style={{ display: 'grid', gap: 6 }}>
               <label className="k-label" style={{ margin: 0 }}>갤러리 · 역극</label>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {initial ? (
-                  <a className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} target="_blank" rel="noopener"
-                    href={`/rels/${encodeURIComponent(initial.slug ?? initial.id)}/gallery`}>갤러리 편집 · 연동 ↗</a>
-                ) : (
-                  <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} disabled>갤러리 편집 · 연동 ↗</button>
-                )}
-                <a className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} target="_blank" rel="noopener" href="/rp">역극 연동 (역극방 만들 때 자관 선택) ↗</a>
+                <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} disabled={!initial}
+                  onClick={() => save('gallery')}>갤러리 편집 · 연동 ↗</button>
+                <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} disabled={!initial}
+                  onClick={() => save('rp')}>역극 연동 (역극방 만들 때 자관 선택) ↗</button>
               </div>
               <p className="hint" style={{ margin: 0 }}>
-                {initial ? '갤러리 사진 묶음 추가·수정과 캐릭터 갤러리 태그 연동은 갤러리 페이지에서, 역극은 역극 게시판에서 이 자관을 골라 연동합니다 — 모두 상세 서랍에 나타납니다'
+                {initial ? '(누르면 지금까지의 수정 내용을 저장하고 같은 탭에서 이동합니다) 갤러리 사진 묶음 추가·수정과 캐릭터 갤러리 태그 연동은 갤러리 페이지에서, 역극은 역극 게시판에서 이 자관을 골라 연동합니다 — 모두 상세 서랍에 나타납니다'
                   : '갤러리·역극 연동은 자관을 등록한 뒤 수정 화면에서 할 수 있습니다'}
               </p>
             </div>
@@ -1663,7 +1660,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
         </div>
         <div className="form-actions">
           <button className="btn btn-onbk" onClick={onCancel}>CANCEL</button>
-          <button className="btn btn-accent" onClick={save}>
+          <button className="btn btn-accent" onClick={() => save()}>
             {isNew ? 'ADD' : 'SAVE'}
           </button>
         </div>

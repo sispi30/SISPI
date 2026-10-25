@@ -45,7 +45,7 @@ function RelEditInner() {
         memberNames={Object.fromEntries(rel.members.map(m => [m.charId, chars.find(c => c.id === m.charId)?.name ?? m.charId]))}
         onCancel={() => router.push(`/rels/${rel.id}`)}
         existingIds={rels.filter(r => r.id !== rel.id).flatMap(r => [r.id, ...(r.slug ? [r.slug] : [])])}
-        onSave={v => {
+        onSave={(v, dest) => {
           // 다인관 멤버 순서 (v6.7) — 자관 공통 멤버 목록을 설정에서 정한 순서로. AU 편집에서는 건드리지 않는다
           const applyOrder = (x: Relation): Relation => {
             if (auObj || !v.memberOrder) return x;
@@ -159,7 +159,7 @@ function RelEditInner() {
               }),
           }) : r)));
           toast('저장되었습니다');
-          router.push(`/rels/${rel.id}`);
+          router.push(dest ?? `/rels/${rel.id}`);
         }}
       />
     </section>
