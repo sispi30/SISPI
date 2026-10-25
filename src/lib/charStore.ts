@@ -68,6 +68,7 @@ export interface DecoScript {
   x: number;          // 가로 위치 (화면 폭의 %, 가운데=50)
   y: number;          // 세로 위치 (화면 높이의 %, 기본 36)
   rot: number;        // 기울기 (도)
+  blur?: number;      // 번짐 (px, 기본 0)
 }
 export const DEFAULT_DECO_SCRIPT: DecoScript = { size: 22, x: 52, y: 36, rot: -4 };
 
@@ -76,6 +77,8 @@ export interface DecoGhost {
   x: number;          // 가로 위치 (화면 폭의 %, 가운데=50)
   y: number;          // 세로 위치 (화면 높이의 %, 기본 30)
   scale: number;      // 크기 (기본 크기 대비 %, 기본 100)
+  color?: string;     // 글씨 색 (자관 스테이지 — 비우면 테마에 맞춰 자동)
+  opacity?: number;   // 불투명도 % (자관 스테이지 — 기본 100)
 }
 export const DEFAULT_DECO_GHOST: DecoGhost = { x: 50, y: 30, scale: 100 };
 

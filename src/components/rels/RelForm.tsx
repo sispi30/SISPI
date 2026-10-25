@@ -636,7 +636,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       deco: deco === 'on' ? undefined : 'off',
       decoBg: decoBg === 'full' ? undefined : 'band',
       decoFontId: decoFontId || undefined,
-      decoGhost: decoGhost.x === DEFAULT_DECO_GHOST.x && decoGhost.y === DEFAULT_DECO_GHOST.y && decoGhost.scale === DEFAULT_DECO_GHOST.scale ? undefined : decoGhost,
+      decoGhost: decoGhost.x === DEFAULT_DECO_GHOST.x && decoGhost.y === DEFAULT_DECO_GHOST.y && decoGhost.scale === DEFAULT_DECO_GHOST.scale && !decoGhost.color && (decoGhost.opacity == null || decoGhost.opacity === 100) ? undefined : decoGhost,
       decoScript: decoScript ? { ...decoScript, text: decoScript.text?.trim() || undefined, fontId: decoScript.fontId || undefined, color: decoScript.color || undefined } : undefined,
       leftBoard: leftBoard === 'gallery' ? 'gallery' : undefined,
       memberOrder: !isNew && !auId && isMultiRel ? memberOrder : undefined,
@@ -879,8 +879,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
 
                 {/* 가운데 정보(INFO · 자관 이름 · 서랍 바로가기) — 끌어서 위치를 옮긴다 (스테이지 구성일 때) */}
                 {detailLayout === 'stage' && !isHid('info') && (() => {
-                  const wPx = Math.min(0.3 * vp.w, 400);
+                  const wMax = Math.min(0.3 * vp.w, 400);
                   const pairTxt = `[ ${pairMembers.map(m => memberNames?.[m.charId] ?? m.charId).join(' × ')} ]`;
+                  const mtPx = Math.min(24, Math.max(11, wMax / (emWidth(pairTxt) + 1)));
+                  const wPx = Math.min(wMax, emWidth(pairTxt) * mtPx);   // 서랍 바로가기는 자관 이름 줄 폭에 맞춘다
                   const infoTop = ((0.46 * vp.h - 58) / heroH) * 100;
                   return (
                     <PrevDrag rootRef={previewRef} x={uiInfo.x} y={uiInfo.y} selected={selLayer === 'info'}
@@ -892,10 +894,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         background: 'rgba(0,0,0,.18)', borderRadius: cq(6), padding: `${cq(6)} 0`,
                       }}>
                       <small style={{ fontSize: cq(9), letterSpacing: '.34em', fontWeight: 800, opacity: .7 }}>INFO.</small>
-                      <b style={{ fontSize: cq(Math.min(24, Math.max(11, wPx / (emWidth(pairTxt) + 1)))), fontWeight: 800 }}>{pairTxt}</b>
+                      <b style={{ fontSize: cq(mtPx), fontWeight: 800, whiteSpace: 'nowrap' }}>{pairTxt}</b>
                       <div style={{ width: '100%', display: 'grid' }}>
                         {['TIMELINE', 'LOG BACKUP', 'SESSION BOARD', 'GALLERY', 'ROLE PLAY'].map(t => (
-                          <div key={t} style={{ fontSize: cq(11), fontWeight: 800, letterSpacing: '.16em', textAlign: 'left', padding: `${cq(3)} ${cq(2)}`, borderBottom: '1px solid rgba(255,255,255,.28)' }}>{t}</div>
+                          <div key={t} style={{ fontSize: cq(11), fontWeight: 800, letterSpacing: '.16em', textAlign: 'left', padding: `${cq(6)} ${cq(2)}`, borderBottom: '1px solid rgba(255,255,255,.28)' }}>{t}</div>
                         ))}
                       </div>
                     </PrevDrag>
@@ -915,7 +917,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         onSelect={() => setSelLayer('deco-ghost')} onChange={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
                         style={{
                           left: `${decoGhost.x}%`, top: `${decoGhost.y}%`, transform: 'translate(-50%,-50%)', width: 'max-content',
-                          textAlign: 'center', whiteSpace: 'nowrap', color: 'rgba(255,255,255,.55)', fontWeight: 800, lineHeight: 0.9,
+                          textAlign: 'center', whiteSpace: 'nowrap', color: decoGhost.color || 'rgba(255,255,255,.55)', opacity: decoGhost.opacity != null ? decoGhost.opacity / 100 : undefined, fontWeight: 800, lineHeight: 0.9,
                           letterSpacing: '-.025em', fontFamily: deVarFamily(familyOf(decoFontId || fontId) ?? ''),
                           fontSize: cq(relTitlePx(bigName, vp.w, heroH, decoGhost.scale)),
                         }}>
@@ -929,7 +931,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                             left: `${decoScript.x}%`, top: `${decoScript.y}%`, transform: `translate(-50%,-50%) rotate(${decoScript.rot}deg)`,
                             whiteSpace: 'nowrap', lineHeight: 1.1, color: decoScript.color || (themeMode === 'custom' ? themeColor : '#7fd6d0'),
                             fontFamily: deVarFamily(familyOf(decoScript.fontId || fontId) ?? ''),
-                            fontSize: cq(decoScript.size * heroH / 100),
+                            fontSize: cq(decoScript.size * heroH / 100), filter: decoScript.blur ? `blur(${cq(decoScript.blur)})` : undefined,
                           }}>{spTxt}</PrevDrag>
                       )}
                     </div>
@@ -1007,23 +1009,36 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                           display: 'flex', flexDirection: 'column', gap: 2, color: '#fff', textShadow: shadowCss,
                           alignItems: ta === 'center' ? 'center' : ta === 'left' ? 'flex-start' : 'flex-end', textAlign: ta,
                         }}>
+                        {/* 상세 스테이지와 같은 구성 — 부제 · 이름 · No. · 기본 정보 · 키워드 · PROFILE (정렬·배지 표시 설정이 그대로 반영된다) */}
+                        <small style={{ fontSize: cq(clampN(vp.w * 0.0085, 9, 12)), fontStyle: 'italic', opacity: .75, letterSpacing: '.06em', fontWeight: 400 }}>{ch?.sub || 'MEMBER'}</small>
                         <b style={{ fontSize: cq(fs), lineHeight: 1.05, fontWeight: (nameBolds[m.charId] ?? true) ? 800 : 400 }}>
                           {memberNames?.[m.charId] ?? m.charId}
                         </b>
-                        {ch?.sub && <small style={{ fontSize: cq(12.5), opacity: .85, letterSpacing: '.04em', fontWeight: 400 }}>{ch.sub}</small>}
-                        {/* 이름 밑 배지 줄 — 상세 화면(.fb-kw-row)과 같은 구성: 키워드 · 스펙 · 컬러 팔레트 */}
-                        {badgesOn && (m.keywords.length > 0 || specPills.length > 0 || gems.length > 0) && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: cq(6), marginTop: cq(8), alignItems: left ? 'flex-start' : 'flex-end' }}>
-                            {m.keywords.map(k => <span key={k} style={pillCss(12)}>{k}</span>)}
-                            {specPills.map(sp => <span key={sp.label} style={pillCss(12)}>{sp.label} {sp.value}</span>)}
-                            {gems.map(gm => (
-                              <span key={gm.hex + gm.label} title={gm.label} style={{
-                                display: 'inline-block', width: cq(14), height: cq(14), borderRadius: '50%', background: gm.hex,
-                                boxShadow: `0 0 0 ${cq(2)} rgba(255,255,255,.5)`,
-                              }} />
+                        <div style={{ display: 'flex', flexDirection: left ? 'row' : 'row-reverse', alignItems: 'center', gap: cq(6),
+                          fontSize: cq(clampN(vp.w * 0.0085, 9, 12)), fontWeight: 800, letterSpacing: '.08em', color: 'var(--accent,#7fd6d0)', textShadow: 'none' }}>
+                          {badgesOn && gems.slice(0, 5).map(gm => <i key={gm.hex + gm.label} title={gm.label} style={{ width: cq(9), height: cq(9), borderRadius: '50%', background: gm.hex }} />)}
+                          <span>No./{String(i + 1).padStart(2, '0')}</span>
+                          <i style={{ width: cq(clampN(vp.w * 0.03, 24, 44)), height: 1, background: 'currentColor' }} />
+                        </div>
+                        {badgesOn && specPills.length > 0 && (
+                          <div style={{ display: 'grid', gap: 1, margin: `${cq(4)} 0 ${cq(2)}`, fontSize: cq(clampN(vp.w * 0.009, 10, 13)) }}>
+                            {specPills.slice(0, 4).map(sp => (
+                              <React.Fragment key={sp.label}>
+                                <span style={{ fontSize: '.72em', fontStyle: 'italic', opacity: .6, marginTop: cq(6) }}>▪ {sp.label}</span>
+                                <b style={{ fontWeight: 700 }}>{sp.value}</b>
+                              </React.Fragment>
                             ))}
                           </div>
                         )}
+                        {badgesOn && m.keywords.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: cq(5), marginTop: cq(2), justifyContent: ta === 'center' ? 'center' : ta === 'left' ? 'flex-start' : 'flex-end' }}>
+                            {m.keywords.slice(0, 5).map(k => (
+                              <span key={k} style={{ padding: `${cq(3)} ${cq(10)}`, borderRadius: 999, border: '1px solid rgba(255,255,255,.4)',
+                                fontSize: cq(clampN(vp.w * 0.008, 9, 11)), fontWeight: 700 }}>{k}</span>
+                            ))}
+                          </div>
+                        )}
+                        <span style={{ marginTop: cq(6), fontSize: cq(10), fontWeight: 800, letterSpacing: '.2em', opacity: .8, borderBottom: '1px solid currentColor', paddingBottom: cq(2) }}>PROFILE →</span>
                       </PrevDrag>
                     );
                   })}
@@ -1481,14 +1496,22 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                       <KStep value={decoScript.size} min={6} max={50} step={1} onChange={v => setDecoScript({ ...decoScript, size: v })} />
                       <span className="cp-lb">기울기</span>
                       <KStep value={decoScript.rot} min={-30} max={30} step={1} suffix="°" onChange={v => setDecoScript({ ...decoScript, rot: v })} />
+                      <span className="cp-lb">블러</span>
+                      <KStep value={decoScript.blur ?? 0} min={0} max={30} step={1} suffix="px" onChange={v => setDecoScript({ ...decoScript, blur: v || undefined })} />
                     </div>
                   </>
                 )}
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                   <span className="cp-lb">큰 자관명 크기</span>
                   <KStep value={decoGhost.scale} min={30} max={200} step={5} suffix="%" onChange={v => setDecoGhost({ ...decoGhost, scale: v })} />
+                  <span className="cp-lb">색</span>
+                  <ColorField value={decoGhost.color || '#ffffff'} onChange={hex => setDecoGhost({ ...decoGhost, color: hex })} />
                   <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
-                    onClick={() => setDecoGhost({ ...DEFAULT_DECO_GHOST })}>위치·크기 처음대로</button>
+                    onClick={() => setDecoGhost({ ...decoGhost, color: undefined })}>자동</button>
+                  <span className="cp-lb">불투명도</span>
+                  <KStep value={decoGhost.opacity ?? 100} min={5} max={100} step={5} suffix="%" onChange={v => setDecoGhost({ ...decoGhost, opacity: v })} />
+                  <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+                    onClick={() => setDecoGhost({ ...DEFAULT_DECO_GHOST })}>위치·크기·색 처음대로</button>
                 </div>
                 {Object.keys(fulls).length === 0 && <ScriptPlacer script={decoScript} scriptText={decoScript?.text?.trim() || name.trim()}
                   scriptFont={decoScript?.fontId ? deVarFamily(familyOf(decoScript.fontId) ?? '') : deVarFamily(familyOf(fontId) ?? '')}

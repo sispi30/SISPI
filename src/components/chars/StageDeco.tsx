@@ -101,7 +101,7 @@ interface Props {
   /** 큰 이름 글씨 위에 겹쳐 쓰는 필기체 글씨 (처음에 써 내려가는 효과) */
   /** 큰 이름 글씨 위치·크기 (x·y = 화면 %, scale = 기본 크기 대비 %) */
   ghostPos?: { x: number; y: number; scale: number };
-  script?: { text: string; font?: string; color?: string; size: number; x: number; y: number; rot: number };
+  script?: { text: string; font?: string; color?: string; size: number; x: number; y: number; rot: number; blur?: number };
 }
 
 /** 큰 이름 글씨 크기(vw) — 화면 폭의 약 92%에 들어오게 (한글·한자는 글자 폭이 넓어 계수가 다르다). 편집 미리보기도 같은 식을 쓴다 */
@@ -144,7 +144,8 @@ export function ScriptWrite({ t, vb }: { t: NonNullable<Props['script']>; vb?: {
       <mask id="dc-wr" maskUnits="userSpaceOnUse" x={-VW * 0.2} y={-VH * 0.4} width={VW * 1.4} height={VH * 1.8}>
         {d && <path className="dc-write" d={d} pathLength={1} fill="none" stroke="#fff" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />}
       </mask>
-      <text ref={ref} x={cx} y={cy} textAnchor="middle" dominantBaseline="central" mask="url(#dc-wr)"
+      {!!t.blur && <filter id="dc-wr-blur" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation={t.blur} /></filter>}
+      <text ref={ref} x={cx} y={cy} textAnchor="middle" dominantBaseline="central" mask="url(#dc-wr)" filter={t.blur ? 'url(#dc-wr-blur)' : undefined}
         fontSize={fs} fill={t.color || 'var(--d-acc)'} style={{ fontFamily: t.font ?? 'cursive' }}>{t.text}</text>
     </g>
   );

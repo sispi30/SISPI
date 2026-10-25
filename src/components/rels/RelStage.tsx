@@ -150,7 +150,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
 
         {/* 메인 이미지 레이어 — 큰 자관명 · 필기체 · 전신 · 이름 · 스티커 (수정 화면 미리보기와 같은 상자) */}
         <div className="rs-hero" ref={heroRef}>
-          {!hid('ghost') && <h1 className="rs-title" style={{ fontFamily: deco?.titleFont ?? fontFamily, left: `${gp.x}%`, top: `${gp.y}%`, fontSize: `${titlePx}px` }}>
+          {!hid('ghost') && <h1 className="rs-title" style={{ fontFamily: deco?.titleFont ?? fontFamily, left: `${gp.x}%`, top: `${gp.y}%`, fontSize: `${titlePx}px`, color: gp.color || undefined, opacity: gp.opacity != null ? gp.opacity / 100 : undefined }}>
             {lines.map((l, i) => <span key={i}>{l}</span>)}
           </h1>}
           {!deco?.off && !hid('script') && deco?.script && deco.script.text && (
