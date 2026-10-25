@@ -1105,65 +1105,6 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
             배경처럼 페이지 전체에 고정으로 깔려 끊김 없이 이어진다 */}
         {pairMembers.length === 0 && titleSizeCtl}
 
-        <label className="k-label" style={{ margin: 0 }}>
-          배경 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 환경설정의 배경 변경과 같은 방식(업로드·블러). 페이지 전체 배경으로 깔림 (선택)</span>
-        </label>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ width: 200, aspectRatio: '3/1', borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1.5px dashed var(--line)', cursor: 'var(--cur-pointer,pointer)' }}
-            onClick={() => document.getElementById('relHeaderF')?.click()}
-            {...fileDrop(fl => {
-              const hf = fl[0];
-              if (hf) { setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false); }
-            })}>
-            {headerUrl ? (
-              <div style={{ position: 'absolute', inset: 0, filter: 'blur(2px)' }}>
-                <CropImg src={headerUrl} />
-              </div>
-            ) : (!headerRemoved && initHeaderId) ? (
-              <HeaderPreview refId={initHeaderId} />
-            ) : (
-              <div className="ph" style={{ width: '100%', height: '100%' }}><span style={{ fontSize: 10 }}>BACKGROUND</span></div>
-            )}
-          </div>
-          <input id="relHeaderF" type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={e => {
-              const hf = e.target.files?.[0];
-              if (hf) { setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false); }
-              e.target.value = '';
-            }} />
-          <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
-            onClick={() => document.getElementById('relHeaderF')?.click()}>
-            {(headerUrl || (!headerRemoved && initHeaderId)) ? 'CHANGE' : 'UPLOAD'}
-          </button>
-          {(headerUrl || (!headerRemoved && initHeaderId)) && (
-            <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
-              onClick={() => { setHeaderFile(null); setHeaderUrl(''); setHeaderRemoved(true); }}>REMOVE</button>
-          )}
-          <span className="cp-lb">블러</span>
-          <KStep value={headerBlur} min={0} max={30} step={2} suffix="px" onChange={setHeaderBlur} />
-        </div>
-
-        {/* 배경 이미지가 없을 때 대신 깔 배경 (v2.0 사용자 요청) — 디자인 탭 배경 설정과 같은 방식.
-            지정하지 않으면 예전처럼 그 자리엔 아무것도 안 그린다. AU마다 따로 정할 수 있다 */}
-        {(
-          <div style={{ marginTop: 10 }}>
-            <KCheck label="배경 이미지 없을 때 배경 직접 지정" checked={headerBgCustom} onChange={setHeaderBgCustom} />
-            {headerBgCustom && (
-              <div className="cf-stack" style={{ marginTop: 8 }}>
-                <div className="cf-row">
-                  <ColorField value={headerBgG1} onChange={setHeaderBgG1} />
-                  <span style={{ color: 'var(--faint)', fontSize: 11 }}>→</span>
-                  <ColorField value={headerBgG2} onChange={setHeaderBgG2} />
-                </div>
-                <div className="cf-row">
-                  <span className="cp-lb">각도</span>
-                  <KStep value={headerBgAngle} min={0} max={360} step={15} suffix="°" onChange={setHeaderBgAngle} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* 상세 하단 연동 리스트 선택 + 연동 항목 검색 — 로그 백업 / 세션 게시판.
             자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
         {/* 다인관 멤버 순서 (v6.7) — 상세 페이지의 멤버 목록 순서. ⠿ 핸들을 잡고 끌어서 바꾼다.
@@ -1181,87 +1122,6 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   <div className="nm"><b>{memberNames?.[id] ?? id}</b></div>
                 </div>
               )} />
-          </div>
-        )}
-
-        {/* 상세 화면 구성 — 스테이지(스크롤 인터랙티브, 기본) / 클래식(예전 구성). 자관 전체 설정 */}
-        {!auObj && (
-          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
-            <label className="k-label" style={{ margin: 0 }}>상세 페이지 구성</label>
-            <div className="mini-seg" style={{ justifySelf: 'start' }}>
-              <button type="button" className={detailLayout === 'stage' ? 'on' : ''} onClick={() => setDetailLayout('stage')}>스테이지</button>
-              <button type="button" className={detailLayout === 'classic' ? 'on' : ''} onClick={() => setDetailLayout('classic')}>클래식</button>
-            </div>
-            <p className="hint" style={{ margin: 0 }}>
-              {detailLayout === 'stage'
-                ? '캐릭터 스테이지처럼 큰 자관명 앞에 전신이 서고, 스크롤을 내리면 장면이 이어서 바뀝니다'
-                : '예전 구성 — 좌우 카드와 중앙 일러가 한 화면에 보입니다'}
-            </p>
-          </div>
-        )}
-
-        {/* 스테이지 배경 장식 — 캐릭터 상세와 같은 설정(큰 글씨 위치·크기·폰트, 필기체 겹치기, 이미지 쓸 곳). 자관 전체 설정 */}
-        {!auObj && detailLayout === 'stage' && (
-          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
-            <label className="k-label" style={{ margin: 0 }}>배경 장식</label>
-            <p className="hint" style={{ margin: 0 }}>
-              스테이지 배경에 얇은 선·눈금·라벨과 뒤쪽 큰 판(왼쪽 위가 둥근 사각형)을 깝니다. 가운데 큰 글씨는 자관명입니다
-            </p>
-            <div className="mini-seg" style={{ justifySelf: 'start' }}>
-              <button type="button" className={deco === 'on' ? 'on' : ''} onClick={() => setDeco('on')}>켜기 (기본)</button>
-              <button type="button" className={deco === 'off' ? 'on' : ''} onClick={() => setDeco('off')}>끄기</button>
-            </div>
-            {deco === 'on' && (
-              <>
-                <p className="hint" style={{ margin: 0 }}>큰 글씨(자관명) 폰트 — 비우면 자관 이름 폰트와 같게</p>
-                <KSelect value={decoFontId} onChange={setDecoFontId}
-                  options={[{ value: '', label: '이름 폰트와 같게 (기본)' },
-                    ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
-                <KCheck label="필기체 글씨 겹치기 — 큰 글씨 위에 다른 색·필기체로 한 번 더 쓰고, 처음 나타날 때 써 내려가는 효과로 등장"
-                  checked={!!decoScript} onChange={v => setDecoScript(v ? { ...DEFAULT_DECO_SCRIPT } : null)} />
-                {decoScript && (
-                  <>
-                    <KInput placeholder="필기체로 쓸 글씨 (비우면 자관명)" value={decoScript.text ?? ''}
-                      onChange={e => setDecoScript({ ...decoScript, text: e.target.value })} />
-                    <KSelect value={decoScript.fontId ?? ''} onChange={v => setDecoScript({ ...decoScript, fontId: v })}
-                      options={[{ value: '', label: '이름 폰트와 같게 (필기체 폰트를 고르세요)' },
-                        ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span className="cp-lb">색</span>
-                      <ColorField value={decoScript.color || '#ff6a00'} onChange={hex => setDecoScript({ ...decoScript, color: hex })} />
-                      <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
-                        onClick={() => setDecoScript({ ...decoScript, color: undefined })}>포인트색</button>
-                      <span className="cp-lb">크기</span>
-                      <KStep value={decoScript.size} min={6} max={50} step={1} onChange={v => setDecoScript({ ...decoScript, size: v })} />
-                      <span className="cp-lb">기울기</span>
-                      <KStep value={decoScript.rot} min={-30} max={30} step={1} suffix="°" onChange={v => setDecoScript({ ...decoScript, rot: v })} />
-                    </div>
-                  </>
-                )}
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span className="cp-lb">큰 자관명 크기</span>
-                  <KStep value={decoGhost.scale} min={30} max={200} step={5} suffix="%" onChange={v => setDecoGhost({ ...decoGhost, scale: v })} />
-                  <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
-                    onClick={() => setDecoGhost({ ...DEFAULT_DECO_GHOST })}>위치·크기 처음대로</button>
-                </div>
-                <ScriptPlacer script={decoScript} scriptText={decoScript?.text?.trim() || name.trim()}
-                  scriptFont={decoScript?.fontId ? deVarFamily(familyOf(decoScript.fontId) ?? '') : deVarFamily(familyOf(fontId) ?? '')}
-                  ghost={name.trim().toUpperCase()} ghostPos={decoGhost} ghostFont={deVarFamily(familyOf(decoFontId || fontId) ?? '')}
-                  ghostVw={relTitleVw(name.trim().toUpperCase())}
-                  accent={themeMode === 'custom' ? themeColor : '#7fd6d0'}
-                  onMoveGhost={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
-                  onMoveScript={(x, y) => decoScript && setDecoScript({ ...decoScript, x, y })} />
-                {(headerUrl || (!headerRemoved && initHeaderId)) && (
-                  <>
-                    <p className="hint" style={{ margin: 0 }}>배경 이미지를 등록했을 때 — 이미지를 어디에 쓸지 고릅니다</p>
-                    <div className="mini-seg">
-                      <button type="button" className={decoBg === 'full' ? 'on' : ''} onClick={() => setDecoBg('full')}>이미지 전체 배경 + 흰색 장식 (기본)</button>
-                      <button type="button" className={decoBg === 'band' ? 'on' : ''} onClick={() => setDecoBg('band')}>큰 판 안에 이미지 + 포인트색 장식</button>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
           </div>
         )}
 
@@ -1429,6 +1289,148 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   : '이 페이지도 홈페이지 테마를 그대로 사용합니다'}
               </p>
             </div>
+        {/* 상세 화면 구성 — 스테이지(스크롤 인터랙티브, 기본) / 클래식(예전 구성). 자관 전체 설정 */}
+        {!auObj && (
+          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+            <label className="k-label" style={{ margin: 0 }}>상세 페이지 구성</label>
+            <div className="mini-seg" style={{ justifySelf: 'start' }}>
+              <button type="button" className={detailLayout === 'stage' ? 'on' : ''} onClick={() => setDetailLayout('stage')}>스테이지</button>
+              <button type="button" className={detailLayout === 'classic' ? 'on' : ''} onClick={() => setDetailLayout('classic')}>클래식</button>
+            </div>
+            <p className="hint" style={{ margin: 0 }}>
+              {detailLayout === 'stage'
+                ? '캐릭터 스테이지처럼 큰 자관명 앞에 전신이 서고, 스크롤을 내리면 장면이 이어서 바뀝니다'
+                : '예전 구성 — 좌우 카드와 중앙 일러가 한 화면에 보입니다'}
+            </p>
+          </div>
+        )}
+
+        {/* 스테이지 배경 장식 — 캐릭터 상세와 같은 설정(큰 글씨 위치·크기·폰트, 필기체 겹치기, 이미지 쓸 곳). 자관 전체 설정 */}
+        {!auObj && detailLayout === 'stage' && (
+          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+            <label className="k-label" style={{ margin: 0 }}>배경 장식</label>
+            <p className="hint" style={{ margin: 0 }}>
+              스테이지 배경에 얇은 선·눈금·라벨과 뒤쪽 큰 판(왼쪽 위가 둥근 사각형)을 깝니다. 가운데 큰 글씨는 자관명입니다
+            </p>
+            <div className="mini-seg" style={{ justifySelf: 'start' }}>
+              <button type="button" className={deco === 'on' ? 'on' : ''} onClick={() => setDeco('on')}>켜기 (기본)</button>
+              <button type="button" className={deco === 'off' ? 'on' : ''} onClick={() => setDeco('off')}>끄기</button>
+            </div>
+            {deco === 'on' && (
+              <>
+                <p className="hint" style={{ margin: 0 }}>큰 글씨(자관명) 폰트 — 비우면 자관 이름 폰트와 같게</p>
+                <KSelect value={decoFontId} onChange={setDecoFontId}
+                  options={[{ value: '', label: '이름 폰트와 같게 (기본)' },
+                    ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
+                <KCheck label="필기체 글씨 겹치기 — 큰 글씨 위에 다른 색·필기체로 한 번 더 쓰고, 처음 나타날 때 써 내려가는 효과로 등장"
+                  checked={!!decoScript} onChange={v => setDecoScript(v ? { ...DEFAULT_DECO_SCRIPT } : null)} />
+                {decoScript && (
+                  <>
+                    <KInput placeholder="필기체로 쓸 글씨 (비우면 자관명)" value={decoScript.text ?? ''}
+                      onChange={e => setDecoScript({ ...decoScript, text: e.target.value })} />
+                    <KSelect value={decoScript.fontId ?? ''} onChange={v => setDecoScript({ ...decoScript, fontId: v })}
+                      options={[{ value: '', label: '이름 폰트와 같게 (필기체 폰트를 고르세요)' },
+                        ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span className="cp-lb">색</span>
+                      <ColorField value={decoScript.color || '#ff6a00'} onChange={hex => setDecoScript({ ...decoScript, color: hex })} />
+                      <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+                        onClick={() => setDecoScript({ ...decoScript, color: undefined })}>포인트색</button>
+                      <span className="cp-lb">크기</span>
+                      <KStep value={decoScript.size} min={6} max={50} step={1} onChange={v => setDecoScript({ ...decoScript, size: v })} />
+                      <span className="cp-lb">기울기</span>
+                      <KStep value={decoScript.rot} min={-30} max={30} step={1} suffix="°" onChange={v => setDecoScript({ ...decoScript, rot: v })} />
+                    </div>
+                  </>
+                )}
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span className="cp-lb">큰 자관명 크기</span>
+                  <KStep value={decoGhost.scale} min={30} max={200} step={5} suffix="%" onChange={v => setDecoGhost({ ...decoGhost, scale: v })} />
+                  <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
+                    onClick={() => setDecoGhost({ ...DEFAULT_DECO_GHOST })}>위치·크기 처음대로</button>
+                </div>
+                <ScriptPlacer script={decoScript} scriptText={decoScript?.text?.trim() || name.trim()}
+                  scriptFont={decoScript?.fontId ? deVarFamily(familyOf(decoScript.fontId) ?? '') : deVarFamily(familyOf(fontId) ?? '')}
+                  ghost={name.trim().toUpperCase()} ghostPos={decoGhost} ghostFont={deVarFamily(familyOf(decoFontId || fontId) ?? '')}
+                  ghostVw={relTitleVw(name.trim().toUpperCase())}
+                  accent={themeMode === 'custom' ? themeColor : '#7fd6d0'}
+                  onMoveGhost={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
+                  onMoveScript={(x, y) => decoScript && setDecoScript({ ...decoScript, x, y })} />
+                {(headerUrl || (!headerRemoved && initHeaderId)) && (
+                  <>
+                    <p className="hint" style={{ margin: 0 }}>배경 이미지를 등록했을 때 — 이미지를 어디에 쓸지 고릅니다</p>
+                    <div className="mini-seg">
+                      <button type="button" className={decoBg === 'full' ? 'on' : ''} onClick={() => setDecoBg('full')}>이미지 전체 배경 + 흰색 장식 (기본)</button>
+                      <button type="button" className={decoBg === 'band' ? 'on' : ''} onClick={() => setDecoBg('band')}>큰 판 안에 이미지 + 포인트색 장식</button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+
+        <label className="k-label" style={{ margin: 0 }}>
+          배경 이미지 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 환경설정의 배경 변경과 같은 방식(업로드·블러). 페이지 전체 배경으로 깔림 (선택)</span>
+        </label>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ width: 200, aspectRatio: '3/1', borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1.5px dashed var(--line)', cursor: 'var(--cur-pointer,pointer)' }}
+            onClick={() => document.getElementById('relHeaderF')?.click()}
+            {...fileDrop(fl => {
+              const hf = fl[0];
+              if (hf) { setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false); }
+            })}>
+            {headerUrl ? (
+              <div style={{ position: 'absolute', inset: 0, filter: 'blur(2px)' }}>
+                <CropImg src={headerUrl} />
+              </div>
+            ) : (!headerRemoved && initHeaderId) ? (
+              <HeaderPreview refId={initHeaderId} />
+            ) : (
+              <div className="ph" style={{ width: '100%', height: '100%' }}><span style={{ fontSize: 10 }}>BACKGROUND</span></div>
+            )}
+          </div>
+          <input id="relHeaderF" type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={e => {
+              const hf = e.target.files?.[0];
+              if (hf) { setHeaderFile(hf); setHeaderUrl(URL.createObjectURL(hf)); setHeaderRemoved(false); }
+              e.target.value = '';
+            }} />
+          <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+            onClick={() => document.getElementById('relHeaderF')?.click()}>
+            {(headerUrl || (!headerRemoved && initHeaderId)) ? 'CHANGE' : 'UPLOAD'}
+          </button>
+          {(headerUrl || (!headerRemoved && initHeaderId)) && (
+            <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+              onClick={() => { setHeaderFile(null); setHeaderUrl(''); setHeaderRemoved(true); }}>REMOVE</button>
+          )}
+          <span className="cp-lb">블러</span>
+          <KStep value={headerBlur} min={0} max={30} step={2} suffix="px" onChange={setHeaderBlur} />
+        </div>
+
+        {/* 배경 이미지가 없을 때 대신 깔 배경 (v2.0 사용자 요청) — 디자인 탭 배경 설정과 같은 방식.
+            지정하지 않으면 예전처럼 그 자리엔 아무것도 안 그린다. AU마다 따로 정할 수 있다 */}
+        {(
+          <div style={{ marginTop: 10 }}>
+            <KCheck label="배경 이미지 없을 때 배경 직접 지정" checked={headerBgCustom} onChange={setHeaderBgCustom} />
+            {headerBgCustom && (
+              <div className="cf-stack" style={{ marginTop: 8 }}>
+                <div className="cf-row">
+                  <ColorField value={headerBgG1} onChange={setHeaderBgG1} />
+                  <span style={{ color: 'var(--faint)', fontSize: 11 }}>→</span>
+                  <ColorField value={headerBgG2} onChange={setHeaderBgG2} />
+                </div>
+                <div className="cf-row">
+                  <span className="cp-lb">각도</span>
+                  <KStep value={headerBgAngle} min={0} max={360} step={15} suffix="°" onChange={setHeaderBgAngle} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+
             {/* 문답 답변 가리기 (v2.0 사용자 요청) — 방문자에게 답변 내용을 안 보이게.
                 자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
             {!auObj && (
