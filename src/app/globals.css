@@ -3438,3 +3438,15 @@ body.rs-full .rs-sticky{top:0!important}
 .rs-mid .rs-au .au-list{position:static!important}
 @media (max-width:900px){.rs-mid{top:40vh;width:60vw}.rs-nb{max-width:46%}.rs-pills{display:none}}
 .rs-nb .rs-pill{color:inherit}
+
+/* 이름 묶음 — 이전 스테이지의 배지 디자인(부제 · 이름 · No. · 기본 정보 · 키워드 · PROFILE) */
+.rs-nb .rs-role{font-size:clamp(9px,.85vw,12px);font-style:italic;opacity:.75;letter-spacing:.06em;font-weight:400}
+.rs-nb .rs-meta{display:flex;align-items:center;gap:6px;font-size:clamp(9px,.85vw,12px);font-weight:800;letter-spacing:.08em;color:var(--rs-c);filter:brightness(1.5);text-shadow:none}
+.rs-nb.r .rs-meta{flex-direction:row-reverse}.rs-nb.r .rs-meta::before{margin:0 4px 0 0}
+.rs-nb .rs-meta .rs-gem{width:9px;height:9px;box-shadow:none}
+.rs-nb .rs-spec{margin:4px 0 2px;text-align:inherit}
+.rs-nb .rs-kw{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.rs-nb.r .rs-kw{justify-content:flex-end}
+.rs-nb .rs-kw span{padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.4);font-size:clamp(9px,.8vw,11px);font-weight:700;background:none}
+.rs[data-lt] .rs-nb .rs-kw span{border-color:rgba(0,0,0,.35)}
+.rs-nb .rs-go{pointer-events:auto;align-self:inherit;text-shadow:none}

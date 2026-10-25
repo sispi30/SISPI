@@ -139,17 +139,21 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
                 fontFamily: n.font,
               };
               return (
-                <div key={n.id} className="rs-nb" style={pos}>
+                <div key={n.id} className={`rs-nb ${left ? 'l' : 'r'}`} style={pos}>
+                  <small className="rs-role">{n.sub || 'MEMBER'}</small>
                   <button type="button" className="rs-nm" onClick={() => onGo(n.href)}
                     style={{ fontSize: n.fs ? `${n.fs}px` : 'clamp(20px,3.4vw,40px)', fontWeight: n.bold ? 800 : 400 }}>{n.name}</button>
-                  {n.sub && <small className="rs-sub">{n.sub}</small>}
-                  {(n.kws.length > 0 || n.specs.length > 0 || n.gems.length > 0) && (
-                    <div className="rs-pills" style={{ alignItems: n.ta === 'center' ? 'center' : n.ta === 'left' ? 'flex-start' : 'flex-end' }}>
-                      {n.kws.map(k => <span key={k} className="rs-pill">{k}</span>)}
-                      {n.specs.map(sp => <span key={sp.label} className="rs-pill">{sp.label} {sp.value}</span>)}
-                      {n.gems.map(g => <i key={g.hex + g.label} className="rs-gem" title={g.label} style={{ background: g.hex }} />)}
-                    </div>
+                  <div className="rs-meta">
+                    {n.gems.slice(0, 5).map(g => <i key={g.hex + g.label} className="rs-gem" title={g.label} style={{ background: g.hex }} />)}
+                    <span>No./{String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  {n.specs.length > 0 && (
+                    <dl className="rs-spec">
+                      {n.specs.slice(0, 4).map(sp => <React.Fragment key={sp.label}><dt>{sp.label}</dt><dd>{sp.value}</dd></React.Fragment>)}
+                    </dl>
                   )}
+                  {n.kws.length > 0 && <div className="rs-kw">{n.kws.slice(0, 5).map(k => <span key={k}>{k}</span>)}</div>}
+                  <button type="button" className="rs-go" onClick={() => onGo(n.href)}>PROFILE →</button>
                 </div>
               );
             })}

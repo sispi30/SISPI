@@ -771,9 +771,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                  앞뒤는 아래 「메인 이미지 · 레이어」 목록의 순서가 정한다. 값은 모두 상자 대비 %.
                  글자 크기·제목 자리는 지금 창 크기(vp) 기준 px를 상자 폭 비율(cqw)로 바꿔 상세와 같게 맞춘다 */
               const heroH = Math.max(1, vp.h - 58);
-              // 격자 한 칸 = 실제 상세 화면의 10px (상자 대비 %). 가로는 히어로 폭, 세로는 히어로 높이 기준
-              const gcx = (10 / vp.w) * 100;
-              const gcy = (10 / heroH) * 100;
+              // 격자 한 칸 = 실제 상세 화면의 20px (상자 대비 %). 가로는 히어로 폭, 세로는 히어로 높이 기준
+              const gcx = (20 / vp.w) * 100;
+              const gcy = (20 / heroH) * 100;
               const g2 = (v: number) => Math.round(v * 100) / 100;
               // 전신 한 칸은 히어로 폭의 44%(왼쪽은 0~44%, 오른쪽은 56~100%) — 이미지 가운데 x와 바닥 y를 격자에 맞춘다
               const fullSnap = (i: number) => (q: { x: number; y: number }) => {
@@ -794,7 +794,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                 <KToggle label="그리드" checked={gridOn} onChange={setGridOn} />
-                <span className="hint" style={{ margin: 0 }}>{gridOn ? '10px 격자에 맞춰 배치됩니다' : '꺼짐 — 자유 배치'}</span>
+                <span className="hint" style={{ margin: 0 }}>{gridOn ? '20px 격자에 맞춰 배치됩니다' : '꺼짐 — 자유 배치'}</span>
               </div>
               <div ref={previewRef} onPointerDown={() => setSelLayer(null)} style={{
                 position: 'relative', width: `min(100%, calc(70vh * ${heroRatio}))`, margin: '0 auto', aspectRatio: `${heroRatio}`, borderRadius: 10,
@@ -842,6 +842,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
                       <PrevDrag rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
                         grid={gridOn ? { ax: 0, ay: 0, cx: gcx, cy: gcy } : undefined}
+                        onWheel={dir => setDecoGhost(g => ({ ...g, scale: clampN(g.scale - dir * 5, 30, 200) }))}
                         onSelect={() => setSelLayer('deco-ghost')} onChange={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
                         style={{
                           left: `${decoGhost.x}%`, top: `${decoGhost.y}%`, transform: 'translate(-50%,-50%)', width: 'max-content',
@@ -853,6 +854,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                       </PrevDrag>
                       {decoScript && (
                         <PrevDrag rootRef={previewRef} x={decoScript.x} y={decoScript.y} min={-20} max={120} selected={ssel}
+                          onWheel={dir => setDecoScript(c => (c ? { ...c, size: clampN(c.size - dir, 6, 50) } : c))}
                           onSelect={() => setSelLayer('deco-script')} onChange={(x, y) => setDecoScript({ ...decoScript, x, y })}
                           style={{
                             left: `${decoScript.x}%`, top: `${decoScript.y}%`, transform: `translate(-50%,-50%) rotate(${decoScript.rot}deg)`,
@@ -967,7 +969,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               </>
               );
             })()}
-            <p className="hint" style={{ margin: '4px 0 0' }}>전신: 드래그 = 위치 · 휠 = 크기 · 우클릭 = 앞으로/뒤로 / 제목(AU 줄 포함)·이름·배지·스티커: 드래그 = 위치 (스티커는 휠 = 크기) / 그리드를 켜면 10px 격자에 맞춰집니다 — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
+            <p className="hint" style={{ margin: '4px 0 0' }}>전신: 드래그 = 위치 · 휠 = 크기 (큰 자관명·필기체도 휠 = 크기) · 우클릭 = 앞으로/뒤로 / 제목(AU 줄 포함)·이름·배지·스티커: 드래그 = 위치 (스티커는 휠 = 크기) / 그리드를 켜면 20px 격자에 맞춰집니다 — 미리보기 비율은 지금 브라우저 창 기준으로 상세 화면과 동일합니다</p>
 
             {/* 메인 이미지 · 레이어 (v5.6 사용자 요청) — 손잡이를 끌어 앞뒤 순서를 바꾼다.
                 목록의 위쪽이 화면 앞쪽. 「UI」(제목·이름·배지 글자)를 전신보다 위에 두면 글자가 앞에, 아래에 두면 뒤에 그려진다 */}
