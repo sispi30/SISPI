@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DecoScript, DecoGhost, DEFAULT_DECO_SCRIPT, DEFAULT_DECO_GHOST } from '@/lib/charStore';
 import { ScriptPlacer } from '@/components/chars/ScriptPlacer';
-import { relTitleLines, relTitlePx, relTitleVw } from '@/components/rels/RelStage';
+import { relTitleLines, relTitlePx, relTitleVw, heroCol, heroNameFs, emWidth } from '@/components/rels/RelStage';
 import { Character, Relation, Visibility, RelCpTag, RelMember, auMember, auStyle, fullShadow,
   HeroLayout, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID } from '@/lib/charStore';
 import { ColorField } from '@/components/ui/ColorField';
@@ -223,6 +223,21 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 /** 미리보기 위에서 끌 수 있는 한 덩어리 (제목·이름·스티커 공용, v5.6).
  *  끈 거리는 미리보기 상자 대비 %로 바뀌어 (x, y) 값에 더해진다 — 상세 화면과 같은 단위.
  *  onWheel을 주면 휠로도 조절한다(스티커 크기). 휠은 네이티브 리스너로 달아 페이지가 같이 스크롤되지 않게 한다 */
+/** 레이어 눈 버튼 — 켜면 보이고 끄면 숨는다 (그림 편집 프로그램의 레이어 눈 아이콘처럼) */
+function EyeBtn({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" aria-label={on ? '숨기기' : '보이기'} title={on ? '보임 — 눌러서 숨기기' : '숨김 — 눌러서 보이기'}
+      onClick={e => { e.stopPropagation(); onToggle(); }}
+      style={{ width: 28, height: 28, flexShrink: 0, display: 'grid', placeItems: 'center', borderRadius: 7, border: 'none',
+        background: 'transparent', cursor: 'var(--cur-pointer,pointer)', color: on ? 'var(--ink,#16191f)' : 'var(--faint)', opacity: on ? 1 : .55 }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
+        {!on && <path d="M3 3l18 18" />}
+      </svg>
+    </button>
+  );
+}
+
 function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSelect, onChange, onWheel, style, children }: {
   rootRef: React.RefObject<HTMLDivElement | null>;
   x: number; y: number; min?: number; max?: number; selected?: boolean;
@@ -423,8 +438,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [pageBgAngle, setPageBgAngle] = useState(st?.pageBgAngle ?? 180);
   const [charQuery, setCharQuery] = useState('');
   // 전신 이미지 (v1.9 — 페어 · 수정 모드) — AU 편집이면 그 AU의 전신
+  // 페어는 2명, 다인관은 등록한 전원 — 둘 다 같은 「메인 이미지 · 레이어」로 전신을 놓는다
   const pairMembers = !isNew && (initial!.kind ? initial!.kind === 'pair' : initial!.members.length === 2)
-    ? initial!.members.slice(0, 2) : [];
+    ? initial!.members.slice(0, 2)
+    : (!isNew && initial!.members.length >= 2 ? initial!.members : []);
   const [fulls, setFulls] = useState<Record<string, FullDraft>>(() => {
     const o: Record<string, FullDraft> = {};
     for (const m of pairMembers) {
@@ -498,15 +515,21 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [uiTitle, setUiTitle] = useState<{ x: number; y: number }>(initLayout?.title ?? { x: 0, y: 0 });
   const [uiNames, setUiNames] = useState<Record<string, { x: number; y: number }>>(initLayout?.names ?? {});
   const [selLayer, setSelLayer] = useState<string | null>(null);
+  // 눈 버튼으로 숨긴 레이어 · 가운데 정보(INFO·서랍) 위치
+  const [hiddenLayers, setHiddenLayers] = useState<string[]>(initLayout?.hidden ?? []);
+  const [uiInfo, setUiInfo] = useState<{ x: number; y: number }>(initLayout?.info ?? { x: 0, y: 0 });
+  const isHid = (id: string) => hiddenLayers.includes(id);
+  const toggleHid = (id: string) => setHiddenLayers(h => (h.includes(id) ? h.filter(x => x !== id) : [...h, id]));
   // 그리드 on/off (v5.7 사용자 요청) — 메인 편집모드와 같은 10px 격자. 편집을 열 때마다 꺼진 상태로 시작
   const [gridOn, setGridOn] = useState(false);
   // 전신 앞으로/뒤로(우클릭 메뉴) — 다른 전신 바로 위/아래로 옮긴다
   const moveFull = (cid: string, front: boolean) => setLayerOrder(o => {
-    const other = pairMembers.find(x => x.charId !== cid)?.charId;
-    if (!other) return o;
+    // 다른 전신들 가운데 맨 앞(맨 위) 또는 맨 뒤(맨 아래)로
     const rest = o.filter(x => x !== heroFullId(cid));
-    const at = rest.indexOf(heroFullId(other));
-    rest.splice(front ? at + 1 : at, 0, heroFullId(cid));
+    const idx = rest.map((x, k) => (x.startsWith('full:') ? k : -1)).filter(k => k >= 0);
+    if (idx.length === 0) return o;
+    const at = front ? idx[idx.length - 1] + 1 : idx[0];
+    rest.splice(at, 0, heroFullId(cid));
     return rest;
   });
   const patchSticker = (id: string, p: Partial<StickerDraft>) =>
@@ -634,7 +657,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       quoteColors: pairMembers.length ? quoteColors : undefined,
       fullFront: topFull ?? initFullFront,
       heroLayout: pairMembers.length
-        ? { order: orderSaved, stickers: stickerSaved, title: uiTitle, names: uiNames } : undefined,
+        ? { order: orderSaved, stickers: stickerSaved, title: uiTitle, names: uiNames,
+          info: uiInfo.x || uiInfo.y ? uiInfo : undefined,
+          hidden: hiddenLayers.length ? hiddenLayers : undefined } : undefined,
       pickedCharIds: picked,
     });
   };
@@ -776,10 +801,11 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               const gcy = (20 / heroH) * 100;
               const g2 = (v: number) => Math.round(v * 100) / 100;
               // 전신 한 칸은 히어로 폭의 44%(왼쪽은 0~44%, 오른쪽은 56~100%) — 이미지 가운데 x와 바닥 y를 격자에 맞춘다
+              const nCols = pairMembers.length;
               const fullSnap = (i: number) => (q: { x: number; y: number }) => {
-                const base = i === 0 ? 22 : 78;
-                const abs = Math.round((base + 0.44 * q.x) / gcx) * gcx;
-                return { x: g2((abs - base) / 0.44), y: g2(100 - Math.round((100 - q.y) / gcy) * gcy) };
+                const cw = heroCol(i, nCols);
+                const abs = Math.round((cw.c + (cw.w / 100) * q.x) / gcx) * gcx;
+                return { x: g2((abs - cw.c) / (cw.w / 100)), y: g2(100 - Math.round((100 - q.y) / gcy) * gcy) };
               };
               const titleTop = ((heroH - 290) / heroH) * 100;          // 상세 .pair-name: 히어로 높이 − 290px
               const cq = (px: number) => `${(px / vp.w) * 100}cqw`;
@@ -803,9 +829,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               } as React.CSSProperties}>
                 {pairMembers.map((m, i) => (
                   <div key={m.charId} style={{
-                    position: 'absolute', width: '44%', height: '100%', bottom: 0, pointerEvents: 'none',
-                    ...(i === 0 ? { left: 0 } : { right: 0 }),
+                    position: 'absolute', width: `${heroCol(i, nCols).w}%`, height: '100%', bottom: 0, pointerEvents: 'none',
+                    left: `${heroCol(i, nCols).left}%`,
                     zIndex: heroZ(layerOrder, heroFullId(m.charId)),
+                    visibility: isHid(heroFullId(m.charId)) ? 'hidden' : undefined,
                   }}>
                     <FullPrevImg draft={fulls[m.charId]}
                         scale={fullScales[m.charId] ?? 90}
@@ -824,7 +851,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   </div>
                 ))}
 
-                {stickers.map(st2 => (
+                {stickers.filter(st2 => !isHid(heroStickerId(st2.id))).map(st2 => (
                   <StickerPrev key={st2.id} s={st2} rootRef={previewRef}
                     z={heroZ(layerOrder, heroStickerId(st2.id))}
                     grid={gridOn ? { cx: gcx, cy: gcy } : undefined}
@@ -833,6 +860,45 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     onChange={p => patchSticker(st2.id, p)} />
                 ))}
 
+                {/* 장식 사각형(뒤쪽 큰 판) — 스테이지와 같은 자리에 흐리게. 눈 버튼으로 켜고 끈다 (자리는 고정) */}
+                {detailLayout === 'stage' && deco === 'on' && !isHid('tile') && (() => {
+                  const sc = Math.max(vp.w / 1920, vp.h / 1080);
+                  const ox = (vp.w - 1920 * sc) / 2, oy = (vp.h - 1080 * sc) / 2;
+                  const x0 = ox + 636 * sc, x1 = ox + 1272 * sc, y0 = oy + 150 * sc - 58, y1 = oy + 790 * sc - 58;
+                  return <div aria-hidden style={{
+                    position: 'absolute', zIndex: 1, pointerEvents: 'none',
+                    left: `${(x0 / vp.w) * 100}%`, top: `${(y0 / heroH) * 100}%`,
+                    width: `${((x1 - x0) / vp.w) * 100}%`, height: `${((y1 - y0) / heroH) * 100}%`,
+                    borderRadius: `${cq(290 * sc)} 0 0 0`, opacity: .55,
+                    background: `linear-gradient(160deg, color-mix(in srgb, ${themeMode === 'custom' ? themeColor : '#7fd6d0'} 70%, #fff), color-mix(in srgb, ${themeMode === 'custom' ? themeColor : '#7fd6d0'} 88%, #000))`,
+                  }} />;
+                })()}
+
+                {/* 가운데 정보(INFO · 자관 이름 · 서랍 바로가기) — 끌어서 위치를 옮긴다 (스테이지 구성일 때) */}
+                {detailLayout === 'stage' && !isHid('info') && (() => {
+                  const wPx = Math.min(0.3 * vp.w, 400);
+                  const pairTxt = `[ ${pairMembers.map(m => memberNames?.[m.charId] ?? m.charId).join(' × ')} ]`;
+                  const infoTop = ((0.46 * vp.h - 58) / heroH) * 100;
+                  return (
+                    <PrevDrag rootRef={previewRef} x={uiInfo.x} y={uiInfo.y} selected={selLayer === 'info'}
+                      grid={gridOn ? { ax: 50, ay: infoTop, cx: gcx, cy: gcy } : undefined}
+                      onSelect={() => setSelLayer('info')} onChange={(x, y) => setUiInfo({ x, y })}
+                      style={{
+                        left: `${50 + uiInfo.x}%`, top: `${infoTop + uiInfo.y}%`, transform: 'translateX(-50%)', width: cq(wPx), zIndex: 300,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(6), color: '#fff', textAlign: 'center',
+                        background: 'rgba(0,0,0,.18)', borderRadius: cq(6), padding: `${cq(6)} 0`,
+                      }}>
+                      <small style={{ fontSize: cq(9), letterSpacing: '.34em', fontWeight: 800, opacity: .7 }}>INFO.</small>
+                      <b style={{ fontSize: cq(Math.min(24, Math.max(11, wPx / (emWidth(pairTxt) + 1)))), fontWeight: 800 }}>{pairTxt}</b>
+                      <div style={{ width: '100%', display: 'grid' }}>
+                        {['TIMELINE', 'LOG BACKUP', 'SESSION BOARD', 'GALLERY', 'ROLE PLAY'].map(t => (
+                          <div key={t} style={{ fontSize: cq(11), fontWeight: 800, letterSpacing: '.16em', textAlign: 'left', padding: `${cq(3)} ${cq(2)}`, borderBottom: '1px solid rgba(255,255,255,.28)' }}>{t}</div>
+                        ))}
+                      </div>
+                    </PrevDrag>
+                  );
+                })()}
+
                 {/* 스테이지의 큰 자관명 · 필기체 — 끌어서 위치를 옮긴다 (스테이지 구성 · 배경 장식 켬일 때만). 전신보다 뒤에 놓인다 */}
                 {detailLayout === 'stage' && deco === 'on' && (() => {
                   const bigName = (auObj ? auName.trim() : '') || name.trim().toUpperCase() || 'TITLE';
@@ -840,7 +906,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   const spTxt = decoScript?.text?.trim() || bigName;
                   return (
                     <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
-                      <PrevDrag rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
+                      {!isHid('ghost') && <PrevDrag rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
                         grid={gridOn ? { ax: 0, ay: 0, cx: gcx, cy: gcy } : undefined}
                         onWheel={dir => setDecoGhost(g => ({ ...g, scale: clampN(g.scale - dir * 5, 30, 200) }))}
                         onSelect={() => setSelLayer('deco-ghost')} onChange={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
@@ -851,8 +917,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                           fontSize: cq(relTitlePx(bigName, vp.w, heroH, decoGhost.scale)),
                         }}>
                         {relTitleLines(bigName).map((l, i) => <span key={i} style={{ display: 'block' }}>{l}</span>)}
-                      </PrevDrag>
-                      {decoScript && (
+                      </PrevDrag>}
+                      {decoScript && !isHid('script') && (
                         <PrevDrag rootRef={previewRef} x={decoScript.x} y={decoScript.y} min={-20} max={120} selected={ssel}
                           onWheel={dir => setDecoScript(c => (c ? { ...c, size: clampN(c.size - dir, 6, 50) } : c))}
                           onSelect={() => setSelLayer('deco-script')} onChange={(x, y) => setDecoScript({ ...decoScript, x, y })}
@@ -868,7 +934,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 })()}
 
                 {/* 글자 묶음(제목 · 이름 · 배지) — 레이어 목록의 「UI」 한 칸. 끌어서 기본 자리에서 옮긴다 */}
-                <div style={{ position: 'absolute', inset: 0, zIndex: uiZ, pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', inset: 0, zIndex: uiZ, pointerEvents: 'none', display: isHid(HERO_UI_ID) ? 'none' : undefined }}>
                   {detailLayout !== 'stage' && (
                   <PrevDrag rootRef={previewRef} x={uiTitle.x} y={uiTitle.y} selected={uiSel}
                     grid={gridOn ? { ax: 50, ay: titleTop, cx: gcx, cy: gcy } : undefined}
@@ -911,9 +977,11 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     if (!fulls[m.charId]) return null;
                     const o = uiNames[m.charId] ?? { x: 0, y: 0 };
                     const al = badgeAligns[m.charId] ?? 'top';
-                    const left = i === 0;
+                    const left = i === 0 || nCols > 2;
+                    const colN = heroCol(i, nCols);
                     const ta = badgeTextAligns[m.charId] ?? (left ? 'left' : 'right');
-                    const fs = heroNameSizes[m.charId] ?? clampN(vp.w * 0.034, 20, 40);
+                    const fs = heroNameFs(memberNames?.[m.charId] ?? m.charId,
+                      heroNameSizes[m.charId] ?? clampN(vp.w * 0.034, 20, 40) * (nCols > 2 ? 0.8 : 1), (colN.w / 100) * vp.w);
                     const ch = myChars.find(c => c.id === m.charId);
                     const specPills = (ch?.specs ?? []).filter(isPlainSpec);
                     const gems = ch?.colors ?? m.palette ?? [];
@@ -921,7 +989,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                       <PrevDrag key={m.charId} rootRef={previewRef} x={o.x} y={o.y} selected={uiSel}
                         grid={gridOn ? {
                           // 기준점 = 왼쪽 이름은 왼쪽 가장자리, 오른쪽 이름은 오른쪽 가장자리 / 위·가운데·아래 정렬에 따라 y
-                          ax: left ? 2.64 : 97.36,
+                          ax: left ? colN.left + colN.w * 0.06 : 97.36,
                           ay: al === 'bottom' ? 96 : al === 'mid' ? 50 : 4,
                           cx: gcx, cy: gcy,
                         } : undefined}
@@ -929,7 +997,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         onChange={(x, y) => setUiNames(sc => ({ ...sc, [m.charId]: { x, y } }))}
                         style={{
                           // 상세와 같은 기본 자리: 전신 칸(폭 44%) 안쪽 6% → 상자 기준 2.64%, 세로는 위 4% / 중앙 / 아래 4%
-                          ...(left ? { left: `${2.64 + o.x}%` } : { right: `${2.64 - o.x}%` }),
+                          ...(left ? { left: `${colN.left + colN.w * 0.06 + o.x}%` } : { right: `${2.64 - o.x}%` }),
+                          ...(nCols > 2 ? { maxWidth: `${colN.w}%` } : null),
                           ...(al === 'bottom' ? { bottom: `${4 - o.y}%` } : { top: `${(al === 'mid' ? 50 : 4) + o.y}%` }),
                           transform: al === 'mid' ? 'translateY(-50%)' : undefined,
                           display: 'flex', flexDirection: 'column', gap: 2, color: '#fff', textShadow: shadowCss,
@@ -979,8 +1048,34 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   메인 이미지 · 레이어 <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— ⠿ 손잡이를 끌어 앞뒤 순서를 바꿉니다 (위 = 앞)</span>
                 </label>
                 <p className="hint" style={{ margin: 0 }}>
-                  UI(제목·이름·배지 글자)보다 위에 두면 글자 앞에, 아래에 두면 글자 뒤에 그려집니다. 스티커 위치와 크기는 위 미리보기에서 직접 끌어 조절합니다.
+                  UI(제목·이름·배지 글자)보다 위에 두면 글자 앞에, 아래에 두면 글자 뒤에 그려집니다. 👁 눈 버튼으로 각 레이어를 보이게/숨기게 할 수 있습니다. 스티커·가운데 정보 위치와 크기는 위 미리보기에서 직접 끌어 조절합니다.
                 </p>
+                {/* 자리가 정해진 레이어 — 순서는 없고 눈 버튼으로 켜고 끈다 */}
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {([
+                    ...(detailLayout === 'stage' && deco === 'on' ? [
+                      { id: 'tile', cap: 'DECO', label: '장식 사각형 (뒤쪽 큰 판)' },
+                      { id: 'ghost', cap: 'TEXT', label: '큰 자관명' },
+                      ...(decoScript ? [{ id: 'script', cap: 'TEXT', label: '필기체 글씨' }] : []),
+                    ] : []),
+                    ...(detailLayout === 'stage' ? [{ id: 'info', cap: 'INFO', label: '가운데 정보 · 서랍 바로가기' }] : []),
+                  ] as { id: string; cap: string; label: string }[]).map(r => {
+                    const sel = selLayer === (r.id === 'ghost' ? 'deco-ghost' : r.id === 'script' ? 'deco-script' : r.id);
+                    return (
+                      <div key={r.id} onClick={() => setSelLayer(r.id === 'ghost' ? 'deco-ghost' : r.id === 'script' ? 'deco-script' : r.id)} style={{
+                        display: 'flex', gap: 10, alignItems: 'center', padding: '5px 10px', borderRadius: 10,
+                        border: `1px solid ${sel ? 'var(--accent)' : 'var(--line)'}`,
+                        background: sel ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
+                      }}>
+                        <EyeBtn on={!isHid(r.id)} onToggle={() => toggleHid(r.id)} />
+                        <div style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>
+                          <div style={{ fontSize: 9.5, letterSpacing: '.08em', color: 'var(--faint)' }}>{r.cap}</div>
+                          <b style={{ fontSize: 12.5 }}>{r.label}</b>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                 <DragList items={[...layerOrder].reverse().filter(id =>
                     id === HERO_UI_ID || (id.startsWith('full:') && fulls[id.slice(5)]) || id.startsWith('st:'))}
                   keyOf={id => id}
@@ -997,13 +1092,14 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     const mi = cid ? pairMembers.findIndex(m => m.charId === cid) : -1;
                     const label = id === HERO_UI_ID ? '이름 · 제목 · 배지 글자'
                       : cid ? (memberNames?.[cid] ?? cid) : `스티커 ${stickers.findIndex(x => x.id === stId) + 1}`;
-                    const cap = id === HERO_UI_ID ? 'UI' : cid ? `전신 · ${mi === 0 ? '왼쪽' : '오른쪽'}` : 'STICKER';
+                    const cap = id === HERO_UI_ID ? 'UI' : cid ? `전신 · ${pairMembers.length > 2 ? `${mi + 1}번째` : mi === 0 ? '왼쪽' : '오른쪽'}` : 'STICKER';
                     return (
                       <div onClick={() => setSelLayer(id)} style={{
                         display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '7px 10px', borderRadius: 10,
                         border: `1px solid ${isSel ? 'var(--accent)' : 'var(--line)'}`,
                         background: isSel ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
                       }}>
+                        <EyeBtn on={!isHid(id)} onToggle={() => toggleHid(id)} />
                         <span className="drag-h">⠿</span>
                         {id === HERO_UI_ID ? <LayerThumb text="Aa" />
                           : cid ? <LayerThumb refId={fulls[cid]?.ref} url={fulls[cid]?.url} />
@@ -1048,6 +1144,12 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                           <KStep value={Math.round(cur.w)} min={3} max={90} step={1} suffix="%"
                             onChange={(v: number) => patchSticker(cur.id, { w: v })} />
                         </>
+                      );
+                    }
+                    if (selLayer === 'info') {
+                      return (
+                        <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }}
+                          onClick={() => setUiInfo({ x: 0, y: 0 })}>가운데 정보 위치 처음대로</button>
                       );
                     }
                     if (selLayer === HERO_UI_ID) {

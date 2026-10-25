@@ -3459,3 +3459,10 @@ body.rs-full #appMain{overflow:hidden}
 .rs-sticky{height:100%!important}
 .rs-head,.rs-crn{z-index:1!important}
 .page-rel-detail.rs-on{animation:none!important}.page-rel-detail.rs-on>*{animation:none}
+
+/* 서랍 바로가기 간격 */
+.rs-mid .cs-link{padding:2px 2px!important}
+.rs-mid .rs-links{margin-top:6px;gap:0}
+.rs-mid .cs-link-k{font-size:10.5px}
+.rs-mid .cs-link-s{font-size:10.5px}
+.rs-mid .rs-mt{white-space:nowrap}

@@ -11,7 +11,7 @@ import type { DecoGhost } from '@/lib/charStore';
 
 export interface RsMember { id: string; name: string; href: string }
 /** 전신 한 칸 — i=0 왼쪽, i=1 오른쪽. scale·off는 상자(칸) 대비 % */
-export interface RsFull { id: string; ref: string; scale: number; offX: number; offY: number; z: number; shadow?: string }
+export interface RsFull { i: number; id: string; ref: string; scale: number; offX: number; offY: number; z: number; shadow?: string }
 /** 이름 묶음 — o는 기본 자리에서 옮긴 거리(상자 대비 %) */
 export interface RsName {
   id: string; name: string; sub?: string; font?: string; fs?: number; bold: boolean; href: string;
@@ -19,7 +19,33 @@ export interface RsName {
   kws: string[]; specs: { label: string; value: string }[]; gems: { hex: string; label: string }[];
 }
 export interface RsSticker { id: string; ref: string; x: number; y: number; w: number; z: number }
-export interface RsHero { fulls: RsFull[]; names: RsName[]; stickers: RsSticker[]; uiZ: number }
+export interface RsHero {
+  fulls: RsFull[]; names: RsName[]; stickers: RsSticker[]; uiZ: number;
+  /** 서는 인원 수 — 2명이면 좌·우 두 칸, 그 이상이면 가로로 고르게 나눈다 */
+  count: number;
+  /** 가운데 INFO(자관명·서랍)를 기본 자리에서 옮긴 거리 — 상자 대비 % */
+  info: { x: number; y: number };
+  /** 눈 버튼으로 숨긴 레이어 id */
+  hidden: string[];
+}
+
+/** 전신 한 칸의 가로 자리(상자 대비 %) — 2명은 예전처럼 좌·우 44%, 3명 이상은 고르게 나눈다. c = 칸 가운데 */
+export function heroCol(i: number, n: number): { left: number; w: number; c: number } {
+  if (n <= 2) return i === 0 ? { left: 0, w: 44, c: 22 } : { left: 56, w: 44, c: 78 };
+  const w = Math.min(44, 100 / n);
+  const c = ((i + 0.5) * 100) / n;
+  return { left: c - w / 2, w, c };
+}
+/** 글자 폭(em) 추정 — 한글·한자 1, 그 밖 0.74 */
+export function emWidth(text: string): number {
+  let w = 0;
+  for (const ch of text) w += /[ᄀ-ᇿ㄰-㆏가-힯぀-ヿ一-鿿]/.test(ch) ? 1 : 0.74;
+  return w;
+}
+/** 이름 글자 크기(px) — 기본 크기 base를 칸 폭(px)에 맞게 줄인다. 이름이 길수록 작아진다 */
+export function heroNameFs(text: string, base: number, colPx: number): number {
+  return Math.max(10, Math.min(base, (colPx * 0.9) / Math.max(1, emWidth(text))));
+}
 
 /** 글자 폭 추정 — 한글·한자는 1em, 나머지는 0.74em. 줄 바꿈 없이 한 줄에 들어가는 글자 크기(vw)를 구한다 */
 export function fitVw(text: string, maxVw: number, widthVw: number): number {
@@ -43,10 +69,11 @@ export function relTitlePx(name: string, W: number, H: number, scale = 100): num
   return Math.min(relTitleVw(name) * W / 100, (0.64 * H / ln) * 1.05) * scale / 100;
 }
 
-function Full({ f, i }: { f: RsFull; i: number }) {
+function Full({ f, i, n }: { f: RsFull; i: number; n: number }) {
   const url = useBlobUrl(f.ref);
+  const col = heroCol(i, n);
   return (
-    <div className={`rs-fb ${i === 0 ? 'l' : 'r'}`} style={{ zIndex: f.z }}>
+    <div className="rs-fb" style={{ zIndex: f.z, left: `${col.left}%`, width: `${col.w}%` }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {url && <img src={url} alt="" draggable={false} style={{
         position: 'absolute', bottom: `${f.offY}%`, left: `calc(50% + ${f.offX}%)`, transform: 'translateX(-50%)',
@@ -100,6 +127,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
     return () => ro.disconnect();
   }, []);
 
+  const hid = (k: string) => hero.hidden.includes(k);
   const pair = members.map(m => m.name).join(' × ');
   const lines = relTitleLines(name);
   const gp = deco?.ghostPos ?? { x: 50, y: 30, scale: 100 };
@@ -111,7 +139,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
         {/* 캐릭터 스테이지와 같은 배경 장식 — 가는 선·눈금·라벨·반짝이·뒤쪽 큰 판. 바탕색은 지금 테마에 맞춘다 */}
         {!deco?.off && (
           <div className="rs-deco" style={{ ['--accent' as string]: tc } as React.CSSProperties}>
-            <StageDeco mode={deco?.image && !deco.band ? 'mono' : 'accent'} shape="tile" tone={light ? 'light' : 'dark'} ink={light ? 'dark' : 'light'}
+            <StageDeco mode={deco?.image && !deco.band ? 'mono' : 'accent'} shape="tile" noShape={hid('tile')} tone={light ? 'light' : 'dark'} ink={light ? 'dark' : 'light'}
               name={name} colorHex={tc} image={deco?.band ? deco.image : undefined} blur={deco?.blur ?? 0} />
           </div>
         )}
@@ -120,21 +148,24 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
 
         {/* 메인 이미지 레이어 — 큰 자관명 · 필기체 · 전신 · 이름 · 스티커 (수정 화면 미리보기와 같은 상자) */}
         <div className="rs-hero" ref={heroRef}>
-          <h1 className="rs-title" style={{ fontFamily: deco?.titleFont ?? fontFamily, left: `${gp.x}%`, top: `${gp.y}%`, fontSize: `${titlePx}px` }}>
+          {!hid('ghost') && <h1 className="rs-title" style={{ fontFamily: deco?.titleFont ?? fontFamily, left: `${gp.x}%`, top: `${gp.y}%`, fontSize: `${titlePx}px` }}>
             {lines.map((l, i) => <span key={i}>{l}</span>)}
-          </h1>
-          {!deco?.off && deco?.script && deco.script.text && (
+          </h1>}
+          {!deco?.off && !hid('script') && deco?.script && deco.script.text && (
             <div className="cs-deco rs-scr" style={{ ['--d-acc' as string]: tc } as React.CSSProperties} aria-hidden="true">
               <svg viewBox={`0 0 ${box.w} ${box.h}`} width="100%" height="100%"><ScriptWrite t={deco.script} vb={box} /></svg>
             </div>
           )}
-          {hero.fulls.slice(0, 2).map((f, i) => <Full key={f.id} f={f} i={i} />)}
-          {hero.stickers.map(st => <Sticker key={st.id} s={st} />)}
-          <div className="rs-ui" style={{ zIndex: hero.uiZ }}>
-            {hero.names.slice(0, 2).map((n, i) => {
-              const left = i === 0;
+          {hero.fulls.map(f => !hid(`full:${f.id}`) && <Full key={f.id} f={f} i={f.i} n={hero.count} />)}
+          {hero.stickers.map(st => !hid(`st:${st.id}`) && <Sticker key={st.id} s={st} />)}
+          {!hid('ui') && <div className="rs-ui" style={{ zIndex: hero.uiZ }}>
+            {hero.names.map((n, i) => {
+              const col = heroCol(i, hero.count);
+              const left = hero.count > 2 || i === 0;
+              const fs = heroNameFs(n.name, n.fs ?? Math.min(40, Math.max(20, box.w * 0.034)) * (hero.count > 2 ? 0.8 : 1), col.w / 100 * box.w);
               const pos: React.CSSProperties = {
-                ...(left ? { left: `${2.64 + n.o.x}%` } : { right: `${2.64 - n.o.x}%` }),
+                ...(left ? { left: `${col.left + col.w * 0.06 + n.o.x}%` } : { right: `${2.64 - n.o.x}%` }),
+                ...(hero.count > 2 ? { maxWidth: `${col.w}%` } : null),
                 ...(n.align === 'bottom' ? { bottom: `${4 - n.o.y}%` } : { top: `${(n.align === 'mid' ? 50 : 4) + n.o.y}%` }),
                 transform: n.align === 'mid' ? 'translateY(-50%)' : undefined,
                 alignItems: n.ta === 'center' ? 'center' : n.ta === 'left' ? 'flex-start' : 'flex-end', textAlign: n.ta,
@@ -144,7 +175,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
                 <div key={n.id} className={`rs-nb ${left ? 'l' : 'r'}`} style={pos}>
                   <small className="rs-role">{n.sub || 'MEMBER'}</small>
                   <button type="button" className="rs-nm" onClick={() => onGo(n.href)}
-                    style={{ fontSize: n.fs ? `${n.fs}px` : 'clamp(20px,3.4vw,40px)', fontWeight: n.bold ? 800 : 400 }}>{n.name}</button>
+                    style={{ fontSize: `${fs}px`, fontWeight: n.bold ? 800 : 400 }}>{n.name}</button>
                   <div className="rs-meta">
                     {n.gems.slice(0, 5).map(g => <i key={g.hex + g.label} className="rs-gem" title={g.label} style={{ background: g.hex }} />)}
                     <span>No./{String(i + 1).padStart(2, '0')}</span>
@@ -159,7 +190,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
                 </div>
               );
             })}
-          </div>
+          </div>}
         </div>
 
         {(admin || onBack) && (
@@ -171,10 +202,10 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
         )}
 
         {/* 가운데 INFO — 아래에 서랍 바로가기와 AU 목록이 이어진다 */}
-        <div className="rs-mid">
+        {!hid('info') && <div className="rs-mid" style={{ translate: `${hero.info.x / 100 * box.w}px ${hero.info.y / 100 * box.h}px` }}>
           <small>INFO.</small><i />
           <b>{cpLabel ? `PAIR · ${cpLabel}` : 'PAIR'}</b>
-          <div className="rs-mt">[ {pair || name} ]</div>
+          <div className="rs-mt" style={{ fontSize: `${Math.min(24, Math.max(11, Math.min(0.3 * box.w, 400) / (emWidth(`[ ${pair || name} ]`) + 1)))}px` }}>[ {pair || name} ]</div>
           {catchphrase && <p>{catchphrase}</p>}
           {links && links.length > 0 && (
             <div className="cs-links rs-links">
@@ -188,7 +219,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
             </div>
           )}
           {auSlot && <div className="rs-au">{auSlot}</div>}
-        </div>
+        </div>}
       </div>
     </div>
   );

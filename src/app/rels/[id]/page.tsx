@@ -877,14 +877,14 @@ export default function RelDetailPage() {
       : [asAu(rel.members[0] ?? null), asAu(rel.members[1] ?? null)])
     : [];
 
-  // 스테이지에 서는 두 사람 — 2인 자관은 좌우 슬롯 그대로, 다인 자관은 앞의 두 명
-  const stageSlots: RelMember[] = (isDuo ? pairSlots : rel.members.slice(0, 2)).filter((x): x is RelMember => !!x);
+  // 스테이지에 서는 사람 — 2인 자관은 좌우 슬롯 그대로, 다인 자관은 등록한 전원
+  const stageSlots: RelMember[] = (isDuo ? pairSlots : rel.members).filter((x): x is RelMember => !!x);
 
   /* 히어로 레이어·배치 (v5.6) — AU는 자기 것만(자관 것을 물려받지 않음). 레이어 순서가 없으면
      예전처럼 앞 캐릭터가 위, 글자가 맨 위 */
   const heroLayout = isBaseAu ? rel.heroLayout : au?.heroLayout;
   const layerOrder = heroOrder(heroLayout,
-    pairSlots.map(sl => sl?.charId).filter((c): c is string => !!c), auFullFront);
+    (isDuo ? pairSlots : rel.members).map(sl => sl?.charId).filter((c): c is string => !!c), auFullFront);
   const uiZ = heroZ(layerOrder, HERO_UI_ID);
   /* 글자 묶음을 기본 자리에서 옮긴 거리 — 값은 히어로 영역 대비 %. 히어로는 폭 100vw × 높이 100vh−58px.
      transform과 겹치지 않게 독립 속성 translate로 준다 */
@@ -1230,9 +1230,12 @@ export default function RelDetailPage() {
           onBack={() => router.push('/rels')}
           hero={{
             uiZ,
-            fulls: stageSlots.map(m => {
+            count: stageSlots.length,
+            info: heroLayout?.info ?? { x: 0, y: 0 },
+            hidden: heroLayout?.hidden ?? [],
+            fulls: stageSlots.map((m, i) => {
               const ref = isBaseAu ? m.fullImgId : au?.fulls?.[m.charId];
-              return ref ? { id: m.charId, ref, scale: m.fullScale ?? 90, offX: m.fullOffX ?? 0, offY: m.fullOffY ?? 0,
+              return ref ? { i, id: m.charId, ref, scale: m.fullScale ?? 90, offX: m.fullOffX ?? 0, offY: m.fullOffY ?? 0,
                 z: heroZ(layerOrder, heroFullId(m.charId)), shadow: fullShadow(auSt.nameShadowColor, auSt.nameShadow) } : null;
             }).filter((x): x is NonNullable<typeof x> => !!x),
             stickers: (heroLayout?.stickers ?? []).map(st => ({ id: st.id, ref: st.ref, x: st.x, y: st.y, w: st.w, z: heroZ(layerOrder, heroStickerId(st.id)) })),
@@ -1243,7 +1246,7 @@ export default function RelDetailPage() {
                 id: m.charId, name: c.name, sub: c.sub || undefined, font: familyOf(c.fontId), fs: m.heroNameSize, bold: m.nameBold ?? true,
                 href: charHref(m.charId),
                 align: (m.badgeAlign ?? 'top') as 'top' | 'mid' | 'bottom',
-                ta: ((m.badgeTextAlign ?? (stageSlots[0] === m ? 'left' : 'right')) as 'left' | 'center' | 'right'),
+                ta: ((m.badgeTextAlign ?? (stageSlots.length > 2 || stageSlots[0] === m ? 'left' : 'right')) as 'left' | 'center' | 'right'),
                 o: heroLayout?.names?.[m.charId] ?? { x: 0, y: 0 },
                 kws: m.keywords ?? [],
                 specs: (c.specs ?? []).filter(isPlainSpec).map(sp => ({ label: sp.label, value: sp.value })),

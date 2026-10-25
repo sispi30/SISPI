@@ -524,6 +524,10 @@ export interface HeroLayout {
   title?: { x: number; y: number };
   /** 멤버별 이름·배지 묶음의 기본 자리에서 옮긴 거리 — 히어로 폭/높이 대비 % */
   names?: Record<string, { x: number; y: number }>;
+  /** 스테이지 가운데 INFO(자관명·서랍 바로가기)의 기본 자리에서 옮긴 거리 — 히어로 폭/높이 대비 % */
+  info?: { x: number; y: number };
+  /** 눈 버튼으로 숨긴 레이어 — 'ui' · 'full:{charId}' · 'st:{id}' · 'tile'(장식 판) · 'ghost'(큰 자관명) · 'script'(필기체) · 'info'(가운데 INFO·서랍) */
+  hidden?: string[];
 }
 
 export const HERO_UI_ID = 'ui';
