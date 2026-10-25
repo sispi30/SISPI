@@ -264,8 +264,11 @@ function CharDetailInner() {
     // 등록된 AU가 「홈페이지 테마 그대로」(색 없음)이면 기본 캐릭터 색이 남지 않게 색을 비워 사이트 테마로 — 예전엔 여기서 그냥 빠져 기본 색이 그대로 반영됐다
     if (!auKey || !auRegistered) return;
     if ((auColor ?? null) === (baseColor ?? null) && auTone === baseTone) return; // 기본과 같으면 레이아웃이 이미 칠해 둔 색 그대로 둔다
-    setPageTheme(auColor, auTone);
+    // 처음 들어올 때는 자식(이 페이지)의 효과가 부모(레이아웃)보다 먼저 돌아, 레이아웃이 기본 캐릭터 색으로 되덮어 버린다 —
+    // 자관 게시판의 AU 프로필 버튼으로 바로 들어오면 AU 색이 안 먹던 이유. 한 박자 늦춰 레이아웃 다음에 칠한다
+    const timer = setTimeout(() => setPageTheme(auColor, auTone), 0);
     return () => {
+      clearTimeout(timer);
       // 캐릭터 화면을 아예 벗어나는 중(레이아웃도 같이 떠남)이면 되칠하지 않는다 —
       // 레이아웃이 먼저 null 로 풀어 둔 뒤라, 여기서 칠하면 다른 메뉴에서도 캐릭터 색 배경이 남는다
       if (layoutAlive && !layoutAlive.current) return;
