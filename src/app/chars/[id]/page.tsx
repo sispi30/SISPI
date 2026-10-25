@@ -261,7 +261,9 @@ function CharDetailInner() {
   const baseTone = baseColor ? resolveThemeTone(ch?.themeTone, ch?.color) : undefined;
   const auTone = auColor ? resolveThemeTone(eff?.themeTone, eff?.color) : undefined;
   useEffect(() => {
-    if (!auColor || (auColor === baseColor && auTone === baseTone)) return; // 기본과 같으면 레이아웃이 이미 칠해 둔 색 그대로 둔다
+    // 등록된 AU가 「홈페이지 테마 그대로」(색 없음)이면 기본 캐릭터 색이 남지 않게 색을 비워 사이트 테마로 — 예전엔 여기서 그냥 빠져 기본 색이 그대로 반영됐다
+    if (!auKey || !auRegistered) return;
+    if ((auColor ?? null) === (baseColor ?? null) && auTone === baseTone) return; // 기본과 같으면 레이아웃이 이미 칠해 둔 색 그대로 둔다
     setPageTheme(auColor, auTone);
     return () => {
       // 캐릭터 화면을 아예 벗어나는 중(레이아웃도 같이 떠남)이면 되칠하지 않는다 —
@@ -269,7 +271,7 @@ function CharDetailInner() {
       if (layoutAlive && !layoutAlive.current) return;
       setPageTheme(baseColor, baseTone);
     };
-  }, [auColor, auTone, baseColor, baseTone, setPageTheme, layoutAlive]);
+  }, [auKey, auRegistered, auColor, auTone, baseColor, baseTone, setPageTheme, layoutAlive]);
 
   // 배경 이미지 (v5.8 사용자 요청) — 자관 배경·환경설정 배경 변경과 똑같이 페이지 전체에 고정·cover로
   // 깔고 블러만 조절한다. AU는 자기 배경만(원본 것을 물려받지 않음 — charWithAu). 이미지가 없으면
