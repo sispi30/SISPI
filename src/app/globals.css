@@ -3390,3 +3390,13 @@ body.rs-full .rs-sticky{top:-58px}
 .rs-bgimg::after{content:"";position:absolute;inset:0;background:rgba(6,8,12,.45)}
 .rs-scr{z-index:2;opacity:calc(1 - var(--k1)*1.6)}
 @media (max-width:960px){.rs-scr{display:block}}
+
+/* 자관 상세 스테이지 — 스크롤 연동 없이 한 화면에 고정. 우측에 서랍 바로가기 */
+.rs{height:100vh!important}
+.rs-sticky{position:relative!important;top:0!important}
+body.rs-full .rs-sticky{top:0!important}
+.rs-panel,.rs-band,.rs-stats,.rs-hint,.rs-more{display:none!important}
+.rs-rt{position:absolute;right:3.4vw;top:calc(11.5vh + 76px);z-index:6;width:min(28vw,360px);display:grid;gap:14px;color:#fff;--ink:#fff;--sub:rgba(255,255,255,.7);--line:rgba(255,255,255,.28)}
+.rs-rt .cs-link{width:100%;text-shadow:0 1px 10px rgba(0,0,0,.55)}
+.rs-rt .au-list{position:static!important}
+@media (max-width:900px){.rs-rt{left:6vw;right:6vw;width:auto;top:auto;bottom:16vh}}

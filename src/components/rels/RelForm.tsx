@@ -22,7 +22,6 @@ import { Lightbox } from '@/components/ui/Lightbox';
 import { useConfirmDelete } from '@/components/ui/Modal';
 import { fileDrop } from '@/lib/dnd';
 import { useToast } from '@/components/ui/Toast';
-import { RelLinkBoard } from '@/components/rels/RelLinkBoard';
 import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
 import type { PageBgm } from '@/lib/bgmStore';
 
@@ -1105,8 +1104,6 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
             배경처럼 페이지 전체에 고정으로 깔려 끊김 없이 이어진다 */}
         {pairMembers.length === 0 && titleSizeCtl}
 
-        {/* 상세 하단 연동 리스트 선택 + 연동 항목 검색 — 로그 백업 / 세션 게시판.
-            자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
         {/* 다인관 멤버 순서 (v6.7) — 상세 페이지의 멤버 목록 순서. ⠿ 핸들을 잡고 끌어서 바꾼다.
             자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
         {!isNew && !auId && isMultiRel && memberOrder.length > 1 && (
@@ -1124,24 +1121,6 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               )} />
           </div>
         )}
-
-        {/* 상세 하단 좌측 칸 (v6.0) — 역극 목록 대신 갤러리를 보일 수 있다. 자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
-        {!auObj && (
-          <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
-            <label className="k-label" style={{ margin: 0 }}>상세 페이지 하단 좌측 칸</label>
-            <div className="mini-seg" style={{ justifySelf: 'start' }}>
-              <button type="button" className={leftBoard === 'rp' ? 'on' : ''} onClick={() => setLeftBoard('rp')}>역극</button>
-              <button type="button" className={leftBoard === 'gallery' ? 'on' : ''} onClick={() => setLeftBoard('gallery')}>갤러리</button>
-            </div>
-            <p className="hint" style={{ margin: 0 }}>
-              {leftBoard === 'gallery'
-                ? '갤러리를 고르면 상세에서 작은 썸네일로 보이고, 「더보기」에서 갤러리를 보고 편집(묶음 추가·사진 첨부)할 수 있습니다'
-                : '이 자관 기반으로 진행된 역극 목록이 보입니다'}
-            </p>
-          </div>
-        )}
-
-        {!auObj && <RelLinkBoard relId={initial?.id} mode={linkBoard} onMode={setLinkBoard} />}
 
         {/* 이 자관 페이지 전용 BGM (v5.9) — 환경설정 BGM과 같은 편집 화면. 자관 전체 설정이라 AU 편집에서는 두지 않는다.
             들어오면 플레이어가 이 BGM으로 바뀌고, 나가면 홈페이지 BGM으로 돌아간다 */}
@@ -1299,7 +1278,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
             </div>
             <p className="hint" style={{ margin: 0 }}>
               {detailLayout === 'stage'
-                ? '캐릭터 스테이지처럼 큰 자관명 앞에 전신이 서고, 스크롤을 내리면 장면이 이어서 바뀝니다'
+                ? '캐릭터 스테이지처럼 큰 자관명 앞에 전신이 서고, 우측 서랍에서 로그·세션·갤러리·역극을 엽니다'
                 : '예전 구성 — 좌우 카드와 중앙 일러가 한 화면에 보입니다'}
             </p>
           </div>

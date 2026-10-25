@@ -5,7 +5,7 @@
 //  ③ 더 내려가면 흰 패널이 솟아 「A × B」 큰 글씨와 멤버가 나타난다
 //  ④ 패널이 화면을 채우면 이어서 기존 상세 내용(타임라인·문답 등)이 나온다
 // 스크롤은 #appMain 이 한다 — 진행도(0~1)를 --p 로 내려 주고, 움직임은 전부 CSS 가 계산한다.
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
 import { StageDeco, ScriptWrite } from '@/components/chars/StageDeco';
 import type { DecoGhost } from '@/lib/charStore';
@@ -39,13 +39,15 @@ export function relTitleVw(name: string): number {
   return fitVw(lines.reduce((a, b) => (b.length > a.length ? b : a), ''), 24, 86);
 }
 
-export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs, stats, tc, onGo, auSlot, admin, deco }: {
+export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs, stats, tc, onGo, auSlot, admin, deco, links }: {
   name: string; fontFamily?: string; catchphrase?: string; cpLabel?: string;
   members: RsMember[]; figs: string[]; stats: RsStat[]; tc: string;
   onGo: (href: string) => void; auSlot?: React.ReactNode;
   /** 관리 글씨(EDIT/DELETE) — 캐릭터 스테이지와 같은 작은 글씨 형태. 권한이 없으면 안 넘긴다 */
   admin?: { editLabel: string; onEdit: () => void; deleteLabel?: string; onDelete?: () => void };
   /** 배경 장식 설정 — 캐릭터 상세와 같은 항목. off면 장식을 그리지 않는다 */
+  /** 서랍(창)을 여는 바로가기 */
+  links?: { key: string; title: string; sub: string; onClick: () => void }[];
   deco?: {
     off?: boolean;
     image?: string; band?: boolean; blur?: number;
@@ -54,33 +56,10 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
     script?: { text: string; font?: string; color?: string; size: number; x: number; y: number; rot: number };
   };
 }) {
-  const wrap = useRef<HTMLDivElement>(null);
-  const stk = useRef<HTMLDivElement>(null);
-
   // 화면 맨 위(메뉴 줄 뒤)까지 꽉 채운다 — 스크롤 영역을 메뉴 줄 뒤로 끌어올리는 클래스
   useEffect(() => {
     document.body.classList.add('rs-full');
     return () => document.body.classList.remove('rs-full');
-  }, []);
-
-  useEffect(() => {
-    const sc = document.getElementById('appMain');
-    const target: HTMLElement | Window = sc ?? window;
-    let raf = 0;
-    const calc = () => {
-      raf = 0;
-      const w = wrap.current, s = stk.current;
-      if (!w || !s) return;
-      const top = sc ? sc.getBoundingClientRect().top : 0;
-      const range = Math.max(1, w.offsetHeight - s.offsetHeight);
-      const p = Math.min(1, Math.max(0, (top - w.getBoundingClientRect().top) / range));
-      w.style.setProperty('--p', p.toFixed(4));
-    };
-    const on = () => { if (!raf) raf = requestAnimationFrame(calc); };
-    calc();
-    target.addEventListener('scroll', on, { passive: true });
-    window.addEventListener('resize', on);
-    return () => { target.removeEventListener('scroll', on); window.removeEventListener('resize', on); if (raf) cancelAnimationFrame(raf); };
   }, []);
 
   const pair = members.map(m => m.name).join(' × ');
@@ -91,12 +70,10 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
   const titleVw = fitVw(longest, 24, 86);
   const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
   const roman = ROMAN[members.length] ?? String(members.length);
-  const goDown = () => (document.getElementById('appMain') ?? window).scrollBy({ top: window.innerHeight * 1.7, behavior: 'smooth' });
-  const pairVw = fitVw(pair || name, 11, 84);
 
   return (
-    <div className="rs" ref={wrap} style={{ ['--rs-c' as string]: tc, ['--rs-fs' as string]: `${titleVw}vw`, ['--rs-pfs' as string]: `${pairVw}vw` } as React.CSSProperties}>
-      <div className="rs-sticky" ref={stk}>
+    <div className="rs" style={{ ['--rs-c' as string]: tc, ['--rs-fs' as string]: `${titleVw}vw` } as React.CSSProperties}>
+      <div className="rs-sticky">
         {/* 캐릭터 스테이지와 같은 배경 장식 — 가는 선·눈금·라벨·반짝이·뒤쪽 큰 반원 */}
         {!deco?.off && deco?.image && !deco.band && (
           <div className="rs-bgimg" aria-hidden="true" style={{ backgroundImage: `url("${deco.image}")`, filter: deco.blur ? `blur(${deco.blur}px)` : undefined }} />
@@ -150,27 +127,21 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, figs
             <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" width="100%" height="100%"><ScriptWrite t={deco.script} /></svg>
           </div>
         )}
-        <div className="rs-band" aria-hidden="true" />
         {figs.length > 0 && <div className="rs-figs">{figs.slice(0, 2).map(f => <Fig key={f} refId={f} />)}</div>}
-        <div className="rs-hint">
-          <button type="button" className="rs-pill" onClick={goDown}>VIEW STORY <b>↗</b></button>
-          <span className="rs-badge" aria-hidden="true"><em>{cpLabel || 'PAIR'}</em></span>
-        </div>
-        <div className="rs-stats">
-          {stats.map((s, i) => (
-            <div key={s.label} className={`rs-stat s${i % 3}`}><small>{s.label}</small><b>{s.n}</b></div>
-          ))}
-        </div>
-        <div className="rs-panel">
-          <div className="rs-ptitle" style={{ fontFamily }}>{pair || name}</div>
-          {catchphrase && <p className="rs-psub">{catchphrase}</p>}
-          <div className="rs-chips">
-            {members.map(m => (
-              <button key={m.id} type="button" onClick={() => onGo(m.href)}><i style={{ background: m.color }} />{m.name}</button>
-            ))}
-          </div>
+        {/* 서랍 바로가기 + AU 목록 — 캐릭터 상세의 우측 항목(cs-links)과 같은 형태 */}
+        <div className="rs-rt">
+          {links && links.length > 0 && (
+            <div className="cs-links">
+              {links.map(l => (
+                <button key={l.key} type="button" className="cs-link" onClick={l.onClick}>
+                  <span className="cs-link-k">{l.title}</span>
+                  <span className="cs-link-s">{l.sub}</span>
+                  <span className="cs-link-a">→</span>
+                </button>
+              ))}
+            </div>
+          )}
           {auSlot && <div className="rs-au">{auSlot}</div>}
-          <div className="rs-more" aria-hidden="true">↓ 아래로 내려 상세 정보 보기</div>
         </div>
       </div>
     </div>

@@ -24,6 +24,8 @@ import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { putBlob } from '@/lib/blobStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import { RelStage } from '@/components/rels/RelStage';
+import { StageWindow, type StageWindowItem } from '@/components/chars/StageWindow';
+import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
 import { TrpgLog, TRPG_SEED, PlayRecord, PLAYLOG_SEED, recordRelIds } from '@/lib/galleryStore';
 import { RpRoom, RP_SEED } from '@/lib/rpStore';
 import { useFonts } from '@/lib/fontStore';
@@ -587,6 +589,19 @@ export default function RelDetailPage() {
     && ((user && rm.memberIds.includes(user.id)) || (rm.status === 'done' && rm.isPublic))),
     [rooms, rel, user]);
 
+  // 서랍 — 로그 백업 · 세션 게시판 · 갤러리 · 역극 (캐릭터 상세의 서랍과 같은 창). AU마다 숨길 수 있다
+  const [win, setWin] = useState<string | null>(null);
+  const drawerItems: (StageWindowItem & { count: string })[] = rel ? [
+    ...(!au?.hideLog ? [
+      { key: 'log', title: 'Log Backup', sub: 'LOG BACKUP', count: relLogs.length ? `로그 ${relLogs.length}개` : '아직 없음' },
+      { key: 'session', title: 'Session Board', sub: 'SESSIONS', count: relSessions.length ? `세션 ${relSessions.length}개` : '아직 없음' },
+    ] : []),
+    ...(!au?.hideRp ? [
+      { key: 'gallery', title: 'Gallery', sub: 'GALLERY', count: (() => { const n = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }).length; return n ? `사진 묶음 ${n}개` : '아직 없음'; })() },
+      { key: 'rp', title: 'Role Play', sub: 'ROLE PLAY', count: relRooms.length ? `역극 ${relRooms.length}개` : '아직 없음' },
+    ] : []),
+  ] : [];
+
   if (!loaded) return <section className="page" />;
   if (!rel || (rel.visibility === 'private' && !isAdmin) || (rel.visibility === 'member' && !user)) {
     return (
@@ -1018,6 +1033,7 @@ export default function RelDetailPage() {
           tc={effThemeColor || 'var(--accent,#7fd6d0)'}
           onGo={href => router.push(href)}
           auSlot={showAuList ? auListEl(false) : undefined}
+          links={drawerItems.map(d => ({ key: d.key, title: d.title, sub: d.count, onClick: () => setWin(d.key) }))}
           deco={{
             off: rel.deco === 'off',
             image: hdrBgUrl ?? undefined, band: rel.decoBg === 'band', blur: hdrBlurForBg,
@@ -1565,57 +1581,47 @@ export default function RelDetailPage() {
         )}
       </div>
 
-      {/* 역극 · 로그 연동 리스트 (4.5) — 역극: 내 참여 방 + 공개 전환된 완결 방.
-          AU마다 숨길 수 있다 (v2.0 사용자 요청 — AU 관리의 체크박스). 둘 다 숨기면 칸 자체가 없다 */}
-      {!(au?.hideRp && au?.hideLog) && (
-      <div className="g2" style={{ marginTop: 16 }}>
-        {!au?.hideRp && rel?.leftBoard === 'gallery' && (
-        <div className="panel widget" style={{ margin: 0, display: 'flex', flexDirection: 'column', ...(au?.hideLog ? { gridColumn: '1/-1' } : null) }}>
-          <h4>갤러리 <span className="more" onClick={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}>더보기 ›</span></h4>
-          <RelGalleryMini ph={rel.thumbClass} onOpen={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}
-            posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} />
+      {/* 서랍 — 로그 백업 · 세션 게시판 · 갤러리 · 역극. 스테이지에서는 우측 바로가기로, 클래식에서는 아래 목록으로 연다 */}
+      {!stageOn && drawerItems.length > 0 && (
+        <div className="panel widget" style={{ marginTop: 16 }}>
+          <div className="cs-links" style={{ marginTop: 0 }}>
+            {drawerItems.map(d => (
+              <button key={d.key} type="button" className="cs-link" onClick={() => setWin(d.key)}>
+                <span className="cs-link-k">{d.title}</span><span className="cs-link-s">{d.count}</span><span className="cs-link-a">→</span>
+              </button>
+            ))}
+          </div>
         </div>
-        )}
-        {!au?.hideRp && rel?.leftBoard !== 'gallery' && (
-        <div className="panel widget" style={{ margin: 0, ...(au?.hideLog ? { gridColumn: '1/-1' } : null) }}>
-          <h4>역극 <span className="more" onClick={() => router.push('/rp')}>더보기 ›</span></h4>
-          {relRooms.length > 0 ? relRooms.map(rm => (
-            <div key={rm.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }} onClick={() => router.push('/rp')}>
-              <span>{rm.title}</span>
-              <b style={{ fontSize: 11, color: 'var(--faint)' }}>
-                {rm.status === 'done' ? (rm.isPublic ? '완결 · 공개' : '완결') : '진행중'}
-              </b>
-            </div>
-          )) : (
-            <p className="hint" style={{ margin: 0 }}>이 자관 기반으로 진행된 역극이 여기에 표시됩니다</p>
+      )}
+      {win && drawerItems.some(d => d.key === win) && (
+        <StageWindow title={drawerItems.find(d => d.key === win)?.title ?? ''} name={(!isBaseAu && au?.name?.trim()) || rel.name}
+          items={drawerItems} current={win} onSelect={setWin} onClose={() => setWin(null)}>
+          {win === 'gallery' ? (
+            <GalleryPanel ph={rel.thumbClass} loggedIn={!!user} posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} canSeePrivate={isAdmin} accent={effThemeColor || undefined} />
+          ) : win === 'rp' ? (
+            relRooms.length > 0 ? relRooms.map(rm => (
+              <div key={rm.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }} onClick={() => router.push('/rp')}>
+                <span>{rm.title}</span>
+                <b style={{ fontSize: 11, color: 'var(--faint)' }}>{rm.status === 'done' ? (rm.isPublic ? '완결 · 공개' : '완결') : '진행중'}</b>
+              </div>
+            )) : <p className="hint">이 자관 기반으로 진행된 역극이 여기에 표시됩니다</p>
+          ) : win === 'session' ? (
+            relSessions.length > 0 ? relSessions.map(sv => (
+              <div key={sv.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }}
+                onClick={() => router.push(sv.postId ? `/board/${sv.postId}` : '/playlog')}>
+                <span>{sv.scenario}</span>
+                <b style={{ fontSize: 11, color: 'var(--faint)' }}>{sv.date?.replace(/-/g, '.') ?? ''}</b>
+              </div>
+            )) : <p className="hint">연동된 세션이 없습니다 — 세션 등록 시 자관을 선택하면 여기에 표시</p>
+          ) : (
+            relLogs.length > 0 ? relLogs.map(l => (
+              <div key={l.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }} onClick={() => router.push(`/trpg/${l.id}`)}>
+                <span>{l.title}</span>
+                <b style={{ fontSize: 11, color: 'var(--faint)' }}>{l.date?.replace(/-/g, '.') ?? ''}</b>
+              </div>
+            )) : <p className="hint">연동된 로그가 없습니다 — 로그 등록 시 자관을 선택하면 여기에 표시</p>
           )}
-        </div>
-        )}
-        {!au?.hideLog && rel?.linkBoard === 'session' && (
-        <div className="panel widget" style={{ margin: 0, ...(au?.hideRp ? { gridColumn: '1/-1' } : null) }}>
-          <h4>세션 <span className="more" onClick={() => router.push('/playlog')}>더보기 ›</span></h4>
-          {relSessions.length > 0 ? relSessions.map(s => (
-            <div key={s.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }}
-              onClick={() => router.push(s.postId ? `/board/${s.postId}` : '/playlog')}>
-              <span>{s.scenario}</span>
-              <b style={{ fontSize: 11, color: 'var(--faint)' }}>{s.date?.replace(/-/g, '.') ?? ''}</b>
-            </div>
-          )) : <p className="hint" style={{ margin: 0 }}>연동된 세션이 없습니다 — 세션 등록 시 자관을 선택하면 여기에 표시</p>}
-        </div>
-        )}
-        {!au?.hideLog && rel?.linkBoard !== 'session' && (
-        <div className="panel widget" style={{ margin: 0, ...(au?.hideRp ? { gridColumn: '1/-1' } : null) }}>
-          <h4>로그 <span className="more" onClick={() => router.push('/trpg')}>더보기 ›</span></h4>
-          {relLogs.length > 0 ? relLogs.map(l => (
-            <div key={l.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }} onClick={() => router.push(`/trpg/${l.id}`)}>
-              {/* 번호 없이 제목만 — 연동 리스트에서는 순번이 의미가 없다 (사용자 확정) */}
-              <span>{l.title}</span>
-              <b style={{ fontSize: 11, color: 'var(--faint)' }}>{l.date?.replace(/-/g, '.') ?? ''}</b>
-            </div>
-          )) : <p className="hint" style={{ margin: 0 }}>연동된 로그가 없습니다 — 로그 등록 시 자관을 선택하면 여기에 표시</p>}
-        </div>
-        )}
-      </div>
+        </StageWindow>
       )}
 
       {/* ---------- 멤버 추가 모달 ---------- */}
@@ -1777,9 +1783,9 @@ export default function RelDetailPage() {
               </div>
               {/* 상세 하단의 연동 리스트 숨김 (v2.0 사용자 요청) — 이 AU를 보는 동안만 적용 */}
               <div style={{ display: 'flex', gap: 16 }}>
-                <KCheck label={<span style={{ fontSize: 11.5 }}>{rel.leftBoard === 'gallery' ? '갤러리' : '역극'} 리스트 숨김</span>} checked={!!a.hideRp}
+                <KCheck label={<span style={{ fontSize: 11.5 }}>갤러리·역극 숨김</span>} checked={!!a.hideRp}
                   onChange={v => updateRel({ aus: rel.aus.map(x => (x.id === a.id ? { ...x, hideRp: v || undefined } : x)) })} />
-                <KCheck label={<span style={{ fontSize: 11.5 }}>{rel.linkBoard === 'session' ? '세션' : '로그'} 리스트 숨김</span>} checked={!!a.hideLog}
+                <KCheck label={<span style={{ fontSize: 11.5 }}>로그·세션 숨김</span>} checked={!!a.hideLog}
                   onChange={v => updateRel({ aus: rel.aus.map(x => (x.id === a.id ? { ...x, hideLog: v || undefined } : x)) })} />
               </div>
             </div>
