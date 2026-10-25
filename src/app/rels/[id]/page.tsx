@@ -23,6 +23,7 @@ import { isPlainSpec } from '@/lib/charRuleConfig';
 import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { putBlob } from '@/lib/blobStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
+import { useBgInk } from '@/lib/useBgInk';
 import { RelStage } from '@/components/rels/RelStage';
 import { StageWindow, type StageWindowItem } from '@/components/chars/StageWindow';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
@@ -591,7 +592,13 @@ export default function RelDetailPage() {
 
   // 서랍 — 로그 백업 · 세션 게시판 · 갤러리 · 역극 (캐릭터 상세의 서랍과 같은 창). AU마다 숨길 수 있다
   const [win, setWin] = useState<string | null>(null);
+  const bgInk = useBgInk();   // 배경이 밝으면 스테이지도 밝게 (캐릭터 상세와 같은 규칙)
+  // 서랍 항목을 고르면 타임라인/문답 탭도 같이 바뀐다
+  const selTab = (t: 'tl' | 'qa') => { setTab(t); if (win === 'timeline' || win === 'qa') setWin(t === 'tl' ? 'timeline' : 'qa'); };
+  const pickWin = (k: string | null) => { if (k === 'timeline') setTab('tl'); else if (k === 'qa') setTab('qa'); setWin(k); };
   const drawerItems: (StageWindowItem & { count: string })[] = rel ? [
+    { key: 'timeline', title: 'Timeline', sub: 'TIMELINE', count: auTimeline.length ? `기록 ${auTimeline.length}개` : '아직 없음' },
+    ...(qaOn ? [{ key: 'qa', title: 'Questions', sub: 'QUESTIONS', count: `질문 ${auQuestions.length}개` }] : []),
     ...(!au?.hideLog ? [
       { key: 'log', title: 'Log Backup', sub: 'LOG BACKUP', count: relLogs.length ? `로그 ${relLogs.length}개` : '아직 없음' },
       { key: 'session', title: 'Session Board', sub: 'SESSIONS', count: relSessions.length ? `세션 ${relSessions.length}개` : '아직 없음' },
@@ -870,6 +877,9 @@ export default function RelDetailPage() {
       : [asAu(rel.members[0] ?? null), asAu(rel.members[1] ?? null)])
     : [];
 
+  // 스테이지에 서는 두 사람 — 2인 자관은 좌우 슬롯 그대로, 다인 자관은 앞의 두 명
+  const stageSlots: RelMember[] = (isDuo ? pairSlots : rel.members.slice(0, 2)).filter((x): x is RelMember => !!x);
+
   /* 히어로 레이어·배치 (v5.6) — AU는 자기 것만(자관 것을 물려받지 않음). 레이어 순서가 없으면
      예전처럼 앞 캐릭터가 위, 글자가 맨 위 */
   const heroLayout = isBaseAu ? rel.heroLayout : au?.heroLayout;
@@ -931,6 +941,213 @@ export default function RelDetailPage() {
     updateRel({ members: rel.members.map(m => (m.charId === cid ? { ...m, faceCrop: c } : m)) });
     setFaceEdit(null);
   };
+
+  const timelinePanel = (
+      <div className={`panel timeline ${!isDuo ? 'multi' : ''}`} style={{ fontFamily: familyOf(auBodyFont) }}>
+        <div className="rel-tabs">
+          <button className={tab === 'tl' ? 'on' : ''} onClick={() => selTab('tl')}><span className="lb-pc">TIMELINE</span><span className="lb-m">T</span></button>
+          {/* QUESTIONS 섹션은 ＋로 추가해야 생김 (v1.9) — 처음에는 타임라인만 */}
+          {qaOn && <button className={tab === 'qa' ? 'on' : ''} onClick={() => selTab('qa')}><span className="lb-pc">QUESTIONS</span><span className="lb-m">Q</span></button>}
+          {isAdmin && !qaOn && (
+            <button data-tip="QUESTIONS 섹션 추가" style={{ color: 'var(--faint)', fontSize: 14, padding: '0 6px' }}
+              onClick={() => setQsetOpen(true)}>＋</button>
+          )}
+          {isAdmin && (
+            <span style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+              {/* 이 줄의 버튼은 홈 공통 버튼과 같은 세로 크기(35px)로 — 탭 줄에서만 작아 보이던 것 */}
+              {tab === 'tl' && auTimeline.length > 1 && (
+                <button className={`btn ${tlSort ? 'btn-accent' : 'btn-ghost'}`}
+                  style={{ height: 35, padding: '0 14px', fontSize: 11.5 }}
+                  onClick={() => setTlSort(v => !v)}>
+                  <span className="lb-pc">{tlSort ? '정렬 완료' : '⠿ 정렬'}</span>
+                  <span className="lb-m">⠿</span>
+                </button>
+              )}
+              {tab === 'tl'
+                ? <button className="btn btn-dark" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }} data-tip="기록 추가" onClick={() => setTlOpen(true)}><span className="lb-pc">＋ ADD RECORD</span><span className="lb-m">＋</span></button>
+                : <>
+                  <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }} data-tip="질문 리스트 추가" onClick={() => setQsetOpen(true)}><span className="lb-pc">＋ 질문 리스트</span><span className="lb-m">≡</span></button>
+                  {/* 되돌리기는 오른쪽 질문 리스트에서 우클릭 (v2.0 사용자 요청) — 여기엔 건너뛰기만 */}
+                  {curQa && (
+                    <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }}
+                      data-tip="이 질문을 아주 버리고 다음 질문으로 — 다시 나오지 않음 (되돌리려면 오른쪽 리스트에서 우클릭)"
+                      onClick={skipQuestion}><span className="lb-pc">질문 건너뛰기</span><span className="lb-m">⏭</span></button>
+                  )}
+                  {/* 대기 풀에서 랜덤 출제 (v1.9) — 리스트를 넣어도 자동 출제되지 않으므로(v2.0)
+                      아직 받은 질문이 없을 때는 「질문 받기」로 문구를 바꿔 이 버튼이 시작점임을 알린다 */}
+                  {auQaPool.length > 0 && (
+                    <button className={curQa ? 'btn btn-ghost' : 'btn btn-dark'} style={{ height: 35, padding: '0 14px', fontSize: 11.5 }}
+                      data-tip={`대기 질문 ${auQaPool.length}개`}
+                      onClick={drawNextQuestion}>
+                      <span className="lb-pc">{curQa ? '완료 — 다음 질문' : '질문 받기'}</span>
+                      <span className="lb-m">↻</span>
+                    </button>
+                  )}
+                  <button className="btn btn-dark" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }} data-tip="질문 추가" onClick={() => setQOpen(true)}><span className="lb-pc">＋ ADD QUESTION</span><span className="lb-m">＋</span></button>
+                </>}
+            </span>
+          )}
+        </div>
+
+        {tab === 'tl' ? (
+          tlSort ? (
+            /* 정렬 모드 — 드래그앤드롭으로 순서 변경 (4.5) */
+            <DragList
+              items={auTimeline.map((item, i) => ({ item, key: `tl-${i}` }))}
+              keyOf={x => x.key}
+              onReorder={list => patchAuData({ timeline: list.map(x => x.item) })}
+              render={({ item }) => (
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '8px 6px', border: '1.5px dashed var(--line)', borderRadius: 9, marginBottom: 6, background: '#fff' }}>
+                  <span className="drag-h">⠿</span>
+                  <div style={{ minWidth: 0 }}>
+                    {item.era && <div className="era">{item.era}</div>}
+                    <div style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.desc || item.says.map(s => s.text).join(' / ')}
+                    </div>
+                  </div>
+                </div>
+              )} />
+          ) : (
+          <div>
+            {auTimeline.map((item, i) => (
+              /* 수정·삭제는 우클릭 메뉴로 (v2.0 사용자 요청) — 늘 떠 있는 [삭제] 글자는 없앴다 */
+              <div className="tl-item" key={i}
+                onContextMenu={e => {
+                  if (!isAdmin) return;
+                  e.preventDefault();
+                  setTlCtx({ x: e.clientX, y: e.clientY, idx: i });
+                }}>
+                {item.era && <div className="era">{item.era}</div>}
+                {item.desc && <div className="desc">{item.desc}</div>}
+                {item.says.map((s, j) => {
+                  const c = charOf(s.charId);
+                  return (
+                    <div key={j} className={`tl-say ${sideOf(s.charId)}`}
+                      style={{ ['--cc' as string]: rgbTriple(c?.color ?? '#5d636d') }}>
+                      <div className="who" style={{ fontFamily: familyOf(c?.fontId) }}>{c?.name}</div>
+                      <div className="bub">{s.text}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+            {auTimeline.length === 0 && <p className="hint">타임라인이 비어 있습니다 — 우상단 [＋ ADD RECORD]로 추가</p>}
+          </div>
+          )
+        ) : (
+          <div className="qa-wrap">
+            <div className="qa-today">
+              {curQa ? (
+                <>
+                  {/* 스크롤은 여기까지 — 입력란은 밖에 두어 답변이 길어져도 자리를 지킨다 (v2.0 사용자 발견) */}
+                  <div className="qa-answers" ref={ansRef} onScroll={onAnsScroll}>
+                  <div className="qa-no">TODAY&apos;S QUESTION · Q.{String(curQa.no).padStart(3, '0')}
+                    {/* 질문에 대한 오너 설명 — 관리자만 작성 (v2.0 사용자 요청) */}
+                    {isAdmin && (
+                      <small style={{ cursor: 'var(--cur-pointer,pointer)', color: 'var(--accent)', marginLeft: 8, fontWeight: 400, letterSpacing: 0 }}
+                        onClick={() => setQNote({ no: curQa.no, text: curQa.note ?? '' })}>
+                        {curQa.note ? '설명 수정' : '＋ 설명'}
+                      </small>
+                    )}
+                  </div>
+                  <div className="qa-q">{curQa.q}</div>
+                  {curQa.note && <div className="qa-note">{curQa.note}</div>}
+                  {/* 날짜만, 오른쪽 정렬 (v1.9 사용자 피드백) */}
+                  <div className="qa-date" style={{ textAlign: 'right' }}>{curQa.date.replace(/-/g, '.')}</div>
+                  {qaHidden && <div className="qa-locked">비공개 답변</div>}
+                  {!qaHidden && curAnswers.map((a, i) => {
+                    const c = charOf(a.charId);
+                    return (
+                      <div key={i} className={`qa-ans ${sideOf(a.charId) === 'r' ? 'r' : ''}`}
+                        style={{ ['--cc' as string]: rgbTriple(c?.color ?? '#5d636d') }}
+                        /* 수정·부연·삭제는 우클릭 메뉴로 — 늘 떠 있으면 답변 줄이 난잡해진다 (사용자 확정) */
+                        onContextMenu={e => {
+                          if (!(canEditAns(a) || isAdmin || canDelAns(a))) return;
+                          e.preventDefault();
+                          setAnsCtx({ x: e.clientX, y: e.clientY, idx: i });
+                        }}>
+                        {/* 같은 캐릭터가 연달아 답하면 이름을 한 번만 (v2.0 사용자 요청) */}
+                        {curAnswers[i - 1]?.charId !== a.charId && (
+                          <div className="who" style={{ fontFamily: familyOf(c?.fontId) }}>{c?.name}</div>
+                        )}
+                        <div className="bub" {...(a.note ? { 'data-note': a.note } : {})}>{a.text}</div>
+                      </div>
+                    );
+                  })}
+                  </div>
+                  {!qaHidden && answerableIds.length > 0 && (
+                    <div className="qa-input">
+                      {/* 페어: 클릭 순환 · 다인: 드롭다운으로 선택 (v1.9 사용자 확정) — 권한 있는 캐릭터만 */}
+                      <div className="char-pick" onClick={e => {
+                        if (isDuo && answerableIds.length > 1) {
+                          const cur = qaChar ?? answerableIds[0];
+                          setQaChar(answerableIds[(answerableIds.indexOf(cur) + 1) % answerableIds.length]);
+                        } else if (answerableIds.length > 1) {
+                          if (qaPickPos) { setQaPickPos(null); return; }
+                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          const h = answerableIds.length * 34 + 10;
+                          setQaPickPos({ left: r.left, top: Math.max(8, r.top - h - 6) });
+                        }
+                      }}>
+                        <CharFace c={charOf(qaChar ?? answerableIds[0])} className="f" />
+                        <small style={{ fontFamily: familyOf(charOf(qaChar ?? answerableIds[0])?.fontId) }}>
+                          {charOf(qaChar ?? answerableIds[0])?.name}{answerableIds.length > 1 ? ' ▾' : ''}
+                        </small>
+                        {qaPickPos && createPortal(
+                          <div className="k-sel-pop" style={{ position: 'fixed', left: qaPickPos.left, top: qaPickPos.top, minWidth: 150, zIndex: 120 }}>
+                            {answerableIds.map(cid => {
+                              const c = charOf(cid);
+                              return (
+                                <div key={cid} style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+                                  onClick={e2 => { e2.stopPropagation(); setQaChar(cid); setQaPickPos(null); }}>
+                                  <CharFace c={c} style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0 }} />
+                                  <span style={{ fontFamily: familyOf(c?.fontId) }}>{c?.name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>,
+                          document.body,
+                        )}
+                      </div>
+                      <textarea
+                        className="k-textarea" style={{ minHeight: 42 }}
+                        placeholder="줄바꿈은 Shift+Enter · Enter로 등록"
+                        value={qaText}
+                        onChange={e => setQaText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitQa(); }
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="hint">등록된 문답이 없습니다 — 우상단 [＋ 질문 추가]로 시작해 보세요</p>
+              )}
+            </div>
+            <div className="qa-list">
+              <div className="qa-search">
+                <span>⌕</span>
+                <input placeholder="질문 검색" value={qaQuery} onChange={e => setQaQuery(e.target.value)} />
+              </div>
+              <div className="qa-scroll">
+                {qaFiltered.map(q => (
+                  /* 우클릭 — 메뉴에서 「리스트로 되돌리기」를 고르면 확인 모달이 뜬다 (v2.0 사용자 요청 —
+                     바로 모달이 뜨는 것보다 한 단계 거치는 쪽이 실수로 우클릭했을 때 안전하다).
+                     지금 보고 있는 질문이 아니어도 리스트에서 바로 고를 수 있다 */
+                  <div key={q.no} className={`qa-item ${curQa?.no === q.no ? 'on' : ''}`} onClick={() => setQaNo(q.no)}
+                    data-tip={isAdmin ? '우클릭 — 리스트로 되돌리기' : undefined}
+                    onContextMenu={e => { if (!isAdmin) return; e.preventDefault(); setQaCtx({ x: e.clientX, y: e.clientY, no: q.no }); }}>
+                    <b>Q.{String(q.no).padStart(3, '0')} {q.q}</b>
+                    <small>{q.date.slice(5).replace('-', '.')} · 답변 {answersOf(q.no).length}</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+  );
 
   return (
     <section className={`page page-rel-detail${stageOn ? ' rs-on' : ''}`}>
@@ -1008,32 +1225,35 @@ export default function RelDetailPage() {
           fontFamily={familyOf(auFont)}
           catchphrase={au?.catchphrase || rel.catchphrase}
           cpLabel={auCpTag ? CP_LABEL[auCpTag] : undefined}
-          members={(isDuo ? pairSlots.filter((x): x is RelMember => !!x) : rel.members).map(m => {
-            const c = charOf(m.charId);
-            return {
-              id: m.charId, name: c?.name ?? '—', color: c?.color ?? '#888', href: charHref(m.charId),
-              // 전신 위 배지와 같은 자료 — 부제·키워드·기본 정보 항목·컬러 팔레트 (자관/캐릭터 설정 그대로)
-              role: c?.sub || undefined,
-              kws: m.keywords,
-              specs: (c?.specs ?? []).filter(isPlainSpec).map(sp => ({ label: sp.label, value: sp.value })),
-              gems: (c?.colors ?? m.palette ?? []).map(g => ({ hex: g.hex, label: g.label })),
-              ta: (m.badgeTextAlign ? m.badgeTextAlign[0] : undefined) as 'l' | 'c' | 'r' | undefined,
-            };
-          })}
-          figs={(() => {
-            const fulls = (isDuo ? pairSlots.map(sl => sl?.charId) : rel.members.map(m => m.charId))
-              .map(cid => (cid ? fullRefOf(cid) : undefined)).filter((r): r is string => !!r);
-            return fulls.length ? fulls : auArts.slice(0, 1);
-          })()}
-          stats={[
-            { n: rel.members.length, label: 'MEMBERS' },
-            { n: auTimeline.length, label: 'TIMELINE' },
-            { n: rel.aus.length, label: 'AU' },
-          ]}
+          members={stageSlots.map(m => ({ id: m.charId, name: charOf(m.charId)?.name ?? '—', href: charHref(m.charId) }))}
+          light={bgInk === 'dark'}
+          hero={{
+            uiZ,
+            fulls: stageSlots.map(m => {
+              const ref = isBaseAu ? m.fullImgId : au?.fulls?.[m.charId];
+              return ref ? { id: m.charId, ref, scale: m.fullScale ?? 90, offX: m.fullOffX ?? 0, offY: m.fullOffY ?? 0,
+                z: heroZ(layerOrder, heroFullId(m.charId)), shadow: fullShadow(auSt.nameShadowColor, auSt.nameShadow) } : null;
+            }).filter((x): x is NonNullable<typeof x> => !!x),
+            stickers: (heroLayout?.stickers ?? []).map(st => ({ id: st.id, ref: st.ref, x: st.x, y: st.y, w: st.w, z: heroZ(layerOrder, heroStickerId(st.id)) })),
+            names: stageSlots.map(m => {
+              const c = charOf(m.charId);
+              if (!c) return null;
+              return {
+                id: m.charId, name: c.name, sub: c.sub || undefined, font: familyOf(c.fontId), fs: m.heroNameSize, bold: m.nameBold ?? true,
+                href: charHref(m.charId),
+                align: (m.badgeAlign ?? 'top') as 'top' | 'mid' | 'bottom',
+                ta: ((m.badgeTextAlign ?? (stageSlots[0] === m ? 'left' : 'right')) as 'left' | 'center' | 'right'),
+                o: heroLayout?.names?.[m.charId] ?? { x: 0, y: 0 },
+                kws: m.keywords ?? [],
+                specs: (c.specs ?? []).filter(isPlainSpec).map(sp => ({ label: sp.label, value: sp.value })),
+                gems: (c.colors ?? m.palette ?? []).map(g => ({ hex: g.hex, label: g.label })),
+              };
+            }).filter((x): x is NonNullable<typeof x> => !!x),
+          }}
           tc={effThemeColor || 'var(--accent,#7fd6d0)'}
           onGo={href => router.push(href)}
           auSlot={showAuList ? auListEl(false) : undefined}
-          links={drawerItems.map(d => ({ key: d.key, title: d.title, sub: d.count, onClick: () => setWin(d.key) }))}
+          links={drawerItems.map(d => ({ key: d.key, title: d.title, sub: d.count, onClick: () => pickWin(d.key) }))}
           deco={{
             off: rel.deco === 'off',
             image: hdrBgUrl ?? undefined, band: rel.decoBg === 'band', blur: hdrBlurForBg,
@@ -1091,7 +1311,7 @@ export default function RelDetailPage() {
       </div>
 
 
-      {heroDuo ? (
+      {stageOn ? null : heroDuo ? (
         <div className={`rel-center rel-center-full ${single ? 'one-mode' : ''}`}
           style={{ fontFamily: familyOf(rel.bodyFontId) }}>
           {/* 전신 — 등록 이미지(AU별 우선) + 크기/앞뒤는 자관 수정의 미리보기에서 (v1.9).
@@ -1375,218 +1595,15 @@ export default function RelDetailPage() {
         </div>
       )}
 
-      {/* 타임라인 / 페어 문답 탭 (v1.8) */}
-      <div className={`panel timeline ${!isDuo ? 'multi' : ''}`} style={{ fontFamily: familyOf(auBodyFont) }}>
-        <div className="rel-tabs">
-          <button className={tab === 'tl' ? 'on' : ''} onClick={() => setTab('tl')}><span className="lb-pc">TIMELINE</span><span className="lb-m">T</span></button>
-          {/* QUESTIONS 섹션은 ＋로 추가해야 생김 (v1.9) — 처음에는 타임라인만 */}
-          {qaOn && <button className={tab === 'qa' ? 'on' : ''} onClick={() => setTab('qa')}><span className="lb-pc">QUESTIONS</span><span className="lb-m">Q</span></button>}
-          {isAdmin && !qaOn && (
-            <button data-tip="QUESTIONS 섹션 추가" style={{ color: 'var(--faint)', fontSize: 14, padding: '0 6px' }}
-              onClick={() => setQsetOpen(true)}>＋</button>
-          )}
-          {isAdmin && (
-            <span style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
-              {/* 이 줄의 버튼은 홈 공통 버튼과 같은 세로 크기(35px)로 — 탭 줄에서만 작아 보이던 것 */}
-              {tab === 'tl' && auTimeline.length > 1 && (
-                <button className={`btn ${tlSort ? 'btn-accent' : 'btn-ghost'}`}
-                  style={{ height: 35, padding: '0 14px', fontSize: 11.5 }}
-                  onClick={() => setTlSort(v => !v)}>
-                  <span className="lb-pc">{tlSort ? '정렬 완료' : '⠿ 정렬'}</span>
-                  <span className="lb-m">⠿</span>
-                </button>
-              )}
-              {tab === 'tl'
-                ? <button className="btn btn-dark" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }} data-tip="기록 추가" onClick={() => setTlOpen(true)}><span className="lb-pc">＋ ADD RECORD</span><span className="lb-m">＋</span></button>
-                : <>
-                  <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }} data-tip="질문 리스트 추가" onClick={() => setQsetOpen(true)}><span className="lb-pc">＋ 질문 리스트</span><span className="lb-m">≡</span></button>
-                  {/* 되돌리기는 오른쪽 질문 리스트에서 우클릭 (v2.0 사용자 요청) — 여기엔 건너뛰기만 */}
-                  {curQa && (
-                    <button className="btn btn-ghost" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }}
-                      data-tip="이 질문을 아주 버리고 다음 질문으로 — 다시 나오지 않음 (되돌리려면 오른쪽 리스트에서 우클릭)"
-                      onClick={skipQuestion}><span className="lb-pc">질문 건너뛰기</span><span className="lb-m">⏭</span></button>
-                  )}
-                  {/* 대기 풀에서 랜덤 출제 (v1.9) — 리스트를 넣어도 자동 출제되지 않으므로(v2.0)
-                      아직 받은 질문이 없을 때는 「질문 받기」로 문구를 바꿔 이 버튼이 시작점임을 알린다 */}
-                  {auQaPool.length > 0 && (
-                    <button className={curQa ? 'btn btn-ghost' : 'btn btn-dark'} style={{ height: 35, padding: '0 14px', fontSize: 11.5 }}
-                      data-tip={`대기 질문 ${auQaPool.length}개`}
-                      onClick={drawNextQuestion}>
-                      <span className="lb-pc">{curQa ? '완료 — 다음 질문' : '질문 받기'}</span>
-                      <span className="lb-m">↻</span>
-                    </button>
-                  )}
-                  <button className="btn btn-dark" style={{ height: 35, padding: '0 14px', fontSize: 11.5 }} data-tip="질문 추가" onClick={() => setQOpen(true)}><span className="lb-pc">＋ ADD QUESTION</span><span className="lb-m">＋</span></button>
-                </>}
-            </span>
-          )}
-        </div>
-
-        {tab === 'tl' ? (
-          tlSort ? (
-            /* 정렬 모드 — 드래그앤드롭으로 순서 변경 (4.5) */
-            <DragList
-              items={auTimeline.map((item, i) => ({ item, key: `tl-${i}` }))}
-              keyOf={x => x.key}
-              onReorder={list => patchAuData({ timeline: list.map(x => x.item) })}
-              render={({ item }) => (
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '8px 6px', border: '1.5px dashed var(--line)', borderRadius: 9, marginBottom: 6, background: '#fff' }}>
-                  <span className="drag-h">⠿</span>
-                  <div style={{ minWidth: 0 }}>
-                    {item.era && <div className="era">{item.era}</div>}
-                    <div style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.desc || item.says.map(s => s.text).join(' / ')}
-                    </div>
-                  </div>
-                </div>
-              )} />
-          ) : (
-          <div>
-            {auTimeline.map((item, i) => (
-              /* 수정·삭제는 우클릭 메뉴로 (v2.0 사용자 요청) — 늘 떠 있는 [삭제] 글자는 없앴다 */
-              <div className="tl-item" key={i}
-                onContextMenu={e => {
-                  if (!isAdmin) return;
-                  e.preventDefault();
-                  setTlCtx({ x: e.clientX, y: e.clientY, idx: i });
-                }}>
-                {item.era && <div className="era">{item.era}</div>}
-                {item.desc && <div className="desc">{item.desc}</div>}
-                {item.says.map((s, j) => {
-                  const c = charOf(s.charId);
-                  return (
-                    <div key={j} className={`tl-say ${sideOf(s.charId)}`}
-                      style={{ ['--cc' as string]: rgbTriple(c?.color ?? '#5d636d') }}>
-                      <div className="who" style={{ fontFamily: familyOf(c?.fontId) }}>{c?.name}</div>
-                      <div className="bub">{s.text}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-            {auTimeline.length === 0 && <p className="hint">타임라인이 비어 있습니다 — 우상단 [＋ ADD RECORD]로 추가</p>}
-          </div>
-          )
-        ) : (
-          <div className="qa-wrap">
-            <div className="qa-today">
-              {curQa ? (
-                <>
-                  {/* 스크롤은 여기까지 — 입력란은 밖에 두어 답변이 길어져도 자리를 지킨다 (v2.0 사용자 발견) */}
-                  <div className="qa-answers" ref={ansRef} onScroll={onAnsScroll}>
-                  <div className="qa-no">TODAY&apos;S QUESTION · Q.{String(curQa.no).padStart(3, '0')}
-                    {/* 질문에 대한 오너 설명 — 관리자만 작성 (v2.0 사용자 요청) */}
-                    {isAdmin && (
-                      <small style={{ cursor: 'var(--cur-pointer,pointer)', color: 'var(--accent)', marginLeft: 8, fontWeight: 400, letterSpacing: 0 }}
-                        onClick={() => setQNote({ no: curQa.no, text: curQa.note ?? '' })}>
-                        {curQa.note ? '설명 수정' : '＋ 설명'}
-                      </small>
-                    )}
-                  </div>
-                  <div className="qa-q">{curQa.q}</div>
-                  {curQa.note && <div className="qa-note">{curQa.note}</div>}
-                  {/* 날짜만, 오른쪽 정렬 (v1.9 사용자 피드백) */}
-                  <div className="qa-date" style={{ textAlign: 'right' }}>{curQa.date.replace(/-/g, '.')}</div>
-                  {qaHidden && <div className="qa-locked">비공개 답변</div>}
-                  {!qaHidden && curAnswers.map((a, i) => {
-                    const c = charOf(a.charId);
-                    return (
-                      <div key={i} className={`qa-ans ${sideOf(a.charId) === 'r' ? 'r' : ''}`}
-                        style={{ ['--cc' as string]: rgbTriple(c?.color ?? '#5d636d') }}
-                        /* 수정·부연·삭제는 우클릭 메뉴로 — 늘 떠 있으면 답변 줄이 난잡해진다 (사용자 확정) */
-                        onContextMenu={e => {
-                          if (!(canEditAns(a) || isAdmin || canDelAns(a))) return;
-                          e.preventDefault();
-                          setAnsCtx({ x: e.clientX, y: e.clientY, idx: i });
-                        }}>
-                        {/* 같은 캐릭터가 연달아 답하면 이름을 한 번만 (v2.0 사용자 요청) */}
-                        {curAnswers[i - 1]?.charId !== a.charId && (
-                          <div className="who" style={{ fontFamily: familyOf(c?.fontId) }}>{c?.name}</div>
-                        )}
-                        <div className="bub" {...(a.note ? { 'data-note': a.note } : {})}>{a.text}</div>
-                      </div>
-                    );
-                  })}
-                  </div>
-                  {!qaHidden && answerableIds.length > 0 && (
-                    <div className="qa-input">
-                      {/* 페어: 클릭 순환 · 다인: 드롭다운으로 선택 (v1.9 사용자 확정) — 권한 있는 캐릭터만 */}
-                      <div className="char-pick" onClick={e => {
-                        if (isDuo && answerableIds.length > 1) {
-                          const cur = qaChar ?? answerableIds[0];
-                          setQaChar(answerableIds[(answerableIds.indexOf(cur) + 1) % answerableIds.length]);
-                        } else if (answerableIds.length > 1) {
-                          if (qaPickPos) { setQaPickPos(null); return; }
-                          const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          const h = answerableIds.length * 34 + 10;
-                          setQaPickPos({ left: r.left, top: Math.max(8, r.top - h - 6) });
-                        }
-                      }}>
-                        <CharFace c={charOf(qaChar ?? answerableIds[0])} className="f" />
-                        <small style={{ fontFamily: familyOf(charOf(qaChar ?? answerableIds[0])?.fontId) }}>
-                          {charOf(qaChar ?? answerableIds[0])?.name}{answerableIds.length > 1 ? ' ▾' : ''}
-                        </small>
-                        {qaPickPos && createPortal(
-                          <div className="k-sel-pop" style={{ position: 'fixed', left: qaPickPos.left, top: qaPickPos.top, minWidth: 150, zIndex: 120 }}>
-                            {answerableIds.map(cid => {
-                              const c = charOf(cid);
-                              return (
-                                <div key={cid} style={{ display: 'flex', gap: 8, alignItems: 'center' }}
-                                  onClick={e2 => { e2.stopPropagation(); setQaChar(cid); setQaPickPos(null); }}>
-                                  <CharFace c={c} style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0 }} />
-                                  <span style={{ fontFamily: familyOf(c?.fontId) }}>{c?.name}</span>
-                                </div>
-                              );
-                            })}
-                          </div>,
-                          document.body,
-                        )}
-                      </div>
-                      <textarea
-                        className="k-textarea" style={{ minHeight: 42 }}
-                        placeholder="줄바꿈은 Shift+Enter · Enter로 등록"
-                        value={qaText}
-                        onChange={e => setQaText(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitQa(); }
-                        }}
-                      />
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="hint">등록된 문답이 없습니다 — 우상단 [＋ 질문 추가]로 시작해 보세요</p>
-              )}
-            </div>
-            <div className="qa-list">
-              <div className="qa-search">
-                <span>⌕</span>
-                <input placeholder="질문 검색" value={qaQuery} onChange={e => setQaQuery(e.target.value)} />
-              </div>
-              <div className="qa-scroll">
-                {qaFiltered.map(q => (
-                  /* 우클릭 — 메뉴에서 「리스트로 되돌리기」를 고르면 확인 모달이 뜬다 (v2.0 사용자 요청 —
-                     바로 모달이 뜨는 것보다 한 단계 거치는 쪽이 실수로 우클릭했을 때 안전하다).
-                     지금 보고 있는 질문이 아니어도 리스트에서 바로 고를 수 있다 */
-                  <div key={q.no} className={`qa-item ${curQa?.no === q.no ? 'on' : ''}`} onClick={() => setQaNo(q.no)}
-                    data-tip={isAdmin ? '우클릭 — 리스트로 되돌리기' : undefined}
-                    onContextMenu={e => { if (!isAdmin) return; e.preventDefault(); setQaCtx({ x: e.clientX, y: e.clientY, no: q.no }); }}>
-                    <b>Q.{String(q.no).padStart(3, '0')} {q.q}</b>
-                    <small>{q.date.slice(5).replace('-', '.')} · 답변 {answersOf(q.no).length}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* 타임라인 / 페어 문답 — 스테이지에서는 서랍 안에, 클래식에서는 아래에 */}
+      {!stageOn && timelinePanel}
 
       {/* 서랍 — 로그 백업 · 세션 게시판 · 갤러리 · 역극. 스테이지에서는 우측 바로가기로, 클래식에서는 아래 목록으로 연다 */}
       {!stageOn && drawerItems.length > 0 && (
         <div className="panel widget" style={{ marginTop: 16 }}>
           <div className="cs-links" style={{ marginTop: 0 }}>
             {drawerItems.map(d => (
-              <button key={d.key} type="button" className="cs-link" onClick={() => setWin(d.key)}>
+              <button key={d.key} type="button" className="cs-link" onClick={() => pickWin(d.key)}>
                 <span className="cs-link-k">{d.title}</span><span className="cs-link-s">{d.count}</span><span className="cs-link-a">→</span>
               </button>
             ))}
@@ -1595,8 +1612,8 @@ export default function RelDetailPage() {
       )}
       {win && drawerItems.some(d => d.key === win) && (
         <StageWindow title={drawerItems.find(d => d.key === win)?.title ?? ''} name={(!isBaseAu && au?.name?.trim()) || rel.name}
-          items={drawerItems} current={win} onSelect={setWin} onClose={() => setWin(null)}>
-          {win === 'gallery' ? (
+          items={drawerItems} current={win} onSelect={pickWin} onClose={() => setWin(null)}>
+          {win === 'timeline' || win === 'qa' ? timelinePanel : win === 'gallery' ? (
             <GalleryPanel ph={rel.thumbClass} loggedIn={!!user} posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} canSeePrivate={isAdmin} accent={effThemeColor || undefined} />
           ) : win === 'rp' ? (
             relRooms.length > 0 ? relRooms.map(rm => (

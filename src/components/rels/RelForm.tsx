@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DecoScript, DecoGhost, DEFAULT_DECO_SCRIPT, DEFAULT_DECO_GHOST } from '@/lib/charStore';
 import { ScriptPlacer } from '@/components/chars/ScriptPlacer';
-import { relTitleVw } from '@/components/rels/RelStage';
+import { relTitleLines, relTitlePx, relTitleVw } from '@/components/rels/RelStage';
 import { Character, Relation, Visibility, RelCpTag, RelMember, auMember, auStyle, fullShadow,
   HeroLayout, heroOrder, heroZ, heroFullId, heroStickerId, HERO_UI_ID } from '@/lib/charStore';
 import { ColorField } from '@/components/ui/ColorField';
@@ -833,8 +833,41 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     onChange={p => patchSticker(st2.id, p)} />
                 ))}
 
+                {/* 스테이지의 큰 자관명 · 필기체 — 끌어서 위치를 옮긴다 (스테이지 구성 · 배경 장식 켬일 때만). 전신보다 뒤에 놓인다 */}
+                {detailLayout === 'stage' && deco === 'on' && (() => {
+                  const bigName = (auObj ? auName.trim() : '') || name.trim().toUpperCase() || 'TITLE';
+                  const gsel = selLayer === 'deco-ghost', ssel = selLayer === 'deco-script';
+                  const spTxt = decoScript?.text?.trim() || bigName;
+                  return (
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
+                      <PrevDrag rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
+                        grid={gridOn ? { ax: 0, ay: 0, cx: gcx, cy: gcy } : undefined}
+                        onSelect={() => setSelLayer('deco-ghost')} onChange={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
+                        style={{
+                          left: `${decoGhost.x}%`, top: `${decoGhost.y}%`, transform: 'translate(-50%,-50%)', width: 'max-content',
+                          textAlign: 'center', whiteSpace: 'nowrap', color: 'rgba(255,255,255,.55)', fontWeight: 800, lineHeight: 0.9,
+                          letterSpacing: '-.025em', fontFamily: deVarFamily(familyOf(decoFontId || fontId) ?? ''),
+                          fontSize: cq(relTitlePx(bigName, vp.w, heroH, decoGhost.scale)),
+                        }}>
+                        {relTitleLines(bigName).map((l, i) => <span key={i} style={{ display: 'block' }}>{l}</span>)}
+                      </PrevDrag>
+                      {decoScript && (
+                        <PrevDrag rootRef={previewRef} x={decoScript.x} y={decoScript.y} min={-20} max={120} selected={ssel}
+                          onSelect={() => setSelLayer('deco-script')} onChange={(x, y) => setDecoScript({ ...decoScript, x, y })}
+                          style={{
+                            left: `${decoScript.x}%`, top: `${decoScript.y}%`, transform: `translate(-50%,-50%) rotate(${decoScript.rot}deg)`,
+                            whiteSpace: 'nowrap', lineHeight: 1.1, color: decoScript.color || (themeMode === 'custom' ? themeColor : '#7fd6d0'),
+                            fontFamily: deVarFamily(familyOf(decoScript.fontId || fontId) ?? ''),
+                            fontSize: cq(decoScript.size * heroH / 100),
+                          }}>{spTxt}</PrevDrag>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* 글자 묶음(제목 · 이름 · 배지) — 레이어 목록의 「UI」 한 칸. 끌어서 기본 자리에서 옮긴다 */}
                 <div style={{ position: 'absolute', inset: 0, zIndex: uiZ, pointerEvents: 'none' }}>
+                  {detailLayout !== 'stage' && (
                   <PrevDrag rootRef={previewRef} x={uiTitle.x} y={uiTitle.y} selected={uiSel}
                     grid={gridOn ? { ax: 50, ay: titleTop, cx: gcx, cy: gcy } : undefined}
                     onSelect={() => setSelLayer(HERO_UI_ID)} onChange={(x, y) => setUiTitle({ x, y })}
@@ -870,6 +903,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                       }}>＋</div>
                     </div>
                   </PrevDrag>
+                  )}
 
                   {pairMembers.map((m, i) => {
                     if (!fulls[m.charId]) return null;
@@ -1328,13 +1362,14 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   <button type="button" className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 10, whiteSpace: 'nowrap' }}
                     onClick={() => setDecoGhost({ ...DEFAULT_DECO_GHOST })}>위치·크기 처음대로</button>
                 </div>
-                <ScriptPlacer script={decoScript} scriptText={decoScript?.text?.trim() || name.trim()}
+                {Object.keys(fulls).length === 0 && <ScriptPlacer script={decoScript} scriptText={decoScript?.text?.trim() || name.trim()}
                   scriptFont={decoScript?.fontId ? deVarFamily(familyOf(decoScript.fontId) ?? '') : deVarFamily(familyOf(fontId) ?? '')}
                   ghost={name.trim().toUpperCase()} ghostPos={decoGhost} ghostFont={deVarFamily(familyOf(decoFontId || fontId) ?? '')}
                   ghostVw={relTitleVw(name.trim().toUpperCase())}
                   accent={themeMode === 'custom' ? themeColor : '#7fd6d0'}
                   onMoveGhost={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
-                  onMoveScript={(x, y) => decoScript && setDecoScript({ ...decoScript, x, y })} />
+                  onMoveScript={(x, y) => decoScript && setDecoScript({ ...decoScript, x, y })} />}
+                {Object.keys(fulls).length > 0 && <p className="hint" style={{ margin: 0 }}>큰 자관명·필기체 위치는 아래 「메인 이미지」 미리보기에서 끌어 옮깁니다 (전신 뒤에 놓여, 전신이 가린 부분은 보이는 글자를 잡으세요)</p>}
                 {(headerUrl || (!headerRemoved && initHeaderId)) && (
                   <>
                     <p className="hint" style={{ margin: 0 }}>배경 이미지를 등록했을 때 — 이미지를 어디에 쓸지 고릅니다</p>

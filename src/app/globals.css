@@ -3400,3 +3400,41 @@ body.rs-full .rs-sticky{top:0!important}
 .rs-rt .cs-link{width:100%;text-shadow:0 1px 10px rgba(0,0,0,.55)}
 .rs-rt .au-list{position:static!important}
 @media (max-width:900px){.rs-rt{left:6vw;right:6vw;width:auto;top:auto;bottom:16vh}}
+
+/* ───── 자관 스테이지 v2 — 테마 배경 · 메인 이미지 레이어(수정 화면 미리보기와 같은 상자) · 가운데 서랍 바로가기 ───── */
+.rs-sticky{background:transparent!important;--ink:#fff;--sub:rgba(255,255,255,.72);--line:rgba(255,255,255,.28)}
+.rs[data-lt] .rs-sticky{color:#16191f;--ink:#16191f;--sub:rgba(22,25,31,.66);--line:rgba(22,25,31,.28)}
+.rs-bar{display:none}
+.rs-hero{position:absolute;left:0;right:0;top:58px;bottom:0;z-index:2;pointer-events:none;container-type:size}
+.rs-hero .rs-title{position:absolute;left:50%;right:auto;top:30%;z-index:2;width:max-content;margin:0;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;
+  font-weight:800;line-height:.9;letter-spacing:-.025em;text-transform:uppercase;color:#fff;text-shadow:none}
+.rs[data-lt] .rs-hero .rs-title{color:#16191f}
+.rs-hero .rs-title span{display:block}
+.rs-hero .rs-scr{position:absolute;inset:0;z-index:3;display:block;opacity:1}
+.rs-hero .rs-scr svg{display:block;overflow:visible}
+.rs-fb{position:absolute;bottom:0;height:100%;width:44%;pointer-events:none}
+.rs-fb.l{left:0}.rs-fb.r{right:0}
+.rs-stk{position:absolute;transform:translate(-50%,-50%);height:auto;max-width:none;pointer-events:none;user-select:none}
+.rs-ui{position:absolute;inset:0;pointer-events:none}
+.rs-nb{position:absolute;width:max-content;max-width:40%;display:flex;flex-direction:column;gap:2px;color:#fff;text-shadow:0 3px 14px rgba(0,0,0,.55)}
+.rs-nb .rs-nm{pointer-events:auto;line-height:1.05;text-align:inherit;font-size:inherit;color:inherit;text-shadow:inherit}
+.rs-nb .rs-nm:hover{color:var(--rs-c);filter:brightness(1.4)}
+.rs-sub{font-size:12.5px;opacity:.85;letter-spacing:.04em;font-weight:400}
+.rs-pills{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.rs-pill{padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.14);backdrop-filter:blur(4px);font-size:12px;font-weight:600;line-height:1.3;white-space:nowrap}
+.rs-nb .rs-gem{display:inline-block;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.5)}
+.rs[data-lt] .rs-nb{color:#16191f;text-shadow:0 2px 12px rgba(255,255,255,.7)}
+.rs[data-lt] .rs-pill{background:rgba(0,0,0,.08)}
+.rs[data-lt] .rs-nb .rs-gem{box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+.rs[data-lt] .rs-head{border-bottom-color:rgba(0,0,0,.18)}
+.rs[data-lt] .rs-adm{color:#16191f;--ink:#16191f;--sub:rgba(22,25,31,.66)}
+.rs-mid{top:46vh;z-index:30;color:inherit}
+.rs[data-lt] .rs-mid i{background:rgba(0,0,0,.4)}
+.rs-mid .rs-links{width:100%;margin-top:8px;text-align:left;pointer-events:auto}
+.rs-mid .cs-link{padding:6px 2px;color:var(--ink);text-shadow:0 1px 10px rgba(0,0,0,.45)}
+.rs[data-lt] .rs-mid .cs-link{text-shadow:0 1px 8px rgba(255,255,255,.7)}
+.rs-mid .cs-link-k{font-size:11px}
+.rs-mid .rs-au{margin-top:10px;pointer-events:auto}
+.rs-mid .rs-au .au-list{position:static!important}
+@media (max-width:900px){.rs-mid{top:40vh;width:60vw}.rs-nb{max-width:46%}.rs-pills{display:none}}
+.rs-nb .rs-pill{color:inherit}

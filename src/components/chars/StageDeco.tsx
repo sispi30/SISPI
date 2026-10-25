@@ -109,10 +109,11 @@ export function ghostSizeVw(g: string): number {
 }
 
 /** 필기체 글씨 — 글자를 지그재그 붓질 마스크로 왼쪽부터 쓸어 드러내, 쓰는 것처럼 나타낸다 */
-export function ScriptWrite({ t }: { t: NonNullable<Props['script']> }) {
+export function ScriptWrite({ t, vb }: { t: NonNullable<Props['script']>; vb?: { w: number; h: number } }) {
   const ref = useRef<SVGTextElement>(null);
   const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const fs = t.size * 10.8, cx = t.x * 19.2, cy = t.y * 10.8;
+  const VW = vb?.w ?? 1920, VH = vb?.h ?? 1080;
+  const fs = t.size * VH / 100, cx = t.x * VW / 100, cy = t.y * VH / 100;
   useEffect(() => {
     let alive = true;
     const measure = () => {
@@ -138,7 +139,7 @@ export function ScriptWrite({ t }: { t: NonNullable<Props['script']> }) {
   }
   return (
     <g transform={`rotate(${t.rot} ${cx} ${cy})`}>
-      <mask id="dc-wr" maskUnits="userSpaceOnUse" x="-400" y="-400" width="2800" height="1900">
+      <mask id="dc-wr" maskUnits="userSpaceOnUse" x={-VW * 0.2} y={-VH * 0.4} width={VW * 1.4} height={VH * 1.8}>
         {d && <path className="dc-write" d={d} pathLength={1} fill="none" stroke="#fff" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />}
       </mask>
       <text ref={ref} x={cx} y={cy} textAnchor="middle" dominantBaseline="central" mask="url(#dc-wr)"
