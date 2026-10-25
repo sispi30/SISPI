@@ -1619,7 +1619,13 @@ export default function RelDetailPage() {
         <StageWindow title={drawerItems.find(d => d.key === win)?.title ?? ''} name={(!isBaseAu && au?.name?.trim()) || rel.name}
           items={drawerItems} current={win} onSelect={pickWin} onClose={() => setWin(null)}>
           {win === 'timeline' || win === 'qa' ? timelinePanel : win === 'gallery' ? (
-            <GalleryPanel ph={rel.thumbClass} loggedIn={!!user} posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} canSeePrivate={isAdmin} accent={effThemeColor || undefined} />
+            <>
+              {isAdmin && (
+                <button type="button" className="btn btn-ghost" style={{ padding: '4px 12px', fontSize: 11, marginBottom: 12 }}
+                  onClick={() => router.push(`/rels/${rel.slug ?? rel.id}/gallery`)}>갤러리 편집 · 연동 ›</button>
+              )}
+              <GalleryPanel ph={rel.thumbClass} loggedIn={!!user} posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} canSeePrivate={isAdmin} accent={effThemeColor || undefined} />
+            </>
           ) : win === 'rp' ? (
             relRooms.length > 0 ? relRooms.map(rm => (
               <div key={rm.id} className="dday-row" style={{ cursor: 'var(--cur-pointer,pointer)' }} onClick={() => router.push('/rp')}>

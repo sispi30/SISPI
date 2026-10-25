@@ -22,6 +22,7 @@ import { Lightbox } from '@/components/ui/Lightbox';
 import { useConfirmDelete } from '@/components/ui/Modal';
 import { fileDrop } from '@/lib/dnd';
 import { useToast } from '@/components/ui/Toast';
+import { RelLinkBoard } from '@/components/rels/RelLinkBoard';
 import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
 import type { PageBgm } from '@/lib/bgmStore';
 
@@ -1260,6 +1261,26 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   <div className="nm"><b>{memberNames?.[id] ?? id}</b></div>
                 </div>
               )} />
+          </div>
+        )}
+
+        {/* 서랍 연동 — 갤러리 편집·연동 · 로그/세션 연동 · 역극. 자관 전체 설정이라 AU 편집에서는 두지 않는다 */}
+        {!auObj && (
+          <div style={{ display: 'grid', gap: 12, marginBottom: 14 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <label className="k-label" style={{ margin: 0 }}>갤러리 · 역극</label>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} disabled={!initial}
+                  onClick={() => initial && window.open(`/rels/${initial.slug ?? initial.id}/gallery`, '_blank')}>갤러리 편집 · 연동 ↗</button>
+                <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }}
+                  onClick={() => window.open('/rp', '_blank')}>역극 연동 (역극방 만들 때 자관 선택) ↗</button>
+              </div>
+              <p className="hint" style={{ margin: 0 }}>
+                {initial ? '갤러리 사진 묶음 추가·수정과 캐릭터 갤러리 태그 연동은 갤러리 페이지에서, 역극은 역극 게시판에서 이 자관을 골라 연동합니다 — 모두 상세 서랍에 나타납니다'
+                  : '갤러리·역극 연동은 자관을 등록한 뒤 수정 화면에서 할 수 있습니다'}
+              </p>
+            </div>
+            <RelLinkBoard relId={initial?.id} mode={linkBoard} onMode={setLinkBoard} />
           </div>
         )}
 

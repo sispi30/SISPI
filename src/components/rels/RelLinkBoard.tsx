@@ -51,13 +51,13 @@ export function RelLinkBoard({ relId, mode, onMode }: {
 
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <label className="k-label" style={{ margin: 0 }}>상세 페이지 하단 연동 리스트</label>
+      <label className="k-label" style={{ margin: 0 }}>로그 · 세션 연동</label>
       <div className="mini-seg" style={{ justifySelf: 'start' }}>
         <button className={mode === 'log' ? 'on' : ''} onClick={() => onMode('log')}>로그 백업</button>
         <button className={mode === 'session' ? 'on' : ''} onClick={() => onMode('session')}>세션 게시판</button>
       </div>
       <p className="hint" style={{ margin: 0 }}>
-        자관 상세 하단에 어느 게시판의 연동 목록을 보일지 고릅니다 — 선택은 저장하면 적용됩니다
+        연결할 게시판을 고르고 아래에서 항목을 연결/해제합니다 — 연결된 로그·세션은 상세 서랍의 「Log Backup」·「Session Board」에 나타납니다
       </p>
 
       {relId ? (
