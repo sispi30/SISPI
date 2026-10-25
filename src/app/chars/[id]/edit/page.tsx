@@ -71,6 +71,7 @@ function CharEditInner() {
             ? { ...x, ownAus: (x.ownAus ?? []).map(a => (ownAuKey(a.id) === auKey ? { ...a, link } : a)) } : x)))} />
       )}
       <CharEditForm
+        key={auKey ?? 'base'}   // 기본 프로필 편집 → AU 편집으로 주소만 바뀔 때 폼 상태가 남아 기존 값이 보이던 것 방지
         initial={formInitial}
         existingIds={chars.filter(c => c.id !== ch.id).flatMap(c => [c.id, ...(c.slug ? [c.slug] : [])])}
         auMode={!!auKey}
