@@ -3471,3 +3471,8 @@ body.rs-full #appMain{overflow:hidden}
 .rs-mid .rs-col .rs-links{width:0;min-width:100%}
 .rs-mid .cs-link{padding:6px 2px!important;line-height:normal}
 .rs-mid .rs-links{margin-top:8px}
+
+/* 서랍 — 좌측 nav 머리와 우측 머리의 아래 선 높이를 맞춘다 */
+.sw-nav-head,.sw-head{box-sizing:border-box;height:104px;padding-top:22px;padding-bottom:0;overflow:hidden}
+.sw-nav-head{display:flex;flex-direction:column;justify-content:flex-start}
+@media (max-width:960px){.sw-head{height:auto;padding-top:16px;padding-bottom:12px}}

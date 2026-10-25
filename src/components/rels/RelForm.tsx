@@ -1285,10 +1285,13 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
             <div style={{ display: 'grid', gap: 6 }}>
               <label className="k-label" style={{ margin: 0 }}>갤러리 · 역극</label>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} disabled={!initial}
-                  onClick={() => initial && window.open(`/rels/${initial.slug ?? initial.id}/gallery`, '_blank')}>갤러리 편집 · 연동 ↗</button>
-                <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }}
-                  onClick={() => window.open('/rp', '_blank')}>역극 연동 (역극방 만들 때 자관 선택) ↗</button>
+                {initial ? (
+                  <a className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} target="_blank" rel="noopener"
+                    href={`/rels/${encodeURIComponent(initial.slug ?? initial.id)}/gallery`}>갤러리 편집 · 연동 ↗</a>
+                ) : (
+                  <button type="button" className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} disabled>갤러리 편집 · 연동 ↗</button>
+                )}
+                <a className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11 }} target="_blank" rel="noopener" href="/rp">역극 연동 (역극방 만들 때 자관 선택) ↗</a>
               </div>
               <p className="hint" style={{ margin: 0 }}>
                 {initial ? '갤러리 사진 묶음 추가·수정과 캐릭터 갤러리 태그 연동은 갤러리 페이지에서, 역극은 역극 게시판에서 이 자관을 골라 연동합니다 — 모두 상세 서랍에 나타납니다'
