@@ -83,6 +83,8 @@ interface Props {
   mode: DecoMode;
   /** 뒤쪽 큰 도형 모양 — 비우면 반원 */
   shape?: DecoShape;
+  /** true면 뒤쪽 큰 도형(반원·판)과 그 윤곽선을 그리지 않는다 */
+  noShape?: boolean;
   /** 장식 바탕·선의 계열 — 'light'=밝은(흰색 계열) 테마 · 'dark'=어두운(검은색 계열) 테마 */
   tone: 'light' | 'dark';
   /** mode='mono'일 때 장식 색 — 'dark'=검정 · 'light'=흰색 (이미지 밝기에 맞춘 값) */
@@ -153,7 +155,7 @@ export function ScriptWrite({ t, vb }: { t: NonNullable<Props['script']>; vb?: {
 const TILE = 'M636 440 A290 290 0 0 1 926 150 H1272 V790 H636 Z';
 const fanPath = (fy: number) => `M350 ${fy} A610 610 0 0 1 1570 ${fy} Z`;
 
-export function StageDeco({ mode, shape = 'fan', tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
+export function StageDeco({ mode, shape = 'fan', noShape, tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
   const [geo, setGeo] = useState({ fy: 1015, sc: 1, ox: 0, oy: 0, W: 1920, H: 1080 });
@@ -175,7 +177,7 @@ export function StageDeco({ mode, shape = 'fan', tone, ink, image, blur = 0, gho
   const tile = shape === 'tile';
   const FAN = tile ? TILE : fanPath(fy);
   const mono = mode === 'mono';
-  const band = mode === 'accent' && !!image;
+  const band = mode === 'accent' && !!image && !noShape;
   // 포인트색으로 칠하는 장식의 칠 — 「장식 안에 이미지」면 같은 이미지를 화면 좌표 그대로 깔아, 반원과 이어지는 한 장의 배경처럼 보이게 한다
   const acc = band ? 'url(#dc-img)' : 'var(--d-acc)';
   const style = (mono
@@ -249,7 +251,7 @@ export function StageDeco({ mode, shape = 'fan', tone, ink, image, blur = 0, gho
         )}
 
         {/* 뒤쪽 큰 반원 — 이미지가 있으면(band) 그 안에 그림을, 없으면 포인트색을 옅게 */}
-        <g className="dc-i" style={I(0.05, 0, 70)}>
+        {!noShape && <g className="dc-i" style={I(0.05, 0, 70)}>
         {band ? (
           <g clipPath="url(#dc-fan)">
             <image href={image} x="0" y="0" width="1920" height="1080" preserveAspectRatio="xMidYMid slice"
@@ -261,7 +263,7 @@ export function StageDeco({ mode, shape = 'fan', tone, ink, image, blur = 0, gho
         ) : (
           <path d={FAN} fill="var(--d-acc)" opacity={mono ? 0.1 : tone === 'light' ? 0.1 : 0.16} />
         )}
-        </g>
+        </g>}
         {/* 큰 이름 글씨가 반원과 겹치는 부분 — 반원 이미지와 같은 그림이라 묻히지 않게, 반원 안에서만 밝은(어두운) 글자로 한 번 더 */}
         {g && band && (
           <g clipPath="url(#dc-fan)">
@@ -271,7 +273,7 @@ export function StageDeco({ mode, shape = 'fan', tone, ink, image, blur = 0, gho
               style={{ fontFamily: ghostFont ?? 'var(--serif)' }}>{g}</text>
           </g>
         )}
-        <g className="dc-i" style={I(0.25, 0, 40)}>
+        {!noShape && <g className="dc-i" style={I(0.25, 0, 40)}>
           {!tile && <path d={FAN} fill="none" stroke="var(--d-acc)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" opacity=".75" />}
           {tile ? (
             /* 판 바깥쪽에 한 칸 어긋난 가는 윤곽선 — 도형이 떠 있는 느낌 */
@@ -282,7 +284,7 @@ export function StageDeco({ mode, shape = 'fan', tone, ink, image, blur = 0, gho
               <line x1="230" y1={fy} x2="1690" y2={fy} stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7" />
             </>
           )}
-        </g>
+        </g>}
 
         {script && script.text && <ScriptWrite t={script} />}
 
