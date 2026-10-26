@@ -534,18 +534,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   // 히어로 레이어·스티커·제목/이름 배치 (v5.6 사용자 요청 — 「메인 이미지 · 레이어」). AU 편집이면 그 AU 것
   const initLayout = auObj ? auObj.heroLayout : initial?.heroLayout;
   const vpWin = useViewport();
-  // 미리보기 화면 크기 — 기본은 지금 브라우저 창. 방문자 화면(탭·주소창·북마크 바 등 브라우저 메뉴가 차지한 만큼 줄어든 실제 보이는 영역)으로 바꿔 볼 수 있다
-  const [vpPreset, setVpPreset] = useState<string>('win');
-  const VP_PRESETS: Record<string, { w: number; h: number; label: string }> = {
-    fhd: { w: 1920, h: 920, label: '1920×1080 모니터 · 북마크 바 있음 (보이는 영역 1920×920)' },
-    fhd2: { w: 1920, h: 960, label: '1920×1080 모니터 · 북마크 바 없음 (1920×960)' },
-    nb: { w: 1440, h: 780, label: '1440×900 노트북 (1440×780)' },
-    hd: { w: 1366, h: 650, label: '1366×768 노트북 (1366×650)' },
-    qhd: { w: 2560, h: 1280, label: '2560×1440 모니터 (2560×1280)' },
-  };
-  const vp = VP_PRESETS[vpPreset] ?? vpWin;
-  // 히어로 상자 비 = 화면 폭 : (화면 높이 − 위 메뉴 58px) — 폭 960px 이하는 높이의 86%
-  const heroRatio = VP_PRESETS[vpPreset] ? vp.w / Math.max(1, vp.w <= 960 ? vp.h * 0.86 : vp.h - 58) : heroRatioWin;
+  const vp = vpWin;
+  const heroRatio = heroRatioWin;
   const previewRef = React.useRef<HTMLDivElement>(null);
   const [stickers, setStickers] = useState<StickerDraft[]>(() => (initLayout?.stickers ?? []).map(s => ({ ...s })));
   const [layerOrder, setLayerOrder] = useState<string[]>(
@@ -1028,6 +1018,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                  앞뒤는 아래 「메인 이미지 · 레이어」 목록의 순서가 정한다. 값은 모두 상자 대비 %.
                  글자 크기·제목 자리는 지금 창 크기(vp) 기준 px를 상자 폭 비율(cqw)로 바꿔 상세와 같게 맞춘다 */
               const heroH = Math.max(1, vp.h - 58);
+              const topPct = vp.w <= 960 ? 0 : (58 / vp.h) * 100;   // 위 메뉴가 차지하는 비율
               // 격자 한 칸 = 실제 상세 화면의 20px (상자 대비 %). 가로는 히어로 폭, 세로는 히어로 높이 기준
               const gcx = (20 / vp.w) * 100;
               const gcy = (20 / heroH) * 100;
@@ -1051,8 +1042,6 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               return (
               <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
-                <KSelect value={vpPreset} onChange={setVpPreset} minWidth={150} maxWidth={260}
-                  options={[{ value: 'win', label: '미리보기: 지금 브라우저 창' }, ...Object.entries(VP_PRESETS).map(([k, v]) => ({ value: k, label: v.label }))]} />
                 <span className="hint" style={{ margin: 0 }}>{multiSel.length >= 2 ? `${multiSel.length}개 선택됨` : 'Shift+클릭으로 여러 개 선택'}</span>
                 {(() => {
                   const selN = multiSel.length || (selLayer ? 1 : 0);
@@ -1093,9 +1082,22 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 <KToggle label="그리드" checked={gridOn} onChange={setGridOn} />
                 <span className="hint" style={{ margin: 0 }}>{gridOn ? '20px 격자에 맞춰 배치됩니다' : '꺼짐 — 자유 배치'}</span>
               </div>
+              {/* 미리보기 = 실제 화면 전체(위 메뉴 58px 포함). 히어로 상자는 그 메뉴 밑에서 시작한다 — 실제 스테이지처럼 상단에 그만큼 여유가 있다 */}
+              <div style={{
+                position: 'relative', width: `min(100%, calc(70vh * ${topPct > 0 ? vp.w / vp.h : heroRatio}))`, margin: '0 auto',
+                aspectRatio: `${topPct > 0 ? vp.w / vp.h : heroRatio}`, borderRadius: 10, overflow: 'hidden',
+                background: 'linear-gradient(180deg,#262b33,#181b20)', border: '1px solid var(--line)',
+              } as React.CSSProperties}>
+              {topPct > 0 && (
+                <div aria-hidden style={{
+                  position: 'absolute', left: 0, right: 0, top: 0, height: `${topPct}%`, pointerEvents: 'none',
+                  background: 'rgba(255,255,255,.05)', borderBottom: '1px dashed rgba(255,255,255,.22)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2%',
+                  fontSize: 'clamp(6px, 0.9vw, 11px)', letterSpacing: '.3em', color: 'rgba(255,255,255,.35)', fontWeight: 700,
+                }}><span>SISPI</span><span>MENU</span></div>
+              )}
               <div ref={previewRef} onPointerDown={() => { setSelLayer(null); setMultiSel([]); }} style={{
-                position: 'relative', width: `min(100%, calc(70vh * ${heroRatio}))`, margin: '0 auto', aspectRatio: `${heroRatio}`, borderRadius: 10,
-                overflow: 'hidden', background: 'linear-gradient(180deg,#262b33,#181b20)', border: '1px solid var(--line)',
+                position: 'absolute', left: 0, right: 0, bottom: 0, top: `${topPct}%`, overflow: 'hidden',
                 containerType: 'inline-size',
               } as React.CSSProperties}>
                 {pairMembers.map((m, i) => (
@@ -1326,6 +1328,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     backgroundSize: `${gcx}% 100%, 100% ${gcy}%`,
                   }} />
                 )}
+              </div>
               </div>
               </>
               );
