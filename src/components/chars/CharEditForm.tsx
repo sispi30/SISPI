@@ -265,7 +265,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       grants: grants.length ? grants : undefined,
       // AU 편집은 base 소관이라 건드리지 않는다 · 재생목록이 하나도 없으면 비움
       bgm: auMode ? initial?.bgm : (bgm && bgm.playlists.length ? bgm : undefined),
-      galleryTagLinks: auMode ? initial?.galleryTagLinks : (tagLinks.length ? tagLinks : undefined),
+      galleryTagLinks: tagLinks.length ? tagLinks : undefined,   // AU 편집이면 이 AU의 서랍 연동 태그
       detailLayout: auMode ? initial?.detailLayout : (detailLayout === 'classic' ? 'classic' : undefined),
       // REL 탭 — AU 편집은 base 소관이라 건드리지 않는다
       relEnabled: auMode ? initial?.relEnabled : (relOn || undefined),

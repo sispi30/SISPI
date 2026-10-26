@@ -56,6 +56,7 @@ function CharEditInner() {
         specs: [{ label: '성별', value: '' }, { label: '키', value: '' }],
         arts: [], artId: undefined, thumbId: undefined, thumbCrop: undefined,
         bgImgId: undefined, bgBlur: undefined,
+        gallery: undefined, galleryPosts: undefined, galleryTagLinks: undefined,   // 새 AU의 서랍은 비어서 시작 (사진은 물려받지 않는다)
       })
     : ch;
 
@@ -93,6 +94,8 @@ function CharEditInner() {
                   arts: c.arts, thumbId: c.thumbId, thumbCrop: c.thumbCrop,
                   bgImgId: c.bgImgId, bgBlur: c.bgBlur,
                   fontId: c.fontId, nameSize: c.nameSize, nameBold: c.nameBold, bodyFontId: c.bodyFontId,
+                  // 서랍(갤러리)도 AU별로 — 원본 갤러리를 건드리지 않고, 이 AU로 전환했을 때 이 값이 서랍에 반영된다
+                  galleryOwn: true, galleryPosts: c.galleryPosts, galleryTagLinks: c.galleryTagLinks,
                 },
               },
             } : x)));

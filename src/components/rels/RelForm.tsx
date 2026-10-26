@@ -22,6 +22,9 @@ import { Lightbox } from '@/components/ui/Lightbox';
 import { useConfirmDelete } from '@/components/ui/Modal';
 import { fileDrop } from '@/lib/dnd';
 import { useToast } from '@/components/ui/Toast';
+import { useLocalList } from '@/lib/postStore';
+import { CHAR_SEED, memberGalleryTags, galleryPostsOf } from '@/lib/charStore';
+import { GalleryTagLinkPicker } from '@/components/gallery/GalleryPostsEditor';
 import { RelLinkBoard } from '@/components/rels/RelLinkBoard';
 import { PageBgmEditor } from '@/components/bgm/PageBgmEditor';
 import type { PageBgm } from '@/lib/bgmStore';
@@ -77,6 +80,7 @@ export interface RelFormValue {
   quoteColors?: Record<string, { fg?: string; mark?: string }>; // 히어로 대사 글씨/따옴표색 (페어, v1.9)
   fullFront?: string;                          // 앞에 보일 캐릭터 id (레이어 순서에서 맨 위 전신 — 예전 화면 호환용)
   heroLayout?: HeroLayout;                     // 레이어 순서·스티커·제목/이름 배치 (v5.6)
+  auGalleryTags?: string[];  // AU별 갤러리 서랍에 보일 사진 태그 (AU 편집일 때만 — 비우면 자관 기본)
   auName?: string;           // AU별 자관명 (v2.0 사용자 요청 — AU 편집일 때만)
   qaHide?: boolean;          // 문답 답변 숨기기 (v2.0 사용자 요청)
   linkBoard?: 'log' | 'session'; // 상세 하단에 보일 연동 리스트 — 로그 백업 / 세션 게시판 (자관 전체 설정)
@@ -500,6 +504,20 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     () => Object.fromEntries(pairMembers.map(m => [m.charId, { fg: mOf(m).quoteColor, mark: mOf(m).quoteMarkColor }])));
   // AU별 자관명 (v2.0 사용자 요청) — 비우면 자관 이름 그대로
   const [auName, setAuName] = useState(auObj?.name ?? '');
+  const [auGalleryTags, setAuGalleryTags] = useState<string[]>(auObj?.galleryTags ?? []);
+  const [allChars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  // 고를 수 있는 태그 = 자관 자기 갤러리 묶음의 태그 + 멤버 캐릭터 갤러리 묶음의 태그
+  const auTagOptions = (() => {
+    if (!initial) return [];
+    const map = new Map<string, { count: number; names: Set<string> }>();
+    for (const p of galleryPostsOf(initial)) for (const t of p.tags ?? []) {
+      const e = map.get(t) ?? { count: 0, names: new Set<string>() }; e.count += 1; e.names.add(initial.name); map.set(t, e);
+    }
+    for (const o of memberGalleryTags(initial, allChars)) {
+      const e = map.get(o.tag) ?? { count: 0, names: new Set<string>() }; e.count += o.count; o.names.forEach(n => e.names.add(n)); map.set(o.tag, e);
+    }
+    return [...map.entries()].map(([tag, e]) => ({ tag, count: e.count, names: [...e.names] })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+  })();
   // 문답 답변 가리기 (v2.0 사용자 요청) — 질문은 그대로 두고 답변 내용만
   const [qaHide, setQaHide] = useState(!!initial?.qaHide);
   const [linkBoard, setLinkBoard] = useState<'log' | 'session'>(initial?.linkBoard ?? 'log');
@@ -629,6 +647,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       themeTone: themeMode === 'custom' ? themeTone : undefined,
       cp,
       auName: auObj ? auName.trim() : undefined,
+      auGalleryTags: auObj ? auGalleryTags : undefined,
       qaHide: qaHide || undefined,
       linkBoard: linkBoard === 'session' ? 'session' : undefined,
       bgm: bgm && bgm.playlists.length ? bgm : undefined,
@@ -1445,6 +1464,14 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   : '이 페이지도 홈페이지 테마를 그대로 사용합니다'}
               </p>
             </div>
+        {auObj && (
+          <GalleryTagLinkPicker title={`갤러리 서랍 — ${auObj.label} AU`}
+            hint="이 AU로 전환했을 때 갤러리 서랍에 보일 사진의 태그를 고르세요 (비워 두면 자관 기본 갤러리 그대로)"
+            emptyHint="자관·멤버 캐릭터의 갤러리 묶음에 태그가 달려 있지 않습니다 — 갤러리 묶음에 태그를 달면 여기에 나타납니다"
+            options={auTagOptions} selected={auGalleryTags}
+            onToggle={t => setAuGalleryTags(l => (l.includes(t) ? l.filter(x => x !== t) : [...l, t]))} />
+        )}
+
         {/* 상세 화면 구성 — 스테이지(스크롤 인터랙티브, 기본) / 클래식(예전 구성). 자관 전체 설정 */}
         {!auObj && (
           <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>

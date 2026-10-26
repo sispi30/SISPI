@@ -224,6 +224,10 @@ export interface AuCharProfile {
   nameSize?: number;     // 상세 큰 이름 크기 px (v2.0)
   nameBold?: boolean;    // 상세 큰 이름 굵게 (v2.0 사용자 요청 — 폰트에 따라 볼드가 안 어울린다)
   bodyFontId?: string;
+  /** 서랍(갤러리) — AU별로 따로 (v7.x). galleryOwn=true 로 저장된 AU 프로필은 원본 갤러리를 물려받지 않고 이 값만 쓴다 */
+  galleryOwn?: boolean;
+  galleryPosts?: GalleryPost[];
+  galleryTagLinks?: string[];
 }
 
 /** 캐릭터 테마색으로 만들 페이지 팔레트의 톤 — 'site'/미지정이면 undefined(홈페이지 현재 톤 유지).
@@ -290,6 +294,7 @@ export function charWithAu(c: Character, auKey?: string | null): Character {
     bgBlur: p.bgBlur,
     ...(p.fontId !== undefined ? { fontId: p.fontId } : {}),
     ...(p.bodyFontId !== undefined ? { bodyFontId: p.bodyFontId } : {}),
+    ...(p.galleryOwn ? { gallery: undefined, galleryPosts: p.galleryPosts, galleryTagLinks: p.galleryTagLinks } : {}),
     // nameSize는 여태 병합에 빠져 있었다 — AU에 저장은 되는데 표시가 base 크기를 따랐다 (v2.0 수정)
     ...(p.nameSize !== undefined ? { nameSize: p.nameSize } : {}),
     ...(p.nameBold !== undefined ? { nameBold: p.nameBold } : {}),
@@ -596,6 +601,8 @@ export interface RelAu {
    *  원본(base)의 설정은 aus의 base 항목에 담긴다 */
   hideRp?: boolean;
   hideLog?: boolean;
+  /** 이 AU로 전환했을 때 갤러리 서랍에 보일 사진 태그 — 비우면 자관 기본(자기 묶음 + 자관 연동 태그) */
+  galleryTags?: string[];
 }
 
 export interface Relation {
@@ -722,8 +729,25 @@ export function memberGalleryTags(rel: Relation, chars: Character[]): { tag: str
 /** 자관 갤러리에 같이 보일 묶음 = 자기 묶음 + 연동 태그가 달린 멤버 캐릭터 묶음.
  *  연동분은 복사하지 않고 캐릭터 쪽 데이터를 그대로 가리킨다(캐릭터에서 고치면 자관에도 반영) —
  *  id는 `캐릭터id:묶음id`, from에 캐릭터 이름. 열람 권한(캐릭터·묶음 공개범위)은 여기서 거른다 */
-export function relGalleryPosts(rel: Relation, chars: Character[], viewer: { isAdmin: boolean; loggedIn: boolean }): GalleryPost[] {
+export function relGalleryPosts(rel: Relation, chars: Character[], viewer: { isAdmin: boolean; loggedIn: boolean },
+  /** AU로 전환한 상태에서 그 AU가 고른 태그 — 있으면 이 태그가 달린 묶음(자관 자기 것 + 멤버 캐릭터 것)만 보인다. charAuKey = 멤버의 AU 프로필 키 */
+  au?: { tags: string[]; charAuKey?: string | null }): GalleryPost[] {
   const ok = (v: Visibility) => v === 'public' || (v === 'member' && viewer.loggedIn) || viewer.isAdmin;
+  if (au && au.tags.length > 0) {
+    const has = (p: GalleryPost) => (p.tags ?? []).some(t => au.tags.includes(t));
+    const mine = galleryPostsOf(rel).filter(p => ok(p.visibility) && has(p));
+    const got: GalleryPost[] = [];
+    for (const m of rel.members) {
+      const base = chars.find(x => x.id === m.charId);
+      if (!base || !ok(base.visibility)) continue;
+      const c = charWithAu(base, au.charAuKey);
+      for (const p of galleryPostsOf(c)) {
+        if (!ok(p.visibility) || !has(p)) continue;
+        got.push({ ...p, id: `${c.id}:${p.id}`, from: c.name });
+      }
+    }
+    return [...mine, ...got];
+  }
   const own = galleryPostsOf(rel).filter(p => ok(p.visibility));
   const tags = rel.galleryTagLinks ?? [];
   if (tags.length === 0) return own;

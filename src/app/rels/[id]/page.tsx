@@ -560,6 +560,8 @@ export default function RelDetailPage() {
     const base = charPath(charOf(cid) ?? { id: cid });
     return auCharKey ? `${base}?au=${encodeURIComponent(auCharKey)}` : base;
   };
+  // AU가 갤러리 태그를 골라 뒀으면 그 태그의 사진만 서랍에 (멤버는 그 AU의 캐릭터 프로필 기준)
+  const auGalleryOpt = !isBaseAu && au?.galleryTags?.length ? { tags: au.galleryTags, charAuKey: auCharKey } : undefined;
   const sideOf = (cid: string) => (isDuo && rel?.members[1]?.charId === cid ? 'r' : 'l');
 
   // AU 전환으로 QUESTIONS 섹션이 없는 AU에 오면 타임라인 탭으로 (v1.9)
@@ -604,7 +606,7 @@ export default function RelDetailPage() {
       { key: 'session', title: 'Session Board', sub: 'SESSIONS', n: relSessions.length, count: relSessions.length ? `세션 ${relSessions.length}개` : '아직 없음' },
     ] : []),
     ...(!au?.hideRp ? [
-      { key: 'gallery', title: 'Gallery', sub: 'GALLERY', ...(() => { const n = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }).length; return { n, count: n ? `사진 묶음 ${n}개` : '아직 없음' }; })() },
+      { key: 'gallery', title: 'Gallery', sub: 'GALLERY', ...(() => { const n = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }, auGalleryOpt).length; return { n, count: n ? `사진 묶음 ${n}개` : '아직 없음' }; })() },
       { key: 'rp', title: 'Role Play', sub: 'ROLE PLAY', n: relRooms.length, count: relRooms.length ? `역극 ${relRooms.length}개` : '아직 없음' },
     ] : []),
   ].filter(d => d.n > 0) : [];   // 아직 넣지 않은 항목은 목록에서 뺀다 (관리자는 타임라인·문답만 남겨 추가할 수 있게)
@@ -1620,7 +1622,7 @@ export default function RelDetailPage() {
           items={drawerItems} current={win} onSelect={pickWin} onClose={() => setWin(null)}>
           {win === 'timeline' || win === 'qa' ? timelinePanel : win === 'gallery' ? (
             <>
-              <GalleryPanel ph={rel.thumbClass} loggedIn={!!user} posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user })} canSeePrivate={isAdmin} accent={effThemeColor || undefined} />
+              <GalleryPanel ph={rel.thumbClass} loggedIn={!!user} posts={relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }, auGalleryOpt)} canSeePrivate={isAdmin} accent={effThemeColor || undefined} />
             </>
           ) : win === 'rp' ? (
             relRooms.length > 0 ? relRooms.map(rm => (

@@ -363,7 +363,7 @@ function CharDetailInner() {
   const customInk = inkMode === 'custom' && /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(eff.bodyInkColor ?? '') ? eff.bodyInkColor! : null;
   const stageInk: 'light' | 'dark' = inkMode === 'light' ? 'light' : inkMode === 'dark' ? 'dark' : bgInk;
   const stageViewer = { isAdmin, canEdit: isAdmin || charGrant(ch, user?.id) === 'edit', loggedIn: !!user };
-  const stageGallery = hasGallery(ch) ? charGalleryPosts(ch, rels, stageViewer) : [];
+  const stageGallery = hasGallery(eff) ? charGalleryPosts(eff, rels, stageViewer) : [];
   const stageRel = ch.relEnabled ? charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user }) : [];
   const stageTrpgCount = playRecords.filter(r => r.charIds?.includes(ch.id)).length;
   const stageTabArts = curTab?.arts && curTab.arts.length > 0 ? curTab.arts : null;
@@ -375,7 +375,7 @@ function CharDetailInner() {
   const stageWinTitle = win === GALLERY_TAB ? 'Gallery' : win === REL_TAB ? 'Relations' : win === TRPG_TAB ? 'TRPG' : win === BGM_TAB ? 'BGM' : '';
   // 항목 창 왼쪽 목록 — 우측 바로가기와 같은 조건으로 있는 항목만 (창 안에서 서로 오갈 수 있다)
   const stageWinItems: StageWindowItem[] = [
-    ...(hasGallery(ch) ? [{ key: GALLERY_TAB, title: 'Gallery', sub: 'GALLERY' }] : []),
+    ...(hasGallery(eff) ? [{ key: GALLERY_TAB, title: 'Gallery', sub: 'GALLERY' }] : []),
     ...(ch.relEnabled ? [{ key: REL_TAB, title: 'Relations', sub: 'RELATIONS' }] : []),
     ...((ch.trpgEnabled || hasTrpgLinks) ? [{ key: TRPG_TAB, title: 'TRPG', sub: 'SESSIONS' }] : []),
   ];
@@ -400,7 +400,7 @@ function CharDetailInner() {
           {/* 캐릭터당 갤러리 하나 — TRPG와 같은 방식으로, 새 페이지로 가지 않고
               우측 패널만 갤러리 그리드로 교체한다 (v3.1 사용자 요청 — 좌측 아이콘 탭·아트와
               상단 버튼 위치를 PROFILE 화면과 통일) */}
-          {!stage && hasGallery(ch) && (
+          {!stage && hasGallery(eff) && (
             <button className="btn btn-dark" onClick={() => setTab(GALLERY_TAB)}>GALLERY</button>
           )}
           {/* 관계(REL) 탭 (v6.8) — GALLERY와 같은 방식. 자관(페어·다인관)·직접 지정한 관계를 카드로 보여준다 */}
@@ -547,7 +547,7 @@ function CharDetailInner() {
           <div className={`cs-intro prose${curTab ? ' tab' : ''}`} dangerouslySetInnerHTML={{ __html: curTab ? tabHtml : basicHtml }} />
           <div className="cs-links">
             {/* BGM 바로가기는 표시하지 않는다 (사용자 요청) — 이 캐릭터 BGM은 페이지에 들어오면 플레이어에서 그대로 재생된다 */}
-            {hasGallery(ch) && (
+            {hasGallery(eff) && (
               <button className="cs-link" onClick={() => setWin(GALLERY_TAB)}>
                 <span className="cs-link-k">Gallery</span>
                 <span className="cs-link-s">{stageGallery.length ? `사진 묶음 ${stageGallery.length}개` : '아직 없음'}</span>
@@ -709,7 +709,7 @@ function CharDetailInner() {
             <>
               <h3 className="tab-tt">Gallery</h3>
               <GalleryPanel ph={ch.thumbClass} loggedIn={!!user}
-                posts={charGalleryPosts(ch, rels, { isAdmin, canEdit: isAdmin || charGrant(ch, user?.id) === 'edit', loggedIn: !!user })}
+                posts={charGalleryPosts(eff, rels, { isAdmin, canEdit: isAdmin || charGrant(ch, user?.id) === 'edit', loggedIn: !!user })}
                 canSeePrivate={isAdmin || charGrant(ch, user?.id) === 'edit'} />
             </>
           ) : (

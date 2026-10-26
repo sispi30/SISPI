@@ -3476,3 +3476,8 @@ body.rs-full #appMain{overflow:hidden}
 .sw-nav-head,.sw-head{box-sizing:border-box;height:104px;padding-top:22px;padding-bottom:0;overflow:hidden}
 .sw-nav-head{display:flex;flex-direction:column;justify-content:flex-start}
 @media (max-width:960px){.sw-head{height:auto;padding-top:16px;padding-bottom:12px}}
+
+/* 다인관 — 이름이 길어 글자 크기를 더 못 줄이면 줄바꿈하고 가운데 정렬 */
+.rs-mid .rs-mt{white-space:normal;text-align:center;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35;margin-left:auto;margin-right:auto}
+.rs-mid .rs-col{align-items:center}
+.rs-mid .rs-col .rs-links{align-self:stretch}
