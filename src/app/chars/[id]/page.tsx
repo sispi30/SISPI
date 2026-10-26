@@ -21,6 +21,7 @@ import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { useSectionTitle } from '@/lib/sectionStore';
 import { ConfirmModal } from '@/components/ui/Modal';
 import { usePageBgm } from '@/lib/bgmStore';
+import { FadeImg } from '@/components/ui/FadeImg';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
 import { RelTab } from '@/components/chars/RelTab';
 import { StageWindow, type StageWindowItem } from '@/components/chars/StageWindow';
@@ -140,8 +141,7 @@ function StageLeft({ children }: { children: React.ReactNode }) {
 function StageArt({ fileRef, onClick }: { fileRef?: string; onClick?: () => void }) {
   const url = useBlobUrl(fileRef);
   if (!url) return null;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img className="cs-art" src={url} alt="" draggable={false} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined} />;
+  return <FadeImg fade={false} className="cs-art" src={url} alt="" draggable={false} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined} />;
 }
 
 /** 스테이지 하단 추가 이미지 줄 — 가운데 칸(좌·우 내용 사이)을 넘지 않는 폭까지만 보이고,

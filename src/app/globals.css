@@ -3487,3 +3487,7 @@ body.rs-full #appMain{overflow:hidden}
 .rx-card.rx-still .pt-line line{animation:none!important;stroke-dashoffset:0}
 
 .rv-card.rv-still{animation:none!important}
+
+/* 큰 그림 페이드 인 (전신 등) */
+.img-fade{animation:imgFade .9s ease both}
+@keyframes imgFade{from{opacity:0}to{opacity:1}}

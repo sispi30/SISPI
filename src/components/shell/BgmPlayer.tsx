@@ -148,6 +148,8 @@ export function BgmPlayer() {
   const crossRef = useRef(crossPlaylist); crossRef.current = crossPlaylist;
   const repeatRef = useRef(repeatMode); repeatRef.current = repeatMode;
   const playingRef = useRef(playing); playingRef.current = playing;
+  const userPausedRef = useRef(false);   // 사용자가 직접 멈춘 상태 — 곡 전환 중 자동 재생을 막는 건 이것뿐
+  const playTokRef = useRef(0);          // 가장 최근 재생 요청 번호 (오래된 재시도가 새 곡을 건드리지 않게)
 
   useEffect(() => { setVolume(settings.volume); }, [settings.volume]);
   useEffect(() => { setShuffle(settings.shuffle); }, [settings.shuffle]);
@@ -259,6 +261,8 @@ export function BgmPlayer() {
     setPlaylistId(pl.id);
     setIdx(i);
     startedRef.current = true;
+    userPausedRef.current = false;
+    const tok = ++playTokRef.current;
     setProgress({ cur: opts?.startSeconds ?? 0, total: parseDurationText(t.duration) });
     if (opts?.follow !== false) { setViewPlaylistId(pl.id); setView('tracks'); }
     const p = playerRef.current;
@@ -271,6 +275,25 @@ export function BgmPlayer() {
         p.playVideo();
         setPlaying(true);
         if (fade) rampVolume(0, () => volumeRef.current, FADE_IN_MS);
+        // 페이지 BGM으로 갈아 끼울 때 가끔 로드만 되고 재생이 시작되지 않는 경우가 있어, 잠시 뒤 상태를 보고 다시 재생을 건다
+        const guard = (n: number) => setTimeout(() => {
+          if (tok !== playTokRef.current || userPausedRef.current) return;
+          const pp = playerRef.current;
+          if (!pp) return;
+          try {
+            const st = pp.getPlayerState();
+            if (st === 1 || st === 3) return;   // 재생 중 / 버퍼링 중
+            if (st === -1 || st === 5) {
+              if (opts?.startSeconds && opts.startSeconds > 1) pp.loadVideoById({ videoId: t.videoId, startSeconds: opts.startSeconds });
+              else pp.loadVideoById(t.videoId);
+            }
+            pp.setVolume(volumeRef.current);
+            pp.playVideo();
+            setPlaying(true);
+          } catch { /* 플레이어 정리됨 */ }
+          if (n < 3) guard(n + 1);
+        }, 1500);
+        guard(1);
       };
       // 지금 소리가 나고 있으면 먼저 줄인 뒤 바꾼다 (곡이 끝나서 넘어가는 경우는 줄일 소리가 없으니 바로 들어간다)
       let audible = false;
@@ -279,7 +302,7 @@ export function BgmPlayer() {
         setPlaying(true);
         rampVolume(volumeRef.current, () => 0, FADE_OUT_MS, () => {
           // 줄이는 사이에 사용자가 멈췄으면 새 곡을 틀지 않는다
-          if (!playingRef.current) { try { p.pauseVideo(); p.setVolume(volumeRef.current); } catch { /* */ } return; }
+          if (userPausedRef.current || tok !== playTokRef.current) { try { p.pauseVideo(); p.setVolume(volumeRef.current); } catch { /* */ } return; }
           load();
         });
       } else {
@@ -392,7 +415,7 @@ export function BgmPlayer() {
       return;
     }
     if (!playerRef.current) return;
-    if (playing) { cancelFade(); playerRef.current.pauseVideo(); playerRef.current.setVolume(volumeRef.current); setPlaying(false); }
+    if (playing) { userPausedRef.current = true; cancelFade(); playerRef.current.pauseVideo(); playerRef.current.setVolume(volumeRef.current); setPlaying(false); }
     else if (!readyRef.current) { armedRef.current = true; }
     else if (!startedRef.current) { playAt(playlistIdRef.current, idxRef.current); }
     else { cancelFade(); playerRef.current.setVolume(volumeRef.current); playerRef.current.playVideo(); setPlaying(true); }

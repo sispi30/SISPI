@@ -6,6 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
 import { Character, CHAR_SEED, Relation, REL_SEED, findByKey } from '@/lib/charStore';
+import { usePageBgm } from '@/lib/bgmStore';
 import { RelForm } from '@/components/rels/RelForm';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle, EditableDesc } from '@/components/ui/PageText';
@@ -23,6 +24,8 @@ function RelEditInner() {
   // 별명 주소로도 열린다 (v2.0 사용자 요청)
   const rel = findByKey(rels, id);
   const auObj = auId ? rel?.aus.find(a => a.id === auId && a.id !== 'base') : undefined;
+  // 수정 화면에서도 이 자관에 지정해 둔 BGM을 들을 수 있게 — 상세와 같은 키라 상세에서 이어서 들린다
+  usePageBgm(loaded && isAdmin && rel ? `rel:${rel.id}` : undefined, loaded && isAdmin && rel ? rel.bgm : undefined);
   if (!loaded) return <section className="page" />;
   if (!isAdmin || !rel) {
     return (

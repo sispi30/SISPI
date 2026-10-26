@@ -4,6 +4,7 @@
 // 관리자: 멤버 추가(내/상대 캐릭터) · 타임라인 항목 추가 · 질문 추가
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { usePageBgm } from '@/lib/bgmStore';
+import { FadeImg } from '@/components/ui/FadeImg';
 import { DragList } from '@/components/ui/DragList';
 import { RelGalleryMini } from '@/components/rels/RelGalleryMini';
 import { createPortal } from 'react-dom';
@@ -46,8 +47,7 @@ function FullImg({ refId, scale, offX = 0, offY = 0, shadow }: { refId: string; 
   const url = useBlobUrl(refId);
   if (!url) return null;
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt="" draggable={false} style={{
+    <FadeImg src={url} alt="" draggable={false} style={{
       position: 'absolute', bottom: `${offY}%`, left: `calc(50% + ${offX}%)`, transform: 'translateX(-50%)',
       height: `${scale}%`, maxWidth: 'none',
       filter: shadow,

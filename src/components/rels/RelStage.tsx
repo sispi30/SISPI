@@ -6,6 +6,7 @@
 // 레이어 좌표는 「메뉴 줄 아래 ~ 화면 끝」 상자 대비 % — 수정 화면 미리보기와 같은 비율이다.
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
+import { FadeImg } from '@/components/ui/FadeImg';
 import { StageDeco, ScriptWrite } from '@/components/chars/StageDeco';
 import type { DecoGhost } from '@/lib/charStore';
 
@@ -76,8 +77,7 @@ function Full({ f, i, n }: { f: RsFull; i: number; n: number }) {
   const col = heroCol(i, n);
   return (
     <div className="rs-fb" style={{ zIndex: f.z, left: `${col.left}%`, width: `${col.w}%` }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {url && <img src={url} alt="" draggable={false} style={{
+      {url && <FadeImg src={url} alt="" draggable={false} style={{
         position: 'absolute', bottom: `${f.offY}%`, left: `calc(50% + ${f.offX}%)`, transform: 'translateX(-50%)',
         height: `${f.scale}%`, maxWidth: 'none', filter: f.shadow ?? 'drop-shadow(0 14px 30px rgba(0,0,0,.45))',
       }} />}
@@ -87,8 +87,7 @@ function Full({ f, i, n }: { f: RsFull; i: number; n: number }) {
 
 function Sticker({ s }: { s: RsSticker }) {
   const url = useBlobUrl(s.ref);
-  // eslint-disable-next-line @next/next/no-img-element
-  return url ? <img className="rs-stk" src={url} alt="" draggable={false} style={{ left: `${s.x}%`, top: `${s.y}%`, width: `${s.w}%`, zIndex: s.z }} /> : null;
+  return url ? <FadeImg className="rs-stk" src={url} alt="" draggable={false} style={{ left: `${s.x}%`, top: `${s.y}%`, width: `${s.w}%`, zIndex: s.z }} /> : null;
 }
 
 export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero, tc, onGo, auSlot, admin, deco, links, light, onBack }: {

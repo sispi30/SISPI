@@ -7,6 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalList } from '@/lib/postStore';
 import { Character, CHAR_SEED, charGrant, charWithAu, auProfileOf, ownAuKey, Relation, REL_SEED , findByKey } from '@/lib/charStore';
+import { usePageBgm } from '@/lib/bgmStore';
 import { CharEditForm } from '@/components/chars/CharEditForm';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle, EditableDesc } from '@/components/ui/PageText';
@@ -26,6 +27,8 @@ function CharEditInner() {
   const ch = findByKey(chars, id);
   // 관리자 또는 「편집까지」 권한이 부여된 회원 (3차 회원-캐릭터 연결, v1.9)
   const canEdit = isAdmin || (ch && charGrant(ch, user?.id) === 'edit');
+  // 수정 화면에서도 이 캐릭터에 지정해 둔 BGM을 들을 수 있게 — 상세와 같은 키라 상세에서 이어서 들린다
+  usePageBgm(loaded && canEdit && ch ? `char:${ch.id}` : undefined, loaded && canEdit && ch ? ch.bgm : undefined);
   if (!loaded) return <section className="page" />;
   if (!canEdit || !ch) {
     return (
