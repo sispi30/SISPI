@@ -114,9 +114,10 @@ function useHeroAspect() {
 /** 전신 미리보기 한 장 (v1.9 조작 개편 — 사용자 확정)
  *  · 드래그 = 위치 이동 (가로·세로)  · 휠 = 크기 (비율 유지)  · 우클릭 = 앞으로/뒤로 메뉴
  *  배치는 상세 FullImg와 동일(부모 fb 박스 기준 하단 중앙 + 오프셋) — 미리보기 = 실제 */
-function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelect, ly, snap, scaleStep, onScale, onOffset, onLayer }: {
+function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelect, ly, onDragStart, onGroup, snap, scaleStep, onScale, onOffset, onLayer }: {
   draft?: FullDraft; scale: number; offX: number; offY: number; name: string; shadow?: string;
   selected?: boolean; onSelect?: (shift: boolean) => void; ly?: string;
+  onDragStart?: () => void; onGroup?: (dxPx: number, dyPx: number) => void;
   /** 그리드가 켜져 있을 때만 — 드래그 중인 위치(오프셋 %)를 격자에 맞춘 값으로 바꿔 준다 (v5.7) */
   snap?: (p: { x: number; y: number }) => { x: number; y: number };
   /** 그리드가 켜져 있을 때만 — 휠 크기를 이 간격(%)의 배수로 (v5.7) */
@@ -178,18 +179,17 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelec
           (e.target as HTMLElement).setPointerCapture(e.pointerId);
           const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
           drag.current = { x: e.clientX, y: e.clientY, ox: offX, oy: offY, bw: box.width, bh: box.height };
+          onDragStart?.();
         }}
         onPointerMove={e => {
           const d = drag.current;
           if (!d) return;
           const nx = d.ox + ((e.clientX - d.x) / d.bw) * 100;
           const ny = d.oy - ((e.clientY - d.y) / d.bh) * 100;
-          if (snap) {
-            const q = snap({ x: nx, y: ny });
-            onOffset(Math.max(-80, Math.min(80, q.x)), Math.max(-60, Math.min(80, q.y)));
-            return;
-          }
-          onOffset(Math.max(-80, Math.min(80, Math.round(nx))), Math.max(-60, Math.min(80, Math.round(ny))));
+          const q = snap ? snap({ x: nx, y: ny }) : { x: Math.round(nx), y: Math.round(ny) };
+          const fx = Math.max(-80, Math.min(80, q.x)), fy = Math.max(-60, Math.min(80, q.y));
+          onOffset(fx, fy);
+          onGroup?.(((fx - d.ox) / 100) * d.bw, -((fy - d.oy) / 100) * d.bh);
         }}
         onPointerUp={() => { drag.current = null; }}
         onContextMenu={e => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY }); }} />
@@ -243,7 +243,7 @@ function EyeBtn({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
-function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSelect, onChange, onWheel, style, children, ly }: {
+function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSelect, onChange, onWheel, style, children, ly, onDragStart, onGroup }: {
   rootRef: React.RefObject<HTMLDivElement | null>;
   x: number; y: number; min?: number; max?: number; selected?: boolean;
   /** 그리드 스냅 (v5.7) — ax·ay = 오프셋 0일 때 기준점의 위치(상자 대비 %), cx·cy = 격자 한 칸(%).
@@ -255,6 +255,8 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSele
   style?: React.CSSProperties;
   children: React.ReactNode;
   ly?: string;   // 정렬 기능이 요소를 찾는 이름
+  onDragStart?: () => void;                       // 여러 개 선택 이동 — 끌기 시작할 때 다른 선택 항목의 시작 위치를 기억
+  onGroup?: (dxPx: number, dyPx: number) => void; // 끄는 동안 이동량(px)을 알려 선택한 다른 항목도 같이 움직이게
 }) {
   const elRef = React.useRef<HTMLDivElement>(null);
   const drag = React.useRef<{ px: number; py: number; ox: number; oy: number; w: number; h: number } | null>(null);
@@ -283,6 +285,7 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSele
         if (!box) return;
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
         drag.current = { px: e.clientX, py: e.clientY, ox: x, oy: y, w: box.width, h: box.height };
+        onDragStart?.();
       }}
       onPointerMove={e => {
         const d = drag.current;
@@ -294,7 +297,9 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSele
           ny = Math.round((grid.ay + ny) / grid.cy) * grid.cy - grid.ay;
         }
         const r = grid ? (v: number) => Math.round(v * 100) / 100 : round1;
-        onChange(clampN(r(nx), min, max), clampN(r(ny), min, max));
+        const fx = clampN(r(nx), min, max), fy = clampN(r(ny), min, max);
+        onChange(fx, fy);
+        onGroup?.(((fx - d.ox) / 100) * d.w, ((fy - d.oy) / 100) * d.h);
       }}
       onPointerUp={() => { drag.current = null; }}>
       {children}
@@ -305,16 +310,17 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSele
 /** 스티커 초안 — 새로 올린 건 file/url, 저장돼 있던 건 ref */
 interface StickerDraft { id: string; ref?: string; file?: File; url?: string; x: number; y: number; w: number }
 
-function StickerPrev({ s, z, rootRef, grid, selected, onSelect, onChange }: {
+function StickerPrev({ s, z, rootRef, grid, selected, onSelect, onChange, onDragStart, onGroup }: {
   s: StickerDraft; z: number; rootRef: React.RefObject<HTMLDivElement | null>;
   grid?: { cx: number; cy: number };
   selected: boolean; onSelect: (shift: boolean) => void; onChange: (p: Partial<StickerDraft>) => void;
+  onDragStart?: () => void; onGroup?: (dxPx: number, dyPx: number) => void;
 }) {
   const loaded = useBlobUrl(s.ref);
   const src = s.url ?? loaded;
   if (!src) return null;
   return (
-    <PrevDrag ly={`st:${s.id}`} rootRef={rootRef} x={s.x} y={s.y} min={-20} max={120} selected={selected} onSelect={onSelect}
+    <PrevDrag ly={`st:${s.id}`} onDragStart={onDragStart} onGroup={onGroup} rootRef={rootRef} x={s.x} y={s.y} min={-20} max={120} selected={selected} onSelect={onSelect}
       grid={grid ? { ax: 0, ay: 0, cx: grid.cx, cy: grid.cy } : undefined}
       onChange={(x, y) => onChange({ x, y })}
       onWheel={dir => onChange({
@@ -538,7 +544,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   // 여러 개 선택 (Shift+클릭) — 정렬 버튼이 이 목록을 기준으로 맞춘다
   const [multiSel, setMultiSel] = useState<string[]>([]);
   const pickLayer = (id: string, shift: boolean) => {
-    if (!shift) { setMultiSel([]); setSelLayer(id); return; }
+    if (!shift) { if (!multiSel.includes(id)) setMultiSel([]); setSelLayer(id); return; }   // 선택된 묶음 안의 항목을 그냥 누르면 묶음 유지 (함께 끌기)
     setMultiSel(m => {
       const base = m.length === 0 && selLayer && selLayer !== id ? [selLayer] : m;
       return base.includes(id) ? base.filter(x => x !== id) : [...base, id];
@@ -546,10 +552,102 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     setSelLayer(id);
   };
   const isSel = (id: string) => selLayer === id || multiSel.includes(id);
+  // 여러 개 선택 이동 — 끌기 시작 때 나머지 선택 항목의 시작 위치를 기억해 두고, 끄는 만큼 같이 옮긴다
+  const groupRef = React.useRef<{ w: number; h: number; items: { id: string; x: number; y: number; cw: number }[] } | null>(null);
+  const startGroup = (primary: string) => {
+    groupRef.current = null;
+    const root = previewRef.current;
+    if (!root || multiSel.length < 2 || !multiSel.includes(primary)) return;
+    const rb = root.getBoundingClientRect();
+    const items = multiSel.filter(id => id !== primary).map(id => {
+      let x = 0, y = 0, cw = rb.width;
+      if (id === 'info') { x = uiInfo.x; y = uiInfo.y; }
+      else if (id === 'deco-ghost') { x = decoGhost.x; y = decoGhost.y; }
+      else if (id === 'deco-script') { x = decoScript?.x ?? 0; y = decoScript?.y ?? 0; }
+      else if (id.startsWith('st:')) { const st = stickers.find(q => q.id === id.slice(3)); x = st?.x ?? 0; y = st?.y ?? 0; }
+      else if (id.startsWith('full:')) {
+        const o = fullOffsets[id.slice(5)]; x = o?.x ?? 0; y = o?.y ?? 0;
+        cw = root.querySelector<HTMLElement>(`[data-ly="${id}"]`)?.parentElement?.getBoundingClientRect().width ?? rb.width;
+      } else return null;
+      return { id, x, y, cw };
+    }).filter((q): q is NonNullable<typeof q> => !!q);
+    groupRef.current = { w: rb.width, h: rb.height, items };
+  };
+  const moveGroup = (dxPx: number, dyPx: number) => {
+    const g = groupRef.current;
+    if (!g) return;
+    const r2 = (v: number) => Math.round(v * 100) / 100;
+    for (const it of g.items) {
+      const nx = it.x + (dxPx / g.w) * 100, ny = it.y + (dyPx / g.h) * 100;
+      if (it.id === 'info') setUiInfo({ x: r2(nx), y: r2(ny) });
+      else if (it.id === 'deco-ghost') setDecoGhost(o => ({ ...o, x: r2(nx), y: r2(ny) }));
+      else if (it.id === 'deco-script') setDecoScript(o => (o ? { ...o, x: r2(nx), y: r2(ny) } : o));
+      else if (it.id.startsWith('st:')) setStickers(list => list.map(st => (st.id === it.id.slice(3) ? { ...st, x: r2(nx), y: r2(ny) } : st)));
+      else if (it.id.startsWith('full:')) {
+        const cid = it.id.slice(5);
+        const fx = it.x + (dxPx / it.cw) * 100, fy = it.y - (dyPx / g.h) * 100;
+        setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-80, Math.min(80, r2(fx))), y: Math.max(-60, Math.min(80, r2(fy))) } }));
+      }
+    }
+  };
+  const grp = (id: string) => ({ onDragStart: () => startGroup(id), onGroup: moveGroup });
   // 눈 버튼으로 숨긴 레이어 · 가운데 정보(INFO·서랍) 위치
   const [hiddenLayers, setHiddenLayers] = useState<string[]>(initLayout?.hidden ?? []);
   const [uiInfo, setUiInfo] = useState<{ x: number; y: number }>(initLayout?.info ?? { x: 0, y: 0 });
   const [badgesOn, setBadgesOn] = useState<boolean>(initLayout?.badgeOff !== true);   // 이름 밑 배지 하위 항목(키워드·기본 정보·컬러) 표시
+  // 실행 취소 / 다시 실행 (Ctrl+Z · Shift+Ctrl+Z) — 메인 이미지 레이어의 배치 상태를 잠깐(0.35초) 멈출 때마다 기록한다
+  type LySnap = { fullScales: typeof fullScales; fullOffsets: typeof fullOffsets; stickers: typeof stickers; layerOrder: string[];
+    uiTitle: { x: number; y: number }; uiNames: typeof uiNames; hiddenLayers: string[]; uiInfo: { x: number; y: number };
+    decoGhost: DecoGhost; decoScript: DecoScript | null; badgesOn: boolean };
+  const curSnap = (): LySnap => ({ fullScales, fullOffsets, stickers, layerOrder, uiTitle, uiNames, hiddenLayers, uiInfo, decoGhost, decoScript, badgesOn });
+  const hist = React.useRef<{ stack: LySnap[]; idx: number; timer: ReturnType<typeof setTimeout> | null }>({ stack: [], idx: -1, timer: null });
+  const sameSnap = (a: LySnap, b: LySnap) => (Object.keys(a) as (keyof LySnap)[]).every(k => a[k] === b[k]);
+  const commitSnap = (snap: LySnap) => {
+    const h = hist.current;
+    if (h.timer) { clearTimeout(h.timer); h.timer = null; }
+    if (h.idx >= 0 && sameSnap(h.stack[h.idx], snap)) return;
+    h.stack = [...h.stack.slice(0, h.idx + 1), snap].slice(-100);
+    h.idx = h.stack.length - 1;
+  };
+  const snapNow = React.useRef<LySnap>(curSnap());
+  snapNow.current = curSnap();
+  useEffect(() => {
+    const h = hist.current;
+    if (h.idx < 0) { commitSnap(snapNow.current); return; }
+    if (sameSnap(h.stack[h.idx], snapNow.current)) return;
+    if (h.timer) clearTimeout(h.timer);
+    h.timer = setTimeout(() => commitSnap(snapNow.current), 350);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullScales, fullOffsets, stickers, layerOrder, uiTitle, uiNames, hiddenLayers, uiInfo, decoGhost, decoScript, badgesOn]);
+  useEffect(() => () => { if (hist.current.timer) clearTimeout(hist.current.timer); }, []);
+  const applySnap = (sn: LySnap) => {
+    setFullScales(sn.fullScales); setFullOffsets(sn.fullOffsets); setStickers(sn.stickers); setLayerOrder(sn.layerOrder);
+    setUiTitle(sn.uiTitle); setUiNames(sn.uiNames); setHiddenLayers(sn.hiddenLayers); setUiInfo(sn.uiInfo);
+    setDecoGhost(sn.decoGhost); setDecoScript(sn.decoScript); setBadgesOn(sn.badgesOn);
+  };
+  const undoRedo = (redo: boolean) => {
+    const h = hist.current;
+    commitSnap(snapNow.current);   // 아직 기록 전인 마지막 변경도 한 단계로 남긴다
+    const ni = h.idx + (redo ? 1 : -1);
+    if (ni < 0 || ni >= h.stack.length) return;
+    h.idx = ni;
+    applySnap(h.stack[ni]);
+  };
+  const undoFn = React.useRef(undoRedo);
+  undoFn.current = undoRedo;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k !== 'z' && k !== 'y') return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;   // 글자 입력 중에는 브라우저 기본 동작
+      e.preventDefault();
+      undoFn.current(k === 'y' || e.shiftKey);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const isHid = (id: string) => hiddenLayers.includes(id);
   const toggleHid = (id: string) => setHiddenLayers(h => (h.includes(id) ? h.filter(x => x !== id) : [...h, id]));
   // 그리드 on/off (v5.7 사용자 요청) — 메인 편집모드와 같은 10px 격자. 편집을 열 때마다 꺼진 상태로 시작
@@ -924,7 +1022,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         name={memberNames?.[m.charId] ?? m.charId}
                         shadow={fullShadow(shadowCustom ? nameShadowColor : undefined,
                           shadowCustom ? nameShadow : undefined, '0 6px 14px')}
-                        selected={isSel(heroFullId(m.charId))} ly={heroFullId(m.charId)}
+                        selected={isSel(heroFullId(m.charId))} ly={heroFullId(m.charId)} {...grp(heroFullId(m.charId))}
                         onSelect={sh => pickLayer(heroFullId(m.charId), sh)}
                         snap={gridOn ? fullSnap(i) : undefined}
                         scaleStep={gridOn ? g2(gcy) : undefined}
@@ -938,7 +1036,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   <StickerPrev key={st2.id} s={st2} rootRef={previewRef}
                     z={heroZ(layerOrder, heroStickerId(st2.id))}
                     grid={gridOn ? { cx: gcx, cy: gcy } : undefined}
-                    selected={isSel(heroStickerId(st2.id))}
+                    selected={isSel(heroStickerId(st2.id))} {...grp(heroStickerId(st2.id))}
                     onSelect={sh => pickLayer(heroStickerId(st2.id), sh)}
                     onChange={p => patchSticker(st2.id, p)} />
                 ))}
@@ -965,7 +1063,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   const wPx = Math.min(wMax, emWidth(pairTxt) * mtPx);   // 서랍 바로가기는 자관 이름 줄 폭에 맞춘다
                   const infoTop = ((0.46 * vp.h - 58) / heroH) * 100;
                   return (
-                    <PrevDrag ly="info" rootRef={previewRef} x={uiInfo.x} y={uiInfo.y} selected={isSel('info')}
+                    <PrevDrag ly="info" {...grp('info')} rootRef={previewRef} x={uiInfo.x} y={uiInfo.y} selected={isSel('info')}
                       grid={gridOn ? { ax: 50, ay: infoTop, cx: gcx, cy: gcy } : undefined}
                       onSelect={sh => pickLayer('info', sh)} onChange={(x, y) => setUiInfo({ x, y })}
                       style={{
@@ -991,7 +1089,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   const spTxt = decoScript?.text?.trim() || bigName;
                   return (
                     <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
-                      {!isHid('ghost') && <PrevDrag ly="deco-ghost" rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
+                      {!isHid('ghost') && <PrevDrag ly="deco-ghost" {...grp('deco-ghost')} rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
                         grid={gridOn ? { ax: 0, ay: 0, cx: gcx, cy: gcy } : undefined}
                         onWheel={dir => setDecoGhost(g => ({ ...g, scale: clampN(g.scale - dir * 5, 30, 200) }))}
                         onSelect={sh => pickLayer('deco-ghost', sh)} onChange={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
@@ -1004,7 +1102,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         {relTitleLines(bigName).map((l, i) => <span key={i} style={{ display: 'block' }}>{l}</span>)}
                       </PrevDrag>}
                       {decoScript && !isHid('script') && (
-                        <PrevDrag ly="deco-script" rootRef={previewRef} x={decoScript.x} y={decoScript.y} min={-20} max={120} selected={ssel}
+                        <PrevDrag ly="deco-script" {...grp('deco-script')} rootRef={previewRef} x={decoScript.x} y={decoScript.y} min={-20} max={120} selected={ssel}
                           onWheel={dir => setDecoScript(c => (c ? { ...c, size: clampN(c.size - dir, 6, 50) } : c))}
                           onSelect={sh => pickLayer('deco-script', sh)} onChange={(x, y) => setDecoScript({ ...decoScript, x, y })}
                           style={{
