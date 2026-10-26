@@ -449,6 +449,22 @@ export default function RelDetailPage() {
     return () => setPageBg(null);
   }, [bgG1, bgG2, bgAngle, setPageBg]);
 
+  // 멤버 캐릭터의 이름 사본 갱신 (관리자만) — 나만보기 캐릭터도 비회원에게 이름이 보이게 자관에 함께 저장
+  useEffect(() => {
+    if (!loaded || !charsLoaded || !rel || !isAdmin) return;
+    let changed = false;
+    const members = rel.members.map(m => {
+      const c = chars.find(x => x.id === m.charId);
+      if (!c) return m;
+      const snap = { name: c.name, sub: c.sub || undefined, fontId: c.fontId, color: c.color, thumbClass: c.thumbClass || undefined, colors: c.colors?.length ? c.colors.map(({ hex, label }) => ({ hex, label })) : undefined };
+      if (JSON.stringify(snap) === JSON.stringify(m.snap)) return m;
+      changed = true;
+      return { ...m, snap };
+    });
+    if (changed) setRels(rels.map(r => (r.id === rel.id ? { ...r, members } : r)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, charsLoaded, isAdmin, rel?.id, chars]);
+
   // 삭제된 캐릭터를 가리키는 멤버 자동 정리 — 카드도 안 뜨고 [＋ 멤버 추가]도
   // 안 나오는 유령 슬롯이 남지 않게 (캐릭터 삭제 기능 도입에 따른 정합성 보정)
   useEffect(() => {
@@ -550,12 +566,16 @@ export default function RelDetailPage() {
 
   // 멤버 캐릭터 — AU 선택 시 그 캐릭터의 AU 프로필(이름·사진 등)로 합성해 표시 (v1.9)
   const auCharKey = rel && !isBaseAu && au ? `${rel.id}:${au.id}` : null;
-  const charOf = (cid: string) => {
+  const charOf = (cid: string): Character | undefined => {
     const c = findChar(chars, cid);
-    return c && auCharKey ? charWithAu(c, auCharKey) : c;
+    if (c) return auCharKey ? charWithAu(c, auCharKey) : c;
+    // 열람 권한이 없어 목록에서 빠진 캐릭터 — 자관에 저장해 둔 이름 사본으로 표시만 한다 (프로필 이동은 막힘)
+    const s = rel?.members.find(x => x.charId === cid)?.snap;
+    return s ? ({ id: cid, name: s.name, sub: s.sub ?? '', fontId: s.fontId, color: s.color ?? '#888888', colors: s.colors ?? [], specs: [], tabs: [],
+      arts: [], thumbClass: s.thumbClass ?? '', visibility: 'private', own: false, basicHtml: '' } as unknown as Character) : undefined;
   };
   // AU 선택 중 그 캐릭터의 AU 프로필 미등록 여부 + 캐릭터 페이지 링크(au 유지) (v1.9)
-  const auUnregOf = (cid: string) => !!auCharKey && !(() => { const c = findChar(chars, cid); return c ? auProfileOf(c, auCharKey) : undefined; })();
+  const auUnregOf = (cid: string) => !!auCharKey && !!findChar(chars, cid) && !(() => { const c = findChar(chars, cid); return c ? auProfileOf(c, auCharKey) : undefined; })();
   // 캐릭터 별명 주소 우선 (v2.0) — 없으면 id 그대로
   const charHref = (cid: string) => {
     const base = charPath(charOf(cid) ?? { id: cid });

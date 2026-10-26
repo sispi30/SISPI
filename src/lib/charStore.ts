@@ -320,6 +320,9 @@ export function charGrant(c: Character, userId?: string): 'play' | 'edit' | null
 
 export interface RelMember {
   charId: string;
+  /** 캐릭터의 공개 표시용 사본(이름·색 등) — 캐릭터가 나만보기/멤버공개라 목록에서 빠지는 방문자에게도 자관 페이지에 이름이 보이게.
+   *  관리자가 자관 페이지를 열 때 자동으로 갱신된다 */
+  snap?: { name: string; sub?: string; fontId?: string; color?: string; thumbClass?: string; colors?: ColorChip[] };
   quote: string;                 // 캐릭터별 한마디
   keywords: string[];            // 키워드 뱃지
   desc: string;                  // 소개글
