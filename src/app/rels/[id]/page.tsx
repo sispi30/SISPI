@@ -452,7 +452,8 @@ export default function RelDetailPage() {
   // 삭제된 캐릭터를 가리키는 멤버 자동 정리 — 카드도 안 뜨고 [＋ 멤버 추가]도
   // 안 나오는 유령 슬롯이 남지 않게 (캐릭터 삭제 기능 도입에 따른 정합성 보정)
   useEffect(() => {
-    if (!loaded || !charsLoaded || !rel) return;
+    // 관리자만 정리한다 — 비회원·일반 회원에게는 나만보기/멤버공개 캐릭터가 목록에서 빠져 있어, 이들이 방문해도 멤버가 지워진 걸로 오해해 저장을 시도(→ 보안 규칙에 막혀 오류 문구가 뜨고 화면이 깜빡임)하던 것을 막는다
+    if (!loaded || !charsLoaded || !rel || !isAdmin) return;
     const alive = rel.members.filter(m => chars.some(c => c.id === m.charId));
     if (alive.length !== rel.members.length) {
       setRels(rels.map(r => (r.id === rel.id ? { ...r, members: alive } : r)));
@@ -562,6 +563,15 @@ export default function RelDetailPage() {
   };
   // AU가 갤러리 태그를 골라 뒀으면 그 태그의 사진만 서랍에 (멤버는 그 AU의 캐릭터 프로필 기준)
   const auGalleryOpt = !isBaseAu && au?.galleryTags?.length ? { tags: au.galleryTags, charAuKey: auCharKey } : undefined;
+  // 열람할 수 없는 캐릭터(나만보기·멤버공개)는 자관 페이지에는 그대로 보이되 프로필로는 들어가지 못한다
+  const profileBlocked = (cid: string) => {
+    const c = findChar(chars, cid);
+    return !c ? !isAdmin : (c.visibility === 'private' && !isAdmin) || (c.visibility === 'member' && !user);
+  };
+  const goChar = (href: string, cid?: string) => {
+    if (cid && profileBlocked(cid)) { toast('공개되지 않은 캐릭터라 프로필로 이동할 수 없습니다'); return; }
+    router.push(href);
+  };
   const sideOf = (cid: string) => (isDuo && rel?.members[1]?.charId === cid ? 'r' : 'l');
 
   // AU 전환으로 QUESTIONS 섹션이 없는 AU에 오면 타임라인 탭으로 (v1.9)
@@ -1258,7 +1268,7 @@ export default function RelDetailPage() {
             }).filter((x): x is NonNullable<typeof x> => !!x),
           }}
           tc={effThemeColor || 'var(--accent,#7fd6d0)'}
-          onGo={href => router.push(href)}
+          onGo={href => { const m = stageSlots.find(x => charHref(x.charId) === href); goChar(href, m?.charId); }}
           auSlot={showAuList ? auListEl(false) : undefined}
           links={drawerItems.map(d => ({ key: d.key, title: d.title, sub: d.count, onClick: () => pickWin(d.key) }))}
           deco={{
@@ -1370,7 +1380,7 @@ export default function RelDetailPage() {
                   return (
                     <div className={`fb-name fb-name-${i === 0 ? 'l' : 'r'}${m?.badgeAlign === 'mid' ? ' fb-name-mid' : m?.badgeAlign === 'bottom' ? ' fb-name-bottom' : ''}${m?.badgeTextAlign ? ` fb-ta-${m.badgeTextAlign[0]}` : ''}`}
                       style={{ fontFamily: familyOf(nc.fontId), cursor: 'var(--cur-pointer,pointer)', ...shiftOf(heroLayout?.names?.[cid]) }}
-                      onClick={() => router.push(charHref(cid))}
+                      onClick={() => goChar(charHref(cid), cid)}
                       onContextMenu={e => {
                         if (!isAdmin) return;
                         e.preventDefault(); e.stopPropagation();
@@ -1462,7 +1472,7 @@ export default function RelDetailPage() {
                 auUnregistered={auUnregOf(pairSlots[0].charId)}
                 side="l" onMoveSide={() => moveSide(pairSlots[0]!.charId)}
                 onFaceCrop={ref => setFaceEdit({ charId: pairSlots[0]!.charId, ref, crop: pairSlots[0]!.faceCrop })}
-                onGo={() => router.push(charHref(pairSlots[0]!.charId))}
+                onGo={() => goChar(charHref(pairSlots[0]!.charId), pairSlots[0]!.charId)}
                 onRemove={() => removeMember(pairSlots[0]!.charId)} />
             : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
           <div className={`rel-center rel-center-m ${single ? 'one-mode' : ''}`}
@@ -1524,7 +1534,7 @@ export default function RelDetailPage() {
                 auUnregistered={auUnregOf(pairSlots[1].charId)}
                 side="r" onMoveSide={() => moveSide(pairSlots[1]!.charId)}
                 onFaceCrop={ref => setFaceEdit({ charId: pairSlots[1]!.charId, ref, crop: pairSlots[1]!.faceCrop })}
-                onGo={() => router.push(charHref(pairSlots[1]!.charId))}
+                onGo={() => goChar(charHref(pairSlots[1]!.charId), pairSlots[1]!.charId)}
                 onRemove={() => removeMember(pairSlots[1]!.charId)} />
             : <EmptyCard isAdmin={isAdmin} onAdd={() => setMemberOpen(true)} />}
         </div>
@@ -1538,7 +1548,7 @@ export default function RelDetailPage() {
               const unreg = auUnregOf(m.charId);
               return (
                 <div key={m.charId} className="mrow" style={{ ['--cc' as string]: rgbTriple(c.color) }}
-                  onClick={() => router.push(charHref(m.charId))}>
+                  onClick={() => goChar(charHref(m.charId), m.charId)}>
                   <div className={`face ph ${c.thumbClass}`}>
                     {!unreg && (c.arts?.[0] ?? c.thumbId) && (
                       <CroppedBlobImg fileRef={c.arts?.[0] ?? c.thumbId} crop={c.thumbCrop} ph={c.thumbClass} />
