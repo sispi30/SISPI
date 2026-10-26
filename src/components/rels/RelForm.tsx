@@ -400,7 +400,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     const refs = auObj ? (auObj.arts ?? []) : (initial?.arts ?? (initial?.thumbId ? [initial.thumbId] : []));
     return refs.map(r => ({ id: newId(), ref: r }));
   });
-  const heroRatio = useHeroAspect();
+  const heroRatioWin = useHeroAspect();
   const [thumbCrop, setThumbCrop] = useState<CropValue | undefined>(initial?.thumbCrop);
   const [cropOpen, setCropOpen] = useState(false);
   const [lb, setLb] = useState<number | null>(null);   // 아트 썸네일 클릭 → 원본 보기
@@ -533,7 +533,19 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const initFullFront = auObj?.fullFront ?? initial?.fullFront;
   // 히어로 레이어·스티커·제목/이름 배치 (v5.6 사용자 요청 — 「메인 이미지 · 레이어」). AU 편집이면 그 AU 것
   const initLayout = auObj ? auObj.heroLayout : initial?.heroLayout;
-  const vp = useViewport();
+  const vpWin = useViewport();
+  // 미리보기 화면 크기 — 기본은 지금 브라우저 창. 방문자 화면(탭·주소창·북마크 바 등 브라우저 메뉴가 차지한 만큼 줄어든 실제 보이는 영역)으로 바꿔 볼 수 있다
+  const [vpPreset, setVpPreset] = useState<string>('win');
+  const VP_PRESETS: Record<string, { w: number; h: number; label: string }> = {
+    fhd: { w: 1920, h: 920, label: '1920×1080 모니터 · 북마크 바 있음 (보이는 영역 1920×920)' },
+    fhd2: { w: 1920, h: 960, label: '1920×1080 모니터 · 북마크 바 없음 (1920×960)' },
+    nb: { w: 1440, h: 780, label: '1440×900 노트북 (1440×780)' },
+    hd: { w: 1366, h: 650, label: '1366×768 노트북 (1366×650)' },
+    qhd: { w: 2560, h: 1280, label: '2560×1440 모니터 (2560×1280)' },
+  };
+  const vp = VP_PRESETS[vpPreset] ?? vpWin;
+  // 히어로 상자 비 = 화면 폭 : (화면 높이 − 위 메뉴 58px) — 폭 960px 이하는 높이의 86%
+  const heroRatio = VP_PRESETS[vpPreset] ? vp.w / Math.max(1, vp.w <= 960 ? vp.h * 0.86 : vp.h - 58) : heroRatioWin;
   const previewRef = React.useRef<HTMLDivElement>(null);
   const [stickers, setStickers] = useState<StickerDraft[]>(() => (initLayout?.stickers ?? []).map(s => ({ ...s })));
   const [layerOrder, setLayerOrder] = useState<string[]>(
@@ -662,38 +674,93 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     rest.splice(at, 0, heroFullId(cid));
     return rest;
   });
-  // 정렬 — 선택한 항목들(2개 이상)의 화면상 경계를 기준으로 가장자리·가운데를 맞춘다
-  const alignSel = (kind: 'l' | 'cx' | 'r' | 't' | 'cy' | 'b') => {
+  // 정렬·분포 — 기준(정렬 대상) = 선택 영역 / 주요 개체(마지막으로 Shift+클릭한 항목) / 아트보드(미리보기 전체)
+  const [alignTo, setAlignTo] = useState<'sel' | 'key' | 'board'>('sel');
+  type AlignKind = 'l' | 'cx' | 'r' | 't' | 'cy' | 'b';
+  type DistKind = 'dl' | 'dcx' | 'dr' | 'dt' | 'dcy' | 'db' | 'sh' | 'sv';
+  const layoutItems = () => {
     const root = previewRef.current;
-    if (!root || multiSel.length < 2) return;
+    if (!root) return null;
     const rb = root.getBoundingClientRect();
-    const items = multiSel.map(id => {
+    const ids = multiSel.length ? multiSel : (selLayer ? [selLayer] : []);
+    const items = ids.map(id => {
       const el = root.querySelector<HTMLElement>(`[data-ly="${id}"]`);
       return el ? { id, el, r: el.getBoundingClientRect() } : null;
     }).filter((x): x is NonNullable<typeof x> => !!x);
-    if (items.length < 2) return;
-    const minL = Math.min(...items.map(i => i.r.left)), maxR = Math.max(...items.map(i => i.r.right));
-    const minT = Math.min(...items.map(i => i.r.top)), maxB = Math.max(...items.map(i => i.r.bottom));
+    return { root, rb, items };
+  };
+  type LyItem = NonNullable<ReturnType<typeof layoutItems>>['items'][number];
+  const moveItemBy = (it: LyItem, rb: DOMRect, dx: number, dy: number) => {
+    if (!dx && !dy) return;
     const r2 = (v: number) => Math.round(v * 100) / 100;
-    for (const it of items) {
-      const { r } = it;
-      const dx = kind === 'l' ? minL - r.left : kind === 'r' ? maxR - r.right : kind === 'cx' ? (minL + maxR) / 2 - (r.left + r.right) / 2 : 0;
-      const dy = kind === 't' ? minT - r.top : kind === 'b' ? maxB - r.bottom : kind === 'cy' ? (minT + maxB) / 2 - (r.top + r.bottom) / 2 : 0;
-      if (!dx && !dy) continue;
-      const px = (dx / rb.width) * 100, py = (dy / rb.height) * 100;
-      const id = it.id;
-      if (id === 'info') setUiInfo(o => ({ x: r2(o.x + px), y: r2(o.y + py) }));
-      else if (id === 'deco-ghost') setDecoGhost(g => ({ ...g, x: r2(g.x + px), y: r2(g.y + py) }));
-      else if (id === 'deco-script') setDecoScript(c => (c ? { ...c, x: r2(c.x + px), y: r2(c.y + py) } : c));
-      else if (id.startsWith('st:')) setStickers(list => list.map(st => (st.id === id.slice(3) ? { ...st, x: r2(st.x + px), y: r2(st.y + py) } : st)));
-      else if (id.startsWith('full:')) {
-        const pr = it.el.parentElement?.getBoundingClientRect();
-        if (!pr) continue;
-        const cid = id.slice(5);
-        const fx = (dx / pr.width) * 100, fy = -(dy / pr.height) * 100;
-        setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-80, Math.min(80, r2((sc[cid]?.x ?? 0) + fx))), y: Math.max(-60, Math.min(80, r2((sc[cid]?.y ?? 0) + fy))) } }));
-      }
+    const px = (dx / rb.width) * 100, py = (dy / rb.height) * 100;
+    const id = it.id;
+    if (id === 'info') setUiInfo(o => ({ x: r2(o.x + px), y: r2(o.y + py) }));
+    else if (id === 'deco-ghost') setDecoGhost(g => ({ ...g, x: r2(g.x + px), y: r2(g.y + py) }));
+    else if (id === 'deco-script') setDecoScript(c => (c ? { ...c, x: r2(c.x + px), y: r2(c.y + py) } : c));
+    else if (id.startsWith('st:')) setStickers(list => list.map(st => (st.id === id.slice(3) ? { ...st, x: r2(st.x + px), y: r2(st.y + py) } : st)));
+    else if (id.startsWith('full:')) {
+      const pr = it.el.parentElement?.getBoundingClientRect();
+      if (!pr) return;
+      const cid = id.slice(5);
+      const fx = (dx / pr.width) * 100, fy = -(dy / pr.height) * 100;
+      setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-80, Math.min(80, r2((sc[cid]?.x ?? 0) + fx))), y: Math.max(-60, Math.min(80, r2((sc[cid]?.y ?? 0) + fy))) } }));
     }
+  };
+  // 기준 상자 — 아트보드면 미리보기 전체, 주요 개체면 그 항목, 아니면 선택한 항목 전체의 경계
+  const refBox = (L: NonNullable<ReturnType<typeof layoutItems>>) => {
+    const { rb, items } = L;
+    if (alignTo === 'board') return { left: rb.left, right: rb.right, top: rb.top, bottom: rb.bottom };
+    if (alignTo === 'key') {
+      const k = items.find(i => i.id === selLayer);
+      if (k) return { left: k.r.left, right: k.r.right, top: k.r.top, bottom: k.r.bottom };
+    }
+    return { left: Math.min(...items.map(i => i.r.left)), right: Math.max(...items.map(i => i.r.right)),
+      top: Math.min(...items.map(i => i.r.top)), bottom: Math.max(...items.map(i => i.r.bottom)) };
+  };
+  const alignSel = (kind: AlignKind) => {
+    const L = layoutItems();
+    if (!L) return;
+    const need = alignTo === 'board' ? 1 : 2;
+    if (L.items.length < need) return;
+    const ref = refBox(L);
+    for (const it of L.items) {
+      const { r } = it;
+      const dx = kind === 'l' ? ref.left - r.left : kind === 'r' ? ref.right - r.right : kind === 'cx' ? (ref.left + ref.right) / 2 - (r.left + r.right) / 2 : 0;
+      const dy = kind === 't' ? ref.top - r.top : kind === 'b' ? ref.bottom - r.bottom : kind === 'cy' ? (ref.top + ref.bottom) / 2 - (r.top + r.bottom) / 2 : 0;
+      moveItemBy(it, L.rb, dx, dy);
+    }
+  };
+  // 분포 — 왼쪽/가운데/오른쪽(위/가운데/아래) 기준선을 같은 간격으로, 또는 항목 사이 빈 칸을 같게.
+  // 선택 영역·주요 개체 기준이면 양 끝 항목은 그대로 두고, 아트보드 기준이면 양 끝 항목이 아트보드 가장자리에 붙는다
+  const distributeSel = (kind: DistKind) => {
+    const L = layoutItems();
+    if (!L) return;
+    const horiz = kind === 'sh' || kind === 'dl' || kind === 'dcx' || kind === 'dr';
+    const need = alignTo === 'board' ? 2 : 3;
+    if (L.items.length < need) return;
+    const lo = (r: DOMRect) => (horiz ? r.left : r.top), hi = (r: DOMRect) => (horiz ? r.right : r.bottom);
+    const sorted = [...L.items].sort((a, b) => (lo(a.r) + hi(a.r)) - (lo(b.r) + hi(b.r)));
+    const n = sorted.length;
+    const board = alignTo === 'board';
+    const ext = board ? (horiz ? { lo: L.rb.left, hi: L.rb.right } : { lo: L.rb.top, hi: L.rb.bottom })
+      : { lo: Math.min(...sorted.map(i => lo(i.r))), hi: Math.max(...sorted.map(i => hi(i.r))) };
+    const size = (it: LyItem) => hi(it.r) - lo(it.r);
+    const apply = (it: LyItem, d: number) => moveItemBy(it, L.rb, horiz ? d : 0, horiz ? 0 : d);
+    if (kind === 'sh' || kind === 'sv') {
+      const free = ext.hi - ext.lo - sorted.reduce((t, i) => t + size(i), 0);
+      const gap = free / (n - 1);
+      let cur = ext.lo;
+      for (const it of sorted) { apply(it, cur - lo(it.r)); cur += size(it) + gap; }
+      return;
+    }
+    // 기준선 위치 = 왼쪽(위)/가운데/오른쪽(아래) 가장자리
+    const mode = kind === 'dl' || kind === 'dt' ? 0 : kind === 'dcx' || kind === 'dcy' ? 1 : 2;
+    const pos = (it: LyItem) => (mode === 0 ? lo(it.r) : mode === 1 ? (lo(it.r) + hi(it.r)) / 2 : hi(it.r));
+    const first = sorted[0], last = sorted[n - 1];
+    const pFirst = board ? (mode === 0 ? ext.lo : mode === 1 ? ext.lo + size(first) / 2 : ext.lo + size(first)) : pos(first);
+    const pLast = board ? (mode === 0 ? ext.hi - size(last) : mode === 1 ? ext.hi - size(last) / 2 : ext.hi) : pos(last);
+    sorted.forEach((it, i) => apply(it, pFirst + ((pLast - pFirst) * i) / (n - 1) - pos(it)));
   };
   const patchSticker = (id: string, p: Partial<StickerDraft>) =>
     setStickers(list => list.map(s => (s.id === id ? { ...s, ...p } : s)));
@@ -984,22 +1051,45 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               return (
               <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
-                <span className="hint" style={{ margin: 0 }}>{multiSel.length >= 2 ? `${multiSel.length}개 선택됨` : 'Shift+클릭으로 여러 개 선택 → 정렬'}</span>
-                <div style={{ display: 'flex', gap: 2, opacity: multiSel.length >= 2 ? 1 : .4, pointerEvents: multiSel.length >= 2 ? 'auto' : 'none' }}>
-                  {([
-                    ['l', '왼쪽 맞춤', 'M3 2v16 M6 5h11v4H6z M6 11h7v4H6z'],
-                    ['cx', '가로 가운데 맞춤', 'M10 2v16 M4 5h12v4H4z M6 11h8v4H6z'],
-                    ['r', '오른쪽 맞춤', 'M17 2v16 M3 5h11v4H3z M7 11h7v4H7z'],
-                    ['t', '위쪽 맞춤', 'M2 3h16 M5 6v11h4V6z M11 6v7h4V6z'],
-                    ['cy', '세로 가운데 맞춤', 'M2 10h16 M5 4v12h4V4z M11 6v8h4V6z'],
-                    ['b', '아래쪽 맞춤', 'M2 17h16 M5 3v11h4V3z M11 7v7h4V7z'],
-                  ] as const).map(([k, t, d]) => (
-                    <button key={k} type="button" className="btn btn-ghost" title={t} aria-label={t} onClick={() => alignSel(k)}
+                <KSelect value={vpPreset} onChange={setVpPreset} minWidth={150} maxWidth={260}
+                  options={[{ value: 'win', label: '미리보기: 지금 브라우저 창' }, ...Object.entries(VP_PRESETS).map(([k, v]) => ({ value: k, label: v.label }))]} />
+                <span className="hint" style={{ margin: 0 }}>{multiSel.length >= 2 ? `${multiSel.length}개 선택됨` : 'Shift+클릭으로 여러 개 선택'}</span>
+                {(() => {
+                  const selN = multiSel.length || (selLayer ? 1 : 0);
+                  const okA = selN >= (alignTo === 'board' ? 1 : 2);
+                  const okD = selN >= (alignTo === 'board' ? 2 : 3);
+                  const grpStyle = (ok: boolean): React.CSSProperties => ({ display: 'flex', gap: 2, opacity: ok ? 1 : .4, pointerEvents: ok ? 'auto' : 'none' });
+                  const btn = (k: string, t: string, d: string, fn: () => void) => (
+                    <button key={k} type="button" className="btn btn-ghost" title={t} aria-label={t} onClick={fn}
                       style={{ width: 28, height: 28, padding: 0, display: 'grid', placeItems: 'center' }}>
                       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d={d} /></svg>
                     </button>
-                  ))}
-                </div>
+                  );
+                  return (
+                    <>
+                      <KSelect value={alignTo} onChange={v => setAlignTo(v as 'sel' | 'key' | 'board')} minWidth={116}
+                        options={[{ value: 'sel', label: '정렬: 선택 영역' }, { value: 'key', label: '정렬: 주요 개체' }, { value: 'board', label: '정렬: 아트보드' }]} />
+                      <div style={grpStyle(okA)}>
+                        {btn('l', '왼쪽 맞춤', 'M3 2v16 M6 5h11v4H6z M6 11h7v4H6z', () => alignSel('l'))}
+                        {btn('cx', '가로 가운데 맞춤', 'M10 2v16 M4 5h12v4H4z M6 11h8v4H6z', () => alignSel('cx'))}
+                        {btn('r', '오른쪽 맞춤', 'M17 2v16 M3 5h11v4H3z M7 11h7v4H7z', () => alignSel('r'))}
+                        {btn('t', '위쪽 맞춤', 'M2 3h16 M5 6v11h4V6z M11 6v7h4V6z', () => alignSel('t'))}
+                        {btn('cy', '세로 가운데 맞춤', 'M2 10h16 M5 4v12h4V4z M11 6v8h4V6z', () => alignSel('cy'))}
+                        {btn('b', '아래쪽 맞춤', 'M2 17h16 M5 3v11h4V3z M11 7v7h4V7z', () => alignSel('b'))}
+                      </div>
+                      <div style={grpStyle(okD)}>
+                        {btn('dt', '위쪽 분포', 'M2 3h16 M2 10h16 M2 17h16 M6 5h8v3H6z M6 12h8v3H6z', () => distributeSel('dt'))}
+                        {btn('dcy', '세로 가운데 분포', 'M2 3h16 M2 10h16 M2 17h16', () => distributeSel('dcy'))}
+                        {btn('db', '아래쪽 분포', 'M2 3h16 M2 10h16 M2 17h16 M6 5h8v3H6z M6 12h8v3H6z', () => distributeSel('db'))}
+                        {btn('dl', '왼쪽 분포', 'M3 2v16 M10 2v16 M17 2v16 M5 6h3v8H5z M12 6h3v8h-3z', () => distributeSel('dl'))}
+                        {btn('dcx', '가로 가운데 분포', 'M3 2v16 M10 2v16 M17 2v16', () => distributeSel('dcx'))}
+                        {btn('dr', '오른쪽 분포', 'M3 2v16 M10 2v16 M17 2v16 M5 6h3v8H5z M12 6h3v8h-3z', () => distributeSel('dr'))}
+                        {btn('sh', '가로 간격 균등 분포', 'M2 3v14 M18 3v14 M6 6h3v8H6z M11 6h3v8h-3z', () => distributeSel('sh'))}
+                        {btn('sv', '세로 간격 균등 분포', 'M3 2h14 M3 18h14 M6 6h8v3H6z M6 11h8v3H6z', () => distributeSel('sv'))}
+                      </div>
+                    </>
+                  );
+                })()}
                 <KToggle label="그리드" checked={gridOn} onChange={setGridOn} />
                 <span className="hint" style={{ margin: 0 }}>{gridOn ? '20px 격자에 맞춰 배치됩니다' : '꺼짐 — 자유 배치'}</span>
               </div>
