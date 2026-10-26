@@ -187,7 +187,7 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelec
           const nx = d.ox + ((e.clientX - d.x) / d.bw) * 100;
           const ny = d.oy - ((e.clientY - d.y) / d.bh) * 100;
           const q = snap ? snap({ x: nx, y: ny }) : { x: Math.round(nx), y: Math.round(ny) };
-          const fx = Math.max(-80, Math.min(80, q.x)), fy = Math.max(-60, Math.min(80, q.y));
+          const fx = Math.max(-1200, Math.min(1200, q.x)), fy = Math.max(-250, Math.min(250, q.y));
           onOffset(fx, fy);
           onGroup?.(((fx - d.ox) / 100) * d.bw, -((fy - d.oy) / 100) * d.bh);
         }}
@@ -592,7 +592,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       else if (it.id.startsWith('full:')) {
         const cid = it.id.slice(5);
         const fx = it.x + (dxPx / it.cw) * 100, fy = it.y - (dyPx / g.h) * 100;
-        setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-80, Math.min(80, r2(fx))), y: Math.max(-60, Math.min(80, r2(fy))) } }));
+        setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-1200, Math.min(1200, r2(fx))), y: Math.max(-250, Math.min(250, r2(fy))) } }));
       }
     }
   };
@@ -700,7 +700,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       if (!pr) return;
       const cid = id.slice(5);
       const fx = (dx / pr.width) * 100, fy = -(dy / pr.height) * 100;
-      setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-80, Math.min(80, r2((sc[cid]?.x ?? 0) + fx))), y: Math.max(-60, Math.min(80, r2((sc[cid]?.y ?? 0) + fy))) } }));
+      setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-1200, Math.min(1200, r2((sc[cid]?.x ?? 0) + fx))), y: Math.max(-250, Math.min(250, r2((sc[cid]?.y ?? 0) + fy))) } }));
     }
   };
   // 기준 상자 — 아트보드면 미리보기 전체, 주요 개체면 그 항목, 아니면 선택한 항목 전체의 경계
