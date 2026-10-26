@@ -566,6 +566,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       if (id === 'info') { x = uiInfo.x; y = uiInfo.y; }
       else if (id === 'deco-ghost') { x = decoGhost.x; y = decoGhost.y; }
       else if (id === 'deco-script') { x = decoScript?.x ?? 0; y = decoScript?.y ?? 0; }
+      else if (id === 'ui:title') { x = uiTitle.x; y = uiTitle.y; }
+      else if (id.startsWith('ui:name:')) { const o = uiNames[id.slice(8)]; x = o?.x ?? 0; y = o?.y ?? 0; }
       else if (id.startsWith('st:')) { const st = stickers.find(q => q.id === id.slice(3)); x = st?.x ?? 0; y = st?.y ?? 0; }
       else if (id.startsWith('full:')) {
         const o = fullOffsets[id.slice(5)]; x = o?.x ?? 0; y = o?.y ?? 0;
@@ -584,6 +586,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       if (it.id === 'info') setUiInfo({ x: r2(nx), y: r2(ny) });
       else if (it.id === 'deco-ghost') setDecoGhost(o => ({ ...o, x: r2(nx), y: r2(ny) }));
       else if (it.id === 'deco-script') setDecoScript(o => (o ? { ...o, x: r2(nx), y: r2(ny) } : o));
+      else if (it.id === 'ui:title') setUiTitle({ x: r2(nx), y: r2(ny) });
+      else if (it.id.startsWith('ui:name:')) { const cid = it.id.slice(8); setUiNames(sc => ({ ...sc, [cid]: { x: r2(nx), y: r2(ny) } })); }
       else if (it.id.startsWith('st:')) setStickers(list => list.map(st => (st.id === it.id.slice(3) ? { ...st, x: r2(nx), y: r2(ny) } : st)));
       else if (it.id.startsWith('full:')) {
         const cid = it.id.slice(5);
@@ -688,6 +692,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     if (id === 'info') setUiInfo(o => ({ x: r2(o.x + px), y: r2(o.y + py) }));
     else if (id === 'deco-ghost') setDecoGhost(g => ({ ...g, x: r2(g.x + px), y: r2(g.y + py) }));
     else if (id === 'deco-script') setDecoScript(c => (c ? { ...c, x: r2(c.x + px), y: r2(c.y + py) } : c));
+    else if (id === 'ui:title') setUiTitle(o => ({ x: r2(o.x + px), y: r2(o.y + py) }));
+    else if (id.startsWith('ui:name:')) { const cid = id.slice(8); setUiNames(sc => ({ ...sc, [cid]: { x: r2((sc[cid]?.x ?? 0) + px), y: r2((sc[cid]?.y ?? 0) + py) } })); }
     else if (id.startsWith('st:')) setStickers(list => list.map(st => (st.id === id.slice(3) ? { ...st, x: r2(st.x + px), y: r2(st.y + py) } : st)));
     else if (id.startsWith('full:')) {
       const pr = it.el.parentElement?.getBoundingClientRect();
@@ -1097,7 +1103,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 }}><span>SISPI</span><span>MENU</span></div>
               )}
               <div ref={previewRef} onPointerDown={() => { setSelLayer(null); setMultiSel([]); }} style={{
-                position: 'absolute', left: 0, right: 0, bottom: 0, top: `${topPct}%`, overflow: 'hidden',
+                position: 'absolute', left: 0, right: 0, bottom: 0, top: `${topPct}%`, overflow: 'visible',   // 위 메뉴 칸까지 올라간 그림(머리 등)도 잘리지 않게 — 바깥 상자가 화면 가장자리에서 자른다
+               
                 containerType: 'inline-size',
               } as React.CSSProperties}>
                 {pairMembers.map((m, i) => (
@@ -1217,9 +1224,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 {/* 글자 묶음(제목 · 이름 · 배지) — 레이어 목록의 「UI」 한 칸. 끌어서 기본 자리에서 옮긴다 */}
                 <div style={{ position: 'absolute', inset: 0, zIndex: uiZ, pointerEvents: 'none', display: isHid(HERO_UI_ID) ? 'none' : undefined }}>
                   {detailLayout !== 'stage' && (
-                  <PrevDrag rootRef={previewRef} x={uiTitle.x} y={uiTitle.y} selected={uiSel}
+                  <PrevDrag ly="ui:title" {...grp('ui:title')} rootRef={previewRef} x={uiTitle.x} y={uiTitle.y} selected={uiSel || isSel('ui:title')}
                     grid={gridOn ? { ax: 50, ay: titleTop, cx: gcx, cy: gcy } : undefined}
-                    onSelect={() => setSelLayer(HERO_UI_ID)} onChange={(x, y) => setUiTitle({ x, y })}
+                    onSelect={sh => pickLayer('ui:title', sh)} onChange={(x, y) => setUiTitle({ x, y })}
                     style={{
                       left: `${50 + uiTitle.x}%`, top: `${titleTop + uiTitle.y}%`, transform: 'translateX(-50%)',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(6),
@@ -1267,14 +1274,14 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     const specPills = (ch?.specs ?? []).filter(isPlainSpec);
                     const gems = ch?.colors ?? m.palette ?? [];
                     return (
-                      <PrevDrag key={m.charId} rootRef={previewRef} x={o.x} y={o.y} selected={uiSel}
+                      <PrevDrag key={m.charId} ly={`ui:name:${m.charId}`} {...grp(`ui:name:${m.charId}`)} rootRef={previewRef} x={o.x} y={o.y} selected={uiSel || isSel(`ui:name:${m.charId}`)}
                         grid={gridOn ? {
                           // 기준점 = 왼쪽 이름은 왼쪽 가장자리, 오른쪽 이름은 오른쪽 가장자리 / 위·가운데·아래 정렬에 따라 y
                           ax: left ? colN.left + colN.w * 0.06 : 97.36,
                           ay: al === 'bottom' ? 96 : al === 'mid' ? 50 : 4,
                           cx: gcx, cy: gcy,
                         } : undefined}
-                        onSelect={() => setSelLayer(HERO_UI_ID)}
+                        onSelect={sh => pickLayer(`ui:name:${m.charId}`, sh)}
                         onChange={(x, y) => setUiNames(sc => ({ ...sc, [m.charId]: { x, y } }))}
                         style={{
                           // 상세와 같은 기본 자리: 전신 칸(폭 44%) 안쪽 6% → 상자 기준 2.64%, 세로는 위 4% / 중앙 / 아래 4%
