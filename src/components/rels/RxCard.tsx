@@ -5,12 +5,8 @@
 import React from 'react';
 import { PairThumb } from '@/components/rels/PairThumb';
 import { useBgLight } from '@/lib/useImgLight';
+import { usePlayedBefore } from '@/lib/playOnce';
 import type { CropValue } from '@/components/ui/CropEditor';
-
-/* 등장 애니메이션은 페이지를 새로 불러온 뒤 처음 나온 카드들만 재생한다 — 다른 메뉴로 갔다 와도(새로고침 전까지) 다시 재생하지 않는다.
-   처음 카드가 붙은 시각에서 0.9초 안에 붙는 카드는 같은 묶음(첫 목록)으로 보고 재생한다 */
-let rxFirstMount = 0;
-const rxStill = () => rxFirstMount !== 0 && Date.now() - rxFirstMount > 900;
 
 export interface RxWho { name: string; color: string }
 
@@ -35,8 +31,7 @@ export function RxCard({ no, fileRef, crop, ph, phLabel, tc, tag, meta, fileText
   children?: React.ReactNode;
 } & Record<string, unknown>) {
   const light = useBgLight(!!adaptive);
-  const [still] = React.useState(rxStill);   // 서버·첫 로드에서는 항상 false(재생), 이후 이동해서 새로 붙는 카드만 true
-  React.useEffect(() => { if (rxFirstMount === 0) rxFirstMount = Date.now(); }, []);
+  const still = usePlayedBefore();   // 이 게시판에서 이미 한 번 재생했으면 애니메이션 없이
   return (
     <div className={`rx-card${still ? ' rx-still' : ''}${light ? ' rx-lt' : ''}${priv ? ' priv' : ''}${tall ? ' rx-tall' : ''}${drawer ? ' rx-d' : ''}`} {...rest} onClick={onClick}
       role={onClick ? 'link' : undefined}

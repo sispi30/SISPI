@@ -6,6 +6,7 @@ import { useBlobUrl } from '@/lib/blobStore';
 import { CropImg } from '@/components/ui/CropEditor';
 import type { CropValue } from '@/components/ui/CropEditor';
 import { useBgLight } from '@/lib/useImgLight';
+import { usePlayedBefore } from '@/lib/playOnce';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
@@ -16,8 +17,9 @@ export function RvCard({ no, fileRef, crop, ph, title, tags, label, sub, anim, s
 } & Record<string, unknown>) {
   const url = useBlobUrl(fileRef);
   const light = useBgLight(true);
+  const still = usePlayedBefore();
   return (
-    <div className={`rv-card${light ? ' rv-lt' : ''}`} {...rest} onClick={onClick}
+    <div className={`rv-card${light ? ' rv-lt' : ''}${still ? ' rv-still' : ''}`} {...rest} onClick={onClick}
       role={onClick ? 'link' : undefined}
       style={{ ['--i' as string]: anim ?? no - 1, ...(style ?? {}) } as React.CSSProperties}>
       <div className="rv-art">

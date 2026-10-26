@@ -3485,3 +3485,5 @@ body.rs-full #appMain{overflow:hidden}
 /* 썸네일 박스 등장 애니메이션은 새로고침 뒤 처음 한 번만 — 이후 이동에서는 바로 완성된 모습으로 */
 .rx-card.rx-still,.rx-card.rx-still .pt,.rx-card.rx-still .rx-top,.rx-card.rx-still .rx-bot{animation:none!important}
 .rx-card.rx-still .pt-line line{animation:none!important;stroke-dashoffset:0}
+
+.rv-card.rv-still{animation:none!important}
