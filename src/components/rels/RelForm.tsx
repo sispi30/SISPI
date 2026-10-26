@@ -114,9 +114,9 @@ function useHeroAspect() {
 /** 전신 미리보기 한 장 (v1.9 조작 개편 — 사용자 확정)
  *  · 드래그 = 위치 이동 (가로·세로)  · 휠 = 크기 (비율 유지)  · 우클릭 = 앞으로/뒤로 메뉴
  *  배치는 상세 FullImg와 동일(부모 fb 박스 기준 하단 중앙 + 오프셋) — 미리보기 = 실제 */
-function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelect, snap, scaleStep, onScale, onOffset, onLayer }: {
+function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelect, ly, snap, scaleStep, onScale, onOffset, onLayer }: {
   draft?: FullDraft; scale: number; offX: number; offY: number; name: string; shadow?: string;
-  selected?: boolean; onSelect?: () => void;
+  selected?: boolean; onSelect?: (shift: boolean) => void; ly?: string;
   /** 그리드가 켜져 있을 때만 — 드래그 중인 위치(오프셋 %)를 격자에 맞춘 값으로 바꿔 준다 (v5.7) */
   snap?: (p: { x: number; y: number }) => { x: number; y: number };
   /** 그리드가 켜져 있을 때만 — 휠 크기를 이 간격(%)의 배수로 (v5.7) */
@@ -161,7 +161,7 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelec
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img ref={imgRef} src={src} alt={name}
+      <img ref={imgRef} src={src} alt={name} data-ly={ly}
         style={{
           position: 'absolute', bottom: `${offY}%`, left: `calc(50% + ${offX}%)`, transform: 'translateX(-50%)',
           height: `${scale}%`, maxWidth: 'none', cursor: 'var(--cur-grab,grab)',
@@ -174,7 +174,7 @@ function FullPrevImg({ draft, scale, offX, offY, name, shadow, selected, onSelec
           if (e.button !== 0) return;
           e.preventDefault();
           e.stopPropagation();
-          onSelect?.();
+          onSelect?.(e.shiftKey);
           (e.target as HTMLElement).setPointerCapture(e.pointerId);
           const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
           drag.current = { x: e.clientX, y: e.clientY, ox: offX, oy: offY, bw: box.width, bh: box.height };
@@ -243,17 +243,18 @@ function EyeBtn({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
-function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSelect, onChange, onWheel, style, children }: {
+function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSelect, onChange, onWheel, style, children, ly }: {
   rootRef: React.RefObject<HTMLDivElement | null>;
   x: number; y: number; min?: number; max?: number; selected?: boolean;
   /** 그리드 스냅 (v5.7) — ax·ay = 오프셋 0일 때 기준점의 위치(상자 대비 %), cx·cy = 격자 한 칸(%).
    *  기준점의 "실제 위치"가 격자에 맞도록 오프셋을 보정한다 — 메인 편집모드의 10px 스냅과 같은 방식 */
   grid?: { ax: number; ay: number; cx: number; cy: number };
-  onSelect?: () => void;
+  onSelect?: (shift: boolean) => void;
   onChange: (x: number, y: number) => void;
   onWheel?: (dir: number) => void;
   style?: React.CSSProperties;
   children: React.ReactNode;
+  ly?: string;   // 정렬 기능이 요소를 찾는 이름
 }) {
   const elRef = React.useRef<HTMLDivElement>(null);
   const drag = React.useRef<{ px: number; py: number; ox: number; oy: number; w: number; h: number } | null>(null);
@@ -268,7 +269,7 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSele
     return () => el.removeEventListener('wheel', fn);
   }, [hasWheel]);
   return (
-    <div ref={elRef}
+    <div ref={elRef} data-ly={ly}
       style={{
         position: 'absolute', cursor: 'var(--cur-grab,grab)', touchAction: 'none', userSelect: 'none',
         pointerEvents: 'auto', outline: selected ? '1.5px dashed var(--accent,#c96a73)' : '1px dashed rgba(255,255,255,.28)',
@@ -277,7 +278,7 @@ function PrevDrag({ rootRef, x, y, min = -100, max = 100, grid, selected, onSele
       onPointerDown={e => {
         if (e.button !== 0) return;
         e.preventDefault(); e.stopPropagation();
-        onSelect?.();
+        onSelect?.(e.shiftKey);
         const box = rootRef.current?.getBoundingClientRect();
         if (!box) return;
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -307,13 +308,13 @@ interface StickerDraft { id: string; ref?: string; file?: File; url?: string; x:
 function StickerPrev({ s, z, rootRef, grid, selected, onSelect, onChange }: {
   s: StickerDraft; z: number; rootRef: React.RefObject<HTMLDivElement | null>;
   grid?: { cx: number; cy: number };
-  selected: boolean; onSelect: () => void; onChange: (p: Partial<StickerDraft>) => void;
+  selected: boolean; onSelect: (shift: boolean) => void; onChange: (p: Partial<StickerDraft>) => void;
 }) {
   const loaded = useBlobUrl(s.ref);
   const src = s.url ?? loaded;
   if (!src) return null;
   return (
-    <PrevDrag rootRef={rootRef} x={s.x} y={s.y} min={-20} max={120} selected={selected} onSelect={onSelect}
+    <PrevDrag ly={`st:${s.id}`} rootRef={rootRef} x={s.x} y={s.y} min={-20} max={120} selected={selected} onSelect={onSelect}
       grid={grid ? { ax: 0, ay: 0, cx: grid.cx, cy: grid.cy } : undefined}
       onChange={(x, y) => onChange({ x, y })}
       onWheel={dir => onChange({
@@ -384,7 +385,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [slug, setSlug] = useState(initial?.slug ?? '');
   const [catchphrase, setCatchphrase] = useState(auObj ? auObj.catchphrase : (initial?.catchphrase ?? ''));
   const [visibility, setVisibility] = useState<Visibility>(initial?.visibility ?? 'public');
-  const [cp, setCp] = useState<RelCpTag>(initial?.cp ?? 'cp');   // CP/NCP (v1.9)
+  const [cp, setCp] = useState<RelCpTag>((auObj?.cp ?? initial?.cp) ?? 'cp');   // CP/NCP (v1.9)
   // AU 편집이면 그 AU에 정한 폰트부터 (v2.0 사용자 제보 — AU 폰트가 분리되지 않던 것)
   const [fontId, setFontId] = useState((auObj?.fontId ?? initial?.fontId) ?? 'serif');
   const [bodyFontId, setBodyFontId] = useState((auObj?.bodyFontId ?? initial?.bodyFontId) ?? 'default');
@@ -534,6 +535,17 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [uiTitle, setUiTitle] = useState<{ x: number; y: number }>(initLayout?.title ?? { x: 0, y: 0 });
   const [uiNames, setUiNames] = useState<Record<string, { x: number; y: number }>>(initLayout?.names ?? {});
   const [selLayer, setSelLayer] = useState<string | null>(null);
+  // 여러 개 선택 (Shift+클릭) — 정렬 버튼이 이 목록을 기준으로 맞춘다
+  const [multiSel, setMultiSel] = useState<string[]>([]);
+  const pickLayer = (id: string, shift: boolean) => {
+    if (!shift) { setMultiSel([]); setSelLayer(id); return; }
+    setMultiSel(m => {
+      const base = m.length === 0 && selLayer && selLayer !== id ? [selLayer] : m;
+      return base.includes(id) ? base.filter(x => x !== id) : [...base, id];
+    });
+    setSelLayer(id);
+  };
+  const isSel = (id: string) => selLayer === id || multiSel.includes(id);
   // 눈 버튼으로 숨긴 레이어 · 가운데 정보(INFO·서랍) 위치
   const [hiddenLayers, setHiddenLayers] = useState<string[]>(initLayout?.hidden ?? []);
   const [uiInfo, setUiInfo] = useState<{ x: number; y: number }>(initLayout?.info ?? { x: 0, y: 0 });
@@ -552,6 +564,39 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
     rest.splice(at, 0, heroFullId(cid));
     return rest;
   });
+  // 정렬 — 선택한 항목들(2개 이상)의 화면상 경계를 기준으로 가장자리·가운데를 맞춘다
+  const alignSel = (kind: 'l' | 'cx' | 'r' | 't' | 'cy' | 'b') => {
+    const root = previewRef.current;
+    if (!root || multiSel.length < 2) return;
+    const rb = root.getBoundingClientRect();
+    const items = multiSel.map(id => {
+      const el = root.querySelector<HTMLElement>(`[data-ly="${id}"]`);
+      return el ? { id, el, r: el.getBoundingClientRect() } : null;
+    }).filter((x): x is NonNullable<typeof x> => !!x);
+    if (items.length < 2) return;
+    const minL = Math.min(...items.map(i => i.r.left)), maxR = Math.max(...items.map(i => i.r.right));
+    const minT = Math.min(...items.map(i => i.r.top)), maxB = Math.max(...items.map(i => i.r.bottom));
+    const r2 = (v: number) => Math.round(v * 100) / 100;
+    for (const it of items) {
+      const { r } = it;
+      const dx = kind === 'l' ? minL - r.left : kind === 'r' ? maxR - r.right : kind === 'cx' ? (minL + maxR) / 2 - (r.left + r.right) / 2 : 0;
+      const dy = kind === 't' ? minT - r.top : kind === 'b' ? maxB - r.bottom : kind === 'cy' ? (minT + maxB) / 2 - (r.top + r.bottom) / 2 : 0;
+      if (!dx && !dy) continue;
+      const px = (dx / rb.width) * 100, py = (dy / rb.height) * 100;
+      const id = it.id;
+      if (id === 'info') setUiInfo(o => ({ x: r2(o.x + px), y: r2(o.y + py) }));
+      else if (id === 'deco-ghost') setDecoGhost(g => ({ ...g, x: r2(g.x + px), y: r2(g.y + py) }));
+      else if (id === 'deco-script') setDecoScript(c => (c ? { ...c, x: r2(c.x + px), y: r2(c.y + py) } : c));
+      else if (id.startsWith('st:')) setStickers(list => list.map(st => (st.id === id.slice(3) ? { ...st, x: r2(st.x + px), y: r2(st.y + py) } : st)));
+      else if (id.startsWith('full:')) {
+        const pr = it.el.parentElement?.getBoundingClientRect();
+        if (!pr) continue;
+        const cid = id.slice(5);
+        const fx = (dx / pr.width) * 100, fy = -(dy / pr.height) * 100;
+        setFullOffsets(sc => ({ ...sc, [cid]: { x: Math.max(-80, Math.min(80, r2((sc[cid]?.x ?? 0) + fx))), y: Math.max(-60, Math.min(80, r2((sc[cid]?.y ?? 0) + fy))) } }));
+      }
+    }
+  };
   const patchSticker = (id: string, p: Partial<StickerDraft>) =>
     setStickers(list => list.map(s => (s.id === id ? { ...s, ...p } : s)));
   const addStickers = (list: FileList | File[] | null) => {
@@ -840,11 +885,27 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
               });
               return (
               <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+                <span className="hint" style={{ margin: 0 }}>{multiSel.length >= 2 ? `${multiSel.length}개 선택됨` : 'Shift+클릭으로 여러 개 선택 → 정렬'}</span>
+                <div style={{ display: 'flex', gap: 2, opacity: multiSel.length >= 2 ? 1 : .4, pointerEvents: multiSel.length >= 2 ? 'auto' : 'none' }}>
+                  {([
+                    ['l', '왼쪽 맞춤', 'M3 2v16 M6 5h11v4H6z M6 11h7v4H6z'],
+                    ['cx', '가로 가운데 맞춤', 'M10 2v16 M4 5h12v4H4z M6 11h8v4H6z'],
+                    ['r', '오른쪽 맞춤', 'M17 2v16 M3 5h11v4H3z M7 11h7v4H7z'],
+                    ['t', '위쪽 맞춤', 'M2 3h16 M5 6v11h4V6z M11 6v7h4V6z'],
+                    ['cy', '세로 가운데 맞춤', 'M2 10h16 M5 4v12h4V4z M11 6v8h4V6z'],
+                    ['b', '아래쪽 맞춤', 'M2 17h16 M5 3v11h4V3z M11 7v7h4V7z'],
+                  ] as const).map(([k, t, d]) => (
+                    <button key={k} type="button" className="btn btn-ghost" title={t} aria-label={t} onClick={() => alignSel(k)}
+                      style={{ width: 28, height: 28, padding: 0, display: 'grid', placeItems: 'center' }}>
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d={d} /></svg>
+                    </button>
+                  ))}
+                </div>
                 <KToggle label="그리드" checked={gridOn} onChange={setGridOn} />
                 <span className="hint" style={{ margin: 0 }}>{gridOn ? '20px 격자에 맞춰 배치됩니다' : '꺼짐 — 자유 배치'}</span>
               </div>
-              <div ref={previewRef} onPointerDown={() => setSelLayer(null)} style={{
+              <div ref={previewRef} onPointerDown={() => { setSelLayer(null); setMultiSel([]); }} style={{
                 position: 'relative', width: `min(100%, calc(70vh * ${heroRatio}))`, margin: '0 auto', aspectRatio: `${heroRatio}`, borderRadius: 10,
                 overflow: 'hidden', background: 'linear-gradient(180deg,#262b33,#181b20)', border: '1px solid var(--line)',
                 containerType: 'inline-size',
@@ -863,8 +924,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         name={memberNames?.[m.charId] ?? m.charId}
                         shadow={fullShadow(shadowCustom ? nameShadowColor : undefined,
                           shadowCustom ? nameShadow : undefined, '0 6px 14px')}
-                        selected={selLayer === heroFullId(m.charId)}
-                        onSelect={() => setSelLayer(heroFullId(m.charId))}
+                        selected={isSel(heroFullId(m.charId))} ly={heroFullId(m.charId)}
+                        onSelect={sh => pickLayer(heroFullId(m.charId), sh)}
                         snap={gridOn ? fullSnap(i) : undefined}
                         scaleStep={gridOn ? g2(gcy) : undefined}
                         onScale={v => setFullScales(sc => ({ ...sc, [m.charId]: v }))}
@@ -877,8 +938,8 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   <StickerPrev key={st2.id} s={st2} rootRef={previewRef}
                     z={heroZ(layerOrder, heroStickerId(st2.id))}
                     grid={gridOn ? { cx: gcx, cy: gcy } : undefined}
-                    selected={selLayer === heroStickerId(st2.id)}
-                    onSelect={() => setSelLayer(heroStickerId(st2.id))}
+                    selected={isSel(heroStickerId(st2.id))}
+                    onSelect={sh => pickLayer(heroStickerId(st2.id), sh)}
                     onChange={p => patchSticker(st2.id, p)} />
                 ))}
 
@@ -904,9 +965,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                   const wPx = Math.min(wMax, emWidth(pairTxt) * mtPx);   // 서랍 바로가기는 자관 이름 줄 폭에 맞춘다
                   const infoTop = ((0.46 * vp.h - 58) / heroH) * 100;
                   return (
-                    <PrevDrag rootRef={previewRef} x={uiInfo.x} y={uiInfo.y} selected={selLayer === 'info'}
+                    <PrevDrag ly="info" rootRef={previewRef} x={uiInfo.x} y={uiInfo.y} selected={isSel('info')}
                       grid={gridOn ? { ax: 50, ay: infoTop, cx: gcx, cy: gcy } : undefined}
-                      onSelect={() => setSelLayer('info')} onChange={(x, y) => setUiInfo({ x, y })}
+                      onSelect={sh => pickLayer('info', sh)} onChange={(x, y) => setUiInfo({ x, y })}
                       style={{
                         left: `${50 + uiInfo.x}%`, top: `${infoTop + uiInfo.y}%`, transform: 'translateX(-50%)', width: cq(wPx), zIndex: 300,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(6), color: '#fff', textAlign: 'center',
@@ -926,14 +987,14 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                 {/* 스테이지의 큰 자관명 · 필기체 — 끌어서 위치를 옮긴다 (스테이지 구성 · 배경 장식 켬일 때만). 전신보다 뒤에 놓인다 */}
                 {detailLayout === 'stage' && deco === 'on' && (() => {
                   const bigName = (auObj ? auName.trim() : '') || name.trim().toUpperCase() || 'TITLE';
-                  const gsel = selLayer === 'deco-ghost', ssel = selLayer === 'deco-script';
+                  const gsel = isSel('deco-ghost'), ssel = isSel('deco-script');
                   const spTxt = decoScript?.text?.trim() || bigName;
                   return (
                     <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
-                      {!isHid('ghost') && <PrevDrag rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
+                      {!isHid('ghost') && <PrevDrag ly="deco-ghost" rootRef={previewRef} x={decoGhost.x} y={decoGhost.y} min={-20} max={120} selected={gsel}
                         grid={gridOn ? { ax: 0, ay: 0, cx: gcx, cy: gcy } : undefined}
                         onWheel={dir => setDecoGhost(g => ({ ...g, scale: clampN(g.scale - dir * 5, 30, 200) }))}
-                        onSelect={() => setSelLayer('deco-ghost')} onChange={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
+                        onSelect={sh => pickLayer('deco-ghost', sh)} onChange={(x, y) => setDecoGhost({ ...decoGhost, x, y })}
                         style={{
                           left: `${decoGhost.x}%`, top: `${decoGhost.y}%`, transform: 'translate(-50%,-50%)', width: 'max-content',
                           textAlign: 'center', whiteSpace: 'nowrap', color: decoGhost.color || 'rgba(255,255,255,.55)', opacity: decoGhost.opacity != null ? decoGhost.opacity / 100 : undefined, fontWeight: 800, lineHeight: 0.9,
@@ -943,9 +1004,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         {relTitleLines(bigName).map((l, i) => <span key={i} style={{ display: 'block' }}>{l}</span>)}
                       </PrevDrag>}
                       {decoScript && !isHid('script') && (
-                        <PrevDrag rootRef={previewRef} x={decoScript.x} y={decoScript.y} min={-20} max={120} selected={ssel}
+                        <PrevDrag ly="deco-script" rootRef={previewRef} x={decoScript.x} y={decoScript.y} min={-20} max={120} selected={ssel}
                           onWheel={dir => setDecoScript(c => (c ? { ...c, size: clampN(c.size - dir, 6, 50) } : c))}
-                          onSelect={() => setSelLayer('deco-script')} onChange={(x, y) => setDecoScript({ ...decoScript, x, y })}
+                          onSelect={sh => pickLayer('deco-script', sh)} onChange={(x, y) => setDecoScript({ ...decoScript, x, y })}
                           style={{
                             left: `${decoScript.x}%`, top: `${decoScript.y}%`, transform: `translate(-50%,-50%) rotate(${decoScript.rot}deg)`,
                             whiteSpace: 'nowrap', lineHeight: 1.1, color: decoScript.color || (themeMode === 'custom' ? themeColor : '#7fd6d0'),
@@ -1098,9 +1159,10 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     ] : []),
                     ...(detailLayout === 'stage' ? [{ id: 'info', cap: 'INFO', label: '가운데 정보 · 서랍 바로가기' }] : []),
                   ] as { id: string; cap: string; label: string }[]).map(r => {
-                    const sel = selLayer === (r.id === 'ghost' ? 'deco-ghost' : r.id === 'script' ? 'deco-script' : r.id);
+                    const rid = r.id === 'ghost' ? 'deco-ghost' : r.id === 'script' ? 'deco-script' : r.id;
+                    const sel = isSel(rid);
                     return (
-                      <div key={r.id} onClick={() => setSelLayer(r.id === 'ghost' ? 'deco-ghost' : r.id === 'script' ? 'deco-script' : r.id)} style={{
+                      <div key={r.id} onClick={e => pickLayer(rid, e.shiftKey)} style={{
                         display: 'flex', gap: 10, alignItems: 'center', padding: '5px 10px', borderRadius: 10,
                         border: `1px solid ${sel ? 'var(--accent)' : 'var(--line)'}`,
                         background: sel ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
@@ -1123,7 +1185,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                     setLayerOrder([...hidden, ...[...shown].reverse()]);
                   }}
                   render={id => {
-                    const isSel = selLayer === id;
+                    const isSel = selLayer === id || multiSel.includes(id);
                     const stId = id.startsWith('st:') ? id.slice(3) : null;
                     const st2 = stId ? stickers.find(x => x.id === stId) : undefined;
                     const cid = id.startsWith('full:') ? id.slice(5) : null;
@@ -1132,7 +1194,7 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                       : cid ? (memberNames?.[cid] ?? cid) : `스티커 ${stickers.findIndex(x => x.id === stId) + 1}`;
                     const cap = id === HERO_UI_ID ? 'UI' : cid ? `전신 · ${pairMembers.length > 2 ? `${mi + 1}번째` : mi === 0 ? '왼쪽' : '오른쪽'}` : 'STICKER';
                     return (
-                      <div onClick={() => setSelLayer(id)} style={{
+                      <div onClick={e => pickLayer(id, e.shiftKey)} style={{
                         display: 'flex', gap: 10, alignItems: 'center', width: '100%', padding: '7px 10px', borderRadius: 10,
                         border: `1px solid ${isSel ? 'var(--accent)' : 'var(--line)'}`,
                         background: isSel ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : undefined,
