@@ -85,6 +85,8 @@ interface Props {
   shape?: DecoShape;
   /** true면 뒤쪽 큰 도형(반원·판)과 그 윤곽선을 그리지 않는다 */
   noShape?: boolean;
+  /** true면 CHARACTER FILE 표식과 STATUS 눈금(캐릭터 전용 장식)을 그리지 않는다 — 자관 게시판용 */
+  noChrome?: boolean;
   /** 장식 바탕·선의 계열 — 'light'=밝은(흰색 계열) 테마 · 'dark'=어두운(검은색 계열) 테마 */
   tone: 'light' | 'dark';
   /** mode='mono'일 때 장식 색 — 'dark'=검정 · 'light'=흰색 (이미지 밝기에 맞춘 값) */
@@ -156,7 +158,7 @@ export function ScriptWrite({ t, vb }: { t: NonNullable<Props['script']>; vb?: {
 const TILE = 'M636 440 A290 290 0 0 1 926 150 H1272 V790 H636 Z';
 const fanPath = (fy: number) => `M350 ${fy} A610 610 0 0 1 1570 ${fy} Z`;
 
-export function StageDeco({ mode, shape = 'fan', noShape, tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
+export function StageDeco({ mode, shape = 'fan', noShape, noChrome, tone, ink, image, blur = 0, ghost, ghostFont, ghostPos, name, colorHex, script }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const probe = useRef<HTMLDivElement>(null);
   const [geo, setGeo] = useState({ fy: 1015, sc: 1, ox: 0, oy: 0, W: 1920, H: 1080 });
@@ -200,7 +202,7 @@ export function StageDeco({ mode, shape = 'fan', noShape, tone, ink, image, blur
     <div ref={root} className="cs-deco" aria-hidden="true" style={style} data-mode={mode} data-tone={tone}>
       <div ref={probe} className="cs-deco-floor" />
       {/* CHARACTER FILE 표식 — 화면 비율에 따라 위가 잘리지 않게 viewBox가 아니라 화면 기준(BACK 줄 왼쪽)에 둔다 */}
-      <div className="cs-deco-tag dc-i" style={I(0.3, 90, 0)}><TagText text="CHARACTER FILE" /></div>
+      {!noChrome && <div className="cs-deco-tag dc-i" style={I(0.3, 90, 0)}><TagText text="CHARACTER FILE" /></div>}
       <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" focusable="false">
         <defs>
           <pattern id="dc-grid" width="96" height="96" patternUnits="userSpaceOnUse">
@@ -336,7 +338,7 @@ export function StageDeco({ mode, shape = 'fan', noShape, tone, ink, image, blur
           <Scr text="// ARCHIVE" delay={900} period={9000} x="60" y={bl - 18} fontSize="14" fontWeight="800" fill={acc} />
           <text x="60" y={bl} fontSize="10" letterSpacing="2">CHARACTER PROFILE · ALL RIGHTS RESERVED</text>
         </g>
-        <g className="dc-i" style={I(0.45, 50, 0)}>
+        {!noChrome && <g className="dc-i" style={I(0.45, 50, 0)}>
           <Scr text="STATUS" delay={800} period={5500} x="1262" y="132" fontSize="12" letterSpacing="3" fill="var(--d-line)"
             fontFamily="ui-monospace,SFMono-Regular,Menlo,monospace" />
           <g stroke="var(--d-line)" strokeWidth="1" vectorEffect="non-scaling-stroke" opacity=".7">
@@ -344,7 +346,7 @@ export function StageDeco({ mode, shape = 'fan', noShape, tone, ink, image, blur
             {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <line key={i} x1="1296" y1={150 + i * 24} x2={i % 2 ? 1303 : 1310} y2={150 + i * 24} />)}
           </g>
           <rect className="dc-scan" x="1290" y="146" width="22" height="4" fill={acc} />
-        </g>
+        </g>}
       </svg>
     </div>
   );

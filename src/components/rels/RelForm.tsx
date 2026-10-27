@@ -1170,10 +1170,9 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: cq(8), color: '#fff', textAlign: 'center',
                         background: 'rgba(0,0,0,.18)', borderRadius: cq(6),
                       }}>
-                      {/* 실제 스테이지의 INFO와 같은 구성·간격 — INFO. · 세로선 · PAIR 꼬리표 · 자관 이름 · (캐치프레이즈) · 서랍 바로가기 */}
+                      {/* 실제 스테이지의 INFO와 같은 구성·간격 — INFO. · PAIR/GROUP 꼬리표 · 자관 이름 · (캐치프레이즈) · 서랍 바로가기 */}
                       <small style={{ fontSize: cq(9), letterSpacing: '.34em', fontWeight: 800, opacity: .7 }}>INFO.</small>
-                      <i style={{ width: 1, height: cq(26), background: 'rgba(255,255,255,.5)', display: 'block' }} />
-                      <b style={{ fontSize: cq(10), letterSpacing: '.14em' }}>{cp ? `PAIR · ${CP_LABEL[cp]}` : 'PAIR'}</b>
+                      <b style={{ fontSize: cq(10), letterSpacing: '.14em' }}>{cp ? `${pairMembers.length > 2 ? 'GROUP' : 'PAIR'} · ${CP_LABEL[cp]}` : (pairMembers.length > 2 ? 'GROUP' : 'PAIR')}</b>
                       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ fontSize: cq(mtPx), fontWeight: 800, whiteSpace: 'nowrap' }}>{pairTxt}</div>
                         {catchphrase.trim() && <p style={{ margin: 0, fontSize: cq(clampN(vp.w * 0.0085, 10, 12)), lineHeight: 1.8, letterSpacing: '.1em', opacity: .8 }}>{catchphrase.trim()}</p>}

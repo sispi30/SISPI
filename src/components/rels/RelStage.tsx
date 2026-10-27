@@ -8,6 +8,8 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
 import { FadeImg } from '@/components/ui/FadeImg';
 import { StageDeco, ScriptWrite } from '@/components/chars/StageDeco';
+import { CroppedBlobImg, type CropValue } from '@/components/ui/CropEditor';
+import { PlainSpecRow } from '@/components/chars/SpecsDisplay';
 import type { DecoGhost } from '@/lib/charStore';
 
 export interface RsMember { id: string; name: string; href: string }
@@ -130,6 +132,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
 
   const hid = (k: string) => hero.hidden.includes(k);
   const pair = members.map(m => m.name).join(' × ');
+  const kindLabel = members.length >= 3 ? 'GROUP' : 'PAIR';
   const lines = relTitleLines(name);
   const gp = deco?.ghostPos ?? { x: 50, y: 30, scale: 100 };
   const titlePx = relTitlePx(name, box.w, box.h, gp.scale);
@@ -140,12 +143,12 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
         {/* 캐릭터 스테이지와 같은 배경 장식 — 가는 선·눈금·라벨·반짝이·뒤쪽 큰 판. 바탕색은 지금 테마에 맞춘다 */}
         {!deco?.off && (
           <div className="rs-deco" style={{ ['--accent' as string]: tc } as React.CSSProperties}>
-            <StageDeco mode={deco?.image && !deco.band ? 'mono' : 'accent'} shape="tile" noShape={hid('tile')} tone={light ? 'light' : 'dark'} ink={light ? 'dark' : 'light'}
+            <StageDeco mode={deco?.image && !deco.band ? 'mono' : 'accent'} shape="tile" noChrome noShape={hid('tile')} tone={light ? 'light' : 'dark'} ink={light ? 'dark' : 'light'}
               name={name} colorHex={tc} image={deco?.band ? deco.image : undefined} blur={deco?.blur ?? 0} />
           </div>
         )}
         <i className="rs-crn tl" aria-hidden="true" /><i className="rs-crn tr" aria-hidden="true" /><i className="rs-crn bl" aria-hidden="true" /><i className="rs-crn br" aria-hidden="true" />
-        <div className="rs-head" aria-hidden="true"><span>{name} // PAIR FILE</span><span>{members.map(m => m.name).join(' × ')}</span></div>
+        <div className="rs-head" aria-hidden="true"><span>{name} // {kindLabel} FILE</span><span>{members.map(m => m.name).join(' × ')}</span></div>
 
         {/* 메인 이미지 레이어 — 큰 자관명 · 필기체 · 전신 · 이름 · 스티커 (수정 화면 미리보기와 같은 상자) */}
         <div className="rs-hero" ref={heroRef}>
@@ -204,8 +207,8 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
 
         {/* 가운데 INFO — 아래에 서랍 바로가기와 AU 목록이 이어진다 */}
         {!hid('info') && <div className="rs-mid" style={{ translate: `${hero.info.x / 100 * box.w}px ${hero.info.y / 100 * box.h}px` }}>
-          <small>INFO.</small><i />
-          <b>{cpLabel ? `PAIR · ${cpLabel}` : 'PAIR'}</b>
+          <small>INFO.</small>
+          <b>{cpLabel ? `${kindLabel} · ${cpLabel}` : kindLabel}</b>
           <div className="rs-col">
           <div className="rs-mt" style={{ fontSize: `${Math.min(24, Math.max(11, Math.min(0.3 * box.w, 400) / (emWidth(`[ ${pair || name} ]`) + 1)))}px`, maxWidth: Math.max(180, Math.min(0.34 * box.w, 460)) }}>[ {pair || name} ]</div>
           {catchphrase && <p>{catchphrase}</p>}
@@ -223,6 +226,73 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
           </div>
           {auSlot && <div className="rs-au">{auSlot}</div>}
         </div>}
+      </div>
+    </div>
+  );
+}
+
+
+/** 모바일(≤960px) 자관 상세 — 캐릭터 게시판 모바일 상세와 같은 구성.
+ *  맨 위 대표 아트 카드(BACK) → 꼬리표 · EDIT/DELETE → 이름 → 캐치프레이즈 → 정보 행 → AU → 서랍 바로가기.
+ *  그림은 전신이 아니라 자관 수정에서 정한 대표 썸네일(첫 아트 + 크롭) */
+export function RelStageMobile({ name, fontFamily, catchphrase, cpLabel, members, thumb, tc, onGo, auSlot, admin, links, ink, onBack, children }: {
+  name: string; fontFamily?: string; catchphrase?: string; cpLabel?: string;
+  members: RsMember[];
+  thumb: { ref?: string; crop?: CropValue; ph?: string };
+  tc: string; onGo: (href: string) => void; auSlot?: React.ReactNode;
+  admin?: { editLabel: string; onEdit: () => void; deleteLabel?: string; onDelete?: () => void };
+  links?: { key: string; title: string; sub: string; onClick: () => void }[];
+  ink: 'light' | 'dark'; onBack?: () => void; children?: React.ReactNode;
+}) {
+  const kind = members.length >= 3 ? 'GROUP' : 'PAIR';
+  const fs = Math.round(Math.min(52, Math.max(26, 330 / Math.max(2.4, emWidth(name) * 0.92))));
+  return (
+    <div className="rs-m-wrap">
+      <div className="cs rs-m" data-ink={ink} data-art-sh={ink === 'dark' ? 'auto-dark' : 'auto-light'}
+        style={{ ['--char-theme' as string]: tc, ['--accent' as string]: tc } as React.CSSProperties}>
+        <div className="cs-bg">
+          <div className="rs-m-art"><CroppedBlobImg fileRef={thumb.ref} crop={thumb.crop} ph={thumb.ph} label="PAIR ART" /></div>
+        </div>
+        {onBack && <div className="cs-tabs cs-admin cs-back"><button type="button" onClick={onBack}><b>BACK</b></button></div>}
+        <div className="cs-left">
+          <div className="cs-left-in">
+            <div className="cs-top">
+              <div className="cs-tag">{cpLabel ? `${kind} · ${cpLabel}` : kind}</div>
+              {admin && (
+                <div className="cs-tabs cs-admin">
+                  <button type="button" onClick={admin.onEdit}><b>{admin.editLabel}</b></button>
+                  {admin.onDelete && <button type="button" onClick={admin.onDelete}><b>{admin.deleteLabel ?? 'DELETE'}</b></button>}
+                </div>
+              )}
+            </div>
+            <div className="cs-name" style={{ fontFamily, fontSize: fs, fontWeight: 700, letterSpacing: '.04em' }}>{name}</div>
+            {catchphrase && <div className="cs-alt">{catchphrase}</div>}
+            <div className="cs-specs">
+              <PlainSpecRow label="MEMBERS" stage>
+                {members.map((m, i) => (
+                  <span key={m.id}>{i > 0 && ' × '}<button type="button" onClick={() => onGo(m.href)} style={{ font: 'inherit', color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 3, padding: 0 }}>{m.name}</button></span>
+                ))}
+              </PlainSpecRow>
+              <PlainSpecRow label="TYPE" stage>{kind}{cpLabel ? ` · ${cpLabel}` : ''}</PlainSpecRow>
+              <PlainSpecRow label="인원" stage>{members.length}명</PlainSpecRow>
+            </div>
+            {auSlot && <div className="cs-au"><div className="cs-au-label">AU</div>{auSlot}</div>}
+          </div>
+        </div>
+        {links && links.length > 0 && (
+          <div className="cs-right">
+            <div className="cs-links">
+              {links.map(l => (
+                <button key={l.key} type="button" className="cs-link" onClick={l.onClick}>
+                  <span className="cs-link-k">{l.title}</span>
+                  <span className="cs-link-s">{l.sub}</span>
+                  <span className="cs-link-a">→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {children}
       </div>
     </div>
   );

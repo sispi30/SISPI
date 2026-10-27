@@ -25,7 +25,7 @@ import { RelQuestionSet, RELQ_SEED, RELQ_KEY, CP_LABEL } from '@/lib/relqStore';
 import { putBlob } from '@/lib/blobStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import { useBgInk } from '@/lib/useBgInk';
-import { RelStage } from '@/components/rels/RelStage';
+import { RelStage, RelStageMobile } from '@/components/rels/RelStage';
 import { StageWindow, type StageWindowItem } from '@/components/chars/StageWindow';
 import { GalleryPanel } from '@/components/gallery/GalleryPostsView';
 import { TrpgLog, TRPG_SEED, PlayRecord, PLAYLOG_SEED, recordRelIds } from '@/lib/galleryStore';
@@ -1251,7 +1251,29 @@ export default function RelDetailPage() {
         ]} />
 
       {/* 스테이지 — 큰 자관명 뒤 전신 → 스크롤하면 필름 띠·숫자 → 흰 패널(멤버·AU). 이어서 아래 기존 상세 내용 */}
-      {stageOn && (
+      {stageOn && isMob && (
+        <RelStageMobile
+          name={(!isBaseAu && au?.name?.trim()) || rel.name}
+          fontFamily={familyOf(auFont)}
+          catchphrase={au?.catchphrase || rel.catchphrase}
+          cpLabel={auCpTag ? CP_LABEL[auCpTag] : undefined}
+          members={stageSlots.map(m => ({ id: m.charId, name: charOf(m.charId)?.name ?? '—', href: charHref(m.charId) }))}
+          thumb={isBaseAu ? { ref: rel.thumbId ?? rel.arts?.[0], crop: rel.thumbCrop, ph: rel.thumbClass } : { ref: au?.arts?.[0], ph: rel.thumbClass }}
+          ink={bgInk === 'dark' ? 'dark' : 'light'}
+          tc={effThemeColor || 'var(--accent,#7fd6d0)'}
+          onBack={() => router.push('/rels')}
+          onGo={href => { const m = stageSlots.find(x => charHref(x.charId) === href); goChar(href, m?.charId); }}
+          auSlot={showAuList ? auListEl(false) : undefined}
+          links={drawerItems.map(d => ({ key: d.key, title: d.title, sub: d.count, onClick: () => pickWin(d.key) }))}
+          admin={isAdmin ? {
+            editLabel: isBaseAu ? 'EDIT' : `EDIT ${au!.label}`,
+            onEdit: () => router.push(`/rels/${rel.id}/edit${isBaseAu ? '' : `?au=${au!.id}`}`),
+            deleteLabel: isBaseAu ? 'DELETE' : `DELETE ${au!.label}`,
+            onDelete: () => (isBaseAu ? setDelAsk(true) : setAuDelAsk(au!.id)),
+          } : undefined}
+        />
+      )}
+      {stageOn && !isMob && (
         <RelStage
           name={(!isBaseAu && au?.name?.trim()) || rel.name}
           fontFamily={familyOf(auFont)}
