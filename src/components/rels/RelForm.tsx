@@ -19,7 +19,7 @@ import { Modal } from '@/components/ui/Modal';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import type { CharGrant } from '@/lib/charStore';
 import { isPlainSpec } from '@/lib/charRuleConfig';
-import { CropEditor, CropValue, CropImg } from '@/components/ui/CropEditor';
+import { CropEditor, CropValue, CropImg, CroppedBlobImg } from '@/components/ui/CropEditor';
 import { DragList } from '@/components/ui/DragList';
 import { Lightbox } from '@/components/ui/Lightbox';
 import { useConfirmDelete } from '@/components/ui/Modal';
@@ -1146,6 +1146,12 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, addC
                 aspectRatio: `${topPct > 0 ? vp.w / vp.h : heroRatio}`, borderRadius: 10, overflow: 'hidden',
                 background: 'linear-gradient(180deg,#262b33,#181b20)', border: '1px solid var(--line)',
               } as React.CSSProperties}>
+              {/* 따로 정한 배경 이미지가 있으면 살짝 비치게 깔아 배치를 가늠할 수 있게 한다 (저장·실제 화면에는 영향 없음) */}
+              {(headerUrl || (!headerRemoved && initHeaderId)) && (
+                <div aria-hidden style={{ position: 'absolute', inset: 0, opacity: 0.4, pointerEvents: 'none', filter: `blur(${Math.round(headerBlur / 4)}px)` }}>
+                  {headerUrl ? <CropImg src={headerUrl} /> : <CroppedBlobImg fileRef={initHeaderId} crop={initHeaderCrop} />}
+                </div>
+              )}
               {topPct > 0 && (
                 <div aria-hidden style={{
                   position: 'absolute', left: 0, right: 0, top: 0, height: `${topPct}%`, pointerEvents: 'none',
