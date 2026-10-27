@@ -56,11 +56,14 @@ export function CropImg({ src, crop, alt, fadeIn }: { src: string; crop?: CropVa
         style={{
           ...(wide == null ? { opacity: 0 } : coverImgStyle(crop, wide)),
           // 처음 로딩될 때 갑자기 뜨지 않게 — 불러오고 크기를 잰 뒤 천천히 떠오른다
-          ...(fadeIn ? { transition: 'opacity 1.8s ease' } : {}),
+          ...(fadeIn ? { transition: 'opacity 1.8s ease' } : wide != null ? { animation: 'imgFade .5s ease both' } : {}),
         }} />
     </div>
   );
 }
+
+/** 파일을 아직 불러오는 중이면 자리표시를 바로 보이지 않고 잠시 뒤에 — 그림이 빨리 오면 자리표시가 깜빡이지 않는다 */
+export const PH_LATE: React.CSSProperties = { opacity: 0, animation: 'phLate .3s ease 1.2s both' };
 
 /** 파일 참조 + 크롭을 적용해 표시하는 썸네일 (없으면 플레이스홀더) */
 export function CroppedBlobImg({ fileRef, crop, ph, label, alt, fadeIn }: {
@@ -68,7 +71,7 @@ export function CroppedBlobImg({ fileRef, crop, ph, label, alt, fadeIn }: {
 }) {
   const url = useBlobUrl(fileRef);
   if (!url) {
-    return <div className={`ph ${ph ?? ''}`} style={{ width: '100%', height: '100%' }}>{label && <span>{label}</span>}</div>;
+    return <div className={`ph ${ph ?? ''}`} style={{ width: '100%', height: '100%', ...(fileRef ? PH_LATE : null) }}>{label && <span>{label}</span>}</div>;
   }
   return <CropImg src={url} crop={crop} alt={alt} fadeIn={fadeIn} />;
 }

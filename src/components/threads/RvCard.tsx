@@ -3,7 +3,7 @@
 // 홈페이지 배경이 밝으면 아래 그라데이션이 밝아지고 글자는 어두워진다 (갤러리 카드와 같은 기준).
 import React from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
-import { CropImg } from '@/components/ui/CropEditor';
+import { CropImg, PH_LATE } from '@/components/ui/CropEditor';
 import type { CropValue } from '@/components/ui/CropEditor';
 import { useBgLight } from '@/lib/useImgLight';
 import { usePlayedBefore } from '@/lib/playOnce';
@@ -23,7 +23,7 @@ export function RvCard({ no, fileRef, crop, ph, title, tags, label, sub, anim, s
       role={onClick ? 'link' : undefined}
       style={{ ['--i' as string]: anim ?? no - 1, ...(style ?? {}) } as React.CSSProperties}>
       <div className="rv-art">
-        {url ? <CropImg src={url} crop={crop} /> : <div className={`ph ${ph ?? ''}`} style={{ position: 'absolute', inset: 0 }} />}
+        {url ? <CropImg src={url} crop={crop} /> : <div className={`ph ${ph ?? ''}`} style={{ position: 'absolute', inset: 0, ...(fileRef ? PH_LATE : null) }} />}
         <div className="rv-shade" />
       </div>
       <div className="rv-txt">

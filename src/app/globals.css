@@ -3497,3 +3497,15 @@ body.rs-full #appMain{overflow:hidden}
 .rs-m-art{position:relative;width:100%;height:100%;border-radius:14px;overflow:hidden}
 .page-rel-detail.rs-on .rs-m-wrap{padding:16px 14px 80px}
 @media (min-width:961px){.rs-m-wrap{display:none}}
+
+@keyframes phLate{from{opacity:0}to{opacity:1}}
+
+/* 세션 게시판 카드 — RvCard와 같은 그라데이션·색 대응 위에 정사각 · 가운데 정렬 · 자물쇠/상태 배지 */
+.rv-card.rv-sess{aspect-ratio:1/1}
+.rv-sess .rv-txt{top:0;bottom:0;justify-content:center;align-items:center;text-align:center;padding-top:6cqw}
+.rv-sess .rv-txt h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
+.rv-sess .rv-cmt{color:var(--accent);font-size:.78em;margin-left:5px;font-weight:700}
+.rv-sess .rv-ic{position:absolute;right:0;bottom:0;margin-top:0}
+.rv-sess .rv-art.spoiler > div:first-child{filter:blur(14px)}
+.rv-lock{position:absolute;top:3.4cqw;left:3.4cqw;z-index:4;width:7.6cqw;min-width:24px;aspect-ratio:1/1;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.55);color:#16191f}
+.rv-st{position:absolute;top:3.4cqw;right:3.4cqw;z-index:4}

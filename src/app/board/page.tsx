@@ -13,6 +13,8 @@ import {
 } from '@/lib/boardStore';
 import { SearchBar, Pager, KSelect } from '@/components/ui/Kit';
 import { CropImg } from '@/components/ui/CropEditor';
+import { SessionCard } from '@/components/board/SessionCard';
+import { useToast } from '@/components/ui/Toast';
 import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { BannerBoardView } from '@/components/board/BannerBoard';
 import { ScrapBoardView } from '@/components/board/ScrapBoard';
@@ -60,6 +62,7 @@ function ScrollTopButton() {
 
 function BoardInner() {
   const router = useRouter();
+  const toast = useToast();
   const { user, isAdmin } = useAuth();
   const { editOn } = useMainStore();
   const params = useSearchParams();
@@ -203,28 +206,19 @@ function BoardInner() {
             const spoiler = !!p.fold && p.fold.type === 'spoiler';
             const statusStyle = boardBadgeStyle(badgeFor(boardSet, { ...p, notice: false, secret: false }, board.cats));
             return (
-              <div className="bthread-gcard" key={p.id} {...threadSort(i)}
-                onClick={() => { if (editOn) return; if (canRead(p)) router.push(`/board/${p.id}`); }}>
-                <div className={`bthread-gthumb ${spoiler ? 'spoiler' : ''}`}>
-                  {thumb
-                    ? <CropImg src={thumb} crop={p.thumbSrc ? p.thumbCrop : undefined} />
-                    : <div className="bt-ph">{(canRead(p) ? p.title : 'SECRET').slice(0, 1).toUpperCase()}</div>}
-                  {spoiler && <span className="bthread-gbadge">스포일러</span>}
-                  {canRead(p) && (
-                    <span
-                      className="bthread-gstatus"
-                      style={statusStyle}
-                      onClick={e => { if (canSetStatus(p)) { e.stopPropagation(); cycleStatus(p); } }}
-                    >
-                      {p.category}
-                    </span>
-                  )}
-                </div>
-                <div className="bthread-gtitle">
-                  {canRead(p) ? p.title : '🔒 비밀글입니다'}
-                  {canRead(p) && cmtCount(p) > 0 && <span className="cmt">{cmtCount(p)}</span>}
-                </div>
-              </div>
+              <SessionCard key={p.id} {...threadSort(i)} no={i + 1} anim={si % 10}
+                thumbSrc={thumb} crop={p.thumbSrc ? p.thumbCrop : undefined} spoiler={spoiler}
+                title={canRead(p) ? p.title : '비밀글입니다'} locked={p.secret}
+                cmt={canRead(p) ? cmtCount(p) : 0}
+                status={canRead(p) ? (
+                  <span className="bthread-gstatus" style={{ ...statusStyle, position: 'static' }}
+                    onClick={e => { if (canSetStatus(p)) { e.stopPropagation(); cycleStatus(p); } }}>{p.category}</span>
+                ) : undefined}
+                onClick={() => { if (editOn) return; if (canRead(p)) router.push(`/board/${p.id}`); }}
+                onLink={() => {
+                  const u = `${window.location.origin}/board/${p.id}`;
+                  navigator.clipboard.writeText(u).then(() => toast('링크를 복사했어요'), () => toast('링크를 복사하지 못했어요'));
+                }} />
             );
           })}
           {pageList.length === 0 && (

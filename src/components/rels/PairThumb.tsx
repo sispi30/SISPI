@@ -3,7 +3,7 @@
 // 페어 목록 · 캐릭터 상세 서랍(Relations·Gallery)이 같이 쓴다. 부모는 position:relative(또는 absolute) + overflow:hidden.
 import React from 'react';
 import { useBlobUrl } from '@/lib/blobStore';
-import { CropImg } from '@/components/ui/CropEditor';
+import { CropImg, PH_LATE } from '@/components/ui/CropEditor';
 import type { CropValue } from '@/components/ui/CropEditor';
 import type { Relation } from '@/lib/charStore';
 
@@ -16,7 +16,7 @@ export function PairThumb({ fileRef, crop, ph, label, tc, delay = 0 }: {
   fileRef?: string; crop?: CropValue; ph?: string; label?: string; tc: string; delay?: number;
 }) {
   const url = useBlobUrl(fileRef);
-  if (!url) return <div className={`ph ${ph ?? ''}`} style={{ position: 'absolute', inset: 0 }}>{label && <span>{label}</span>}</div>;
+  if (!url) return <div className={`ph ${ph ?? ''}`} style={{ position: 'absolute', inset: 0, ...(fileRef ? PH_LATE : null) }}>{label && <span>{label}</span>}</div>;
   return (
     <div className="pt" style={{ '--tc': tc, '--pd': `${delay}s` } as React.CSSProperties}>
       <div className="pt-base"><CropImg src={url} crop={crop} /></div>
