@@ -3,7 +3,7 @@
 // 화면 오른쪽에 높이 전체로 펼쳐지는 서랍: 왼쪽 목록(ARCHIVE FILE · 캐릭터 이름 · 번호 붙은 항목)에서
 // 다른 항목으로 바로 오갈 수 있고, 위쪽에 현재 항목 제목·CLOSE, 아래쪽에 PREV / NEXT.
 // 오른쪽에서 옆으로 펼쳐지듯 열리고, 닫을 때는 반대로 접힌다.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useBgTone } from '@/lib/useBgTone';
 
@@ -14,6 +14,22 @@ export function StageWindow({ title, name, items, current, onSelect, onClose, ch
   onSelect: (key: string) => void; onClose: () => void; children: React.ReactNode;
 }) {
   const [closing, setClosing] = useState(false);
+  // 이름이 길어 머리말 칸을 넘으면 글자 크기를 줄여 전부 보이게 한다 (모바일 서랍)
+  const nameRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const b = nameRef.current, head = b?.parentElement;
+    if (!b || !head) return;
+    const fit = () => {
+      b.style.fontSize = '';
+      let fs = parseFloat(getComputedStyle(b).fontSize) || 22;
+      const over = () => b.getBoundingClientRect().bottom > head.getBoundingClientRect().bottom - 2 || b.scrollWidth > b.clientWidth + 1;
+      while (over() && fs > 9) { fs -= 1; b.style.fontSize = `${fs}px`; }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(head);
+    return () => ro.disconnect();
+  }, [name]);
   // 서랍 색 — 지금 깔린 배경(이미지·테마)의 평균 색에 맞춘다. 밝은 배경이면 밝은 서랍 + 어두운 글자, 어두우면 어두운 서랍 + 밝은 글자
   // (기준은 글자색 자동 판정과 같은 휘도 0.24). 포인트색은 그대로
   const tone = useBgTone();
@@ -54,7 +70,7 @@ export function StageWindow({ title, name, items, current, onSelect, onClose, ch
         <nav className="sw-nav">
           <div className="sw-nav-head">
             <small>ARCHIVE FILE</small>
-            <b>{name}</b>
+            <b ref={nameRef}>{name}</b>
           </div>
           <div className="sw-nav-list">
             {items.map((it, i) => (

@@ -14,7 +14,7 @@ function Card({ c, no }: { c: RelCardInfo; no: number }) {
     <RxCard drawer no={no} tall={isChar} fileRef={c.thumbRef} crop={c.thumbCrop} ph={c.thumbClass}
       tc={c.themeColor ?? 'var(--accent,#7fd6d0)'}
       tag={isChar ? c.label : c.tag} meta={isChar ? undefined : `${pad(c.memberCount ?? 0)} MEMBERS`}
-      fileText={isChar ? 'CHAR\nFILE' : 'PAIR\nFILE'}
+      fileText={isChar ? 'CHAR\nFILE' : (c.memberCount ?? 0) >= 3 ? 'GROUP\nFILE' : 'PAIR\nFILE'}
       small={isChar ? (c.sub ?? '') : (c.catchphrase ?? '').replace(/ /g, '')}
       title={c.name} who={c.who ?? []}
       tabIndex={0} onClick={() => router.push(c.href)}

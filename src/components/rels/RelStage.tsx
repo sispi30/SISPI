@@ -210,7 +210,7 @@ export function RelStage({ name, fontFamily, catchphrase, cpLabel, members, hero
           <small>INFO.</small>
           <b>{cpLabel ? `${kindLabel} · ${cpLabel}` : kindLabel}</b>
           <div className="rs-col">
-          <div className="rs-mt" style={{ fontSize: `${Math.min(24, Math.max(11, Math.min(0.3 * box.w, 400) / (emWidth(`[ ${pair || name} ]`) + 1)))}px`, maxWidth: Math.max(180, Math.min(0.34 * box.w, 460)) }}>[ {pair || name} ]</div>
+          <div className="rs-mt" style={{ fontSize: `${Math.min(24, Math.max(11, Math.min(0.5 * box.w, 760) / (emWidth(`[ ${pair || name} ]`) + 1)))}px`, whiteSpace: 'nowrap' }}>[ {pair || name} ]</div>
           {catchphrase && <p>{catchphrase}</p>}
           {links && links.length > 0 && (
             <div className="cs-links rs-links">

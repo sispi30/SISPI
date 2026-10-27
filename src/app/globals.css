@@ -3509,3 +3509,6 @@ body.rs-full #appMain{overflow:hidden}
 .rv-sess .rv-art.spoiler > div:first-child{filter:blur(14px)}
 .rv-lock{position:absolute;top:3.4cqw;left:3.4cqw;z-index:4;width:7.6cqw;min-width:24px;aspect-ratio:1/1;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.55);color:#16191f}
 .rv-st{position:absolute;top:3.4cqw;right:3.4cqw;z-index:4}
+
+/* INFO의 멤버 이름 줄 — 멤버가 많아도 줄을 바꾸지 않고 한 줄로 길어진다 (바로가기 칸보다 넓어져도 가운데 기준으로 양옆으로) */
+.rs-mid .rs-mt{white-space:nowrap!important;overflow-wrap:normal!important;width:max-content;max-width:none!important;position:relative;left:50%;transform:translateX(-50%)}

@@ -29,7 +29,7 @@ function PairCard({ rel, no, locked, priv, members, onOpen, dragProps }: {
   return (
     <RxCard adaptive no={no} fileRef={ref} crop={rel.thumbId ? rel.thumbCrop : undefined} ph={rel.thumbClass}
       phLabel={priv ? '나만보기' : locked ? '멤버공개' : 'NO ART'} tc={relThemeColor(rel, c1)}
-      tag={tag} meta={`${pad2(rel.members.length)} MEMBERS`}
+      tag={tag} meta={`${pad2(rel.members.length)} MEMBERS`} fileText={rel.members.length >= 3 ? 'GROUP\nFILE' : 'PAIR\nFILE'}
       small={locked ? '' : rel.catchphrase.replace(/ /g, '')} title={rel.name}
       titleExtra={rel.visibility === 'member' ? <span className="pill" style={{ marginLeft: 8, verticalAlign: 'middle' }}>멤버</span> : undefined}
       who={members.slice(0, 3)} whoMore={members.length - 3} priv={priv} onClick={onOpen} {...dragProps} />

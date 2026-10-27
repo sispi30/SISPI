@@ -629,15 +629,15 @@ export default function RelDetailPage() {
   const selTab = (t: 'tl' | 'qa') => { setTab(t); if (win === 'timeline' || win === 'qa') setWin(t === 'tl' ? 'timeline' : 'qa'); };
   const pickWin = (k: string | null) => { if (k === 'timeline') setTab('tl'); else if (k === 'qa') setTab('qa'); setWin(k); };
   const drawerItems: (StageWindowItem & { count: string; n: number })[] = rel ? [
-    { key: 'timeline', title: 'Timeline', sub: 'TIMELINE', n: auTimeline.length || (isAdmin ? 1 : 0), count: auTimeline.length ? `기록 ${auTimeline.length}개` : '아직 없음' },
-    ...(qaOn ? [{ key: 'qa', title: 'Questions', sub: 'QUESTIONS', n: auQuestions.length || (isAdmin ? 1 : 0), count: `질문 ${auQuestions.length}개` }] : []),
+    { key: 'timeline', title: 'Timeline', sub: '타임라인', n: auTimeline.length || (isAdmin ? 1 : 0), count: auTimeline.length ? `기록 ${auTimeline.length}개` : '아직 없음' },
+    ...(qaOn ? [{ key: 'qa', title: 'Questions', sub: '문답', n: auQuestions.length || (isAdmin ? 1 : 0), count: `질문 ${auQuestions.length}개` }] : []),
     ...(!au?.hideLog ? [
-      { key: 'log', title: 'Log Backup', sub: 'LOG BACKUP', n: relLogs.length, count: relLogs.length ? `로그 ${relLogs.length}개` : '아직 없음' },
-      { key: 'session', title: 'Session Board', sub: 'SESSIONS', n: relSessions.length, count: relSessions.length ? `세션 ${relSessions.length}개` : '아직 없음' },
+      { key: 'log', title: 'Log Backup', sub: '세션 로그', n: relLogs.length, count: relLogs.length ? `로그 ${relLogs.length}개` : '아직 없음' },
+      { key: 'session', title: 'Session Board', sub: '세션 기록', n: relSessions.length, count: relSessions.length ? `세션 ${relSessions.length}개` : '아직 없음' },
     ] : []),
     ...(!au?.hideRp ? [
-      { key: 'gallery', title: 'Gallery', sub: 'GALLERY', ...(() => { const n = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }, auGalleryOpt).length; return { n, count: n ? `사진 묶음 ${n}개` : '아직 없음' }; })() },
-      { key: 'rp', title: 'Role Play', sub: 'ROLE PLAY', n: relRooms.length, count: relRooms.length ? `역극 ${relRooms.length}개` : '아직 없음' },
+      { key: 'gallery', title: 'Gallery', sub: '갤러리', ...(() => { const n = relGalleryPosts(rel, chars, { isAdmin, loggedIn: !!user }, auGalleryOpt).length; return { n, count: n ? `사진 묶음 ${n}개` : '아직 없음' }; })() },
+      { key: 'rp', title: 'Role Play', sub: '역극', n: relRooms.length, count: relRooms.length ? `역극 ${relRooms.length}개` : '아직 없음' },
     ] : []),
   ].filter(d => d.n > 0) : [];   // 아직 넣지 않은 항목은 목록에서 뺀다 (관리자는 타임라인·문답만 남겨 추가할 수 있게)
 
