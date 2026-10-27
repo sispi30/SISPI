@@ -37,7 +37,7 @@ function Note({ c }: { c: RelCardInfo }) {
 }
 
 /** 마우스 휠을 굴리면 가로로 넘어가게 (끝에 닿으면 원래대로 세로 스크롤) */
-function Row({ cards }: { cards: RelCardInfo[] }) {
+function Row({ cards, wrap }: { cards: RelCardInfo[]; wrap?: boolean }) {
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     const el = ref.current;
@@ -54,6 +54,15 @@ function Row({ cards }: { cards: RelCardInfo[] }) {
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
+  // 직접 지정한 관계는 가로 스크롤 없이 카드(+설명)를 한 묶음으로 아랫줄에 이어 배치한다
+  if (wrap) {
+    return <div className="rc-row rc-wrap">{cards.map((c, i) => (
+      <div key={c.key} className="rc-item">
+        <Card c={c} no={i + 1} />
+        {c.desc && <Note c={c} />}
+      </div>
+    ))}</div>;
+  }
   return <div className="rc-row" ref={ref}>{cards.map((c, i) => (
     <React.Fragment key={c.key}>
       <Card c={c} no={i + 1} />
@@ -71,7 +80,7 @@ export function RelTab({ groups }: { groups: RelGroupInfo[] }) {
       {groups.map(g => (
         <div key={g.name} className="rc-group">
           <p className="rc-group-title"><span className="rc-group-name">{g.name}</span><span className="rc-group-count">{g.cards.length}</span></p>
-          <Row cards={g.cards} />
+          <Row cards={g.cards} wrap={g.cards.length > 0 && g.cards.every(c => c.shape === 'char')} />
         </div>
       ))}
     </div>

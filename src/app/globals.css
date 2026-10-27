@@ -3512,3 +3512,15 @@ body.rs-full #appMain{overflow:hidden}
 
 /* INFO의 멤버 이름 줄 — 멤버가 많아도 줄을 바꾸지 않고 한 줄로 길어진다 (바로가기 칸보다 넓어져도 가운데 기준으로 양옆으로) */
 .rs-mid .rs-mt{white-space:nowrap!important;overflow-wrap:normal!important;width:max-content;max-width:none!important;position:relative;left:50%;transform:translateX(-50%)}
+
+/* 직접 지정한 관계 — 가로 스크롤 대신 줄바꿈. 카드+설명이 한 묶음이고, 좁으면(모바일) 한 줄에 한 묶음씩 */
+.rc-row.rc-wrap{flex-wrap:wrap;overflow-x:visible;scroll-snap-type:none;gap:18px 22px}
+.rc-item{display:flex;gap:12px;align-items:flex-start;min-width:0;max-width:100%}
+.rc-item>.rx-card{flex:none;width:140px}
+.rc-item>.rc-note{flex:1 1 140px;min-width:120px;max-width:320px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;gap:12px;padding:0 14px 6px 4px;margin-top:-2px;color:var(--ink)}
+@media (max-width:960px){
+  .rc-row.rc-wrap{flex-direction:column;flex-wrap:nowrap;gap:18px}
+  .rc-item{width:100%}
+  .rc-item>.rx-card{width:clamp(100px,32vw,140px)}
+  .rc-item>.rc-note{max-width:none}
+}
