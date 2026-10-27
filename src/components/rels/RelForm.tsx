@@ -14,7 +14,10 @@ import { CP_LABEL } from '@/lib/relqStore';
 import { newId } from '@/lib/postStore';
 import { useFonts, deVarFamily } from '@/lib/fontStore';
 import { putBlob, getBlob, useBlobUrl } from '@/lib/blobStore';
-import { KInput, KSelect, KCheck, KStep, KToggle } from '@/components/ui/Kit';
+import { KInput, KSelect, KCheck, KStep, KToggle, KRadio } from '@/components/ui/Kit';
+import { Modal } from '@/components/ui/Modal';
+import { GrantsEditor } from '@/components/chars/GrantsEditor';
+import type { CharGrant } from '@/lib/charStore';
 import { isPlainSpec } from '@/lib/charRuleConfig';
 import { CropEditor, CropValue, CropImg } from '@/components/ui/CropEditor';
 import { DragList } from '@/components/ui/DragList';
@@ -359,7 +362,16 @@ function ArtThumb({ item, crop }: { item: ArtItem; crop?: CropValue }) {
   return <CropImg src={src} crop={crop} />;
 }
 
-export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSave, onCancel }: {
+/** ADD CHARACTER — 기존 캐릭터 연동 또는 새 상대 캐릭터 간단 등록 (자관 상세의 「멤버 추가」와 같은 입력) */
+export type AddMemberInput =
+  | { mode: 'exist'; charId: string; quote: string }
+  | { mode: 'new'; name: string; sub: string; color: string; grants: CharGrant[]; quote: string };
+
+export function RelForm({ initial, auId, myChars, memberNames, existingIds, addCandidates, onAddMember, onSave, onCancel }: {
+  /** 멤버로 추가할 수 있는 캐릭터(이미 멤버가 아닌 것) — 수정 화면에서만 */
+  addCandidates?: Character[];
+  /** 멤버 추가를 바로 저장한다. 성공하면 true — 폼에 적던 내용은 그대로 유지된다 */
+  onAddMember?: (a: AddMemberInput) => boolean;
   initial: Relation | null;          // null = 신규 등록
   auId?: string;                     // AU 편집 모드 (v1.9) — 아트·캐치프레이즈·전신이 이 AU의 것
   myChars: Character[];
@@ -449,6 +461,38 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
   const [pageBgG2, setPageBgG2] = useState(st?.pageBgG2 ?? '#121418');
   const [pageBgAngle, setPageBgAngle] = useState(st?.pageBgAngle ?? 180);
   const [charQuery, setCharQuery] = useState('');
+  // ADD CHARACTER 모달 상태
+  const [memberOpen, setMemberOpen] = useState(false);
+  const [mMode, setMMode] = useState<'exist' | 'new'>('exist');
+  const [mCharId, setMCharId] = useState('');
+  const [mQuery, setMQuery] = useState('');
+  const [mQuote, setMQuote] = useState('');
+  const [mName, setMName] = useState('');
+  const [mSub, setMSub] = useState('');
+  const [mColor, setMColor] = useState('#8a7f70');
+  const [mGrants, setMGrants] = useState<CharGrant[]>([]);
+  const submitMember = () => {
+    if (!onAddMember) return;
+    if (mMode === 'new' && !mName.trim()) { toast('상대 캐릭터 이름을 입력해 주세요'); return; }
+    if (mMode === 'exist' && !mCharId) { toast('추가할 캐릭터를 선택해 주세요'); return; }
+    const ok = mMode === 'new'
+      ? onAddMember({ mode: 'new', name: mName.trim(), sub: mSub.trim(), color: mColor, grants: mGrants, quote: mQuote.trim() })
+      : onAddMember({ mode: 'exist', charId: mCharId, quote: mQuote.trim() });
+    if (!ok) return;
+    setMemberOpen(false);
+    setMCharId(''); setMQuery(''); setMQuote(''); setMName(''); setMSub(''); setMGrants([]);
+    toast('캐릭터가 추가되었습니다');
+  };
+  // 멤버가 늘면 다인관 순서 목록에도 이어 붙인다
+  const memberKey = (initial?.members ?? []).map(m => m.charId).join('|');
+  useEffect(() => {
+    const ids = memberKey ? memberKey.split('|') : [];
+    setMemberOrder(o => {
+      const keep = o.filter(id => ids.includes(id));
+      const add = ids.filter(id => !keep.includes(id));
+      return add.length || keep.length !== o.length ? [...keep, ...add] : o;
+    });
+  }, [memberKey]);
   // 전신 이미지 (v1.9 — 페어 · 수정 모드) — AU 편집이면 그 AU의 전신
   // 페어는 2명, 다인관은 등록한 전원 — 둘 다 같은 「메인 이미지 · 레이어」로 전신을 놓는다
   const pairMembers = !isNew && (initial!.kind ? initial!.kind === 'pair' : initial!.members.length === 2)
@@ -985,6 +1029,14 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
           {...fileDrop(fl => addArts(fl))}>
           ＋ ADD ART {arts.length === 0 && '(첫 장 등록 시 썸네일 크롭 지정)'}
         </button>
+
+        {/* 캐릭터 추가 — 스테이지에서 멤버 추가 버튼이 없어져 여기서 한다. 누르면 바로 저장된다 */}
+        {!isNew && onAddMember && (
+          <button className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 11, justifySelf: 'center' }}
+            onClick={() => setMemberOpen(true)}>
+            ＋ ADD CHARACTER
+          </button>
+        )}
 
         {/* 전신 이미지 (v1.9) — 페어 좌/우 캐릭터, 미리보기에서 드래그=크기 · 클릭=앞으로 */}
         {pairMembers.length > 0 && (
@@ -1966,6 +2018,65 @@ export function RelForm({ initial, auId, myChars, memberNames, existingIds, onSa
       {/* 아트 원본 보기 — 아직 저장 전 파일은 url, 저장된 것은 ref (Lightbox가 둘 다 처리) */}
       {lb !== null && (
         <Lightbox srcs={arts.map(a => a.url ?? a.ref ?? '')} index={lb} onClose={() => setLb(null)} />
+      )}
+      {/* ---------- ADD CHARACTER 모달 — 자관 상세의 「멤버 추가」와 같다 ---------- */}
+      {onAddMember && (
+        <Modal open={memberOpen} onClose={() => setMemberOpen(false)} small title="캐릭터 추가"
+          dirty={!!(mCharId || mName || mQuote)}
+          desc="내 캐릭터를 연동하거나, 상대(타인) 캐릭터를 간단 등록 — 상대 캐릭터는 내 캐릭터 리스트에 표시되지 않음 · 추가하면 바로 저장됩니다"
+          actions={<>
+            <button className="btn btn-ghost" onClick={() => setMemberOpen(false)}>CANCEL</button>
+            <button className="btn btn-dark" onClick={submitMember}>ADD</button>
+          </>}>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <KRadio name="mm" value="exist" current={mMode} onChange={v => setMMode(v as 'exist')} label="기존 캐릭터" />
+              <KRadio name="mm" value="new" current={mMode} onChange={v => setMMode(v as 'new')} label="새 상대 캐릭터" />
+            </div>
+            {mMode === 'exist' ? (
+              <div>
+                <KInput placeholder="캐릭터 검색" value={mQuery} onChange={e => setMQuery(e.target.value)} />
+                <div style={{ marginTop: 6, maxHeight: 190, overflowY: 'auto', border: '1.5px solid var(--line)', borderRadius: 9 }}>
+                  {(addCandidates ?? [])
+                    .filter(c => {
+                      const q2 = mQuery.trim().toLowerCase();
+                      return !q2 || c.name.toLowerCase().includes(q2) || (c.sub ?? '').toLowerCase().includes(q2);
+                    })
+                    .map(c => (
+                      <div key={c.id} onClick={() => setMCharId(mCharId === c.id ? '' : c.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', cursor: 'var(--cur-pointer,pointer)',
+                          background: mCharId === c.id ? 'rgba(127,127,127,.12)' : undefined,
+                          borderBottom: '1px dashed var(--line)', transition: '.13s',
+                        }}>
+                        <i style={{ width: 9, height: 9, borderRadius: '50%', background: c.color, fontStyle: 'normal', flexShrink: 0 }} />
+                        <b style={{ fontSize: 12.5 }}>{c.name}</b>
+                        <small style={{ color: 'var(--faint)', fontSize: 10.5 }}>{c.sub}{!c.own && ' · 상대'}</small>
+                        {mCharId === c.id && <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontWeight: 700 }}>✓</span>}
+                      </div>
+                    ))}
+                  {(addCandidates ?? []).length === 0 && <p className="hint" style={{ padding: 10 }}>추가할 수 있는 캐릭터가 없습니다</p>}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <KInput placeholder="이름" value={mName} onChange={e => setMName(e.target.value)} />
+                  <KInput placeholder="한 줄 소개 (선택)" value={mSub} onChange={e => setMSub(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <span className="cp-lb">테마색</span>
+                  <ColorField value={mColor} onChange={setMColor} />
+                </div>
+                <div>
+                  <label className="k-label" style={{ marginBottom: 7 }}>회원 권한 (선택)</label>
+                  <GrantsEditor value={mGrants} onChange={setMGrants} />
+                </div>
+              </>
+            )}
+            <KInput placeholder="캐릭터 한마디 (선택 — 타이틀 옆 인용구)" value={mQuote} onChange={e => setMQuote(e.target.value)} />
+          </div>
+        </Modal>
       )}
       {del.element}
     </div>

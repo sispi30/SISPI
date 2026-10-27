@@ -4,10 +4,10 @@
 import React, { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { useLocalList } from '@/lib/postStore';
+import { useLocalList, newId } from '@/lib/postStore';
 import { Character, CHAR_SEED, Relation, REL_SEED, findByKey } from '@/lib/charStore';
 import { usePageBgm } from '@/lib/bgmStore';
-import { RelForm } from '@/components/rels/RelForm';
+import { RelForm, type AddMemberInput } from '@/components/rels/RelForm';
 import { useToast } from '@/components/ui/Toast';
 import { PageTitle, EditableDesc } from '@/components/ui/PageText';
 
@@ -19,13 +19,31 @@ function RelEditInner() {
   const params = useSearchParams();
   const auId = params.get('au') ?? undefined;
   const [rels, setRels, loaded] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
-  const [chars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
+  const [chars, setChars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
 
   // 별명 주소로도 열린다 (v2.0 사용자 요청)
   const rel = findByKey(rels, id);
   const auObj = auId ? rel?.aus.find(a => a.id === auId && a.id !== 'base') : undefined;
   // 수정 화면에서도 이 자관에 지정해 둔 BGM을 들을 수 있게 — 상세와 같은 키라 상세에서 이어서 들린다
   usePageBgm(loaded && isAdmin && rel ? `rel:${rel.id}` : undefined, loaded && isAdmin && rel ? rel.bgm : undefined);
+  // ADD CHARACTER — 자관 상세의 「멤버 추가」와 같은 처리. 폼에 적던 내용은 건드리지 않고 멤버만 바로 저장한다
+  const addMember = (a: AddMemberInput): boolean => {
+    if (!rel) return false;
+    let cid = a.mode === 'exist' ? a.charId : '';
+    if (a.mode === 'new') {
+      const nc: Character = {
+        id: newId(), name: a.name, sub: a.sub, color: a.color,
+        colors: [], specs: [], tabs: [],
+        basicHtml: '', visibility: 'public', thumbClass: '', own: false,
+        grants: a.grants.length ? a.grants : undefined,
+      };
+      setChars([...chars, nc]);
+      cid = nc.id;
+    }
+    if (!cid || rel.members.some(m => m.charId === cid)) return false;
+    setRels(rels.map(r => (r.id === rel.id ? { ...r, members: [...r.members, { charId: cid, quote: a.quote, keywords: [], desc: '', palette: [] }] } : r)));
+    return true;
+  };
   if (!loaded) return <section className="page" />;
   if (!isAdmin || !rel) {
     return (
@@ -45,6 +63,8 @@ function RelEditInner() {
         initial={rel}
         auId={auObj?.id}
         myChars={chars.filter(c => c.own)}
+        addCandidates={chars.filter(c => !rel.members.some(m => m.charId === c.id))}
+        onAddMember={addMember}
         memberNames={Object.fromEntries(rel.members.map(m => [m.charId, chars.find(c => c.id === m.charId)?.name ?? m.charId]))}
         onCancel={() => router.push(`/rels/${rel.id}`)}
         existingIds={rels.filter(r => r.id !== rel.id).flatMap(r => [r.id, ...(r.slug ? [r.slug] : [])])}
