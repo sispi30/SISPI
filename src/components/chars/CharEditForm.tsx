@@ -94,7 +94,8 @@ function TabArtEditor({ arts, onChange }: { arts: string[]; onChange: (arts: str
   );
 }
 
-export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }: {
+export function CharEditForm({ initial, onSave, onCancel, auMode, auKey, existingIds }: {
+  auKey?: string;                          // AU 전용 편집일 때 그 AU 키 — 관계란을 이 AU 몫으로 저장한다
   initial: Character | null;               // null = 신규 등록
   onSave: (c: Character) => void;
   onCancel: () => void;
@@ -175,13 +176,13 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // REL(관계) 탭 (v6.8) — 켜면 상세 화면에 REL 버튼. 직접 지정한 관계만 여기서 정하고, 자관 관계는 자동으로 모인다
   // 상세 화면 레이아웃 (v7.0) — 스테이지(기본) / 클래식
   const [detailLayout, setDetailLayout] = useState<'stage' | 'classic'>(initial?.detailLayout === 'classic' ? 'classic' : 'stage');
-  const [relOn, setRelOn] = useState<boolean>(!!initial?.relEnabled);
+  const [relOn, setRelOn] = useState<boolean>(!!initial?.relEnabled || !!(auKey && initial?.auRel?.[auKey]));
   // 관계란은 원본('')과 이 캐릭터의 AU 키마다 한 벌씩 — relTab이 지금 편집 중인 벌
   const [relSets, setRelSets] = useState<Record<string, RelSet>>(() => ({
     '': { notes: initial?.relNotes ?? {}, links: initial?.relLinks ?? [], relAu: initial?.relAu ?? {} },
     ...Object.fromEntries(Object.entries(initial?.auRel ?? {}).map(([k, v]) => [k, { notes: v.notes ?? {}, links: v.links ?? [], relAu: v.relAu ?? {} }])),
   }));
-  const [relTab, setRelTab] = useState('');
+  const [relTab, setRelTab] = useState(auMode && auKey ? auKey : '');
   const curSet: RelSet = relSets[relTab] ?? {};
   const relNotes = curSet.notes ?? {};
   const relLinks = curSet.links ?? [];
@@ -279,9 +280,8 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       galleryTagLinks: tagLinks.length ? tagLinks : undefined,   // AU 편집이면 이 AU의 서랍 연동 태그
       detailLayout: auMode ? initial?.detailLayout : (detailLayout === 'classic' ? 'classic' : undefined),
       // REL 탭 — AU 편집은 base 소관이라 건드리지 않는다
-      relEnabled: auMode ? initial?.relEnabled : (relOn || undefined),
+      relEnabled: auMode ? (relOn ? true : initial?.relEnabled) : (relOn || undefined),
       ...(() => {
-        if (auMode) return { relNotes: initial?.relNotes, relLinks: initial?.relLinks, relAu: initial?.relAu, auRel: initial?.auRel };
         const clean = (st: RelSet): RelSet | undefined => {
           const notes = Object.fromEntries(Object.entries(st.notes ?? {}).filter(([, v]) => v.trim()));
           const links = (st.links ?? []).filter(l => l.charId).map(l => (l.au ? l : { charId: l.charId, label: l.label }));
@@ -290,6 +290,13 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
             ? { notes: Object.keys(notes).length ? notes : undefined, links: links.length ? links : undefined, relAu: Object.keys(relAu).length ? relAu : undefined }
             : undefined;
         };
+        // AU 편집 — 원본 관계란은 그대로 두고 이 AU 몫만 갱신한다
+        if (auMode) {
+          const rest = { ...(initial?.auRel ?? {}) };
+          const mine = auKey ? clean(relSets[auKey] ?? {}) : undefined;
+          if (auKey) { if (mine) rest[auKey] = mine; else delete rest[auKey]; }
+          return { relNotes: initial?.relNotes, relLinks: initial?.relLinks, relAu: initial?.relAu, auRel: Object.keys(rest).length ? rest : undefined };
+        }
         if (!relOn) return { relNotes: undefined, relLinks: undefined, relAu: undefined, auRel: undefined };
         const base = clean(relSets['']) ;
         const auRel = Object.fromEntries(Object.entries(relSets).filter(([k]) => k).map(([k, v]) => [k, clean(v)]).filter(([, v]) => !!v)) as Record<string, RelSet>;
@@ -326,7 +333,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   }
 
   /* ---------- REL(관계) 탭 전용 편집 화면 (v6.8) ---------- */
-  if (view === REL_VIEW && relOn && !auMode) {
+  if (view === REL_VIEW && relOn) {
     const others = allChars.filter(c => c.id !== initial?.id);
     const myRels = initial?.id ? rels.filter(r => r.members.some(m => m.charId === initial.id)) : [];
     const myAus = initial ? charAuList(initial, rels) : [];
@@ -339,7 +346,10 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           <b style={{ fontSize: 14 }}>RELATIONS 편집</b>
           <span className="hint" style={{ margin: 0 }}>이 화면의 내용은 프로필 [SAVE] 시 함께 저장됩니다</span>
           <button className="btn btn-ghost" style={{ marginLeft: 'auto', fontSize: 11 }}
-            onClick={() => { setRelOn(false); setView('main'); }}>RELATIONS 삭제</button>
+            onClick={() => {
+              if (auMode) { patchSet({ notes: {}, links: [], relAu: {} }); setView('main'); return; }
+              setRelOn(false); setView('main');
+            }}>{auMode ? '이 AU 관계란 비우기' : 'RELATIONS 삭제'}</button>
         </div>
         <p className="hint" style={{ margin: 0 }}>
           상세 화면 <b>RELATIONS</b> 버튼에서 관계 카드가 보입니다. 이 캐릭터가 멤버인 <b>자관(페어는 Pair · 다인관은 Group)</b>은 자동으로 모이고,
@@ -347,7 +357,10 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         </p>
 
         {/* 이 캐릭터의 AU별로 관계란을 따로 쓴다 — AU 관계란이 비어 있으면 그 AU 화면에서는 원본 관계가 그대로 보인다 */}
-        {myAus.length > 0 && (
+        {auMode && (
+          <p className="hint" style={{ margin: 0 }}>이 AU 전용 관계란입니다 — 비워 두면 이 AU 화면에서도 원본 관계가 그대로 보입니다. 원본 관계란은 원본 프로필 편집에서 고칩니다.</p>
+        )}
+        {!auMode && myAus.length > 0 && (
           <div style={{ display: 'grid', gap: 6 }}>
             <label className="k-label" style={{ margin: 0 }}>
               편집 중인 AU <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 이 캐릭터의 AU마다 관계란을 따로 쓸 수 있습니다{relTab ? ' (비워 두면 원본 관계가 보입니다)' : ''}</span>
@@ -611,7 +624,7 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
         )}
 
         {/* RELATIONS(관계) 탭 (v6.8) — GALLERY와 같은 방식: 추가하면 상세 화면에 RELATIONS 버튼이 생긴다. 신규 캐릭터도 가능(자관 연동은 저장 후 자동) */}
-        {!auMode && (relOn ? (
+        {(relOn ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', border: '1.5px solid var(--line)', borderRadius: 8, padding: '8px 10px' }}>
             <span style={{ width: 28, height: 28, borderRadius: 8, background: '#eef0f2', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>♡</span>
             <b style={{ fontSize: 13 }}>RELATIONS</b>

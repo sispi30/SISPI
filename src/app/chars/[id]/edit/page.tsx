@@ -79,12 +79,15 @@ function CharEditInner() {
         initial={formInitial}
         existingIds={chars.filter(c => c.id !== ch.id).flatMap(c => [c.id, ...(c.slug ? [c.slug] : [])])}
         auMode={!!auKey}
+        auKey={auKey ?? undefined}
         onCancel={() => router.push(back)}
         onSave={c => {
           if (auKey) {
             // AU 프로필 스냅샷 저장 — base 필드는 그대로, auProfiles[auKey]만 폼 값 전체로
             setChars(chars.map(x => (x.id === ch.id ? {
               ...x,
+              // 이 AU의 관계란 (원본 관계란은 건드리지 않는다)
+              auRel: c.auRel, relEnabled: c.relEnabled ?? x.relEnabled,
               auProfiles: {
                 ...x.auProfiles,
                 [auKey]: {
