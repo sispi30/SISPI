@@ -115,14 +115,23 @@ export const newId = () => Date.now().toString(36) + Math.random().toString(36).
  *  서버 모드에서는 저장할 때 이전/새 배열을 비교해 바뀐 행만 insert/update/delete 하고,
  *  다른 사람의 변경은 실시간 구독으로 받아 온다. (로컬 모드는 storage 이벤트로 탭 간 동기화)
  */
+/* 서버 모드 목록 캐시 — 화면(페이지·레이아웃·목록)마다 같은 표를 따로 받아 오느라, 게시판을 옮길 때마다
+   「빈 화면(로딩) → 일부만 도착 → 전부 도착」 순서로 그려져 테마·배경이 번쩍였다. 마지막에 받은 값을 들고 있다가
+   새 화면이 열리면 그 값으로 바로 그리고, 뒤에서 조용히 최신으로 갱신한다. 로그인한 사람이 바뀌면 쓰지 않는다. */
+const LIST_CACHE = new Map<string, { uid: string | null; rows: unknown[] }>();
+const cachedRows = <T,>(table: string | undefined): T[] | null => {
+  const hit = table ? LIST_CACHE.get(table) : undefined;
+  return hit && hit.uid === currentUserId() ? (hit.rows as T[]) : null;
+};
+
 export function useLocalList<T extends { id?: string }>(key: string, seed: T[]): [T[], (next: T[]) => void, boolean] {
   const server = isServerMode() && !!TABLE_OF[key];
   const table = TABLE_OF[key];
   // 서버 모드에선 시드를 화면에 내보내지 않는다 (v2.0 사용자 발견) — 서버 목록을 받아오기 전까지
   // 예시 데이터가 잠깐 보였다 사라지는 깜빡임의 원인이었다. 시드는 로컬 모드의 시작값일 뿐이고,
   // 서버 모드에서 시드를 기준으로 삼으면 저장할 때 없는 행을 지우려 드는 문제도 있었다.
-  const [list, setList] = useState<T[]>(() => (server ? [] : seed));
-  const [loaded, setLoaded] = useState(false);
+  const [list, setList] = useState<T[]>(() => (server ? (cachedRows<T>(table) ?? []) : seed));
+  const [loaded, setLoaded] = useState(() => server && !!cachedRows<T>(table));
   const latest = useRef<T[]>(list);          // diff 기준이 되는 "DB에 있다고 아는" 상태
   latest.current = list;
   // 순번 — 서버 fetch가 여러 건 동시에 떠 있을 때, 늦게 시작한 것보다 먼저 도착한 낡은 결과가
@@ -141,6 +150,7 @@ export function useLocalList<T extends { id?: string }>(key: string, seed: T[]):
         fetchList<T & { id: string }>(table)
           .then(rows => {
             if (!alive || id !== reqId.current) return;   // 그 사이 더 최신 요청이 있었으면 버림
+            LIST_CACHE.set(table, { uid: currentUserId(), rows });
             setList(rows); latest.current = rows; setLoaded(true);
           })
           .catch(() => { if (alive) setLoaded(true); });
@@ -168,6 +178,7 @@ export function useLocalList<T extends { id?: string }>(key: string, seed: T[]):
     const id = ++reqId.current;
     setList(next);            // 낙관적 반영 — 화면은 즉시 바뀐다
     latest.current = next;
+    if (server) LIST_CACHE.set(table, { uid: currentUserId(), rows: next });
     if (server) {
       syncList(table, prev as unknown as { id: string }[], next as unknown as { id: string }[], currentUserId())
         .catch(err => {
@@ -181,7 +192,7 @@ export function useLocalList<T extends { id?: string }>(key: string, seed: T[]):
           } catch { /* 무시 */ }
           reqId.current = id;   // 이 복구 fetch는 유효한 최신 요청으로 인정
           fetchList<T & { id: string }>(table)
-            .then(rows => { if (id === reqId.current) { setList(rows); latest.current = rows; } })
+            .then(rows => { if (id === reqId.current) { LIST_CACHE.set(table, { uid: currentUserId(), rows }); setList(rows); latest.current = rows; } })
             .catch(() => { /* 무시 */ });
         });
       return;
