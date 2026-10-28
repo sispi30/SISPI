@@ -2,7 +2,10 @@
 // 자관 상세 (4.5) — 2인: 헤더 블러 + 대형 타이틀 + 좌우 카드 + 중앙 일러(전신/일러 토글) + AU
 // 하단: TIMELINE / QUESTIONS 탭 (v1.8) + 역극·로그 연동 리스트 · 다인(3인+): 멤버 리스트형
 // 관리자: 멤버 추가(내/상대 캐릭터) · 타임라인 항목 추가 · 질문 추가
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react';
+
+// 테마·배경은 화면이 그려지기 전에 적용 — 효과로 두면 이전 테마로 한 번 그려졌다가 바뀌며 번쩍인다
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 import { usePageBgm } from '@/lib/bgmStore';
 import { FadeImg } from '@/components/ui/FadeImg';
 import { DragList } from '@/components/ui/DragList';
@@ -432,7 +435,7 @@ export default function RelDetailPage() {
   const effThemeColor = auTheme ? auTheme.color : rel?.themeColor;
   const pageColor = effThemeMode === 'custom' && effThemeColor ? effThemeColor : null;
   const pageTone = auTheme ? auTheme.tone : rel?.themeTone;
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     setPageTheme(pageColor, pageTone);
     return () => setPageTheme(null);
   }, [pageColor, pageTone, setPageTheme]);
@@ -443,7 +446,7 @@ export default function RelDetailPage() {
   const bgG1 = themeAuStyle?.pageBgG1;
   const bgG2 = themeAuStyle?.pageBgG2;
   const bgAngle = themeAuStyle?.pageBgAngle;
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!bgG1 && !bgG2) return;
     setPageBg({ g1: bgG1 ?? '#2b3038', g2: bgG2 ?? '#121418', angle: bgAngle ?? 180 });
     return () => setPageBg(null);

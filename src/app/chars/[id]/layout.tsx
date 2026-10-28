@@ -8,7 +8,9 @@
 // 계속 마운트된 채로 유지되므로 페이지를 오가도 테마가 끊기지 않는다.
 // (AU별로 테마색이 다른 경우의 "미세 조정"은 상세 페이지 자체에서 별도로 얹는다 — 그 경우에도
 // 벗어날 때 null이 아니라 이 레이아웃의 기본색으로 되돌아가게 해 깜빡임이 나지 않도록 함)
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 import { useParams } from 'next/navigation';
 import { useLocalList } from '@/lib/postStore';
 import { Character, CHAR_SEED, findByKey, resolveThemeTone } from '@/lib/charStore';
@@ -30,7 +32,8 @@ export default function CharIdLayout({ children }: { children: React.ReactNode }
     return () => { alive.current = false; };
   }, []);
 
-  useEffect(() => {
+  // 그리기 전에 적용 — 효과로 두면 캐릭터 화면이 먼저 이전 테마로 한 번 그려졌다가 바뀌며 번쩍였다
+  useIsoLayoutEffect(() => {
     setPageTheme(baseColor, baseTone);
     return () => setPageTheme(null);
   }, [baseColor, baseTone, setPageTheme]);
