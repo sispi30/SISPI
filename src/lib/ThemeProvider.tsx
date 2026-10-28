@@ -5,7 +5,7 @@
 // · 변경은 즉시 미리보기(DOM)되지만 저장은 [SAVE]를 눌러야 확정 — 새로고침 시 저장본으로 복귀
 // TODO(0차→): Supabase 연결 시 site_settings 테이블로 저장 위치 이동
 import { usePathname } from 'next/navigation';
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   ThemeMode, PointTone, ThemeVars, ThemeState, ThemeStore, ThemePreset,
   DARK_THEME, DEFAULT_THEME_STORE, defaultVarsFor, derivePointTheme, themeToCssVars,
@@ -157,11 +157,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // 배경 이미지 (v1.9) — IndexedDB 파일을 blob URL로 풀어 --bg-image 적용 (그라데이션 모드면 해제).
   // 자관 헤더 사진(pageBgImageUrl, v3.5)이 있으면 그게 최우선 — 상단 바가 투명이라
   // body 배경이 그대로 비쳐 보이므로, 헤더 사진을 body 배경으로도 깔아 위쪽 빈 띠가 안 생기게 한다
+  // 배경 사진이 바뀔 때만 부드럽게 떠오르게 한다 — 게시판을 옮길 때 배경이 번쩍이지 않게. 같은 값이면(테마 슬라이더 조정 등) 건드리지 않는다
+  const lastBgImg = useRef<string | null>(null);
+  const setBgImage = (root: HTMLElement, value: string | null) => {
+    if (value === lastBgImg.current) return;
+    lastBgImg.current = value;
+    if (value) root.style.setProperty('--bg-image', value); else root.style.removeProperty('--bg-image');
+    root.classList.remove('bg-fx');
+    void root.offsetWidth;
+    root.classList.add('bg-fx');
+    window.setTimeout(() => root.classList.remove('bg-fx'), 900);
+  };
   useEffect(() => {
     if (!loaded) return;
     const root = document.documentElement;
     if (pageBgImageUrl) {
-      root.style.setProperty('--bg-image', `url("${pageBgImageUrl}")`);
+      setBgImage(root, `url("${pageBgImageUrl}")`);
       return;
     }
     const vars = draft.perMode[draft.mode];
@@ -177,8 +188,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
          CORS 설정에 걸리면 조용히 실패한다 — 화면 어디에도 오류가 안 뜨고 배경만 안 바뀐다.
          다른 이미지들은 전부 주소를 그대로 쓰므로(useBlobUrl) 잘 나왔다. 여기만 예외였다. */
       if (/^(https?:|data:|blob:)/.test(ref)) {
-        root.style.setProperty('--bg-image', `url("${ref}")`);
-        return () => { root.style.removeProperty('--bg-image'); };
+        setBgImage(root, `url("${ref}")`);
+        return;
       }
       // 브라우저 저장(IndexedDB) 파일 id — 그때만 풀어서 blob 주소를 만든다
       let cancelled = false;
@@ -186,15 +197,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       getBlob(ref).then(b => {
         if (cancelled || !b) return;
         url = URL.createObjectURL(b);
-        root.style.setProperty('--bg-image', `url("${url}")`);
+        setBgImage(root, `url("${url}")`);
       });
       return () => {
         cancelled = true;
-        root.style.removeProperty('--bg-image');
-        if (url) URL.revokeObjectURL(url);
+        // 곧바로 다음 사진으로 바뀌는 경우가 많아 여기서 지우지 않는다(번쩍임 방지) — 주소만 나중에 풀어 준다
+        const u = url;
+        if (u) window.setTimeout(() => URL.revokeObjectURL(u), 1500);
       };
     }
-    root.style.removeProperty('--bg-image');
+    setBgImage(root, null);
   }, [draft, pageColor, pageBg, pageBgImageUrl, pathname, loaded]);
 
   const dirty = useMemo(() => JSON.stringify(saved) !== JSON.stringify(draft), [saved, draft]);
