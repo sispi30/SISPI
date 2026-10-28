@@ -3247,7 +3247,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 
 /* ───────── 자관 상세 스테이지 (RelStage) — 스크롤 진행도 --p(0~1)로 장면이 이어서 바뀐다 ───────── */
 .page-rel-detail.rs-on .rel-hero,.page-rel-detail.rs-on .rel-center-full{display:none}
-.rs{--p:0;position:relative;height:420vh;width:100vw;margin:-16px 0 0 calc(50% - 50vw);z-index:1}
+div.rs{--p:0;position:relative;height:420vh;width:100vw;margin:-16px 0 0 calc(50% - 50vw);z-index:1}
 .rs-sticky{--k1:clamp(0,calc((var(--p) - .04)/.26),1);--k2:clamp(0,calc((var(--p) - .12)/.4),1);--k3:clamp(0,calc((var(--p) - .34)/.16),1);--k4:clamp(0,calc((var(--p) - .58)/.34),1);
   position:sticky;top:0;height:100vh;overflow:hidden;color:#fff;
   background:radial-gradient(120% 90% at 50% 40%,color-mix(in srgb,var(--rs-c) 22%,#14171d),#08090c 78%)}
@@ -3287,7 +3287,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .rs-au .au-list{position:static!important}
 .rs-more{position:absolute;left:6vw;bottom:5vh;font-size:11px;letter-spacing:.2em;font-weight:700;opacity:.5}
 @media (max-width:760px){
-  .rs{height:380vh}
+  div.rs{height:380vh}
   .rs-cast{top:64px}.rs-cast button{font-size:10px;letter-spacing:.1em}
   .rs-info{max-width:46vw}.rs-fig{max-width:64vw;margin:0 -8vw}
   .rs-title{top:24vh}
@@ -3392,7 +3392,7 @@ body.rs-full .rs-sticky{top:-58px}
 @media (max-width:960px){.rs-scr{display:block}}
 
 /* 자관 상세 스테이지 — 스크롤 연동 없이 한 화면에 고정. 우측에 서랍 바로가기 */
-.rs{height:100vh!important}
+div.rs{height:100vh!important}
 .rs-sticky{position:relative!important;top:0!important}
 body.rs-full .rs-sticky{top:0!important}
 .rs-panel,.rs-band,.rs-stats,.rs-hint,.rs-more{display:none!important}
@@ -3452,7 +3452,7 @@ body.rs-full .rs-sticky{top:0!important}
 .rs-nb .rs-go{pointer-events:auto;align-self:inherit;text-shadow:none}
 
 /* 스테이지는 화면에 고정 — 아래 여백·스크롤이 생기지 않는다 (캐릭터 상세와 같은 방식). 선·모서리 장식은 전신 뒤로 */
-.rs{position:fixed!important;inset:0;width:auto!important;height:auto!important;margin:0!important;z-index:1}
+div.rs{position:fixed!important;inset:0;width:auto!important;height:auto!important;margin:0!important;z-index:1}
 body.rs-full .page-rel-detail.rs-on .rs{margin-top:0!important}
 body.rs-full #appMain{overflow:hidden}
 .page-rel-detail.rs-on{padding:0!important;min-height:0}
@@ -3530,3 +3530,23 @@ body.rs-full #appMain{overflow:hidden}
 .rc-item{width:100%}
 .rc-item>.rc-note{flex:1 1 auto;max-width:390px;min-width:120px}
 @media (max-width:960px){.rc-item>.rc-note{max-width:none}}
+
+/* 메인 위젯 크기조절 핸들(span.rs)이 자관 스테이지(div.rs)의 전체화면 규칙에 휘말려 화면을 파랗게 덮던 문제 — 스테이지 규칙을 div.rs로 한정 */
+.wgt span.rs{position:absolute!important;inset:auto 5px 5px auto;width:15px!important;height:15px!important;margin:0!important}
+
+/* 배경 사진 전환 — 사진이 바뀔 때만 새 사진이 떠오른다 (배경 색은 글자·패널 색과 어긋나 보이지 않게 서서히 바꾸지 않고 한 번에 바꾼다) */
+html.bg-fx body::before{animation:bgFxIn .7s ease both}
+@keyframes bgFxIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){html.bg-fx body::before{animation:none}}
+
+/* 맞교차 — 이전 배경 사진 층(body::after)을 새 사진(body::before) 한 겹 아래에 두고, 새 사진이 위에서 떠오르는 동안만 보인다 */
+body::after{
+  content:"";position:fixed;z-index:-2;opacity:0;pointer-events:none;
+  --_bleed:var(--bg-page-bleed, calc(var(--bg-blur,0px)*2));
+  top:calc(var(--_bleed)*-1);left:calc(var(--_bleed)*-1);right:calc(var(--_bleed)*-1);
+  height:calc(var(--bg-page-height,100vh) + var(--_bleed)*2);
+  background-image:var(--bg-image-prev,none);background-size:cover;background-position:center;
+  filter:blur(var(--bg-blur,0px)) brightness(var(--bg-brightness,1)) saturate(var(--bg-saturate,1));
+}
+html.bg-fx body::after{opacity:1}
+@media (prefers-reduced-motion:reduce){html.bg-fx body::after{opacity:0}}
