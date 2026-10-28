@@ -136,7 +136,11 @@ export interface Character {
   /** 상세 화면 레이아웃 (v7.0) — 비우면 스테이지(등록한 그림 배경 + 좌 정보 · 우 소개/항목 창), 'classic'이면 예전 좌 아이콘탭·중앙 아트·우 패널 */
   detailLayout?: 'stage' | 'classic';
   relEnabled?: boolean;
-  relLinks?: { charId: string; label?: string }[];
+  relLinks?: RelLinkItem[];
+  /** 자관 설명 박스에서 고른 자관의 AU — 키 relId, 값 AU id (비우면 자관 원본) */
+  relAu?: Record<string, string>;
+  /** 이 캐릭터의 AU(키 = AU 키)별 관계란 — 지정하면 그 AU 화면에서는 원본 대신 이 값을 쓴다 */
+  auRel?: Record<string, RelSet>;
   /** 관계 카드 옆 설명 박스의 글 — 키는 카드 키(자관 `rel:<id>` · 직접 지정 `link:<charId>`). RELATIONS 편집 화면에서 고친다 */
   relNotes?: Record<string, string>;   // 직접 지정한 관계 — 상대 캐릭터 + 꼬리표(예: 라이벌)
   /** 이 캐릭터 상세 페이지에서만 나오는 BGM (v5.9) — 환경설정 BGM과 같은 구조, 페이지를 나가면 홈페이지 BGM으로 복귀 */
@@ -812,6 +816,21 @@ export function charGalleryPosts(c: Character, rels: Relation[], viewer: { isAdm
 
 
 /* ---------- REL(관계) 탭 (v6.8) — 참고: OC-homepage의 관계 탭(페어 자동 목록) ---------- */
+/** 직접 지정한 관계 한 줄 — au = 상대 캐릭터의 AU 키(비우면 상대 원본) */
+export interface RelLinkItem { charId: string; label?: string; au?: string }
+/** 관계란 한 벌 — 원본 또는 AU 하나분 */
+export interface RelSet { notes?: Record<string, string>; links?: RelLinkItem[]; relAu?: Record<string, string> }
+
+/** 이 캐릭터의 AU 목록(원본 제외) — 내가 만든 AU + 속한 자관의 AU (연결된 것은 한 번만) */
+export function charAuList(ch: Character, rels: Relation[]): { key: string; label: string; relName: string }[] {
+  const own = (ch.ownAus ?? []).map(a => ({ key: ownAuKey(a.id), label: a.label, relName: '' }));
+  const linked = new Set((ch.ownAus ?? []).map(a => a.link).filter(Boolean));
+  const fromRels = rels.flatMap(r => r.members.some(m => m.charId === ch.id)
+    ? r.aus.filter(a => a.id !== 'base' && !linked.has(`${r.id}:${a.id}`)).map(a => ({ key: `${r.id}:${a.id}`, label: a.label, relName: r.name }))
+    : []);
+  return [...own, ...fromRels];
+}
+
 export interface RelCardInfo {
   key: string; name: string; sub: string;
   label?: string;          // 카드 왼쪽 위 꼬리표 (CP·관계명)
@@ -833,7 +852,9 @@ export interface RelGroupInfo { name: string; cards: RelCardInfo[] }
 
 /** 이 캐릭터의 관계 그룹들 — Pair(페어 자관) · Group(다인관) · 직접 지정 순.
  *  자관은 이 캐릭터가 멤버인 것, 열람 권한이 없는 자관·캐릭터는 뺀다 */
-export function charRelGroups(ch: Character, chars: Character[], rels: Relation[], viewer: { isAdmin: boolean; loggedIn: boolean }): RelGroupInfo[] {
+export function charRelGroups(ch: Character, chars: Character[], rels: Relation[], viewer: { isAdmin: boolean; loggedIn: boolean }, auKey?: string | null): RelGroupInfo[] {
+  // 이 AU 전용 관계란이 있으면 그것을, 없으면 원본 관계란을 쓴다
+  const set: RelSet = (auKey && ch.auRel?.[auKey]) || { notes: ch.relNotes, links: ch.relLinks, relAu: ch.relAu };
   const ok = (v: Visibility) => v === 'public' || (v === 'member' && viewer.loggedIn) || viewer.isAdmin;
   const charOf = (id: string) => chars.find(c => c.id === id);
   const charHref = (c: Character) => `/chars/${c.slug ?? c.id}`;
@@ -843,18 +864,19 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
     if (!r.members.some(m => m.charId === ch.id) || !ok(r.visibility)) continue;
     const others = r.members.filter(m => m.charId !== ch.id).map(m => charOf(m.charId)).filter((c): c is Character => !!c);
     const isPair = (r.kind ?? (r.members.length === 2 ? 'pair' : 'multi')) === 'pair';
+    const rau = set.relAu?.[r.id] ? r.aus.find(a => a.id === set.relAu![r.id] && a.id !== 'base') : undefined;
     const card: RelCardInfo = {
-      key: `rel:${r.id}`, name: r.name,
+      key: `rel:${r.id}`, name: rau?.name?.trim() || r.name,
       sub: others.length ? `with ${others.map(o => o.name).join(', ')}` : '',
       label: r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : undefined,
-      thumbRef: r.thumbId ?? others[0]?.thumbId, thumbClass: others[0]?.thumbClass ?? r.thumbClass,
+      thumbRef: rau?.arts?.[0] ?? r.thumbId ?? others[0]?.thumbId, thumbClass: others[0]?.thumbClass ?? r.thumbClass,
       href: `/rels/${r.slug ?? r.id}`,
-      thumbCrop: r.thumbId ? r.thumbCrop : undefined,
+      thumbCrop: !rau?.arts?.[0] && r.thumbId ? r.thumbCrop : undefined,
       themeColor: r.themeMode === 'custom' && r.themeColor ? r.themeColor : undefined,
       tag: r.cp === 'ncp' ? 'NCP' : r.cp === 'cp' ? 'CP' : r.kind === 'multi' ? 'MULTI' : 'PAIR',
-      memberCount: r.members.length, catchphrase: r.catchphrase,
+      memberCount: r.members.length, catchphrase: rau?.catchphrase || r.catchphrase,
       who: r.members.map(m => ({ name: charOf(m.charId)?.name || '—', color: charOf(m.charId)?.color ?? '#666' })),
-      desc: ch.relNotes?.[`rel:${r.id}`]?.trim() || undefined,
+      desc: set.notes?.[`rel:${r.id}`]?.trim() || undefined,
       names: r.members.map(m => charOf(m.charId)?.name).filter(Boolean).join(' × '),
       cpTag: r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : undefined,
     };
@@ -865,12 +887,15 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
   if (groups.length) out.push({ name: 'Group', cards: groups });
 
   const manual: RelCardInfo[] = [];
-  for (const l of ch.relLinks ?? []) {
-    const c = charOf(l.charId);
-    if (!c || c.id === ch.id || !ok(c.visibility)) continue;
-    manual.push({ key: `link:${c.id}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass, href: charHref(c), shape: 'char',
+  for (const l of set.links ?? []) {
+    const c0 = charOf(l.charId);
+    if (!c0 || c0.id === ch.id || !ok(c0.visibility)) continue;
+    // 상대 캐릭터의 AU를 골랐으면 그 AU의 이름·썸네일로
+    const c = l.au && auProfileOf(c0, l.au) ? charWithAu(c0, l.au) : c0;
+    manual.push({ key: `link:${c0.id}:${l.au ?? ''}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass,
+      href: `${charHref(c0)}${l.au && auProfileOf(c0, l.au) ? `?au=${encodeURIComponent(l.au)}` : ''}`, shape: 'char',
       who: [{ name: c.name, color: c.color }], themeColor: c.color,
-      desc: ch.relNotes?.[`link:${c.id}`]?.trim() || undefined, names: `${ch.name} × ${c.name}`, cpTag: l.label || undefined });
+      desc: set.notes?.[`link:${c0.id}${l.au ? `:${l.au}` : ''}`]?.trim() || undefined, names: `${ch.name} × ${c.name}`, cpTag: l.label || undefined });
   }
   if (manual.length) out.push({ name: '관계', cards: manual });
 

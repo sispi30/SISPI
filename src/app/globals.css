@@ -3524,3 +3524,9 @@ body.rs-full #appMain{overflow:hidden}
   .rc-item>.rx-card{width:clamp(100px,32vw,140px)}
   .rc-item>.rc-note{max-width:none}
 }
+
+/* 직접 지정한 관계 — 설명 글이 나오는 폭을 자관 카드 옆 설명과 오른쪽 끝이 맞도록 (카드 폭 차이 70px만큼 더 넓게). 썸네일 크기는 그대로 */
+.rc-row.rc-wrap{flex-wrap:wrap}
+.rc-item{width:100%}
+.rc-item>.rc-note{flex:1 1 auto;max-width:390px;min-width:120px}
+@media (max-width:960px){.rc-item>.rc-note{max-width:none}}

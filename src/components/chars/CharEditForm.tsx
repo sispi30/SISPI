@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { DecoScript, DecoGhost, DEFAULT_DECO_SCRIPT, DEFAULT_DECO_GHOST } from '@/lib/charStore';
 import { ScriptPlacer } from '@/components/chars/ScriptPlacer';
-import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, GalleryPost, galleryPostsOf, hasGallery, CHAR_SEED, Relation, REL_SEED, relGalleryTagsForChar } from '@/lib/charStore';
+import { Character, CharTab, ColorChip, Visibility, CharGrant, GalleryImg, GalleryPost, galleryPostsOf, hasGallery, CHAR_SEED, Relation, REL_SEED, relGalleryTagsForChar, RelSet, RelLinkItem, charAuList } from '@/lib/charStore';
 import { GrantsEditor } from '@/components/chars/GrantsEditor';
 import { RuleSelect, RuleSpecsEditor } from '@/components/chars/RuleSpecsEditor';
 import { Spec } from '@/lib/charRuleConfig';
@@ -176,8 +176,19 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   // 상세 화면 레이아웃 (v7.0) — 스테이지(기본) / 클래식
   const [detailLayout, setDetailLayout] = useState<'stage' | 'classic'>(initial?.detailLayout === 'classic' ? 'classic' : 'stage');
   const [relOn, setRelOn] = useState<boolean>(!!initial?.relEnabled);
-  const [relNotes, setRelNotes] = useState<Record<string, string>>(initial?.relNotes ?? {});
-  const [relLinks, setRelLinks] = useState<{ charId: string; label?: string }[]>(initial?.relLinks ?? []);
+  // 관계란은 원본('')과 이 캐릭터의 AU 키마다 한 벌씩 — relTab이 지금 편집 중인 벌
+  const [relSets, setRelSets] = useState<Record<string, RelSet>>(() => ({
+    '': { notes: initial?.relNotes ?? {}, links: initial?.relLinks ?? [], relAu: initial?.relAu ?? {} },
+    ...Object.fromEntries(Object.entries(initial?.auRel ?? {}).map(([k, v]) => [k, { notes: v.notes ?? {}, links: v.links ?? [], relAu: v.relAu ?? {} }])),
+  }));
+  const [relTab, setRelTab] = useState('');
+  const curSet: RelSet = relSets[relTab] ?? {};
+  const relNotes = curSet.notes ?? {};
+  const relLinks = curSet.links ?? [];
+  const relAuMap = curSet.relAu ?? {};
+  const patchSet = (p: Partial<RelSet>) => setRelSets(m => ({ ...m, [relTab]: { ...(m[relTab] ?? {}), ...p } }));
+  const setRelNotes = (f: (n: Record<string, string>) => Record<string, string>) => patchSet({ notes: f(relNotes) });
+  const setRelLinks = (f: (l: RelLinkItem[]) => RelLinkItem[]) => patchSet({ links: f(relLinks) });
   const [allChars] = useLocalList<Character>('ohome.chars.v1', CHAR_SEED);
   // 자관 갤러리 연동 태그 (v6.3) — 이 캐릭터가 멤버인 자관 갤러리의 태그 중 이 캐릭터 갤러리에도 보일 것
   const [rels] = useLocalList<Relation>('ohome.rels.v1', REL_SEED);
@@ -269,8 +280,21 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
       detailLayout: auMode ? initial?.detailLayout : (detailLayout === 'classic' ? 'classic' : undefined),
       // REL 탭 — AU 편집은 base 소관이라 건드리지 않는다
       relEnabled: auMode ? initial?.relEnabled : (relOn || undefined),
-      relNotes: auMode ? initial?.relNotes : (relOn && Object.values(relNotes).some(v => v.trim()) ? Object.fromEntries(Object.entries(relNotes).filter(([, v]) => v.trim())) : undefined),
-      relLinks: auMode ? initial?.relLinks : (relOn && relLinks.some(l => l.charId) ? relLinks.filter(l => l.charId) : undefined),
+      ...(() => {
+        if (auMode) return { relNotes: initial?.relNotes, relLinks: initial?.relLinks, relAu: initial?.relAu, auRel: initial?.auRel };
+        const clean = (st: RelSet): RelSet | undefined => {
+          const notes = Object.fromEntries(Object.entries(st.notes ?? {}).filter(([, v]) => v.trim()));
+          const links = (st.links ?? []).filter(l => l.charId).map(l => (l.au ? l : { charId: l.charId, label: l.label }));
+          const relAu = Object.fromEntries(Object.entries(st.relAu ?? {}).filter(([, v]) => v));
+          return Object.keys(notes).length || links.length || Object.keys(relAu).length
+            ? { notes: Object.keys(notes).length ? notes : undefined, links: links.length ? links : undefined, relAu: Object.keys(relAu).length ? relAu : undefined }
+            : undefined;
+        };
+        if (!relOn) return { relNotes: undefined, relLinks: undefined, relAu: undefined, auRel: undefined };
+        const base = clean(relSets['']) ;
+        const auRel = Object.fromEntries(Object.entries(relSets).filter(([k]) => k).map(([k, v]) => [k, clean(v)]).filter(([, v]) => !!v)) as Record<string, RelSet>;
+        return { relNotes: base?.notes, relLinks: base?.links, relAu: base?.relAu, auRel: Object.keys(auRel).length ? auRel : undefined };
+      })(),
     });
   };
 
@@ -305,8 +329,9 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
   if (view === REL_VIEW && relOn && !auMode) {
     const others = allChars.filter(c => c.id !== initial?.id);
     const myRels = initial?.id ? rels.filter(r => r.members.some(m => m.charId === initial.id)) : [];
+    const myAus = initial ? charAuList(initial, rels) : [];
     const setNote = (k: string, v: string) => setRelNotes(n => ({ ...n, [k]: v }));
-    const patchLink = (i: number, p: Partial<{ charId: string; label?: string }>) => setRelLinks(l => l.map((x, k) => (k === i ? { ...x, ...p } : x)));
+    const patchLink = (i: number, p: Partial<RelLinkItem>) => setRelLinks(l => l.map((x, k) => (k === i ? { ...x, ...p } : x)));
     return (
       <div className="panel" style={{ padding: 24, display: 'grid', gap: 16 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -321,6 +346,21 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           아래에서 <b>직접 지정하는 관계</b>를 더할 수 있습니다.
         </p>
 
+        {/* 이 캐릭터의 AU별로 관계란을 따로 쓴다 — AU 관계란이 비어 있으면 그 AU 화면에서는 원본 관계가 그대로 보인다 */}
+        {myAus.length > 0 && (
+          <div style={{ display: 'grid', gap: 6 }}>
+            <label className="k-label" style={{ margin: 0 }}>
+              편집 중인 AU <span style={{ fontWeight: 400, color: 'var(--faint)' }}>— 이 캐릭터의 AU마다 관계란을 따로 쓸 수 있습니다{relTab ? ' (비워 두면 원본 관계가 보입니다)' : ''}</span>
+            </label>
+            <div className="seg" style={{ flexWrap: 'wrap' }}>
+              <button type="button" className={relTab === '' ? 'on' : ''} onClick={() => setRelTab('')}>원본</button>
+              {myAus.map(a => (
+                <button key={a.key} type="button" className={relTab === a.key ? 'on' : ''} onClick={() => setRelTab(a.key)}>{a.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 자관 설명 박스 — 관계 카드 옆에 붙는 간단한 설명. 비워 두면 박스가 붙지 않는다 */}
         <div style={{ display: 'grid', gap: 8 }}>
           <label className="k-label" style={{ margin: 0 }}>
@@ -329,8 +369,14 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           {myRels.length === 0 && <p className="hint" style={{ margin: 0 }}>이 캐릭터가 멤버인 자관이 아직 없습니다</p>}
           {myRels.map(r => (
             <div key={r.id} style={{ display: 'grid', gap: 5 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 700 }}>
-                {r.name} <small style={{ fontWeight: 400, color: 'var(--faint)' }}>{r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : ''}</small>
+              <span style={{ fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span>{r.name} <small style={{ fontWeight: 400, color: 'var(--faint)' }}>{r.cp === 'cp' ? 'CP' : r.cp === 'ncp' ? 'NCP' : ''}</small></span>
+                {/* 이 자관에 AU가 있으면 카드에 어느 AU로 보일지 고른다 */}
+                {r.aus.some(a => a.id !== 'base') && (
+                  <KSelect minWidth={130} placeholder="원본" value={relAuMap[r.id] ?? ''}
+                    options={[{ value: '', label: '원본' }, ...r.aus.filter(a => a.id !== 'base').map(a => ({ value: a.id, label: a.label }))]}
+                    onChange={v => patchSet({ relAu: { ...relAuMap, [r.id]: v } })} />
+                )}
               </span>
               <KTextarea rows={2} placeholder="간단한 관계 설명" value={relNotes[`rel:${r.id}`] ?? ''}
                 onChange={e => setNote(`rel:${r.id}`, e.target.value)} />
@@ -344,19 +390,29 @@ export function CharEditForm({ initial, onSave, onCancel, auMode, existingIds }:
           </label>
           {relLinks.length > 0 && (
             <DragList items={relLinks.map((l, i) => ({ ...l, _k: i }))} keyOf={l => `${l.charId}:${l._k}`}
-              onReorder={list => setRelLinks(list.map(({ _k, ...l }) => l))}
+              onReorder={list => setRelLinks(() => list.map(({ _k, ...l }) => l))}
               render={(l, i) => (
                 <div className="upfile-row" style={{ width: '100%', flexWrap: 'wrap' }}>
                   <span className="drag-h">⠿</span>
                   <KSelect minWidth={170} placeholder="상대 캐릭터 선택" value={l.charId}
                     options={others.map(c => ({ value: c.id, label: c.name }))}
-                    onChange={v => patchLink(i, { charId: v })} />
+                    onChange={v => patchLink(i, { charId: v, au: undefined })} />
                   <KInput placeholder="관계 꼬리표 (선택)" value={l.label ?? ''} style={{ flex: 1, minWidth: 120 }}
                     onChange={e => patchLink(i, { label: e.target.value })} />
+                  {/* 상대 캐릭터에게 AU가 있으면 어느 AU로 보일지 고른다 */}
+                  {(() => {
+                    const oc = others.find(c => c.id === l.charId);
+                    const list = oc ? charAuList(oc, rels) : [];
+                    return list.length > 0 ? (
+                      <KSelect minWidth={150} placeholder="상대 원본" value={l.au ?? ''}
+                        options={[{ value: '', label: '원본' }, ...list.map(a => ({ value: a.key, label: a.label }))]}
+                        onChange={v => patchLink(i, { au: v || undefined })} />
+                    ) : null;
+                  })()}
                   <span className="fx" data-tip="제거" onClick={() => setRelLinks(list => list.filter((_, k) => k !== i))}>✕</span>
                   {l.charId && (
                     <KTextarea rows={2} placeholder="간단한 관계 설명 (선택 — 카드 옆 박스)" style={{ flexBasis: '100%' }}
-                      value={relNotes[`link:${l.charId}`] ?? ''} onChange={e => setNote(`link:${l.charId}`, e.target.value)} />
+                      value={relNotes[`link:${l.charId}${l.au ? `:${l.au}` : ''}`] ?? ''} onChange={e => setNote(`link:${l.charId}${l.au ? `:${l.au}` : ''}`, e.target.value)} />
                   )}
                 </div>
               )} />

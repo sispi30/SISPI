@@ -364,7 +364,7 @@ function CharDetailInner() {
   const stageInk: 'light' | 'dark' = inkMode === 'light' ? 'light' : inkMode === 'dark' ? 'dark' : bgInk;
   const stageViewer = { isAdmin, canEdit: isAdmin || charGrant(ch, user?.id) === 'edit', loggedIn: !!user };
   const stageGallery = hasGallery(eff) ? charGalleryPosts(eff, rels, stageViewer) : [];
-  const stageRel = ch.relEnabled ? charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user }) : [];
+  const stageRel = ch.relEnabled ? charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user }, auKey) : [];
   const stageTrpgCount = playRecords.filter(r => r.charIds?.includes(ch.id)).length;
   const stageTabArts = curTab?.arts && curTab.arts.length > 0 ? curTab.arts : null;
   const stageBaseArts = eff.arts && eff.arts.length > 0 ? eff.arts : (eff.artId ? [eff.artId] : []);
@@ -703,7 +703,7 @@ function CharDetailInner() {
           ) : tab === REL_TAB ? (
             <>
               <h3 className="tab-tt">Relations</h3>
-              <RelTab groups={charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user })} />
+              <RelTab groups={charRelGroups(ch, chars, rels, { isAdmin, loggedIn: !!user }, auKey)} />
             </>
           ) : tab === GALLERY_TAB ? (
             <>
