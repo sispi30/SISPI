@@ -5,10 +5,7 @@
 // · 변경은 즉시 미리보기(DOM)되지만 저장은 [SAVE]를 눌러야 확정 — 새로고침 시 저장본으로 복귀
 // TODO(0차→): Supabase 연결 시 site_settings 테이블로 저장 위치 이동
 import { usePathname } from 'next/navigation';
-import React, { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
-
-// 서버 렌더링에서는 경고가 나지 않게 — 브라우저에서만 그리기 전에 적용한다
-const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   ThemeMode, PointTone, ThemeVars, ThemeState, ThemeStore, ThemePreset,
   DARK_THEME, DEFAULT_THEME_STORE, defaultVarsFor, derivePointTheme, themeToCssVars,
@@ -115,7 +112,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // 드래프트 변경 시 DOM 즉시 반영 (미리보기) — 저장은 save()에서만.
   // 로드 전에는 건드리지 않음 — 첫 페인트의 인라인 FOUC 맵을 기본 다크로 덮어써 깜빡이는 것 방지 (v1.9)
-  useIsoLayoutEffect(() => {
+  useEffect(() => {
     if (!loaded) return;
     /* 캐릭터·자관 테마컬러는 색만 바꾸는 것 — 파생 팔레트가 ThemeVars를 통째로 새로 만들어
        **표시 옵션까지 기본값으로 리셋**되던 것을 사이트 설정에서 이어받는다 (v2.0 사용자 제보 —
@@ -164,16 +161,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const lastBgImg = useRef<string | null>(null);
   const setBgImage = (root: HTMLElement, value: string | null) => {
     if (value === lastBgImg.current) return;
-    // 이전 사진은 한 겹 아래(body::after)에 그대로 두고, 새 사진이 그 위에서 떠오른다 — 맞교차
-    root.style.setProperty('--bg-image-prev', lastBgImg.current ?? 'none');
     lastBgImg.current = value;
     if (value) root.style.setProperty('--bg-image', value); else root.style.removeProperty('--bg-image');
     root.classList.remove('bg-fx');
     void root.offsetWidth;
     root.classList.add('bg-fx');
-    window.setTimeout(() => { root.classList.remove('bg-fx'); root.style.removeProperty('--bg-image-prev'); }, 900);
+    window.setTimeout(() => root.classList.remove('bg-fx'), 900);
   };
-  useIsoLayoutEffect(() => {
+  useEffect(() => {
     if (!loaded) return;
     const root = document.documentElement;
     if (pageBgImageUrl) {

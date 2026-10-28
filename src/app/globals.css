@@ -3538,15 +3538,3 @@ body.rs-full #appMain{overflow:hidden}
 html.bg-fx body::before{animation:bgFxIn .7s ease both}
 @keyframes bgFxIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){:root{transition:none}html.bg-fx body::before{animation:none}}
-
-/* 맞교차 — 이전 배경 사진 층(body::after)을 새 사진(body::before) 한 겹 아래에 두고, 새 사진이 위에서 떠오르는 동안만 보인다 */
-body::after{
-  content:"";position:fixed;z-index:-2;opacity:0;pointer-events:none;
-  --_bleed:var(--bg-page-bleed, calc(var(--bg-blur,0px)*2));
-  top:calc(var(--_bleed)*-1);left:calc(var(--_bleed)*-1);right:calc(var(--_bleed)*-1);
-  height:calc(var(--bg-page-height,100vh) + var(--_bleed)*2);
-  background-image:var(--bg-image-prev,none);background-size:cover;background-position:center;
-  filter:blur(var(--bg-blur,0px)) brightness(var(--bg-brightness,1)) saturate(var(--bg-saturate,1));
-}
-html.bg-fx body::after{opacity:1}
-@media (prefers-reduced-motion:reduce){html.bg-fx body::after{opacity:0}}
