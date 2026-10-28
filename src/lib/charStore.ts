@@ -847,6 +847,8 @@ export interface RelCardInfo {
   shape?: 'char';
   /** 카드 옆 설명 박스 — 관계 설명(있을 때만 박스가 붙는다) · 관계 캐릭터 이름들 · CP/NCP(또는 직접 지정 꼬리표) */
   desc?: string; names?: string; cpTag?: string;
+  /** 열람 권한이 없는 캐릭터 — 카드와 설명은 보이되 프로필로는 들어가지 못한다 */
+  blocked?: boolean;
 }
 export interface RelGroupInfo { name: string; cards: RelCardInfo[] }
 
@@ -889,11 +891,11 @@ export function charRelGroups(ch: Character, chars: Character[], rels: Relation[
   const manual: RelCardInfo[] = [];
   for (const l of set.links ?? []) {
     const c0 = charOf(l.charId);
-    if (!c0 || c0.id === ch.id || !ok(c0.visibility)) continue;
+    if (!c0 || c0.id === ch.id) continue;
     // 상대 캐릭터의 AU를 골랐으면 그 AU의 이름·썸네일로
     const c = l.au && auProfileOf(c0, l.au) ? charWithAu(c0, l.au) : c0;
     manual.push({ key: `link:${c0.id}:${l.au ?? ''}`, name: c.name, sub: c.sub, label: l.label || undefined, thumbRef: c.thumbId, thumbClass: c.thumbClass,
-      href: `${charHref(c0)}${l.au && auProfileOf(c0, l.au) ? `?au=${encodeURIComponent(l.au)}` : ''}`, shape: 'char',
+      href: `${charHref(c0)}${l.au && auProfileOf(c0, l.au) ? `?au=${encodeURIComponent(l.au)}` : ''}`, shape: 'char', blocked: !ok(c0.visibility),
       who: [{ name: c.name, color: c.color }], themeColor: c.color,
       desc: set.notes?.[`link:${c0.id}${l.au ? `:${l.au}` : ''}`]?.trim() || undefined, names: `${ch.name} × ${c.name}`, cpTag: l.label || undefined });
   }

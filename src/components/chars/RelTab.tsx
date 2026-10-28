@@ -5,9 +5,12 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import type { RelCardInfo, RelGroupInfo } from '@/lib/charStore';
 import { RxCard } from '@/components/rels/RxCard';
+import { useToast } from '@/components/ui/Toast';
 
 function Card({ c, no }: { c: RelCardInfo; no: number }) {
   const router = useRouter();
+  const toast = useToast();
+  const go = () => { if (c.blocked) { toast('공개되지 않은 캐릭터라 프로필로 이동할 수 없습니다'); return; } router.push(c.href); };
   const isChar = c.shape === 'char';
   const pad = (n: number) => String(n).padStart(2, '0');
   return (
@@ -17,8 +20,8 @@ function Card({ c, no }: { c: RelCardInfo; no: number }) {
       fileText={isChar ? 'CHAR\nFILE' : (c.memberCount ?? 0) >= 3 ? 'GROUP\nFILE' : 'PAIR\nFILE'}
       small={isChar ? (c.sub ?? '') : (c.catchphrase ?? '').replace(/ /g, '')}
       title={c.name} who={c.who ?? []}
-      tabIndex={0} onClick={() => router.push(c.href)}
-      onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') router.push(c.href); }} />
+      tabIndex={0} onClick={go}
+      onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') go(); }} />
   );
 }
 
