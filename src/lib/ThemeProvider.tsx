@@ -161,12 +161,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const lastBgImg = useRef<string | null>(null);
   const setBgImage = (root: HTMLElement, value: string | null) => {
     if (value === lastBgImg.current) return;
+    // 이전 사진은 한 겹 아래(body::after)에 그대로 두고, 새 사진이 그 위에서 떠오른다 — 맞교차
+    root.style.setProperty('--bg-image-prev', lastBgImg.current ?? 'none');
     lastBgImg.current = value;
     if (value) root.style.setProperty('--bg-image', value); else root.style.removeProperty('--bg-image');
     root.classList.remove('bg-fx');
     void root.offsetWidth;
     root.classList.add('bg-fx');
-    window.setTimeout(() => root.classList.remove('bg-fx'), 900);
+    window.setTimeout(() => { root.classList.remove('bg-fx'); root.style.removeProperty('--bg-image-prev'); }, 900);
   };
   useEffect(() => {
     if (!loaded) return;
