@@ -3531,10 +3531,19 @@ body.rs-full #appMain{overflow:hidden}
 .rc-item>.rc-note{flex:1 1 auto;max-width:390px;min-width:120px}
 @media (max-width:960px){.rc-item>.rc-note{max-width:none}}
 
-/* 배경 전환 — 게시판을 옮겨 배경 색·사진이 바뀔 때 번쩍이지 않고 부드럽게 (그라데이션 색은 변수를 등록해 서서히, 사진은 떠오르게) */
-@property --bg-g1{syntax:'<color>';inherits:true;initial-value:#2b3038}
-@property --bg-g2{syntax:'<color>';inherits:true;initial-value:#121418}
-:root{transition:--bg-g1 .6s ease,--bg-g2 .6s ease}
+/* 배경 사진 전환 — 사진이 바뀔 때만 새 사진이 떠오른다 (배경 색은 글자·패널 색과 어긋나 보이지 않게 서서히 바꾸지 않고 한 번에 바꾼다) */
 html.bg-fx body::before{animation:bgFxIn .7s ease both}
 @keyframes bgFxIn{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){:root{transition:none}html.bg-fx body::before{animation:none}}
+@media (prefers-reduced-motion:reduce){html.bg-fx body::before{animation:none}}
+
+/* 맞교차 — 이전 배경 사진 층(body::after)을 새 사진(body::before) 한 겹 아래에 두고, 새 사진이 위에서 떠오르는 동안만 보인다 */
+body::after{
+  content:"";position:fixed;z-index:-2;opacity:0;pointer-events:none;
+  --_bleed:var(--bg-page-bleed, calc(var(--bg-blur,0px)*2));
+  top:calc(var(--_bleed)*-1);left:calc(var(--_bleed)*-1);right:calc(var(--_bleed)*-1);
+  height:calc(var(--bg-page-height,100vh) + var(--_bleed)*2);
+  background-image:var(--bg-image-prev,none);background-size:cover;background-position:center;
+  filter:blur(var(--bg-blur,0px)) brightness(var(--bg-brightness,1)) saturate(var(--bg-saturate,1));
+}
+html.bg-fx body::after{opacity:1}
+@media (prefers-reduced-motion:reduce){html.bg-fx body::after{opacity:0}}
