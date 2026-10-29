@@ -3161,7 +3161,6 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-line.tf-line.tf-line button.tf-ln:hover::before{transform:scaleX(.5);opacity:.35}
 .tf-line.tf-line.tf-line button.tf-ln:hover::after{transform:translateX(-50%) scale(.7);opacity:.45}
 .tf-line.tf-line.tf-line button.tf-ln.on{color:var(--tf-menu-hv,var(--top-hv));opacity:1}
-.tf-line.tf-line.tf-line.tf-line button.tf-ln.on .tf-en,.tf-line.tf-line button.tf-ln.on span{text-shadow:var(--tf-item-sh,0 0 0 transparent),0 0 14px color-mix(in srgb,var(--tf-menu-mk,var(--accent)) 38%,transparent)}
 .tf-line.tf-line.tf-line.tf-line button.tf-ln.on span{font-weight:500}
 .tf-line.tf-line.tf-line button.tf-ln.on::before{transform:scaleX(1);opacity:1}
 .tf-line.tf-line.tf-line button.tf-ln.on::after{transform:translateX(-50%) rotate(0) scale(1);opacity:1;animation:tfStarSpin .7s cubic-bezier(.2,.8,.2,1)}
