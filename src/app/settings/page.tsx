@@ -3069,10 +3069,10 @@ function MenuDesignPane() {
       </div>
       {cfg.enabled && (
         <div className="set-row">
-          <div className="l"><b>표시 방식</b><small>위젯에서 메뉴를 어떻게 보여줄지 — 「아이콘만」은 아이콘만, 「라인」은 메뉴 이름 위에 영문 라벨이, 현재 위치 아래에 별 마커와 밑줄이 뜨는 스타일입니다</small></div>
+          <div className="l"><b>표시 방식</b><small>위젯에서 메뉴를 어떻게 보여줄지 — 「아이콘만」은 아이콘만, 「라벨」은 메뉴 이름 위에 영문 라벨이, 현재 위치 아래에 별 마커와 밑줄이 뜨는 스타일입니다</small></div>
           {seg<'text' | 'icon-text' | 'icon' | 'line'>(cfg.iconMode, [
             { v: 'text', label: '글자만' }, { v: 'icon-text', label: '아이콘 + 글자' }, { v: 'icon', label: '아이콘만' },
-            { v: 'line', label: '라인 (영문 라벨)' },
+            { v: 'line', label: '라벨' },
           ], v => patch({ iconMode: v }))}
         </div>
       )}
@@ -3109,7 +3109,7 @@ function MenuDesignPane() {
       )}
       {cfg.enabled && cfg.iconMode === 'line' && (
         <div className="set-row">
-          <div className="l"><b>영문 라벨 글꼴</b><small>라인 방식에서 영문 라벨에만 쓰는 글꼴 — 메뉴 이름 글꼴과 따로 정합니다</small></div>
+          <div className="l"><b>영문 라벨 글꼴</b><small>라벨 방식에서 영문 라벨에만 쓰는 글꼴 — 메뉴 이름 글꼴과 따로 정합니다</small></div>
           <KSelect minWidth={160} value={cfg.lineFontId || ''} onChange={v => patch({ lineFontId: v })}
             options={[{ value: '', label: '기본 (굵은 산세리프)' },
               ...fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: deVarFamily(f.family) }}>{f.name}</span> }))]} />

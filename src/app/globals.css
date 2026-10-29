@@ -3138,7 +3138,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-fixed .tf-items.tf-line > button.tf-ln,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln,
 .gnb.tf-static.tf-line > button.tf-ln,.gnb.tf-static.tf-line .tf-grp > button.tf-ln{
   position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;
-  padding:4px 10px 24px;border-radius:0;background:none;color:var(--tf-menu-fg,var(--top-fg));opacity:.62;
+  padding:20px 10px 6px;border-radius:0;background:none;color:var(--tf-menu-fg,var(--top-fg));opacity:.86;
   transition:color .25s,opacity .25s;
 }
 /* 영문 라벨 — 굵은 대문자. 글꼴은 설정(영문 라벨 글꼴)에서 바꾼다 */
@@ -3147,24 +3147,28 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 /* 현재 위치 — 밑줄(::before)과 별 마커(::after)가 이름 아래에 뜬다 */
 .tf-fixed .tf-items.tf-line > button.tf-ln::before,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln::before,
 .gnb.tf-static.tf-line > button.tf-ln::before,.gnb.tf-static.tf-line .tf-grp > button.tf-ln::before{
-  content:"";position:absolute;left:10px;right:10px;bottom:2px;height:1.5px;background:currentColor;
+  content:"";position:absolute;left:10px;right:10px;bottom:0;height:1.5px;background:currentColor;
   transform:scaleX(0);opacity:0;transform-origin:center;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .25s;
 }
 .tf-fixed .tf-items.tf-line > button.tf-ln::after,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln::after,
 .gnb.tf-static.tf-line > button.tf-ln::after,.gnb.tf-static.tf-line .tf-grp > button.tf-ln::after{
-  content:"\2726";position:absolute;left:50%;bottom:8px;width:auto;height:auto;margin:0;background:none;box-shadow:none;
-  font-size:11px;line-height:1;color:var(--tf-menu-mk,var(--accent));text-shadow:0 0 8px color-mix(in srgb,var(--tf-menu-mk,var(--accent)) 55%,transparent);
+  content:"\2726";position:absolute;left:50%;top:3px;bottom:auto;width:auto;height:auto;margin:0;background:none;box-shadow:none;
+  font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2",system-ui,sans-serif;font-size:13px;line-height:1;pointer-events:none;color:var(--tf-menu-mk,var(--accent));text-shadow:0 0 8px color-mix(in srgb,var(--tf-menu-mk,var(--accent)) 55%,transparent);
   transform:translateX(-50%) scale(0);opacity:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .25s;
 }
-.tf-line button.tf-ln:hover{color:var(--tf-menu-hv,var(--top-hv));opacity:.95}
-.tf-line button.tf-ln:hover .tf-en{letter-spacing:.2em}
-.tf-line button.tf-ln:hover::before{transform:scaleX(.5);opacity:.35}
-.tf-line button.tf-ln:hover::after{transform:translateX(-50%) scale(.7);opacity:.45}
-.tf-line button.tf-ln.on{color:var(--tf-menu-hv,var(--top-hv));opacity:1}
-.tf-line button.tf-ln.on .tf-en,.tf-line button.tf-ln.on span{text-shadow:0 0 14px color-mix(in srgb,var(--tf-menu-mk,var(--accent)) 38%,transparent)}
-.tf-line button.tf-ln.on span{font-weight:500}
-.tf-line button.tf-ln.on::before{transform:scaleX(1);opacity:1}
-.tf-line button.tf-ln.on::after{transform:translateX(-50%) scale(1);opacity:1}
+.tf-line.tf-line.tf-line button.tf-ln:hover{color:var(--tf-menu-hv,var(--top-hv));opacity:.95}
+.tf-line.tf-line.tf-line.tf-line button.tf-ln:hover .tf-en{letter-spacing:.2em}
+.tf-line.tf-line.tf-line button.tf-ln:hover::before{transform:scaleX(.5);opacity:.35}
+.tf-line.tf-line.tf-line button.tf-ln:hover::after{transform:translateX(-50%) scale(.7);opacity:.45}
+.tf-line.tf-line.tf-line button.tf-ln.on{color:var(--tf-menu-hv,var(--top-hv));opacity:1}
+.tf-line.tf-line.tf-line.tf-line button.tf-ln.on .tf-en,.tf-line.tf-line button.tf-ln.on span{text-shadow:0 0 14px color-mix(in srgb,var(--tf-menu-mk,var(--accent)) 38%,transparent)}
+.tf-line.tf-line.tf-line.tf-line button.tf-ln.on span{font-weight:500}
+.tf-line.tf-line.tf-line button.tf-ln.on::before{transform:scaleX(1);opacity:1}
+.tf-line.tf-line.tf-line button.tf-ln.on::after{transform:translateX(-50%) rotate(0) scale(1);opacity:1;animation:tfStarSpin .7s cubic-bezier(.2,.8,.2,1)}
+/* 눌렀을 때 별이 한 바퀴 돈다 */
+.tf-line.tf-line.tf-line button.tf-ln:active::after{transform:translateX(-50%) rotate(180deg) scale(1.25);opacity:1;transition-duration:.18s}
+@keyframes tfStarSpin{from{transform:translateX(-50%) rotate(-270deg) scale(0);opacity:0}to{transform:translateX(-50%) rotate(0) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.tf-line.tf-line.tf-line button.tf-ln.on::after{animation:none}}
 
 /* 서브메뉴를 부모 메뉴 항목 가운데에 맞춘다 (왼쪽 끝 정렬이면 메인 메뉴와 어긋나 보였다) */
 .gnb.tf-static .tf-sub,.tf-fixed .tf-sub{left:50%;transform:translateX(-50%);width:max-content}
