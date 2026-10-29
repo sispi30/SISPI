@@ -3562,3 +3562,9 @@ body::after{
 }
 html.bg-fx body::after{opacity:1}
 @media (prefers-reduced-motion:reduce){html.bg-fx body::after{opacity:0}}
+
+/* 본문 영역 위·아래 — 위쪽은 상단바 뒤까지 콘텐츠가 이어져 보이고(스크롤하면 상단바 아래로 비쳐 지나간다),
+   아래쪽은 화면 맨 아래 메뉴 위젯 높이만큼 본문을 끊어 콘텐츠가 메뉴 뒤로 비치지 않는다 (--tf-bottom-gap은 TransformMenu가 잰다).
+   메인(고정 캔버스)은 제외 */
+#appMain{margin-top:-58px;padding-top:58px}
+body:not(.main-fixed):not(.edit-on) #appMain{margin-bottom:var(--tf-bottom-gap,0px)}

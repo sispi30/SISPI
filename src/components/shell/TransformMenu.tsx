@@ -118,12 +118,15 @@ export function TransformMenu() {
     const measure = () => {
       const r = el.getBoundingClientRect();
       setOpenUp(r.top > window.innerHeight / 2);
+      // 화면 맨 아래에 붙어 있는 위젯이면 그 높이만큼 본문 영역을 위에서 끊는다 — 콘텐츠가 메뉴 뒤로 비쳐 글씨와 겹치지 않게
+      const atBottom = r.bottom >= window.innerHeight - 60 && r.top > window.innerHeight / 2;
+      document.documentElement.style.setProperty('--tf-bottom-gap', atBottom ? `${Math.max(0, Math.round(window.innerHeight - r.top))}px` : '0px');
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     window.addEventListener('resize', measure);
-    return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure); document.documentElement.style.removeProperty('--tf-bottom-gap'); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.positionType, cfg.anchorX, cfg.anchorY, cfg.posX, cfg.posY, cfg.direction, cfg.gap, pos, menu.length]);
 
