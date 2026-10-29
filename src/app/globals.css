@@ -3173,6 +3173,10 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-fixed.tf-up .tf-items.tf-line .tf-sub{bottom:calc(100% - 12px)}
 .tf-fixed:not(.tf-up) .tf-items.tf-line .tf-sub,.gnb.tf-static.tf-line .tf-sub{top:calc(100% - 6px)}
 
+/* 항목 윤곽선·외부 광선 — SVG 필터(TransformMenu의 ItemFx)를 글자·아이콘에만 건다 (버튼 박스·밑줄·별은 제외) */
+.gnb.tf-static > button > *,.gnb.tf-static .tf-grp > button > *,.gnb.tf-static .tf-sub button > *,
+.tf-fixed .tf-items > button > *,.tf-fixed .tf-grp > button > *,.tf-fixed .tf-sub button > *{filter:var(--tf-item-filter,none)}
+
 /* 서브메뉴를 부모 메뉴 항목 가운데에 맞춘다 (왼쪽 끝 정렬이면 메인 메뉴와 어긋나 보였다) */
 .gnb.tf-static .tf-sub,.tf-fixed .tf-sub{left:50%;transform:translateX(-50%);width:max-content}
 .gnb.tf-static .tf-grp.open .tf-sub,.tf-fixed .tf-grp.open .tf-sub{animation:tfSubIn .15s}

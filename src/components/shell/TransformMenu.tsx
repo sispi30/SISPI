@@ -3,14 +3,13 @@
 // 환경설정 > 메뉴 위젯에서 켜면 TopBar의 기존 메뉴 줄(gnb) 대신 이 컴포넌트가 그 자리에 쓰인다.
 // · positionType 'static'  — 상단바 자리에 그대로, 배경/테두리는 상단바를 따름 (로고·로그인 버튼 없음)
 // · positionType 'fixed'   — 화면에 고정된 독립 캡슐, 드래그로 옮길 수 있고 자체 배경/로고/로그인 버튼을 가짐
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { boardEntries, useMenuSettings, buildMenu, faClass } from '@/lib/menuStore';
 import { useBoards } from '@/lib/boardStore';
 import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
-import { outerGlowShadow, roundOutlineShadow } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { useMainStore } from '@/lib/mainStore';
 import { useBlobUrl } from '@/lib/blobStore';
@@ -128,6 +127,7 @@ export function TransformMenu() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.positionType, cfg.anchorX, cfg.anchorY, cfg.posX, cfg.posY, cfg.direction, cfg.gap, pos, menu.length]);
 
+  const fxUid = useId();   // 조기 반환보다 앞에 — 훅 순서가 바뀌지 않게
   if (!loaded || !cfg.enabled) return null;
 
   // 하위 메뉴 열림 상태 — 순수 CSS :hover는 버튼→서브메뉴 사이 틈을 지날 때 hover가 끊겨
@@ -181,7 +181,7 @@ export function TransformMenu() {
   const subLabel = (icon: string | undefined, label: string) => {
     const c = subMode === 'text' ? null : faClass(icon);
     if (subMode === 'icon' && c) return <i className={c} aria-hidden />;
-    return <>{c && <i className={c} aria-hidden style={{ marginRight: 6 }} />}{label}</>;
+    return <>{c && <i className={c} aria-hidden style={{ marginRight: 6 }} />}<span>{label}</span></>;
   };
 
   const menuNodes = menu.map(item => (
@@ -208,6 +208,14 @@ export function TransformMenu() {
   const { familyOf } = useFonts();
   const menuFam = cfg.menuFontId ? familyOf(cfg.menuFontId) : undefined;
   const enFam = cfg.lineFontId ? familyOf(cfg.lineFontId) : undefined;
+  const fxRaw = Math.min(200, Math.max(0, cfg.itemShadow));
+  const fxOl = Math.max(0, cfg.itemOutlineWidth);
+  const hasFx = fxRaw > 0 || fxOl > 0;
+  const fxId = 'tf-fx-' + fxUid.replace(/[^a-zA-Z0-9_-]/g, '');
+  const fxNode = hasFx ? (
+    <ItemFx id={fxId} outline={fxOl} outlineColor={cfg.itemOutlineColor || 'var(--accent)'}
+      glow={fxRaw} glowSize={cfg.itemShadowSize ?? 6} glowColor={cfg.itemShadowColor || '#000000'} />
+  ) : null;
   const fontVars: React.CSSProperties = {
     ...(menuFam ? { ['--tf-font' as string]: deVarFamily(menuFam) } : {}),
     ...(enFam ? { ['--tf-en-font' as string]: deVarFamily(enFam) } : {}),
@@ -226,15 +234,12 @@ export function TransformMenu() {
     ['--tf-sub-shadow' as string]: cfg.subShadow ? 'var(--sh-dd)' : 'none',
     // 항목 외곽선 — 아이콘·글자 자체에 두르는 윤곽선. 글자 윤곽선(text-stroke)은 선의 절반이 글자 안쪽을 먹으므로,
     // 선을 글자 뒤에 깔고(paint-order) 두께를 두 배로 그려서 바깥으로 보이는 두께가 설정값과 같게 한다.
-    // → 뾰족한 모서리가 생기던 text-stroke 대신, 둥근 윤곽선을 text-shadow로 그린다 (윤곽선이 맨 위, 그 아래에 외부 광선)
+    // 윤곽선·외부 광선은 SVG 필터로 그린다 (아래 <ItemFx/>) — text-stroke는 모서리가 뾰족하고, 겹쳐 찍은 그림자는 작은 글씨에서 자글거렸다.
+    // 글자를 흐린 뒤 문턱값으로 잘라 내면 어느 방향으로든 같은 거리만큼 부드럽게 둥근 윤곽이 생긴다.
     ['--tf-item-ol' as string]: '0px',
     ['--tf-item-olc' as string]: cfg.itemOutlineColor || 'var(--accent)',
-    ['--tf-item-sh' as string]: (() => {
-      const ol = roundOutlineShadow(cfg.itemOutlineWidth, cfg.itemOutlineColor || 'var(--accent)');
-      const gl = outerGlowShadow(cfg.itemShadow, cfg.itemShadowSize ?? 6, cfg.itemShadowColor || '#000000');
-      const all = [ol, gl === 'none' ? '' : gl].filter(Boolean).join(', ');
-      return all || '0 0 0 transparent';
-    })(),
+    ['--tf-item-sh' as string]: '0 0 0 transparent',
+    ['--tf-item-filter' as string]: hasFx ? `url(#${fxId})` : 'none',
   };
 
   // ---------- static: 상단바 자리에 그대로 (배경/로고/로그인은 상단바가 담당) ----------
@@ -248,6 +253,7 @@ export function TransformMenu() {
           alignItems: cfg.align, flexWrap: 'wrap', gap: cfg.gap,
         }}
       >
+        {fxNode}
         {withDividers(menuNodes)}
       </nav>
     );
@@ -296,6 +302,7 @@ export function TransformMenu() {
           alignItems: cfg.align, flexWrap: 'wrap', gap: cfg.gap,
         }}
       >
+        {fxNode}
         {withDividers(menuNodes)}
       </div>
       {cfg.showLoginBtn && !user && (
@@ -306,5 +313,50 @@ export function TransformMenu() {
       )}
     </div>,
     document.body,
+  );
+}
+
+
+/** 항목 윤곽선 + 외부 광선(표준 혼합) 필터 — 글자(아이콘)에만 걸린다.
+ *  윤곽선: 글자 모양(알파)을 흐린 뒤 문턱값으로 잘라 바깥으로 부풀리면 모서리가 둥글고 자글거림 없는 윤곽이 된다.
+ *  외부 광선: 알파를 흐려 색을 입히고, 세기만큼 곱해 짙게 한다. */
+function ItemFx({ id, outline, outlineColor, glow, glowSize, glowColor }: {
+  id: string; outline: number; outlineColor: string; glow: number; glowSize: number; glowColor: string;
+}) {
+  const T = 0.08;   // 문턱 — 가장자리에서 흐림 폭(σ)만큼 떨어진 지점 (1-Φ(1.4)≈0.08)
+  const K = 16;     // 가장자리 부드러움(기울기)
+  const olSigma = Math.max(0.3, outline / 1.4);
+  const alpha = 0.3 + Math.min(glow, 100) / 100 * 0.7;
+  const n = 1 + Math.min(5, Math.floor(glow / 35));
+  const gSigma = Math.max(0.3, glowSize / 2);
+  return (
+    <svg aria-hidden width="0" height="0" style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
+      <filter id={id} x="-80%" y="-200%" width="260%" height="500%" colorInterpolationFilters="sRGB">
+        {glow > 0 && <>
+          <feGaussianBlur in="SourceAlpha" stdDeviation={gSigma} result="gb" />
+          <feComponentTransfer in="gb" result="ga"><feFuncA type="linear" slope={alpha * n} /></feComponentTransfer>
+          <feFlood style={{ floodColor: glowColor }} />
+          <feComposite in2="ga" operator="in" result="gl" />
+        </>}
+        {glow > 100 && <>
+          <feGaussianBlur in="SourceAlpha" stdDeviation={0.9} result="tb" />
+          <feComponentTransfer in="tb" result="ta"><feFuncA type="linear" slope={K} intercept={-K * T} /></feComponentTransfer>
+          <feFlood style={{ floodColor: glowColor }} />
+          <feComposite in2="ta" operator="in" result="tg" />
+        </>}
+        {outline > 0 && <>
+          <feGaussianBlur in="SourceAlpha" stdDeviation={olSigma} result="ob" />
+          <feComponentTransfer in="ob" result="oa"><feFuncA type="linear" slope={K} intercept={-K * T} /></feComponentTransfer>
+          <feFlood style={{ floodColor: outlineColor }} />
+          <feComposite in2="oa" operator="in" result="ol" />
+        </>}
+        <feMerge>
+          {glow > 0 && <feMergeNode in="gl" />}
+          {glow > 100 && <feMergeNode in="tg" />}
+          {outline > 0 && <feMergeNode in="ol" />}
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </svg>
   );
 }
