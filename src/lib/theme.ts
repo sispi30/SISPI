@@ -125,10 +125,19 @@ export const LIGHT_THEME: ThemeVars = {
  */
 /** 글자 그림자 — 강도(0~100)가 올라갈수록 짙기·번짐이 커지고, 같은 그림자를 겹쳐 쌓아(최대 3겹) 더 선명하게 보이게 한다. 0이면 none */
 export function layeredTextShadow(strength: number, color: string): string {
-  const a = Math.min(100, Math.max(0, strength));
-  if (a <= 0) return 'none';
-  const one = `0 0 ${(2 + a / 14).toFixed(1)}px color-mix(in srgb, ${color || '#000000'} ${Math.min(100, Math.round(45 + a * 0.55))}%, transparent)`;
-  return Array(a < 35 ? 1 : a < 70 ? 2 : 3).fill(one).join(', ');
+  const raw = Math.min(200, Math.max(0, strength));
+  if (raw <= 0) return 'none';
+  const a = Math.min(100, raw);
+  const c = color || '#000000';
+  const one = `0 0 ${(2 + a / 14).toFixed(1)}px color-mix(in srgb, ${c} ${Math.min(100, Math.round(45 + a * 0.55))}%, transparent)`;
+  const layers = Array(a < 35 ? 1 : a < 70 ? 2 : 3).fill(one);
+  // 100%를 넘으면 글자 바로 둘레에 촘촘하고 짙은 윤곽 그림자를 더 쌓아 — 번짐이 아니라 글씨 자체가 또렷하게 떠 보이게 한다
+  if (raw > 100) {
+    const extra = Math.min(4, Math.ceil((raw - 100) / 25));
+    const tight = `0 0 1.5px ${c}`;
+    for (let i = 0; i < extra; i++) layers.push(tight);
+  }
+  return layers.join(', ');
 }
 
 export function derivePointTheme(accent: string, tone: PointTone): ThemeVars {
