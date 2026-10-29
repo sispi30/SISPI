@@ -122,7 +122,7 @@ export function TransformMenu() {
       const atBottom = r.bottom >= window.innerHeight - 60 && r.top > window.innerHeight / 2;
       // 끊는 선은 별 마커(✦)의 한가운데 — 위젯 윗단이 아니라 첫 항목 위쪽 별 자리까지만 차지한다 (라벨 방식이 아니면 위젯 윗단)
       const firstLn = el.querySelector('button.tf-ln') as HTMLElement | null;
-      const cutY = firstLn ? firstLn.getBoundingClientRect().top + 9.5 : r.top;
+      const cutY = firstLn ? firstLn.getBoundingClientRect().top + 11 : r.top;
       const root = document.documentElement.style;
       root.setProperty('--tf-bottom-gap', atBottom ? `${Math.max(0, Math.round(window.innerHeight - cutY))}px` : '0px');
       // 하단이 끊기면 본문 전체를 위로 올린다 (스테이지 화면은 그대로)
