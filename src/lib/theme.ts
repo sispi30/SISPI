@@ -140,6 +140,24 @@ export function layeredTextShadow(strength: number, color: string): string {
   return layers.join(', ');
 }
 
+/** 외부 광선(Outer Glow, 표준 혼합) 방식 글자 그림자 — 글자 둘레 사방으로 고르게 번지는 빛.
+ *  size = 번지는 폭(px), strength = 불투명도·두께(0~200%: 100%까지는 짙어지고, 넘기면 같은 빛을 더 쌓고 글자 바로 둘레를 촘촘하게 채운다). 0이면 none */
+export function outerGlowShadow(strength: number, size: number, color: string): string {
+  const raw = Math.min(200, Math.max(0, strength));
+  if (raw <= 0) return 'none';
+  const w = Math.min(40, Math.max(0, size));
+  const c = color || '#000000';
+  const alpha = Math.round(30 + Math.min(raw, 100) * 0.7);                 // 30~100%
+  const glow = `0 0 ${w.toFixed(1)}px color-mix(in srgb, ${c} ${alpha}%, transparent)`;
+  const n = 1 + Math.min(5, Math.floor(raw / 35));                          // 겹쳐 쌓을수록 빛이 짙어진다 (확산 효과)
+  const layers = Array(n).fill(glow);
+  if (raw > 100) {
+    const tight = `0 0 ${Math.min(2, w * 0.3).toFixed(1)}px ${c}`;
+    for (let i = 0, k = Math.min(4, Math.ceil((raw - 100) / 25)); i < k; i++) layers.push(tight);
+  }
+  return layers.join(', ');
+}
+
 export function derivePointTheme(accent: string, tone: PointTone): ThemeVars {
   const { h, s } = hexToHsl(accent);
   const c = (sat: number, lig: number) => hslToHex({ h, s: Math.min(1, s * sat), l: lig });

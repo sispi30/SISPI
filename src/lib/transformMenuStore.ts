@@ -76,7 +76,8 @@ export interface TransformMenuSettings {
   itemOutlineColor: string;    // 비우면 포인트색(--accent)
 
   // 항목 그림자 — 같은 방식으로 아이콘·글자 자체에 드리우는 그림자 (강도 0이면 끔)
-  itemShadow: number;          // 0~100 (%)
+  itemShadow: number;          // 0~200 (%) — 외부 광선의 세기
+  itemShadowSize?: number;     // 외부 광선이 번지는 폭 (px, 비우면 6)
   itemShadowColor: string;     // 비우면 검정
 
   // 서브메뉴 배경

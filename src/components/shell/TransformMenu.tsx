@@ -10,7 +10,7 @@ import { boardEntries, useMenuSettings, buildMenu, faClass } from '@/lib/menuSto
 import { useBoards } from '@/lib/boardStore';
 import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
-import { layeredTextShadow } from '@/lib/theme';
+import { outerGlowShadow } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { useMainStore } from '@/lib/mainStore';
 import { useBlobUrl } from '@/lib/blobStore';
@@ -228,7 +228,7 @@ export function TransformMenu() {
     // 선을 글자 뒤에 깔고(paint-order) 두께를 두 배로 그려서 바깥으로 보이는 두께가 설정값과 같게 한다.
     ['--tf-item-ol' as string]: `${cfg.itemOutlineWidth * 2}px`,
     ['--tf-item-olc' as string]: cfg.itemOutlineColor || 'var(--accent)',
-    ['--tf-item-sh' as string]: (() => { const sh = layeredTextShadow(cfg.itemShadow, cfg.itemShadowColor || '#000000'); return sh === 'none' ? '0 0 0 transparent' : sh; })(),
+    ['--tf-item-sh' as string]: (() => { const sh = outerGlowShadow(cfg.itemShadow, cfg.itemShadowSize ?? 6, cfg.itemShadowColor || '#000000'); return sh === 'none' ? '0 0 0 transparent' : sh; })(),
   };
 
   // ---------- static: 상단바 자리에 그대로 (배경/로고/로그인은 상단바가 담당) ----------

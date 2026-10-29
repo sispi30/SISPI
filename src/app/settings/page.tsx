@@ -3253,10 +3253,12 @@ function MenuDesignPane() {
           </div>
 
           <div className="set-row" style={{ flexWrap: 'wrap' }}>
-            <div className="l"><b>항목 그림자</b><small>항목 외곽선과 같은 방식 — 박스가 아니라 각 아이콘·글자 자체에 드리우는 그림자 · 서브메뉴 항목에도 같이 적용 · 강도 0%이면 꺼짐 · 100%를 넘기면 글자 둘레에 짙은 윤곽 그림자가 더해져 글씨가 더 또렷해집니다</small></div>
+            <div className="l"><b>항목 그림자</b><small>외부 광선(Outer Glow, 표준 혼합) 방식 — 각 아이콘·글자 둘레로 고르게 번지는 빛 · 강도는 짙기, 폭은 번지는 범위 · 서브메뉴 항목에도 같이 적용 · 강도 0%이면 꺼짐 · 100%를 넘기면 같은 빛이 더 쌓여 글씨가 더 또렷해집니다</small></div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <span className="cp-lb">강도</span>
               <KStep value={cfg.itemShadow} min={0} max={200} step={5} suffix="%" onChange={v => patch({ itemShadow: v })} />
+              {cfg.itemShadow > 0 && <><span className="cp-lb">폭</span>
+                <KStep value={cfg.itemShadowSize ?? 6} min={0} max={30} step={1} suffix="px" onChange={v => patch({ itemShadowSize: v })} /></>}
               {cfg.itemShadow > 0 && <TfColor label="색" value={cfg.itemShadowColor} fallback="#000000" patch={patch} k="itemShadowColor" />}
             </div>
           </div>
