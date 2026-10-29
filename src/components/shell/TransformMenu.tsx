@@ -207,8 +207,10 @@ export function TransformMenu() {
 
   const { familyOf } = useFonts();
   const menuFam = cfg.menuFontId ? familyOf(cfg.menuFontId) : undefined;
+  const enFam = cfg.lineFontId ? familyOf(cfg.lineFontId) : undefined;
   const fontVars: React.CSSProperties = {
     ...(menuFam ? { ['--tf-font' as string]: deVarFamily(menuFam) } : {}),
+    ...(enFam ? { ['--tf-en-font' as string]: deVarFamily(enFam) } : {}),
     ...(cfg.menuFontWeight ? { ['--tf-fw' as string]: String(cfg.menuFontWeight) } : {}),
     ['--tf-menu-fs' as string]: `${+(cfg.menuFontSize * (cfg.menuFontScale ?? 100) / 100).toFixed(2)}px`,
     ['--tf-menu-fg' as string]: cfg.menuFontColor || 'var(--top-fg)',

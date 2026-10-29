@@ -42,6 +42,7 @@ export interface TransformMenuSettings {
   menuFontWeight?: number; // 글자 굵기 (비우면 기본)
   menuFontScale: number;   // 글자 크기 배율 % (메뉴·서브메뉴 공통)
   menuFontId: string;      // 메뉴 글꼴 (비우면 사이트 기본)
+  lineFontId?: string;     // 라인 방식 영문 라벨 글꼴 (비우면 기본 굵은 산세리프)
 
   // 서브메뉴 글자
   subFontSize: number;
