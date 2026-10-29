@@ -3568,3 +3568,5 @@ html.bg-fx body::after{opacity:1}
    메인(고정 캔버스)은 제외 */
 #appMain{margin-top:-58px;padding-top:58px}
 body:not(.main-fixed):not(.edit-on) #appMain{margin-bottom:var(--tf-bottom-gap,0px)}
+/* 하단이 끊겨 있을 땐 본문 전체를 위로 올린다 — 스테이지(전체 화면 고정) 화면은 위의 전용 규칙이 이겨 그대로 */
+body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{padding-top:calc(58px - var(--tf-top-shift,0px))}

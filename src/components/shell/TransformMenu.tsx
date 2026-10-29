@@ -120,13 +120,19 @@ export function TransformMenu() {
       setOpenUp(r.top > window.innerHeight / 2);
       // 화면 맨 아래에 붙어 있는 위젯이면 그 높이만큼 본문 영역을 위에서 끊는다 — 콘텐츠가 메뉴 뒤로 비쳐 글씨와 겹치지 않게
       const atBottom = r.bottom >= window.innerHeight - 60 && r.top > window.innerHeight / 2;
-      document.documentElement.style.setProperty('--tf-bottom-gap', atBottom ? `${Math.max(0, Math.round(window.innerHeight - r.top))}px` : '0px');
+      // 끊는 선은 별 마커(✦)의 한가운데 — 위젯 윗단이 아니라 첫 항목 위쪽 별 자리까지만 차지한다 (라벨 방식이 아니면 위젯 윗단)
+      const firstLn = el.querySelector('button.tf-ln') as HTMLElement | null;
+      const cutY = firstLn ? firstLn.getBoundingClientRect().top + 9.5 : r.top;
+      const root = document.documentElement.style;
+      root.setProperty('--tf-bottom-gap', atBottom ? `${Math.max(0, Math.round(window.innerHeight - cutY))}px` : '0px');
+      // 하단이 끊기면 본문 전체를 위로 올린다 (스테이지 화면은 그대로)
+      root.setProperty('--tf-top-shift', atBottom ? '30px' : '0px');
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     window.addEventListener('resize', measure);
-    return () => { ro.disconnect(); window.removeEventListener('resize', measure); document.documentElement.style.removeProperty('--tf-bottom-gap'); };
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure); document.documentElement.style.removeProperty('--tf-bottom-gap'); document.documentElement.style.removeProperty('--tf-top-shift'); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.positionType, cfg.anchorX, cfg.anchorY, cfg.posX, cfg.posY, cfg.direction, cfg.gap, pos, menu.length]);
 
