@@ -10,7 +10,7 @@ import { boardEntries, useMenuSettings, buildMenu, faClass } from '@/lib/menuSto
 import { useBoards } from '@/lib/boardStore';
 import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
-import { outerGlowShadow } from '@/lib/theme';
+import { outerGlowShadow, roundOutlineShadow } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { useMainStore } from '@/lib/mainStore';
 import { useBlobUrl } from '@/lib/blobStore';
@@ -226,9 +226,15 @@ export function TransformMenu() {
     ['--tf-sub-shadow' as string]: cfg.subShadow ? 'var(--sh-dd)' : 'none',
     // 항목 외곽선 — 아이콘·글자 자체에 두르는 윤곽선. 글자 윤곽선(text-stroke)은 선의 절반이 글자 안쪽을 먹으므로,
     // 선을 글자 뒤에 깔고(paint-order) 두께를 두 배로 그려서 바깥으로 보이는 두께가 설정값과 같게 한다.
-    ['--tf-item-ol' as string]: `${cfg.itemOutlineWidth * 2}px`,
+    // → 뾰족한 모서리가 생기던 text-stroke 대신, 둥근 윤곽선을 text-shadow로 그린다 (윤곽선이 맨 위, 그 아래에 외부 광선)
+    ['--tf-item-ol' as string]: '0px',
     ['--tf-item-olc' as string]: cfg.itemOutlineColor || 'var(--accent)',
-    ['--tf-item-sh' as string]: (() => { const sh = outerGlowShadow(cfg.itemShadow, cfg.itemShadowSize ?? 6, cfg.itemShadowColor || '#000000'); return sh === 'none' ? '0 0 0 transparent' : sh; })(),
+    ['--tf-item-sh' as string]: (() => {
+      const ol = roundOutlineShadow(cfg.itemOutlineWidth, cfg.itemOutlineColor || 'var(--accent)');
+      const gl = outerGlowShadow(cfg.itemShadow, cfg.itemShadowSize ?? 6, cfg.itemShadowColor || '#000000');
+      const all = [ol, gl === 'none' ? '' : gl].filter(Boolean).join(', ');
+      return all || '0 0 0 transparent';
+    })(),
   };
 
   // ---------- static: 상단바 자리에 그대로 (배경/로고/로그인은 상단바가 담당) ----------

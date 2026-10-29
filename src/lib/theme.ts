@@ -140,6 +140,22 @@ export function layeredTextShadow(strength: number, color: string): string {
   return layers.join(', ');
 }
 
+/** 둥근 윤곽선 — 글자 둘레 원 위에 같은 색 그림자를 촘촘히 깔아 모서리가 뾰족해지지 않는 바깥 윤곽을 만든다.
+ *  (text-stroke는 브라우저가 모서리를 뾰족하게(miter) 그려 글자 꺾임마다 가시가 돋았다.) width = 바깥으로 보이는 두께(px). 0이면 빈 문자열 */
+export function roundOutlineShadow(width: number, color: string): string {
+  const w = Math.max(0, width);
+  if (w <= 0) return '';
+  const pt = (r: number, n: number, off = 0) =>
+    Array.from({ length: n }, (_, i) => {
+      const a = (i / n) * Math.PI * 2 + off;
+      return `${(Math.cos(a) * r).toFixed(2)}px ${(Math.sin(a) * r).toFixed(2)}px 0 ${color}`;
+    });
+  const n = Math.min(40, Math.max(16, Math.round(w * 14)));
+  const out = pt(w, n);
+  if (w > 1.6) out.push(...pt(w * 0.55, Math.max(12, Math.round(n / 2)), Math.PI / n));   // 안쪽 고리 — 글자 사이 빈틈 방지
+  return out.join(', ');
+}
+
 /** 외부 광선(Outer Glow, 표준 혼합) 방식 글자 그림자 — 글자 둘레 사방으로 고르게 번지는 빛.
  *  size = 번지는 폭(px), strength = 불투명도·두께(0~200%: 100%까지는 짙어지고, 넘기면 같은 빛을 더 쌓고 글자 바로 둘레를 촘촘하게 채운다). 0이면 none */
 export function outerGlowShadow(strength: number, size: number, color: string): string {
