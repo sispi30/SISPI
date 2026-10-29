@@ -3153,7 +3153,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-fixed .tf-items.tf-line > button.tf-ln::after,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln::after,
 .gnb.tf-static.tf-line > button.tf-ln::after,.gnb.tf-static.tf-line .tf-grp > button.tf-ln::after{
   content:"\2726";position:absolute;left:50%;top:3px;bottom:auto;width:auto;height:auto;margin:0;background:none;box-shadow:none;
-  font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2",system-ui,sans-serif;font-size:13px;line-height:1;pointer-events:none;color:var(--tf-menu-mk,var(--accent));text-shadow:0 0 8px color-mix(in srgb,var(--tf-menu-mk,var(--accent)) 55%,transparent);
+  font-family:"Segoe UI Symbol","Apple Symbols","Noto Sans Symbols 2",system-ui,sans-serif;font-size:13px;line-height:1;pointer-events:none;color:var(--tf-menu-mk,var(--accent));text-shadow:none;
   transform:translateX(-50%) scale(0);opacity:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .25s;
 }
 .tf-line.tf-line.tf-line button.tf-ln:hover{color:var(--tf-menu-hv,var(--top-hv));opacity:.95}
@@ -3168,6 +3168,10 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
 .tf-line.tf-line.tf-line button.tf-ln:active::after{transform:translateX(-50%) rotate(180deg) scale(1.25);opacity:1;transition-duration:.18s}
 @keyframes tfStarSpin{from{transform:translateX(-50%) rotate(-270deg) scale(0);opacity:0}to{transform:translateX(-50%) rotate(0) scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.tf-line.tf-line.tf-line button.tf-ln.on::after{animation:none}}
+
+/* 라벨 방식 — 서브메뉴와 메뉴 항목 사이 간격을 좁힌다 (별 마커 자리까지 바짝) */
+.tf-fixed.tf-up .tf-items.tf-line .tf-sub{bottom:calc(100% - 12px)}
+.tf-fixed:not(.tf-up) .tf-items.tf-line .tf-sub,.gnb.tf-static.tf-line .tf-sub{top:calc(100% - 6px)}
 
 /* 서브메뉴를 부모 메뉴 항목 가운데에 맞춘다 (왼쪽 끝 정렬이면 메인 메뉴와 어긋나 보였다) */
 .gnb.tf-static .tf-sub,.tf-fixed .tf-sub{left:50%;transform:translateX(-50%);width:max-content}
