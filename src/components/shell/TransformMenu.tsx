@@ -317,15 +317,34 @@ export function TransformMenu() {
 }
 
 
+/** 둥근 원판 커널 — 가장자리는 부분 가중치로 부드럽게 (반지름 R 픽셀) */
+function discKernel(R: number): string {
+  const out: string[] = [];
+  for (let j = -R; j <= R; j++) for (let i = -R; i <= R; i++) {
+    const d = Math.hypot(i, j);
+    out.push(Math.max(0, Math.min(1, R + 0.5 - d)).toFixed(2));
+  }
+  return out.join(' ');
+}
+
 /** 항목 윤곽선 + 외부 광선(표준 혼합) 필터 — 글자(아이콘)에만 걸린다.
- *  윤곽선: 글자 모양(알파)을 흐린 뒤 문턱값으로 잘라 바깥으로 부풀리면 모서리가 둥글고 자글거림 없는 윤곽이 된다.
+ *  윤곽선: 글자 모양(알파)을 원판 커널로 번지게(컨볼루션) 한 뒤 불투명하게 올려, 어느 방향으로든 같은 두께의 둥근 윤곽을 만든다 —
+ *  (text-stroke는 모서리가 뾰족하고, 흐림+문턱값은 두께가 들쭉날쭉했다). 커널은 화면 픽셀 단위라 배율(devicePixelRatio)을 곱해 두께를 맞추고,
+ *  커서가 커지면 작은 원판을 여러 번 겹쳐(원판 ⊕ 원판 = 더 큰 원판) 쓴다.
  *  외부 광선: 알파를 흐려 색을 입히고, 세기만큼 곱해 짙게 한다. */
 function ItemFx({ id, outline, outlineColor, glow, glowSize, glowColor }: {
   id: string; outline: number; outlineColor: string; glow: number; glowSize: number; glowColor: string;
 }) {
-  const T = 0.08;   // 문턱 — 가장자리에서 흐림 폭(σ)만큼 떨어진 지점 (1-Φ(1.4)≈0.08)
-  const K = 16;     // 가장자리 부드러움(기울기)
-  const olSigma = Math.max(0.3, outline / 1.4);
+  const [dpr, setDpr] = useState(1);
+  useEffect(() => {
+    const upd = () => setDpr(Math.max(1, Math.min(4, window.devicePixelRatio || 1)));
+    upd();
+    window.addEventListener('resize', upd);
+    return () => window.removeEventListener('resize', upd);
+  }, []);
+  const R = outline > 0 ? Math.min(36, Math.max(1, Math.round(outline * dpr))) : 0;
+  const parts = R > 0 ? Math.ceil(R / 6) : 0;
+  const steps = Array.from({ length: parts }, (_, i) => Math.floor(R / parts) + (i < R % parts ? 1 : 0));
   const alpha = 0.3 + Math.min(glow, 100) / 100 * 0.7;
   const n = 1 + Math.min(5, Math.floor(glow / 35));
   const gSigma = Math.max(0.3, glowSize / 2);
@@ -339,21 +358,25 @@ function ItemFx({ id, outline, outlineColor, glow, glowSize, glowColor }: {
           <feComposite in2="ga" operator="in" result="gl" />
         </>}
         {glow > 100 && <>
-          <feGaussianBlur in="SourceAlpha" stdDeviation={0.9} result="tb" />
-          <feComponentTransfer in="tb" result="ta"><feFuncA type="linear" slope={K} intercept={-K * T} /></feComponentTransfer>
+          <feConvolveMatrix in="SourceAlpha" order={3} kernelMatrix={discKernel(1)} divisor={1} edgeMode="none" preserveAlpha="false" result="tc" />
+          <feComponentTransfer in="tc" result="ta"><feFuncA type="linear" slope={3} /></feComponentTransfer>
           <feFlood style={{ floodColor: glowColor }} />
           <feComposite in2="ta" operator="in" result="tg" />
         </>}
-        {outline > 0 && <>
-          <feGaussianBlur in="SourceAlpha" stdDeviation={olSigma} result="ob" />
-          <feComponentTransfer in="ob" result="oa"><feFuncA type="linear" slope={K} intercept={-K * T} /></feComponentTransfer>
+        {steps.map((r, i) => (
+          <React.Fragment key={i}>
+            <feConvolveMatrix in={i === 0 ? 'SourceAlpha' : `oa${i - 1}`} order={2 * r + 1} kernelMatrix={discKernel(r)} divisor={1} edgeMode="none" preserveAlpha="false" result={`oc${i}`} />
+            <feComponentTransfer in={`oc${i}`} result={`oa${i}`}><feFuncA type="linear" slope={3} /></feComponentTransfer>
+          </React.Fragment>
+        ))}
+        {R > 0 && <>
           <feFlood style={{ floodColor: outlineColor }} />
-          <feComposite in2="oa" operator="in" result="ol" />
+          <feComposite in2={`oa${steps.length - 1}`} operator="in" result="ol" />
         </>}
         <feMerge>
           {glow > 0 && <feMergeNode in="gl" />}
           {glow > 100 && <feMergeNode in="tg" />}
-          {outline > 0 && <feMergeNode in="ol" />}
+          {R > 0 && <feMergeNode in="ol" />}
           <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
