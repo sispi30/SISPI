@@ -3142,7 +3142,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   transition:color .25s,opacity .25s;
 }
 /* 영문 라벨 — 굵은 대문자. 글꼴은 설정(영문 라벨 글꼴)에서 바꾼다 */
-.tf-line button.tf-ln .tf-en{font-family:var(--tf-en-font,"Inter","Helvetica Neue",Arial,system-ui,sans-serif);font-weight:var(--tf-en-fw,800);font-size:max(10.5px,calc(var(--tf-menu-fs,14px)*.82));line-height:1.1;letter-spacing:.16em;text-indent:.16em;text-transform:uppercase;transition:letter-spacing .35s}
+.tf-line button.tf-ln .tf-en{font-family:var(--tf-en-font,"Inter","Helvetica Neue",Arial,system-ui,sans-serif);font-weight:var(--tf-en-fw,800);font-size:max(10.5px,calc(var(--tf-menu-fs,14px)*.82));line-height:1.1;letter-spacing:.16em;text-indent:.16em;text-transform:uppercase}
 .tf-line button.tf-ln span{font-weight:400;line-height:1.25}
 /* 현재 위치 — 밑줄(::before)과 별 마커(::after)가 이름 아래에 뜬다 */
 .tf-fixed .tf-items.tf-line > button.tf-ln::before,.tf-fixed .tf-items.tf-line .tf-grp > button.tf-ln::before,
@@ -3157,8 +3157,7 @@ body.main-fixed #appMain{margin-top:-58px;padding-top:58px}
   transform:translateX(-50%) scale(0);opacity:0;transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .25s;
 }
 .tf-line.tf-line.tf-line button.tf-ln:hover{color:var(--tf-menu-hv,var(--top-hv));opacity:.95}
-.tf-line.tf-line.tf-line.tf-line button.tf-ln:hover .tf-en{letter-spacing:.2em}
-.tf-line.tf-line.tf-line button.tf-ln:hover::before{transform:scaleX(.5);opacity:.35}
+.tf-line.tf-line.tf-line.tf-line button.tf-ln:hover::before{transform:scaleX(.5);opacity:.35}
 .tf-line.tf-line.tf-line button.tf-ln:hover::after{transform:translateX(-50%) scale(.7);opacity:.45}
 .tf-line.tf-line.tf-line button.tf-ln.on{color:var(--tf-menu-hv,var(--top-hv));opacity:1}
 .tf-line.tf-line.tf-line.tf-line button.tf-ln.on span{font-weight:500}

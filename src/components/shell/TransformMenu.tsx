@@ -152,8 +152,12 @@ export function TransformMenu() {
         : { x: window.innerWidth / 2 - 60, y: window.innerHeight - 80, w: 120, h: 60 };
       const c = await sampleBgColor(box);
       if (!alive || !c) return;
-      const css = `rgb(${Math.round(c.r)}, ${Math.round(c.g)}, ${Math.round(c.b)})`;
-      setAutoBg(prev => (prev && prev.css === css ? prev : { css, light: rgbLum(c) > 0.4 }));
+      const light = rgbLum(c) > 0.4;
+      // 밝은 배경에서는 박스를 주변보다 조금 더 밝게 (흰색 쪽으로 28%) — 배경에 묻히지 않고 떠 보이게
+      const k = light ? 0.28 : 0;
+      const m = (v: number) => Math.round(v + (255 - v) * k);
+      const css = `rgb(${m(c.r)}, ${m(c.g)}, ${m(c.b)})`;
+      setAutoBg(prev => (prev && prev.css === css ? prev : { css, light }));
     };
     const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(run); };
     schedule();
