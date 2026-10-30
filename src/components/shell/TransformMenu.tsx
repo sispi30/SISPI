@@ -200,7 +200,8 @@ export function TransformMenu() {
         <button className={lineMode ? `tf-ln${isOn(item) ? ' on' : ''}` : undefined} onClick={() => nav(item.children![0].href)} title={topIconOnly ? item.label : undefined}>
           {topLabel(item.icon, item.label, tfEnglishLabel(item, cfg.lineEn))}
         </button>
-        <div className="tf-sub" onMouseEnter={() => openSub(item.label)} onMouseLeave={scheduleCloseSub}>
+        {/* 서브메뉴는 그룹 안쪽이라 그룹의 enter/leave만으로 충분하다 — 서브메뉴에 따로 leave를 걸면, 간격이 없을 때 서브메뉴→메뉴 항목으로 옮기기만 해도(그룹은 안 벗어남) 닫힘 예약이 걸려 꺼졌다 */}
+        <div className="tf-sub">
           {item.children.map(c => (
             <button key={c.href} onClick={() => nav(c.href)} title={subMode === 'icon' ? c.label : undefined}>{subLabel(c.icon, c.label)}</button>
           ))}
