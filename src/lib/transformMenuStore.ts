@@ -83,6 +83,7 @@ export interface TransformMenuSettings {
   // 서브메뉴 배경
   subHoverBg: string;      // 서브메뉴 항목 호버 박스색 — 비우면 기존 연한 색
   subBgColor: string;      // 비우면 --dd-bg
+  subBgAuto?: boolean;     // 켜면 서브메뉴 박스 색을 주변 배경색에 맞춘다 (배경이 바뀌면 따라 바뀜)
   subBorderRadius: number;
   subShadow: boolean;
 

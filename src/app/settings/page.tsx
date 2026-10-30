@@ -3294,9 +3294,10 @@ function MenuDesignPane() {
                 </div>
               </div>
               <div className="set-row" style={{ flexWrap: 'wrap' }}>
-                <div className="l"><b>서브메뉴 배경</b></div>
+                <div className="l"><b>서브메뉴 배경</b><small>「주변 배경색에 맞춤」을 켜면 서브메뉴가 뜨는 자리 뒤의 배경(사진·그라데이션)을 읽어 박스 색을 맞추고, 배경이 바뀌면 따라 바뀝니다 · 글자색을 비워 두면 박스 밝기에 맞춰 자동으로 읽히는 색이 됩니다</small></div>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  <TfColor label="배경색" value={cfg.subBgColor} fallback="#1c1f25" patch={patch} k="subBgColor" />
+                  <KCheck label="주변 배경색에 맞춤" checked={!!cfg.subBgAuto} onChange={v => patch({ subBgAuto: v })} />
+                  {!cfg.subBgAuto && <TfColor label="배경색" value={cfg.subBgColor} fallback="#1c1f25" patch={patch} k="subBgColor" />}
                   <TfColor label="호버 박스" value={cfg.subHoverBg} fallback="#e3e7f3" patch={patch} k="subHoverBg" />
                   <span className="cp-lb">모서리</span>
                   <KStep value={cfg.subBorderRadius} min={0} max={30} step={1} suffix="px" onChange={v => patch({ subBorderRadius: v })} />

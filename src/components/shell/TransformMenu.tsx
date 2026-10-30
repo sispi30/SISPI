@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { useMainStore } from '@/lib/mainStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { useFonts, deVarFamily } from '@/lib/fontStore';
+import { sampleBgColor, rgbLum } from '@/lib/bgColorSample';
 import { refreshPage } from '@/lib/pageRefresh';
 import {
   loadTfPosition, saveTfPosition, useTransformMenuSettings, TransformMenuSettings, tfEnglishLabel,
@@ -65,6 +66,8 @@ export function TransformMenu() {
   const [isDragging, setIsDragging] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 서브메뉴 박스 색 자동 — 주변 배경색을 읽어 맞춘다 (배경·테마·페이지가 바뀌면 다시 읽는다)
+  const [autoBg, setAutoBg] = useState<{ css: string; light: boolean } | null>(null);
   useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); }, []);
 
   useEffect(() => {
@@ -137,6 +140,29 @@ export function TransformMenu() {
   }, [cfg.positionType, cfg.anchorX, cfg.anchorY, cfg.posX, cfg.posY, cfg.direction, cfg.gap, pos, menu.length]);
 
   const fxUid = useId();   // 조기 반환보다 앞에 — 훅 순서가 바뀌지 않게
+  const subAuto = !!cfg.subBgAuto;
+  useEffect(() => {
+    if (!loaded || !cfg.enabled || !subAuto) { setAutoBg(null); return; }
+    let alive = true;
+    let raf = 0;
+    const run = async () => {
+      const el = (document.querySelector('.tf-grp.open .tf-sub') ?? document.querySelector('.tf-grp')) as HTMLElement | null;
+      const r = el?.getBoundingClientRect();
+      const box = r && r.width > 0 ? { x: r.left, y: r.top, w: r.width, h: Math.max(1, r.height) }
+        : { x: window.innerWidth / 2 - 60, y: window.innerHeight - 80, w: 120, h: 60 };
+      const c = await sampleBgColor(box);
+      if (!alive || !c) return;
+      const css = `rgb(${Math.round(c.r)}, ${Math.round(c.g)}, ${Math.round(c.b)})`;
+      setAutoBg(prev => (prev && prev.css === css ? prev : { css, light: rgbLum(c) > 0.4 }));
+    };
+    const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(run); };
+    schedule();
+    const mo = new MutationObserver(schedule);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class', 'data-theme'] });
+    window.addEventListener('resize', schedule);
+    return () => { alive = false; cancelAnimationFrame(raf); mo.disconnect(); window.removeEventListener('resize', schedule); };
+  }, [loaded, cfg.enabled, subAuto, openGroup, pathname]);
+
   if (!loaded || !cfg.enabled) return null;
 
   // 하위 메뉴 열림 상태 — 순수 CSS :hover는 버튼→서브메뉴 사이 틈을 지날 때 hover가 끊겨
@@ -236,10 +262,11 @@ export function TransformMenu() {
     ['--tf-menu-ls' as string]: `${cfg.menuLetterSpacing}px`,
     ['--tf-sub-fs' as string]: `${+(cfg.subFontSize * (cfg.menuFontScale ?? 100) / 100).toFixed(2)}px`,
     ['--tf-sub-align' as string]: cfg.subAlign ?? 'left',
-    ['--tf-sub-fg' as string]: cfg.subFontColor || 'var(--dd-fg)',
+    // 박스 색 자동일 때: 글자색이 비어 있으면 박스 밝기에 맞춰 읽히는 색으로
+    ['--tf-sub-fg' as string]: cfg.subFontColor || (subAuto && autoBg ? (autoBg.light ? '#1d2026' : '#f1f3f6') : 'var(--dd-fg)'),
     ['--tf-sub-hv' as string]: cfg.subHoverColor || 'var(--accent)',
-    ['--tf-sub-hvbg' as string]: cfg.subHoverBg || 'var(--dd-hv)',
-    ['--tf-sub-bg' as string]: cfg.subBgColor || 'var(--dd-bg)',
+    ['--tf-sub-hvbg' as string]: cfg.subHoverBg || (subAuto && autoBg ? 'rgba(127,127,127,.18)' : 'var(--dd-hv)'),
+    ['--tf-sub-bg' as string]: subAuto && autoBg ? autoBg.css : (cfg.subBgColor || 'var(--dd-bg)'),
     ['--tf-sub-radius' as string]: `${cfg.subBorderRadius}px`,
     ['--tf-sub-shadow' as string]: cfg.subShadow ? 'var(--sh-dd)' : 'none',
     // 항목 외곽선 — 아이콘·글자 자체에 두르는 윤곽선. 글자 윤곽선(text-stroke)은 선의 절반이 글자 안쪽을 먹으므로,
