@@ -153,8 +153,8 @@ export function TransformMenu() {
       const c = await sampleBgColor(box);
       if (!alive || !c) return;
       const light = rgbLum(c) > 0.4;
-      // 밝은 배경에서는 박스를 주변보다 조금 더 밝게 (흰색 쪽으로 28%) — 배경에 묻히지 않고 떠 보이게
-      const k = light ? 0.28 : 0;
+      // 밝은 배경에서는 박스를 주변보다 조금 더 밝게 (흰색 쪽으로 60%) — 배경에 묻히지 않고 떠 보이게
+      const k = light ? 0.6 : 0;
       const m = (v: number) => Math.round(v + (255 - v) * k);
       const css = `rgb(${m(c.r)}, ${m(c.g)}, ${m(c.b)})`;
       setAutoBg(prev => (prev && prev.css === css ? prev : { css, light }));
