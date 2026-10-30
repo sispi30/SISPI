@@ -3232,6 +3232,13 @@ function MenuDesignPane() {
           </div>
 
           <div className="set-row" style={{ flexWrap: 'wrap' }}>
+            <div className="l"><b>서브메뉴 모서리</b><small>서브메뉴 박스의 모서리 둥글기 — 0이면 각진 박스, 숫자가 클수록 둥글어집니다</small></div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <KStep value={cfg.subBorderRadius} min={0} max={40} step={1} suffix="px" onChange={v => patch({ subBorderRadius: v })} />
+            </div>
+          </div>
+
+          <div className="set-row" style={{ flexWrap: 'wrap' }}>
             <div className="l"><b>구분선</b><small>상위 메뉴 항목 사이 구분 표시</small></div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               {seg<TfDivider>(cfg.dividerStyle, [
@@ -3299,8 +3306,6 @@ function MenuDesignPane() {
                   <KCheck label="주변 배경색에 맞춤" checked={!!cfg.subBgAuto} onChange={v => patch({ subBgAuto: v })} />
                   {!cfg.subBgAuto && <TfColor label="배경색" value={cfg.subBgColor} fallback="#1c1f25" patch={patch} k="subBgColor" />}
                   <TfColor label="호버 박스" value={cfg.subHoverBg} fallback="#e3e7f3" patch={patch} k="subHoverBg" />
-                  <span className="cp-lb">모서리</span>
-                  <KStep value={cfg.subBorderRadius} min={0} max={30} step={1} suffix="px" onChange={v => patch({ subBorderRadius: v })} />
                   <KCheck label="그림자" checked={cfg.subShadow} onChange={v => patch({ subShadow: v })} />
                 </div>
               </div>
