@@ -98,7 +98,7 @@ function PlaylogPageInner() {
         </div>
       </div>
 
-      <div className="panel" style={{ padding: '10px 16px 16px', overflowX: 'auto' }}>
+      <div className="panel" style={{ padding: '10px 16px 0', overflowX: 'auto' }}>
         <table className={`pl-table${show('rels') ? ' has-rel' : ''}`}>
           {/* 열 구성 — 환경설정 > 메뉴 관리에서 PC/모바일 각각 선택 (4.16 v1.8) */}
           <colgroup>
@@ -209,7 +209,7 @@ function PlaylogPageInner() {
         </table>
       </div>
 
-      <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
         {!editOn && <Pager page={page} total={totalPages} onChange={setPage} />}
       </div>
 
