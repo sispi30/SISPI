@@ -466,17 +466,14 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
   const isWornHidden = (i: ClosetItem) => !STACK_TABS.includes(i.tab) && isWornBy(i.id);
   const anyShown = matched.some(i => !isWornHidden(i));
 
+  const wf = useFloater('ohome.closet.wardpos', { right: '16px', top: '120px' });
+
   return (
     <div className="closet" ref={rootRef}>
       <div className="cl-wrap">
         <div className="cl-main">
           <div className="ribbon-wrapper"><div className="ribbon-bg" /><Title text={pairTitle(pair)} /></div>
           <div className="title-btns">
-            <button type="button" className="btn_custom big" onClick={() => setSaveAsk(pair.saveName || pairTitle(pair))}><Ico name="camera" size={15} />찰칵!</button>
-            <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={() => {
-              const v = !mute; setMute(v); muteRef.current = v;
-              try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
-            }}><Ico name={mute ? 'soundOff' : 'soundOn'} />{mute ? '소리 꺼짐' : '소리'}</button>
             <button type="button" className={`btn_custom ${gapOpen ? '' : 'off'}`} aria-pressed={gapOpen} onClick={() => setGapOpen(o => !o)}>
               <Ico name="arrows" />간격
             </button>
@@ -499,10 +496,6 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
                 {chars.map(([cid, c]) => (
                   <div className="char-col" key={cid} style={{ width: c.width }}>
                     <div className="char-name-label">{c.name}</div>
-                    <div className="char-btn-row">
-                      <button type="button" className="btn_custom" onClick={() => restore(cid)}>다시 입히기</button>
-                      <button type="button" className="btn_custom btn_reset" onClick={() => stripAll(cid)}>전부 벗기!</button>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -536,6 +529,10 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
               <div className="ctl-row">
                 {chars.map(([cid, c]) => (
                   <div className="worn-panel-wrap" key={cid} style={{ width: c.width }}>
+                    <div className="char-btn-row">
+                      <button type="button" className="btn_custom" onClick={() => restore(cid)}>다시 입히기</button>
+                      <button type="button" className="btn_custom btn_reset" onClick={() => stripAll(cid)}>전부 벗기!</button>
+                    </div>
                     <div className="worn-panel-title"><Ico name="shirt" size={12} />착용 중 — ✕ 벗기 / ▲▼ 앞뒤 조절</div>
                     <div className="worn-panel">
                       {worn[cid].filter(w => !w.fx).length === 0 && <span className="worn-empty">없음</span>}
@@ -575,7 +572,11 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
           </div>
         </div>
 
-        <div className="cl-side">
+        <div className="cl-side" ref={wf.box} style={wf.home}>
+          <div className="ward-head" title="이 줄을 끌어서 옮기세요 (두 번 누르면 제자리로)"
+            onPointerDown={wf.down} onDoubleClick={e => { if (!(e.target as HTMLElement).closest('button,input')) wf.reset(); }}>
+            <span><Ico name="shirt" size={15} />옷장</span><span className="guide-grip">⠿</span>
+          </div>
           <div className="wardrobe-top-bar">
             <input className="search-box" placeholder="아이템 검색..." value={kw} onChange={e => setKw(e.target.value)} />
             <div className="dbl-bar">
@@ -624,7 +625,10 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
         </div>
       )}
 
-      <GuideBox c1={c1} c2={c2} />
+      <GuideBox c1={c1} c2={c2} onSnap={() => setSaveAsk(pair.saveName || pairTitle(pair))} mute={mute} onToggleMute={() => {
+        const v = !mute; setMute(v); muteRef.current = v;
+        try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
+      }} />
 
       {tip && (
         <div className="closet-tip" style={{
@@ -683,31 +687,30 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
   );
 }
 
-/** 사용법 상자 — 원본처럼 떠 있고, 제목 줄을 끌어 옮기고(자리는 기억됨), 두 번 누르면 제자리, × 로 닫기 */
-function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name: string; label: string } }) {
-  const KEY = 'ohome.closet.guidepos';
+/** 떠 있는 상자 공통 — 제목 줄을 끌어 옮기고(자리는 기억됨), 두 번 누르면 제자리 */
+function useFloater(KEY: string, home: { left?: string; right?: string; top: string }) {
   const box = useRef<HTMLDivElement>(null);
-  const [gone, setGone] = useState(false);
-  const [more, setMore] = useState(false);
-  const home = { left: '10px', top: '130px' };
-
   const place = (l: number, t: number) => {
     const g = box.current;
     if (!g) return;
     l = Math.max(0, Math.min(l, window.innerWidth - g.offsetWidth));
     t = Math.max(0, Math.min(t, window.innerHeight - 44));   // 제목 줄은 항상 잡을 수 있게
-    g.style.left = `${l}px`; g.style.top = `${t}px`;
+    g.style.left = `${l}px`; g.style.right = 'auto'; g.style.top = `${t}px`;
   };
   useEffect(() => {
     try { const sv = JSON.parse(localStorage.getItem(KEY) || 'null'); if (sv && typeof sv.l === 'number') place(sv.l, sv.t); } catch { /* 무시 */ }
-    const onResize = () => { const g = box.current; if (g) place(parseFloat(g.style.left) || 0, parseFloat(g.style.top) || 0); };
+    const onResize = () => {
+      const g = box.current;
+      if (!g || !g.style.left || g.style.left === 'auto') return;   // 오른쪽에 붙어 있는 기본 자리는 알아서 따라감
+      place(parseFloat(g.style.left) || 0, parseFloat(g.style.top) || 0);
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   const down = (e: React.PointerEvent) => {
     const g = box.current;
-    if (!g || (e.target as HTMLElement).closest('button')) return;
+    if (!g || (e.target as HTMLElement).closest('button,input')) return;
     const r = g.getBoundingClientRect();
     const ox = e.clientX - r.left, oy = e.clientY - r.top;
     g.classList.add('is-dragging');
@@ -723,18 +726,34 @@ function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name:
   };
   const reset = () => {
     const g = box.current;
-    if (g) { g.style.left = home.left; g.style.top = home.top; }
+    if (g) { g.style.left = home.left ?? 'auto'; g.style.right = home.right ?? 'auto'; g.style.top = home.top; }
     try { localStorage.removeItem(KEY); } catch { /* 무시 */ }
   };
+  return { box, down, reset, home };
+}
 
+/** 사용법 상자 — 원본처럼 떠 있고, 제목 줄을 끌어 옮기고(자리는 기억됨), 두 번 누르면 제자리, × 로 닫기. 찰칵/소리 버튼도 여기에 있다 */
+function GuideBox({ c1, c2, onSnap, mute, onToggleMute }: {
+  c1: { name: string; label: string }; c2: { name: string; label: string };
+  onSnap: () => void; mute: boolean; onToggleMute: () => void;
+}) {
+  const f = useFloater('ohome.closet.guidepos', { left: '10px', top: '130px' });
+  const [gone, setGone] = useState(false);
+  const [more, setMore] = useState(false);
   if (gone) return null;
   const sz = [c1, c2].sort((a, b) => a.label.localeCompare(b.label));
   return (
-    <div ref={box} className="guide-box" style={home}>
+    <div ref={f.box} className="guide-box" style={f.home}>
       <div className="guide-header" title="이 줄을 끌어서 옮기세요 (두 번 누르면 제자리로)"
-        onPointerDown={down} onDoubleClick={e => { if (!(e.target as HTMLElement).closest('button')) reset(); }}>
+        onPointerDown={f.down} onDoubleClick={e => { if (!(e.target as HTMLElement).closest('button')) f.reset(); }}>
         <span><Ico name="book" size={15} />사용법</span><span className="guide-grip">⠿</span>
         <button type="button" className="btn-close-guide" onClick={() => setGone(true)}>×</button>
+      </div>
+      <div className="guide-actions">
+        <button type="button" className="btn_custom big" onClick={onSnap}><Ico name="camera" size={15} />찰칵!</button>
+        <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={onToggleMute}>
+          <Ico name={mute ? 'soundOff' : 'soundOn'} />{mute ? '소리 꺼짐' : '소리'}
+        </button>
       </div>
       <div className="guide-details" style={{ display: more ? 'block' : 'none' }}>
         <ul className="guide-list">
@@ -747,6 +766,7 @@ function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name:
           <li><b>찰칵!</b>으로 두 캐릭터 PNG 저장</li>
           <li><b>다시 입히기</b>: 기본 코디로 복귀</li>
           <li><b>전부 벗기!</b>: 해당 캐릭터 모두 벗기기</li>
+          <li><b>옷장·사용법 상자</b>: 제목 줄을 끌어 옮기기 (두 번 누르면 제자리)</li>
           <li><b>방치 모드</b>: 가만히 두면 혼잣말을 합니다.</li>
           <li><b>부끄럼 모드</b>: 레어 모드?</li>
         </ul>
