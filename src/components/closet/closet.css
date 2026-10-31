@@ -1,7 +1,8 @@
 /* 페어 옷장 — 원본(PHP) 스타일을 .closet 안으로 가둔 것. 사이트 다른 곳에는 영향을 주지 않는다. */
 @font-face{font-family:'KotraHope';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2110@1.0/KOTRAHOPE.woff2') format('woff2');font-weight:normal;font-display:swap}
 /* 색은 사이트 테마를 따른다 — 다른 메뉴의 버튼·제목과 같은 변수 */
-.closet{--pc:var(--btn-dark,#7b9bcc);--rm:var(--btn-dark-hv,#6a8cc2);--tc:var(--btn-dark-fg,#fff)}
+.closet{--pc:#7b9bcc;--rm:#6a8cc2;--tc:#fff;--ink:#555}
+.closet{--btn-dark:#7b9bcc;--btn-dark-hv:#6a8cc2;--btn-dark-fg:#fff}
 .closet *{box-sizing:border-box}
 .closet{user-select:none;-webkit-user-select:none;font-family:'KotraHope',var(--sans,sans-serif)}
 .closet button,.closet input{font-family:inherit}
@@ -35,7 +36,7 @@
 .closet .char-slot{position:relative;flex:none}
 .closet .gap-panel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;padding:8px 14px;background:rgba(255,255,255,.7);border:2px dashed var(--pc);border-radius:14px;max-width:100%}
 .closet .gap-lbl{font-size:13px;color:var(--pc)}
-.closet .gap-val{font-size:13px;min-width:52px;text-align:center;color:var(--ink,#555);font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+.closet .gap-val{font-size:13px;min-width:52px;text-align:center;color:#555;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
 .closet .cl-slider{position:relative;width:220px;max-width:60vw;height:26px;cursor:pointer;touch-action:none;outline:none}
 .closet .cl-slider::before{content:'';position:absolute;left:0;right:0;top:11px;height:4px;border-radius:2px;background:#ddd}
 .closet .cl-slider-fill{position:absolute;top:11px;height:4px;background:var(--pc);border-radius:2px}
@@ -92,7 +93,7 @@
 .closet .anim-pop{display:block;transform-origin:bottom center;animation:bubblePop .4s cubic-bezier(.175,.885,.32,1.275) forwards}
 
 /* 버튼 */
-.closet .btn_custom{background:var(--ink,#555);color:#fff;border:none;height:30px;padding:0 12px;border-radius:15px;cursor:pointer;font-size:13px;transition:all .3s;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.closet .btn_custom{background:#555;color:#fff;border:none;height:30px;padding:0 12px;border-radius:15px;cursor:pointer;font-size:13px;transition:all .3s;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
 .closet .btn_custom:hover{background:var(--pc);transform:translateY(-1px)}
 .closet .btn_custom.big{height:34px;padding:0 20px;font-size:14px;background:var(--pc)}
 .closet .btn_custom.off{background:#aaa}
@@ -180,7 +181,7 @@ body.closet-dragging,body.closet-dragging *{cursor:grabbing!important}
 .closet .sets-title span{font-size:11px;color:#aaa;margin-left:4px;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
 .closet .sets-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .closet .set-chip{display:inline-flex;align-items:center;background:var(--pc);border-radius:15px;overflow:hidden}
-.closet .set-chip.mine{background:var(--ink,#555)}
+.closet .set-chip.mine{background:#555}
 .closet .set-chip button{border:none;background:none;color:#fff;cursor:pointer;font-size:13px;height:30px;padding:0 12px;font-family:inherit;transition:opacity .15s}
 .closet .set-chip button:hover{opacity:.75}
 .closet .set-chip button.x{padding:0 9px 0 0;font-size:10px;opacity:.7}
@@ -224,3 +225,4 @@ body.closet-dragging,body.closet-dragging *{cursor:grabbing!important}
 .closet .guide-actions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .closet .char-btn-row{margin:6px 0 8px}
 @media(max-width:1000px){.closet .cl-side{position:static;width:100%;max-width:440px;margin:0 auto}}
+.closet .cl-wrap{margin-top:-18px}

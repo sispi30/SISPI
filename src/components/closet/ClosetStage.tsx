@@ -473,11 +473,6 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
       <div className="cl-wrap">
         <div className="cl-main">
           <div className="ribbon-wrapper"><div className="ribbon-bg" /><Title text={pairTitle(pair)} /></div>
-          <div className="title-btns">
-            <button type="button" className={`btn_custom ${gapOpen ? '' : 'off'}`} aria-pressed={gapOpen} onClick={() => setGapOpen(o => !o)}>
-              <Ico name="arrows" />간격
-            </button>
-          </div>
           {gapOpen && (
             <div className="gap-panel">
               <span className="gap-lbl">두 캐릭터 간격</span>
@@ -625,7 +620,7 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
         </div>
       )}
 
-      <GuideBox c1={c1} c2={c2} onSnap={() => setSaveAsk(pair.saveName || pairTitle(pair))} mute={mute} onToggleMute={() => {
+      <GuideBox c1={c1} c2={c2} gapOpen={gapOpen} onToggleGap={() => setGapOpen(o => !o)} onSnap={() => setSaveAsk(pair.saveName || pairTitle(pair))} mute={mute} onToggleMute={() => {
         const v = !mute; setMute(v); muteRef.current = v;
         try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
       }} />
@@ -733,9 +728,9 @@ function useFloater(KEY: string, home: { left?: string; right?: string; top: str
 }
 
 /** 사용법 상자 — 원본처럼 떠 있고, 제목 줄을 끌어 옮기고(자리는 기억됨), 두 번 누르면 제자리, × 로 닫기. 찰칵/소리 버튼도 여기에 있다 */
-function GuideBox({ c1, c2, onSnap, mute, onToggleMute }: {
+function GuideBox({ c1, c2, onSnap, mute, onToggleMute, gapOpen, onToggleGap }: {
   c1: { name: string; label: string }; c2: { name: string; label: string };
-  onSnap: () => void; mute: boolean; onToggleMute: () => void;
+  onSnap: () => void; mute: boolean; onToggleMute: () => void; gapOpen: boolean; onToggleGap: () => void;
 }) {
   const f = useFloater('ohome.closet.guidepos', { left: '10px', top: '130px' });
   const [gone, setGone] = useState(false);
@@ -753,6 +748,9 @@ function GuideBox({ c1, c2, onSnap, mute, onToggleMute }: {
         <button type="button" className="btn_custom big" onClick={onSnap}><Ico name="camera" size={15} />찰칵!</button>
         <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={onToggleMute}>
           <Ico name={mute ? 'soundOff' : 'soundOn'} />{mute ? '소리 꺼짐' : '소리'}
+        </button>
+        <button type="button" className={`btn_custom ${gapOpen ? '' : 'off'}`} aria-pressed={gapOpen} onClick={onToggleGap}>
+          <Ico name="arrows" />간격
         </button>
       </div>
       <div className="guide-details" style={{ display: more ? 'block' : 'none' }}>
