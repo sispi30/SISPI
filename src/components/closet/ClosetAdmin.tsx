@@ -5,20 +5,21 @@ import { putBlob, useUploading } from '@/lib/blobStore';
 import { newId } from '@/lib/postStore';
 import {
   CLOSET_TABS, DIALOGUE_FIELDS, itemsForPair, newPair, pairTitle,
-  type ClosetChar, type ClosetData, type ClosetItem, type ClosetPair,
+  type ClosetChar, type ClosetData, type ClosetItem, type ClosetPair, type ClosetSet,
 } from '@/lib/closetStore';
 import { Modal, useConfirmDelete } from '@/components/ui/Modal';
 import { FileDrop } from '@/components/ui/FileDrop';
 import { KCheck, KInput, KLabel, KSelect, KStep, KTextarea } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
 import { useUrlMap } from './ClosetStage';
+import { ClosetIcon as Ico } from './ClosetIcon';
 
 type Sec = 'pairs' | 'items' | 'chars' | 'dialogue' | 'design';
 const SECS: { key: Sec; label: string }[] = [
   { key: 'pairs', label: '페어' }, { key: 'items', label: '옷' }, { key: 'chars', label: '캐릭터' },
   { key: 'dialogue', label: '대사' }, { key: 'design', label: '디자인' },
 ];
-const tabOpts = CLOSET_TABS.map(t => ({ value: t.key, label: t.label }));
+const tabOpts = CLOSET_TABS.map(t => ({ value: t.key, label: <span className="cl-opt"><Ico name={t.icon} size={13} />{t.label}</span> }));
 const zOf = (tab: string) => CLOSET_TABS.find(t => t.key === tab)?.zi ?? 20;
 const stem = (f: string) => f.replace(/\.[^.]+$/, '');
 const SHARED = '__shared';   // 선택칸에서 「공용」을 나타내는 값
@@ -122,6 +123,11 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
       const idMap = new Map<string, string>();
       const copies = x.items.filter(i => i.pair === p.id).map(i => { const nid = newId(); idMap.set(i.id, nid); return { ...i, id: nid, pair: cp.id }; });
       cp.chars = cp.chars.map(c => ({ ...c, outfit: c.outfit.map(o => idMap.get(o) ?? o) })) as ClosetPair['chars'];
+      // 세트도 복제본의 옷을 가리키게 (세트 id 는 새로)
+      cp.sets = (cp.sets ?? []).map(s => ({
+        ...s, id: newId(),
+        outfits: s.outfits.map(o => o && o.map(e => ({ ...e, itemId: idMap.get(e.itemId) ?? e.itemId }))) as ClosetSet['outfits'],
+      }));
       return { ...x, pairs: [...x.pairs, cp], items: [...x.items, ...copies] };
     });
     setPi(cp.id);
@@ -184,11 +190,7 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
             </p>
             {d.pairs.map((p, idx) => (
               <div className="row" key={p.id}>
-                <KInput style={{ width: 180 }} value={p.name} onChange={e => {
-                  // 제목이 자동(이름 따라가는) 상태면 이름을 바꿀 때 제목도 같이 바꾼다
-                  const auto = pairTitle(p) === `${p.name}의 옷장`;
-                  patchPair(p.id, { name: e.target.value, ...(auto ? { title: `${e.target.value}의 옷장` } : {}) });
-                }} />
+                <KInput style={{ width: 180 }} value={p.name} onChange={e => patchPair(p.id, { name: e.target.value })} />
                 <button className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 11 }} disabled={idx === 0} onClick={() => movePair(idx, -1)}>▲</button>
                 <button className="btn btn-ghost" style={{ padding: '4px 9px', fontSize: 11 }} disabled={idx === d.pairs.length - 1} onClick={() => movePair(idx, 1)}>▼</button>
                 <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => dupPair(p)}>복제</button>
@@ -236,6 +238,14 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
           </div>
         </>)}
 
+        {sec === 'chars' && (
+          <div className="row">
+            <KLabel>두 캐릭터 간격</KLabel>
+            <KStep value={cur.gap ?? 20} min={-1200} max={1200} step={10} suffix="px" onChange={v => patchPair(cur.id, { gap: v })} />
+            <span className="hint">0 보다 작으면 두 캐릭터가 겹칩니다 (방문자는 페이지에서 슬라이드로 직접 조절할 수도 있어요)</span>
+          </div>
+        )}
+
         {sec === 'chars' && ([0, 1] as const).map(n => {
           const c = cur.chars[n];
           return (
@@ -258,36 +268,13 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
                 ))}
               </div>
               <p className="hint">표정 5장은 크기가 모두 같은 투명 PNG 여야 하고, 위 크기(px)와 맞춰 주세요. 얼굴 위치도 5장 모두 똑같이 맞춥니다.</p>
-              <KLabel>홍조 위치 (부끄러운 표정에서 볼에 붉게 번집니다)</KLabel>
-              {(() => {
-                const set = (k: 0 | 1 | 2 | 3, v: number) =>
-                  setChar(n, { blush: c.blush.map((x, i) => i === k ? v : x) as ClosetChar['blush'] });
-                const sc = Math.min(1, 220 / Math.max(c.height, 1));
-                const [bl, bt, bw, bh] = c.blush;
-                const rows: [0 | 1 | 2 | 3, string, number][] = [
-                  [1, '상하', c.height], [0, '좌우', c.width], [2, '너비', c.width], [3, '높이', c.height],
-                ];
-                return (
-                  <div className="blush-edit">
-                    <div className="blush-prev" style={{ width: c.width * sc, height: c.height * sc }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={resolve(c.bodies[3] || c.bodies[0])} alt="" />
-                      <i style={{ left: bl * sc, top: bt * sc, width: bw * sc, height: bh * sc }} />
-                    </div>
-                    <div className="blush-ctl">
-                      {rows.map(([k, label, max]) => (
-                        <label key={k}>
-                          <span>{label}</span>
-                          <input type="range" min={0} max={max} step={1} value={Math.min(c.blush[k], max)}
-                            onChange={e => set(k, Number(e.target.value))} />
-                          <KStep value={c.blush[k]} min={0} max={1600} step={1} suffix="px" onChange={v => set(k, v)} />
-                        </label>
-                      ))}
-                      <p className="hint">상하를 움직이면 미리보기의 붉은 번짐이 위아래로 움직입니다.</p>
-                    </div>
-                  </div>
-                );
-              })()}
+              <div className="row">
+                <span className="hint">홍조 위치(왼쪽·위·너비·높이)</span>
+                {([0, 1, 2, 3] as const).map(k => (
+                  <KStep key={k} value={c.blush[k]} min={0} max={1600} step={5}
+                    onChange={v => setChar(n, { blush: c.blush.map((x, i) => i === k ? v : x) as ClosetChar['blush'] })} />
+                ))}
+              </div>
               <KLabel>처음 입고 나오는 옷</KLabel>
               <div className="chk">
                 {curItems.map(it => (
@@ -317,9 +304,10 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
         {sec === 'design' && (
           <div className="sec">
             <KLabel>제목 (리본에 타자로 나옵니다)</KLabel>
-            <KInput value={pairTitle(cur)} onChange={e => patchPair(cur.id, { title: e.target.value })} />
+            <KInput value={cur.title} placeholder={pairTitle({ name: cur.name, title: '' })} onChange={e => patchPair(cur.id, { title: e.target.value })} />
+            <p className="hint">비워 두면 「페어이름의 옷장」으로 나와서, 「페어」 탭에서 이름을 바꾸면 제목도 같이 바뀝니다.</p>
             <KLabel>저장 파일 기본 이름</KLabel>
-            <KInput value={cur.saveName} onChange={e => patchPair(cur.id, { saveName: e.target.value })} />
+            <KInput value={cur.saveName} placeholder={pairTitle(cur)} onChange={e => patchPair(cur.id, { saveName: e.target.value })} />
           </div>
         )}
       </div>

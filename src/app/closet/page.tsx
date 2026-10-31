@@ -4,6 +4,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useCloset, itemsForPair } from '@/lib/closetStore';
+import { EditableDesc, PageTitle } from '@/components/ui/PageText';
 import { ClosetStage, type StageSaved } from '@/components/closet/ClosetStage';
 import { ClosetAdmin } from '@/components/closet/ClosetAdmin';
 
@@ -43,8 +44,13 @@ export default function ClosetPage() {
 
   return (
     <section className="page">
+      <div className="page-head">
+        <PageTitle>CLOSET</PageTitle>
+        <EditableDesc k="closet-desc" def="두 명에게 옷을 입혀 보고, 사진으로 남겨요" />
+      </div>
+
       {data.pairs.length > 1 && (
-        <div className="closet-pairs narrow-only">
+        <div className="closet-pairs">
           {data.pairs.map(p => (
             <button key={p.id} type="button" className={p.id === pair.id ? 'on' : ''} onClick={() => pick(p.id)}>{p.name}</button>
           ))}
@@ -52,8 +58,9 @@ export default function ClosetPage() {
       )}
 
       {/* key — 페어가 바뀌면 화면을 새로 세운다 (입은 모습은 memo 로 이어 간다) */}
-      <ClosetStage key={pair.id} pair={pair} items={items} isAdmin={isAdmin} onEdit={() => setEdit(true)} pairs={data.pairs} onPick={pick}
-        saved={memo.current[pair.id]} onSave={s => { memo.current[pair.id] = s; }} />
+      <ClosetStage key={pair.id} pair={pair} items={items} isAdmin={isAdmin} onEdit={() => setEdit(true)}
+        saved={memo.current[pair.id]} onSave={s => { memo.current[pair.id] = s; }}
+        onSharedSets={sets => save({ ...data, pairs: data.pairs.map(p => p.id === pair.id ? { ...p, sets } : p) })} />
 
       {isAdmin && (
         <ClosetAdmin open={edit} data={data} pairId={pair.id} onClose={() => setEdit(false)}

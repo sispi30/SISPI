@@ -8,15 +8,22 @@ import { getRawSetting, setSetting } from './settingStore';
 export const CLOSET_KEY = 'ohome.closet.v1';
 
 /** 옷 탭 — 키는 고정, 이름은 화면에 보이는 것 */
-export const CLOSET_TABS: { key: string; label: string; zi: number }[] = [
-  { key: 'bottom', label: '👖 하의', zi: 15 },
-  { key: 'top', label: '👕 상의', zi: 20 },
-  { key: 'shoes', label: '👟 신발', zi: 22 },
-  { key: 'dress', label: '👗 원피스', zi: 20 },
-  { key: 'outer', label: '🧥 외투', zi: 35 },
-  { key: 'acc', label: '✨ 악세', zi: 40 },
-  { key: 'bg', label: '🏞 배경', zi: 3 },
+export const CLOSET_TABS: { key: string; label: string; icon: string; zi: number }[] = [
+  // 화면에 보이는 순서 (옷장 오른쪽 탭, 위 → 아래)
+  // 머리 — 몸(z-index 10)을 기준으로 앞머리는 앞(옷보다도 앞), 뒷머리는 몸 뒤로 깔린다. 탭당 한 벌(바꾸면 교체)
+  { key: 'hairF', label: '앞머리', icon: 'hair', zi: 38 },
+  { key: 'hairB', label: '뒷머리', icon: 'hair', zi: 5 },
+  { key: 'top', label: '상의', icon: 'shirt', zi: 20 },
+  { key: 'bottom', label: '하의', icon: 'pants', zi: 15 },
+  { key: 'shoes', label: '신발', icon: 'shoe', zi: 22 },
+  { key: 'dress', label: '원피스', icon: 'dress', zi: 20 },
+  { key: 'outer', label: '외투', icon: 'coat', zi: 35 },
+  { key: 'acc', label: '악세', icon: 'sparkle', zi: 40 },
+  { key: 'bg', label: '배경', icon: 'mountain', zi: 3 },
 ];
+
+/** 머리 탭 — 벗고 입을 때 위로 날아가는 연출을 쓴다 */
+export const HAIR_TABS = ['hairF', 'hairB'];
 
 /** 여러 벌을 겹쳐 입을 수 있는 탭 (나머지는 탭당 한 벌 — 새로 입으면 이전 것이 벗겨진다) */
 export const STACK_TABS = ['outer', 'acc', 'shoes', 'bg'];
@@ -42,6 +49,15 @@ export interface ClosetChar {
   outfit: string[];     // 처음 입고 나오는 옷 (아이템 id)
 }
 
+/** 코디 세트 — 입은 옷 조합을 이름 붙여 저장해 두고 버튼 하나로 입힌다.
+ *  outfits[0|1] = 캐릭터 1·2 가 입은 옷 (null = 이 세트는 그 캐릭터를 건드리지 않음) */
+export interface ClosetSetEntry { itemId: string; zi: number }
+export interface ClosetSet {
+  id: string;
+  name: string;
+  outfits: [ClosetSetEntry[] | null, ClosetSetEntry[] | null];
+}
+
 /** 페어 하나 — 캐릭터 두 명 · 대사 · 제목. 옷장(옷 목록)은 모든 페어가 같이 쓴다 */
 export interface ClosetPair {
   id: string;
@@ -50,12 +66,31 @@ export interface ClosetPair {
   saveName: string;
   chars: [ClosetChar, ClosetChar];
   dialogue: [Record<string, string>, Record<string, string>];
+  gap?: number;         // 두 캐릭터 사이 간격(px) — 기본 20 · 음수면 서로 겹친다
+  sets?: ClosetSet[];   // 모두에게 보이는 세트 (관리자가 저장) — 방문자 개인 세트는 그 브라우저에만 둔다
+}
+
+/** 세트 한 칸 보정 — 깨진 값은 버린다 */
+export function cleanSets(raw: unknown): ClosetSet[] {
+  if (!Array.isArray(raw)) return [];
+  const entries = (v: unknown): ClosetSetEntry[] | null => Array.isArray(v)
+    ? v.filter((e): e is ClosetSetEntry => !!e && typeof (e as ClosetSetEntry).itemId === 'string')
+      .map(e => ({ itemId: e.itemId, zi: Number(e.zi) || 0 }))
+    : null;
+  return raw.filter(s => s && typeof (s as ClosetSet).id === 'string' && typeof (s as ClosetSet).name === 'string')
+    .map(s => {
+      const o = (s as ClosetSet).outfits;
+      return { id: (s as ClosetSet).id, name: (s as ClosetSet).name, outfits: [entries(o?.[0]), entries(o?.[1])] as ClosetSet['outfits'] };
+    });
 }
 
 export interface ClosetData {
   pairs: ClosetPair[];
   items: ClosetItem[];
 }
+
+/** 리본에 보이는 제목 — 비워 두면 「페어이름의 옷장」 이라 이름을 바꾸면 같이 바뀐다 */
+export const pairTitle = (p: Pick<ClosetPair, 'name' | 'title'>) => p.title.trim() || `${p.name}의 옷장`;
 
 /** 이 페어에서 보이는 옷 — 공용 + 이 페어 전용 */
 export const itemsForPair = (items: ClosetItem[], pairId: string) =>
@@ -104,7 +139,7 @@ export function newPair(id: string, name: string, outfit: [string[], string[]] =
       : `${f.label} ${who} 대사`]),
   );
   return {
-    id, name, title: `${name}의 옷장`, saveName: '옷장',
+    id, name, title: '', saveName: '',
     chars: [
       { name: '캐릭터A', label: 'A', bodies: bodies(1), width: 300, height: 600, blush: [100, 92, 100, 56], outfit: outfit[0] },
       { name: '캐릭터B', label: 'B', bodies: bodies(2), width: 300, height: 600, blush: [100, 92, 100, 56], outfit: outfit[1] },
@@ -113,16 +148,10 @@ export function newPair(id: string, name: string, outfit: [string[], string[]] =
   };
 }
 
-/** 제목이 비었거나 예시 글자(「페어명의 옷장」) 그대로면 페어 이름을 넣어 「이름의 옷장」으로 보여 준다 */
-export function pairTitle(p: { name: string; title: string }): string {
-  const t = (p.title || '').trim();
-  return !t || t === '페어명의 옷장' ? `${p.name}의 옷장` : p.title;
-}
-
 /** 처음 열었을 때 보이는 예시 */
 export function defaultCloset(): ClosetData {
   return {
-    pairs: [{ ...newPair('p1', '페어 1', [['base-wear0', 'base-ace1'], ['base-wear1', 'base-ace2']]) }],
+    pairs: [newPair('p1', '페어 1', [['base-wear0', 'base-ace1'], ['base-wear1', 'base-ace2']])],
     items: SAMPLE_ITEMS,
   };
 }
@@ -142,8 +171,10 @@ function normalizePair(raw: Partial<ClosetPair>, id: string, fallbackName: strin
   }) as ClosetPair['chars'];
   const dialogue = d.dialogue.map((dd, i) => ({ ...dd, ...(raw.dialogue?.[i] ?? {}) })) as ClosetPair['dialogue'];
   return {
-    ...d, id, chars, dialogue,
-    title: typeof raw.title === 'string' ? raw.title : d.title,
+    ...d, id, chars, dialogue, sets: cleanSets(raw.sets),
+    gap: typeof raw.gap === 'number' && Number.isFinite(raw.gap) ? raw.gap : 20,
+    // 예전에 이름으로 자동 채워 저장된 제목(「페어 2의 옷장」 따위)은 자동 제목으로 되돌려 이름을 따라가게 한다
+    title: typeof raw.title === 'string' && !/^(페어 \d+|페어명)의 옷장$/.test(raw.title) && raw.title !== `${d.name}의 옷장` ? raw.title : '',
     saveName: typeof raw.saveName === 'string' ? raw.saveName : d.saveName,
   };
 }

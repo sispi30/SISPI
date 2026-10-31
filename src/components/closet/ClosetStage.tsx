@@ -3,11 +3,17 @@
 // 입은 옷과 표정은 React 상태로, 말풍선·모션·홍조 같은 연출은 Brain 이 DOM 에 직접 건다.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getBlob } from '@/lib/blobStore';
-import { CLOSET_TABS, CLOTH_TABS, STACK_TABS, type ClosetItem, type ClosetPair, pairTitle } from '@/lib/closetStore';
-import { Modal } from '@/components/ui/Modal';
-import { KInput } from '@/components/ui/Kit';
+import {
+  CLOSET_TABS, CLOTH_TABS, HAIR_TABS, STACK_TABS, cleanSets, pairTitle,
+  type ClosetItem, type ClosetPair, type ClosetSet, type ClosetSetEntry,
+} from '@/lib/closetStore';
+import { Modal, useConfirmDelete } from '@/components/ui/Modal';
+import { KCheck, KInput } from '@/components/ui/Kit';
+import { newId } from '@/lib/postStore';
 import { useToast } from '@/components/ui/Toast';
 import { Brain, type BrainEnv, type CharView } from './closetBrain';
+import { ClosetIcon as Ico } from './ClosetIcon';
+import { ClosetSlider } from './ClosetSlider';
 import './closet.css';
 
 type Cid = 1 | 2;
@@ -36,12 +42,16 @@ export function useUrlMap(refs: string[]) {
 /** 페어를 바꿨다 돌아와도 입혀 둔 모습이 남도록, 떠날 때 맡겨 두는 상태 */
 export interface StageSaved { worn: Record<Cid, Worn[]>; bg: Record<Cid, string> }
 
-export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs, onPick }: {
+const LS_GAP = 'ohome.closet.gap.v1';     // 방문자가 정한 캐릭터 간격 — { 페어id: px } (이 브라우저에만)
+const LS_SETS = 'ohome.closet.sets.v1';   // 방문자 개인 세트 — { 페어id: 세트[] } (이 브라우저에만)
+
+export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSharedSets }: {
   pair: ClosetPair; items: ClosetItem[]; isAdmin: boolean; onEdit: () => void;
-  pairs?: ClosetPair[]; onPick?: (id: string) => void;
   saved?: StageSaved; onSave: (s: StageSaved) => void;
+  onSharedSets: (sets: ClosetSet[]) => void;   // 모두에게 보이는 세트가 바뀌었을 때 (관리자만)
 }) {
   const toast = useToast();
+  const del = useConfirmDelete();
   const data = { ...pair, items };
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -70,6 +80,9 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
   const [saveAsk, setSaveAsk] = useState<string | null>(null);
   const [mute, setMute] = useState(false);
   const muteRef = useRef(false);
+  const [gapOv, setGapOv] = useState<number | null>(null);   // 방문자가 슬라이드로 바꾼 간격 (없으면 기본값)
+  const [gapOpen, setGapOpen] = useState(false);
+  const [front, setFront] = useState<Cid>(2);                  // 겹쳤을 때 앞에 보이는 캐릭터
 
   // 화면 요소 · 반응 엔진
   const els = useRef<Record<Cid, CharView>>({
@@ -182,6 +195,61 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
     } else go();
   };
 
+  /* ---------- 코디 세트 ---------- */
+  const [localSets, setLocalSets] = useState<ClosetSet[]>([]);
+  const [setAsk, setSetAsk] = useState<{ name: string; chars: [boolean, boolean]; share: boolean } | null>(null);
+  useEffect(() => {
+    try { setLocalSets(cleanSets((JSON.parse(localStorage.getItem(LS_SETS) || '{}') as Record<string, unknown>)[pair.id])); } catch { /* 무시 */ }
+  }, [pair.id]);
+  const writeLocal = (next: ClosetSet[]) => {
+    setLocalSets(next);
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_SETS) || '{}') as Record<string, unknown>;
+      all[pair.id] = next;
+      localStorage.setItem(LS_SETS, JSON.stringify(all));
+    } catch { toast('이 브라우저에 저장하지 못했습니다'); }
+  };
+  const sharedSets = pair.sets ?? [];
+
+  const saveSet = () => {
+    if (!setAsk) return;
+    const name = setAsk.name.trim();
+    if (!name) { toast('세트 이름을 적어 주세요'); return; }
+    if (!setAsk.chars[0] && !setAsk.chars[1]) { toast('저장할 캐릭터를 하나 이상 골라 주세요'); return; }
+    const grab = (cid: Cid): ClosetSetEntry[] | null => setAsk.chars[cid - 1]
+      ? wornRef.current[cid].filter(w => w.fx !== 'out').map(w => ({ itemId: w.itemId, zi: w.zi }))
+      : null;
+    const set: ClosetSet = { id: newId(), name, outfits: [grab(1), grab(2)] };
+    if (setAsk.share && isAdmin) onSharedSets([...sharedSets, set]);
+    else writeLocal([...localSets, set]);
+    setSetAsk(null);
+    toast(`「${name}」 세트를 저장했습니다`);
+  };
+
+  const applySet = (set: ClosetSet) => {
+    let missing = 0;
+    ([1, 2] as Cid[]).forEach(cid => {
+      const ent = set.outfits[cid - 1];
+      if (!ent) return;   // 이 세트가 건드리지 않는 캐릭터
+      const next: Worn[] = [];
+      ent.forEach(e => {
+        const it = itemOf(e.itemId);
+        if (!it) { missing += 1; return; }
+        next.push({ key: `w${++wornSeq}`, itemId: it.id, src: resolve(it.src), tab: it.tab, name: it.name, zi: e.zi, fx: 'in' });
+      });
+      setWorn(cid, () => next);
+      setTimeout(() => setWorn(cid, w => w.map(x => ({ ...x, fx: undefined }))), 600);
+      brains.current?.[cid].interact(false);
+    });
+    sfx('magic');
+    if (missing) toast(`없어진 옷 ${missing}개는 빼고 입혔어요`);
+  };
+
+  const removeSet = (set: ClosetSet, shared: boolean) => del.ask(`「${set.name}」 세트를 삭제할까요?`, () => {
+    if (shared) onSharedSets(sharedSets.filter(s => s.id !== set.id));
+    else writeLocal(localSets.filter(s => s.id !== set.id));
+  });
+
   const stripAll = (cid: Cid) => {
     const b = brains.current?.[cid];
     if (!b) return;
@@ -287,25 +355,15 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
   };
 
   /* ---------- 찰칵 — 두 명을 나란히 PNG 로 ---------- */
-  const loadImg = async (src: string) => {
-    // 다른 주소(저장소)의 그림은 브라우저가 CORS로 막아 캔버스에 못 담는 일이 있다 —
-    // 사이트 공용 getBlob 이 직접 받고, 안 되면 같은 출처 중계로 받아 같은 출처 주소로 바꿔 그린다
+  const loadImg = (src: string) => new Promise<HTMLImageElement | null>(resolveImg => {
     const cross = /^https?:\/\//.test(src) && !src.startsWith(window.location.origin);
-    let url = src;
-    let tmp = false;
-    if (cross) {
-      const b = await getBlob(src).catch(() => null);
-      if (b) { url = URL.createObjectURL(b); tmp = true; }
-    }
-    return new Promise<HTMLImageElement | null>(resolveImg => {
-      const im = new Image();
-      if (cross && !tmp) im.crossOrigin = 'anonymous';
-      im.onload = () => { if (tmp) URL.revokeObjectURL(url); resolveImg(im); };
-      im.onerror = () => { if (tmp) URL.revokeObjectURL(url); resolveImg(null); };
-      // 받아 오지 못해 직접 불러야 할 때는 CORS 없이 받아 둔 캐시와 섞이지 않게 구분
-      im.src = cross && !tmp ? src + (src.includes('?') ? '&' : '?') + '_cors=1' : url;
-    });
-  };
+    const im = new Image();
+    if (cross) im.crossOrigin = 'anonymous';
+    im.onload = () => resolveImg(im);
+    im.onerror = () => resolveImg(null);
+    // 같은 주소를 CORS 없이 받아 둔 캐시와 섞이지 않게 구분
+    im.src = cross ? src + (src.includes('?') ? '&' : '?') + '_cors=1' : src;
+  });
 
   const drawChar = async (cid: Cid, canvas: HTMLCanvasElement, skipped: string[]) => {
     const c = dataRef.current.chars[cid - 1];
@@ -334,18 +392,21 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
     const skipped: string[] = [];
     const c1 = document.createElement('canvas'), c2 = document.createElement('canvas');
     await Promise.all([drawChar(1, c1, skipped), drawChar(2, c2, skipped)]);
-    const gap = 20, a = d.chars[0], b = d.chars[1];
+    // 화면과 같은 배치 — 간격(겹침 포함)과 앞뒤 순서를 그대로
+    const a = d.chars[0], b = d.chars[1];
     const comb = document.createElement('canvas');
     comb.width = a.width + gap + b.width; comb.height = Math.max(a.height, b.height);
     const ctx = comb.getContext('2d')!;
-    ctx.drawImage(c1, 0, 0); ctx.drawImage(c2, a.width + gap, 0);
+    const spots: [HTMLCanvasElement, number, Cid][] = [[c1, 0, 1], [c2, a.width + gap, 2]];
+    spots.sort((x, y) => (x[2] === front ? 1 : 0) - (y[2] === front ? 1 : 0));   // 앞 캐릭터를 나중에 그린다
+    spots.forEach(([cv, x]) => ctx.drawImage(cv, x, 0));
     let url: string;
     try { url = comb.toDataURL('image/png'); } catch {
       toast('저장하지 못했습니다 — 다른 사이트 주소의 그림이 섞여 있으면 브라우저가 막습니다');
       return;
     }
     const link = document.createElement('a');
-    link.download = `${name || d.saveName || '옷장'}.png`; link.href = url;
+    link.download = `${name || d.saveName || pairTitle(pair)}.png`; link.href = url;
     document.body.appendChild(link); link.click(); link.remove();
     if (skipped.length) toast(`저장됐지만 담기지 않은 그림: ${Array.from(new Set(skipped)).join(', ')}`);
     setTimeout(() => brains.current?.[1].bubble(lines(1, 'save_photo')[0], 3), 800);
@@ -353,18 +414,51 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
   };
 
   /* ---------- 표시용 ---------- */
-  // 찰칵·소리 버튼 — 넓은 화면에서는 사용법 상자 안에, 좁은 화면에서는 제목 아래에 보인다
-  const actionBtns = (<>
-    <button type="button" className="btn_custom big" onClick={() => setSaveAsk(data.saveName)}>📸 찰칵!</button>
-    <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={() => {
-      const v = !mute; setMute(v); muteRef.current = v;
-      try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
-    }}>{mute ? '🔇 소리 꺼짐' : '🔊 소리'}</button>
-  </>);
-  // 옷장(오른쪽 목록)은 사용법 상자처럼 끌어서 옮긴다 — 캐릭터 화면은 가운데에 둔다
-  const ward = useFloat('ohome.closet.wardpos', () => ({ l: window.innerWidth - 460, t: 130 }));
   const [c1, c2] = data.chars;
   const chars: [Cid, typeof c1][] = [[1, c1], [2, c2]];
+
+  /* 두 캐릭터 사이 간격 — 관리자가 정한 기본값(pair.gap), 또는 이 방문자가 슬라이드로 바꾼 값(이 브라우저에만 기억).
+     0 보다 작으면 서로 겹친다. 두 명은 항상 한 줄이고, 화면보다 넓으면 통째로 줄여 맞춘다 */
+  const gapMin = -Math.min(c1.width, c2.width);
+  const gap = Math.max(gapMin, gapOv ?? pair.gap ?? 20);
+  const stageW = c1.width + c2.width + gap;
+  const natural = Math.max(stageW, c1.width + c2.width + 20);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState({ s: 1, h: 0 });
+  // 슬라이드를 끄는 동안은 배치를 고정한다 — 끌 때마다 폭이 바뀌면 옆의 옷장이 위아래로 튀어서 못 끌었다.
+  // 손을 놓으면 그때 새 크기에 맞춰 한 번만 다시 배치한다
+  const [freeze, setFreeze] = useState<{ natural: number; s: number; h: number } | null>(null);
+  const layNat = freeze ? freeze.natural : natural;
+  const laySc = freeze ? freeze.s : fit.s;
+  const layH = freeze ? freeze.h : fit.h;
+  useEffect(() => {
+    const root = rootRef.current, inner = innerRef.current;
+    if (!root || !inner) return;
+    const calc = () => {
+      const s = root.clientWidth > 0 ? Math.min(1, root.clientWidth / natural) : 1;
+      const h = inner.offsetHeight;
+      setFit(f => (f.s === s && f.h === h ? f : { s, h }));
+    };
+    calc();
+    const ro = new ResizeObserver(calc);
+    ro.observe(root); ro.observe(inner);
+    return () => ro.disconnect();
+  }, [natural]);
+  useEffect(() => {
+    try {
+      const v = (JSON.parse(localStorage.getItem(LS_GAP) || '{}') as Record<string, number>)[pair.id];
+      setGapOv(typeof v === 'number' ? v : null);
+    } catch { /* 무시 */ }
+  }, [pair.id]);
+  const writeGap = (v: number | null) => {
+    setGapOv(v);
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_GAP) || '{}') as Record<string, number>;
+      if (v === null) delete all[pair.id]; else all[pair.id] = v;
+      localStorage.setItem(LS_GAP, JSON.stringify(all));
+    } catch { /* 무시 */ }
+  };
   const tabItems = useMemo(() => data.items.filter(i => i.tab === tab), [data.items, tab]);
   const q = kw.trim().toLowerCase();
   // 입은 옷은 목록에서 투명해질 뿐 자리는 그대로 둔다 (원본: visibility:hidden)
@@ -373,87 +467,130 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
   const anyShown = matched.some(i => !isWornHidden(i));
 
   return (
-    <div className="closet">
+    <div className="closet" ref={rootRef}>
       <div className="cl-wrap">
         <div className="cl-main">
-          <div className="ribbon-wrapper"><div className="ribbon-bg" /><Title text={pairTitle(data)} /></div>
-          <div className="title-btns narrow-only">{actionBtns}</div>
+          <div className="ribbon-wrapper"><div className="ribbon-bg" /><Title text={pairTitle(pair)} /></div>
+          <div className="title-btns">
+            <button type="button" className="btn_custom big" onClick={() => setSaveAsk(pair.saveName || pairTitle(pair))}><Ico name="camera" size={15} />찰칵!</button>
+            <button type="button" className={`btn_custom ${mute ? 'off' : ''}`} onClick={() => {
+              const v = !mute; setMute(v); muteRef.current = v;
+              try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
+            }}><Ico name={mute ? 'soundOff' : 'soundOn'} />{mute ? '소리 꺼짐' : '소리'}</button>
+            <button type="button" className={`btn_custom ${gapOpen ? '' : 'off'}`} aria-pressed={gapOpen} onClick={() => setGapOpen(o => !o)}>
+              <Ico name="arrows" />간격
+            </button>
+          </div>
+          {gapOpen && (
+            <div className="gap-panel">
+              <span className="gap-lbl">두 캐릭터 간격</span>
+              <ClosetSlider value={gap} min={gapMin} max={Math.max(300, gap)} step={5} onChange={writeGap}
+                onDragStart={() => setFreeze({ natural, s: fit.s, h: fit.h })} onDragEnd={() => setFreeze(null)} />
+              <b className="gap-val">{gap}px</b>
+              <button type="button" className="btn_custom" onClick={() => writeGap(null)}>기본값</button>
+              <button type="button" className="btn_custom" onClick={() => setFront(f => (f === 1 ? 2 : 1))}>앞 캐릭터 바꾸기</button>
+            </div>
+          )}
 
-          <div className="dual-stage">
-            {chars.map(([cid, c]) => (
-              <div className="char-col" key={cid}>
-                <div className="char-name-label">{c.name}</div>
-                <div className="character-stage" data-zone={cid} style={{
-                  width: c.width, height: c.height,
-                  backgroundImage: bgSrc[cid] ? `url("${bgSrc[cid]}")` : undefined, backgroundSize: 'cover', backgroundPosition: 'center',
-                }} onClick={() => brains.current?.[cid].click()}>
-                  <div className="speech-bubble" ref={el => { els.current[cid].bubble = el; }} />
-                  <div ref={el => { els.current[cid].sweat = el; }} />
-                  <div ref={el => { els.current[cid].cloud = el; }} />
-                  <div className="blush-overlay" ref={el => { els.current[cid].blush = el; }}
-                    style={{ left: c.blush[0], top: c.blush[1], width: c.blush[2], height: c.blush[3] }} />
-                  <div className="char-visuals" ref={el => { els.current[cid].cv = el; }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="base-layer" alt="" draggable={false} src={resolve(c.bodies[face[cid] - 1] || c.bodies[0])} />
-                    {worn[cid].map(w => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={w.key} className={`dropped-item ${w.fx === 'out' ? 'anim-fly-down' : w.fx === 'in' ? 'anim-fly-in-up' : ''}`}
-                        alt="" draggable={false} src={w.src} style={{ zIndex: w.zi }} />
-                    ))}
+          {/* 두 명은 항상 한 줄 — 화면보다 넓으면 통째로 줄여 맞춘다. 간격이 음수면 서로 겹친다 */}
+          <div className="dual-wrap" style={{ width: layNat * laySc, height: layH ? layH * laySc : undefined }}>
+            <div className="dual-scale" ref={innerRef} style={{ width: layNat, transform: `scale(${laySc})` }}>
+              <div className="ctl-row">
+                {chars.map(([cid, c]) => (
+                  <div className="char-col" key={cid} style={{ width: c.width }}>
+                    <div className="char-name-label">{c.name}</div>
+                    <div className="char-btn-row">
+                      <button type="button" className="btn_custom" onClick={() => restore(cid)}>다시 입히기</button>
+                      <button type="button" className="btn_custom btn_reset" onClick={() => stripAll(cid)}>전부 벗기!</button>
+                    </div>
                   </div>
-                </div>
-                <div className="char-btn-row below">
-                  <button type="button" className="btn_custom" onClick={() => restore(cid)}>다시 입히기</button>
-                  <button type="button" className="btn_custom btn_reset" onClick={() => stripAll(cid)}>전부 벗기!</button>
-                </div>
-                <div className="worn-panel-wrap" style={{ width: c.width, maxWidth: '100%' }}>
-                  <div className="worn-panel-title">👕 착용 중 — ✕ 벗기 / ▲▼ 앞뒤 조절</div>
-                  <div className="worn-panel">
-                    {worn[cid].filter(w => !w.fx).length === 0 && <span className="worn-empty">없음</span>}
-                    {worn[cid].filter(w => !w.fx).map(w => (
-                      <div className="worn-chip" key={w.key}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={w.src} alt="" title={w.name} />
-                        <span className="chip-lbl">{w.name}</span>
-                        <div className="zi-row">
-                          <button className="zi-btn" onClick={() => shiftZ(cid, w.key, 1)}>▲</button>
-                          <span className="zi-val">{w.zi}</span>
-                          <button className="zi-btn" onClick={() => shiftZ(cid, w.key, -1)}>▼</button>
-                        </div>
-                        <button className="worn-x" title="벗기기" onClick={() => removeWorn(cid, w.key)}>✕</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+
+              <div className="stage-row" style={{ width: stageW, height: Math.max(c1.height, c2.height) }}>
+                {chars.map(([cid, c]) => (
+                  <div className="char-slot" key={cid} style={{ marginLeft: cid === 2 ? gap : 0, zIndex: front === cid ? 3 : 2 }}>
+                    <div className="character-stage" data-zone={cid} style={{
+                      width: c.width, height: c.height,
+                      backgroundImage: bgSrc[cid] ? `url("${bgSrc[cid]}")` : undefined, backgroundSize: 'cover', backgroundPosition: 'center',
+                    }} onClick={() => brains.current?.[cid].click()}>
+                      <div className="speech-bubble" ref={el => { els.current[cid].bubble = el; }} />
+                      <div ref={el => { els.current[cid].sweat = el; }} />
+                      <div ref={el => { els.current[cid].cloud = el; }} />
+                      <div className="blush-overlay" ref={el => { els.current[cid].blush = el; }}
+                        style={{ left: c.blush[0], top: c.blush[1], width: c.blush[2], height: c.blush[3] }} />
+                      <div className="char-visuals" ref={el => { els.current[cid].cv = el; }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img className="base-layer" alt="" draggable={false} src={resolve(c.bodies[face[cid] - 1] || c.bodies[0])} />
+                        {worn[cid].map(w => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={w.key} className={`dropped-item ${w.fx === 'out' ? (HAIR_TABS.includes(w.tab) ? 'anim-fly-up' : 'anim-fly-down') : w.fx === 'in' ? (HAIR_TABS.includes(w.tab) ? 'anim-fly-in-down' : 'anim-fly-in-up') : ''}`}
+                            alt="" draggable={false} src={w.src} style={{ zIndex: w.zi }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="ctl-row">
+                {chars.map(([cid, c]) => (
+                  <div className="worn-panel-wrap" key={cid} style={{ width: c.width }}>
+                    <div className="worn-panel-title"><Ico name="shirt" size={12} />착용 중 — ✕ 벗기 / ▲▼ 앞뒤 조절</div>
+                    <div className="worn-panel">
+                      {worn[cid].filter(w => !w.fx).length === 0 && <span className="worn-empty">없음</span>}
+                      {worn[cid].filter(w => !w.fx).map(w => (
+                        <div className="worn-chip" key={w.key}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={w.src} alt="" title={w.name} />
+                          <span className="chip-lbl">{w.name}</span>
+                          <div className="zi-row">
+                            <button className="zi-btn" onClick={() => shiftZ(cid, w.key, 1)}>▲</button>
+                            <span className="zi-val">{w.zi}</span>
+                            <button className="zi-btn" onClick={() => shiftZ(cid, w.key, -1)}>▼</button>
+                          </div>
+                          <button className="worn-x" title="벗기기" onClick={() => removeWorn(cid, w.key)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="sets">
+            <div className="sets-title"><Ico name="ribbon" size={16} />코디 세트 <span>— 지금 입은 조합을 저장해 두고, 버튼 하나로 입혀요</span></div>
+            <div className="sets-row">
+              {[...sharedSets.map(s => ({ s, shared: true })), ...localSets.map(s => ({ s, shared: false }))].map(({ s, shared }) => (
+                <span className={`set-chip ${shared ? '' : 'mine'}`} key={s.id}
+                  title={shared ? '모두에게 보이는 세트' : '이 브라우저에만 저장된 내 세트'}>
+                  <button type="button" onClick={() => applySet(s)}>{!shared && <Ico name="bookmark" size={12} />}{s.name}</button>
+                  {(!shared || isAdmin) && <button type="button" className="x" title="삭제" onClick={() => removeSet(s, shared)}>✕</button>}
+                </span>
+              ))}
+              {sharedSets.length + localSets.length === 0 && <span className="sets-empty">저장한 세트가 없어요</span>}
+              <button type="button" className="btn_custom" onClick={() => setSetAsk({ name: '', chars: [true, true], share: isAdmin })}>＋ 지금 코디 저장</button>
+            </div>
           </div>
         </div>
 
-        <div className="cl-side floating" ref={ward.box}>
-          <div className="float-header" title="이 줄을 끌어서 옮기세요 (두 번 누르면 제자리로)"
-            onPointerDown={ward.down} onDoubleClick={ward.reset}>
-            <span>👗 옷장</span><span className="guide-grip">⠿</span>
-          </div>
+        <div className="cl-side">
           <div className="wardrobe-top-bar">
             <input className="search-box" placeholder="아이템 검색..." value={kw} onChange={e => setKw(e.target.value)} />
             <div className="dbl-bar">
-              <span className="dbl-hint">👆 더블클릭 → 입히기</span>
+              <span className="dbl-hint"><Ico name="pointer" size={11} />더블클릭 → 입히기</span>
               <button type="button" className={`dbl-btn ${dblTarget === 'auto' ? 'active' : ''}`} onClick={() => setDblTarget('auto')}
                 title={`아이템 이름 끝의 ${c1.label}/${c2.label} 를 보고 알아서 정합니다`}>자동</button>
               <button type="button" className={`dbl-btn ${dblTarget === 1 ? 'active' : ''}`} onClick={() => setDblTarget(1)}>{c1.name}</button>
               <button type="button" className={`dbl-btn ${dblTarget === 2 ? 'active' : ''}`} onClick={() => setDblTarget(2)}>{c2.name}</button>
             </div>
           </div>
-          <div className="tab-nav">
-            {CLOSET_TABS.map(t => (
-              <button key={t.key} className={`tab-btn ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}>{t.label}</button>
-            ))}
-          </div>
+          <div className="wardrobe-row">
           <div className="wardrobe">
             {tab === 'bg' && (<>
-              <div className="bg-remove-btn" onClick={() => setBgSrc(b => ({ ...b, 1: '' }))}><span style={{ fontSize: 15 }}>🚫</span><span>{c1.name}<br />배경제거</span></div>
-              <div className="bg-remove-btn" onClick={() => setBgSrc(b => ({ ...b, 2: '' }))}><span style={{ fontSize: 15 }}>🚫</span><span>{c2.name}<br />배경제거</span></div>
+              <div className="bg-remove-btn" onClick={() => setBgSrc(b => ({ ...b, 1: '' }))}><Ico name="ban" size={16} /><span>{c1.name}<br />배경제거</span></div>
+              <div className="bg-remove-btn" onClick={() => setBgSrc(b => ({ ...b, 2: '' }))}><Ico name="ban" size={16} /><span>{c2.name}<br />배경제거</span></div>
             </>)}
             {matched.map(it => (
               // eslint-disable-next-line @next/next/no-img-element
@@ -467,20 +604,27 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
             ))}
             {!anyShown && <div className="tab-empty">아이템이 없습니다.</div>}
           </div>
+          {/* 탭은 옷장 오른쪽에 위에서 아래로 */}
+          <div className="tab-nav">
+            {CLOSET_TABS.map(t => (
+              <button key={t.key} className={`tab-btn ${tab === t.key ? 'active' : ''}`} onClick={() => setTab(t.key)}><Ico name={t.icon} size={13} />{t.label}</button>
+            ))}
+          </div>
+          </div>
           <div className="footer-credit">
             <a href="https://uchoman.ivyro.net/" target="_blank" rel="noreferrer">원본 제작 우초맨</a>
-            <span>✔ SFX: <a href="https://sellbuymusic.com/md/spjqcbb-efbfbct" target="_blank" rel="noreferrer">셀바이뮤직</a></span>
+            <span>SFX: <a href="https://sellbuymusic.com/md/spjqcbb-efbfbct" target="_blank" rel="noreferrer">셀바이뮤직</a></span>
           </div>
         </div>
       </div>
 
       {isAdmin && (
         <div style={{ textAlign: 'center', margin: '30px auto 10px' }}>
-          <button type="button" className="admin-link" onClick={() => { setTip(null); onEdit(); }}>👑 옷장 편집</button>
+          <button type="button" className="admin-link" onClick={() => { setTip(null); onEdit(); }}><Ico name="crown" size={15} />옷장 편집</button>
         </div>
       )}
 
-      <GuideBox c1={c1} c2={c2} pairs={pairs} pairId={pair.id} onPick={onPick} actions={actionBtns} />
+      <GuideBox c1={c1} c2={c2} />
 
       {tip && (
         <div className="closet-tip" style={{
@@ -493,27 +637,60 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, pairs
       <Modal open={bgAsk !== null} small title="어디에 배경을 적용할까요?" onClose={() => setBgAsk(null)}
         actions={<button className="btn btn-ghost" onClick={() => setBgAsk(null)}>취소</button>}>
         <div style={{ display: 'grid', gap: 8 }}>
-          <button className="btn btn-dark" onClick={() => applyBg(1)}>🧍 {c1.name} 만</button>
-          <button className="btn btn-dark" onClick={() => applyBg(2)}>🧍 {c2.name} 만</button>
-          <button className="btn btn-accent" onClick={() => applyBg('both')}>👫 둘 다</button>
+          <button className="btn btn-dark" onClick={() => applyBg(1)}><Ico name="person" size={15} />{c1.name} 만</button>
+          <button className="btn btn-dark" onClick={() => applyBg(2)}><Ico name="person" size={15} />{c2.name} 만</button>
+          <button className="btn btn-accent" onClick={() => applyBg('both')}><Ico name="people" size={15} />둘 다</button>
         </div>
       </Modal>
+
+      <Modal open={setAsk !== null} small title="코디 세트로 저장" desc="지금 입고 있는 옷 조합(앞뒤 순서 포함)을 저장합니다" onClose={() => setSetAsk(null)}
+        actions={<>
+          <button className="btn btn-ghost" onClick={() => setSetAsk(null)}>취소</button>
+          <button className="btn btn-dark" onClick={saveSet}>저장</button>
+        </>}>
+        {setAsk && (
+          <div style={{ display: 'grid', gap: 12 }}>
+            <KInput value={setAsk.name} placeholder="세트 이름 (예: 교복, 파티룩)" autoFocus
+              onChange={e => setSetAsk({ ...setAsk, name: e.target.value })}
+              onKeyDown={e => { if (e.key === 'Enter') saveSet(); }} />
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              {chars.map(([cid, c]) => (
+                <KCheck key={cid} label={`${c.name} 코디`} checked={setAsk.chars[cid - 1]}
+                  onChange={v => setSetAsk({ ...setAsk, chars: cid === 1 ? [v, setAsk.chars[1]] : [setAsk.chars[0], v] })} />
+              ))}
+            </div>
+            {isAdmin && (
+              <div className="mini-seg" style={{ justifySelf: 'start' }}>
+                <button className={setAsk.share ? 'on' : ''} onClick={() => setSetAsk({ ...setAsk, share: true })}>모두에게 보이게</button>
+                <button className={!setAsk.share ? 'on' : ''} onClick={() => setSetAsk({ ...setAsk, share: false })}>내 브라우저에만</button>
+              </div>
+            )}
+            {!isAdmin && <p style={{ fontSize: 11, color: 'var(--faint)' }}>세트는 이 브라우저에만 저장됩니다 (다른 기기에서는 안 보여요).</p>}
+          </div>
+        )}
+      </Modal>
+      {del.element}
 
       <Modal open={saveAsk !== null} small title="저장 파일명" onClose={() => setSaveAsk(null)}
         actions={<>
           <button className="btn btn-ghost" onClick={() => setSaveAsk(null)}>취소</button>
           <button className="btn btn-dark" onClick={() => { const n = saveAsk ?? ''; setSaveAsk(null); void saveBoth(n.trim()); }}>저장</button>
         </>}>
-        <KInput value={saveAsk ?? ''} onChange={e => setSaveAsk(e.target.value)} placeholder={data.saveName}
+        <KInput value={saveAsk ?? ''} onChange={e => setSaveAsk(e.target.value)} placeholder={pairTitle(pair)}
           onKeyDown={e => { if (e.key === 'Enter') { const n = saveAsk ?? ''; setSaveAsk(null); void saveBoth(n.trim()); } }} />
       </Modal>
     </div>
   );
 }
 
-/** 끌어서 옮기는 떠 있는 상자 공통 — 자리는 기억되고, 제목 줄을 두 번 누르면 제자리 */
-function useFloat(key: string, home: () => { l: number; t: number }) {
+/** 사용법 상자 — 원본처럼 떠 있고, 제목 줄을 끌어 옮기고(자리는 기억됨), 두 번 누르면 제자리, × 로 닫기 */
+function GuideBox({ c1, c2 }: { c1: { name: string; label: string }; c2: { name: string; label: string } }) {
+  const KEY = 'ohome.closet.guidepos';
   const box = useRef<HTMLDivElement>(null);
+  const [gone, setGone] = useState(false);
+  const [more, setMore] = useState(false);
+  const home = { left: '10px', top: '130px' };
+
   const place = (l: number, t: number) => {
     const g = box.current;
     if (!g) return;
@@ -522,14 +699,10 @@ function useFloat(key: string, home: () => { l: number; t: number }) {
     g.style.left = `${l}px`; g.style.top = `${t}px`;
   };
   useEffect(() => {
-    let sv: { l: number; t: number } | null = null;
-    try { sv = JSON.parse(localStorage.getItem(key) || 'null'); } catch { /* 무시 */ }
-    const h = sv && typeof sv.l === 'number' ? sv : home();
-    place(h.l, h.t);
+    try { const sv = JSON.parse(localStorage.getItem(KEY) || 'null'); if (sv && typeof sv.l === 'number') place(sv.l, sv.t); } catch { /* 무시 */ }
     const onResize = () => { const g = box.current; if (g) place(parseFloat(g.style.left) || 0, parseFloat(g.style.top) || 0); };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const down = (e: React.PointerEvent) => {
@@ -543,47 +716,26 @@ function useFloat(key: string, home: () => { l: number; t: number }) {
       window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       g.classList.remove('is-dragging');
-      try { localStorage.setItem(key, JSON.stringify({ l: parseFloat(g.style.left) || 0, t: parseFloat(g.style.top) || 0 })); } catch { /* 무시 */ }
+      try { localStorage.setItem(KEY, JSON.stringify({ l: parseFloat(g.style.left) || 0, t: parseFloat(g.style.top) || 0 })); } catch { /* 무시 */ }
     };
     window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
     e.preventDefault();
   };
-  const reset = (e?: React.MouseEvent) => {
-    if (e && (e.target as HTMLElement).closest('button')) return;
-    const h = home();
-    place(h.l, h.t);
-    try { localStorage.removeItem(key); } catch { /* 무시 */ }
+  const reset = () => {
+    const g = box.current;
+    if (g) { g.style.left = home.left; g.style.top = home.top; }
+    try { localStorage.removeItem(KEY); } catch { /* 무시 */ }
   };
-  return { box, down, reset };
-}
 
-/** 사용법 상자 — 떠 있고 제목 줄을 끌어 옮긴다. 찰칵·소리 버튼과 페어 고르기가 여기 있다. 페어가 둘 이상이면 여기서 페어를 고른다(많으면 스크롤) */
-function GuideBox({ c1, c2, pairs, pairId, onPick, actions }: {
-  actions?: React.ReactNode;
-  c1: { name: string; label: string }; c2: { name: string; label: string };
-  pairs?: ClosetPair[]; pairId: string; onPick?: (id: string) => void;
-}) {
-  const g = useFloat('ohome.closet.guidepos', () => ({ l: 10, t: 130 }));
-  const [more, setMore] = useState(false);
-
+  if (gone) return null;
   const sz = [c1, c2].sort((a, b) => a.label.localeCompare(b.label));
   return (
-    <div ref={g.box} className="guide-box" style={{ left: '10px', top: '130px' }}>
+    <div ref={box} className="guide-box" style={home}>
       <div className="guide-header" title="이 줄을 끌어서 옮기세요 (두 번 누르면 제자리로)"
-        onPointerDown={g.down} onDoubleClick={g.reset}>
-        <span>📖 사용법</span><span className="guide-grip">⠿</span>
+        onPointerDown={down} onDoubleClick={e => { if (!(e.target as HTMLElement).closest('button')) reset(); }}>
+        <span><Ico name="book" size={15} />사용법</span><span className="guide-grip">⠿</span>
+        <button type="button" className="btn-close-guide" onClick={() => setGone(true)}>×</button>
       </div>
-      <div className="guide-actions">{actions}</div>
-      {pairs && pairs.length > 1 && (
-        <div className="guide-pairs">
-          <div className="guide-pairs-title">👫 페어 고르기</div>
-          <div className="guide-pairs-list">
-            {pairs.map(p => (
-              <button key={p.id} type="button" className={p.id === pairId ? 'on' : ''} onClick={() => onPick?.(p.id)}>{p.name}</button>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="guide-details" style={{ display: more ? 'block' : 'none' }}>
         <ul className="guide-list">
           <li><b>드래그&드롭</b>으로 옷 입히기</li>
@@ -592,12 +744,11 @@ function GuideBox({ c1, c2, pairs, pairId, onPick, actions }: {
           <li>착용 중 패널 <b>✕</b>로 개별 벗기기</li>
           <li><b>▲▼</b>로 의상 앞뒤 조절</li>
           <li><b>배경 탭</b> 클릭 → 배경 적용</li>
-          <li>📸 <b>찰칵!</b>으로 두 캐릭터 PNG 저장</li>
+          <li><b>찰칵!</b>으로 두 캐릭터 PNG 저장</li>
           <li><b>다시 입히기</b>: 기본 코디로 복귀</li>
           <li><b>전부 벗기!</b>: 해당 캐릭터 모두 벗기기</li>
           <li><b>방치 모드</b>: 가만히 두면 혼잣말을 합니다.</li>
           <li><b>부끄럼 모드</b>: 레어 모드?</li>
-          <li><b>옷장</b>(오른쪽 목록)도 제목 줄을 끌어 옮길 수 있어요</li>
         </ul>
       </div>
       <button type="button" className="btn-toggle-detail" onClick={() => setMore(m => !m)}>{more ? '닫기 ▲' : '자세히 ▼'}</button>
