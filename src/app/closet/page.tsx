@@ -44,16 +44,9 @@ export default function ClosetPage() {
   return (
     <section className="page">
 
-      {data.pairs.length > 1 && (
-        <div className="closet-pairs">
-          {data.pairs.map(p => (
-            <button key={p.id} type="button" className={p.id === pair.id ? 'on' : ''} onClick={() => pick(p.id)}>{p.name}</button>
-          ))}
-        </div>
-      )}
-
       {/* key — 페어가 바뀌면 화면을 새로 세운다 (입은 모습은 memo 로 이어 간다) */}
       <ClosetStage key={pair.id} pair={pair} items={items} isAdmin={isAdmin} onEdit={() => setEdit(true)}
+        pairs={data.pairs.map(p => ({ id: p.id, name: p.name }))} onPickPair={pick}
         saved={memo.current[pair.id]} onSave={s => { memo.current[pair.id] = s; }}
         onSharedSets={sets => save({ ...data, pairs: data.pairs.map(p => p.id === pair.id ? { ...p, sets } : p) })} />
 

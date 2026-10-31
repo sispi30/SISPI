@@ -45,7 +45,8 @@ export interface StageSaved { worn: Record<Cid, Worn[]>; bg: Record<Cid, string>
 const LS_GAP = 'ohome.closet.gap.v1';     // 방문자가 정한 캐릭터 간격 — { 페어id: px } (이 브라우저에만)
 const LS_SETS = 'ohome.closet.sets.v1';   // 방문자 개인 세트 — { 페어id: 세트[] } (이 브라우저에만)
 
-export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSharedSets }: {
+export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSharedSets, pairs, onPickPair }: {
+  pairs?: { id: string; name: string }[]; onPickPair?: (id: string) => void;
   pair: ClosetPair; items: ClosetItem[]; isAdmin: boolean; onEdit: () => void;
   saved?: StageSaved; onSave: (s: StageSaved) => void;
   onSharedSets: (sets: ClosetSet[]) => void;   // 모두에게 보이는 세트가 바뀌었을 때 (관리자만)
@@ -369,6 +370,7 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
     const c = dataRef.current.chars[cid - 1];
     canvas.width = c.width; canvas.height = c.height;
     const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);   // 투명 그대로 두면 뷰어에 따라 검게 보인다
     const layers: { src: string; zi: number; bg?: boolean; name: string }[] = [];
     if (bgSrc[cid]) layers.push({ src: bgSrc[cid], zi: -999, bg: true, name: '배경' });
     layers.push({ src: resolve(c.bodies[face[cid] - 1] || c.bodies[0]), zi: 10, name: '캐릭터' });
@@ -397,17 +399,22 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
     const comb = document.createElement('canvas');
     comb.width = a.width + gap + b.width; comb.height = Math.max(a.height, b.height);
     const ctx = comb.getContext('2d')!;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, comb.width, comb.height);
     const spots: [HTMLCanvasElement, number, Cid][] = [[c1, 0, 1], [c2, a.width + gap, 2]];
     spots.sort((x, y) => (x[2] === front ? 1 : 0) - (y[2] === front ? 1 : 0));   // 앞 캐릭터를 나중에 그린다
     spots.forEach(([cv, x]) => ctx.drawImage(cv, x, 0));
-    let url: string;
-    try { url = comb.toDataURL('image/png'); } catch {
+    // 큰 그림도 안전하게 — 긴 data 주소 대신 Blob 으로 내려받는다
+    let blob: Blob | null = null;
+    try { blob = await new Promise<Blob | null>(res => comb.toBlob(res, 'image/png')); } catch { blob = null; }
+    if (!blob) {
       toast('저장하지 못했습니다 — 다른 사이트 주소의 그림이 섞여 있으면 브라우저가 막습니다');
       return;
     }
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.download = `${name || d.saveName || pairTitle(pair)}.png`; link.href = url;
     document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
     if (skipped.length) toast(`저장됐지만 담기지 않은 그림: ${Array.from(new Set(skipped)).join(', ')}`);
     setTimeout(() => brains.current?.[1].bubble(lines(1, 'save_photo')[0], 3), 800);
     setTimeout(() => brains.current?.[2].bubble(lines(2, 'save_photo')[0], 3), 1100);
@@ -641,7 +648,7 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
         </div>
       )}
 
-      <GuideBox c1={c1} c2={c2} gapOpen={gapOpen} onToggleGap={() => setGapOpen(o => !o)} onSnap={() => setSaveAsk(pair.saveName || pairTitle(pair))} mute={mute} onToggleMute={() => {
+      <GuideBox c1={c1} c2={c2} pairs={pairs} curPair={pair.id} onPickPair={onPickPair} gapOpen={gapOpen} onToggleGap={() => setGapOpen(o => !o)} onSnap={() => setSaveAsk(pair.saveName || pairTitle(pair))} mute={mute} onToggleMute={() => {
         const v = !mute; setMute(v); muteRef.current = v;
         try { localStorage.setItem('ohome.closet.mute', v ? '1' : '0'); } catch { /* 무시 */ }
       }} />
@@ -749,13 +756,15 @@ function useFloater(KEY: string, home: { left?: string; right?: string; top: str
 }
 
 /** 사용법 상자 — 원본처럼 떠 있고, 제목 줄을 끌어 옮기고(자리는 기억됨), 두 번 누르면 제자리, × 로 닫기. 찰칵/소리 버튼도 여기에 있다 */
-function GuideBox({ c1, c2, onSnap, mute, onToggleMute, gapOpen, onToggleGap }: {
+function GuideBox({ c1, c2, onSnap, mute, onToggleMute, gapOpen, onToggleGap, pairs, curPair, onPickPair }: {
+  pairs?: { id: string; name: string }[]; curPair: string; onPickPair?: (id: string) => void;
   c1: { name: string; label: string }; c2: { name: string; label: string };
   onSnap: () => void; mute: boolean; onToggleMute: () => void; gapOpen: boolean; onToggleGap: () => void;
 }) {
   const f = useFloater('ohome.closet.guidepos', { left: '10px', top: '130px' });
   const [gone, setGone] = useState(false);
   const [more, setMore] = useState(false);
+  const [pairOpen, setPairOpen] = useState(false);
   if (gone) return null;
   const sz = [c1, c2].sort((a, b) => a.label.localeCompare(b.label));
   return (
@@ -774,6 +783,21 @@ function GuideBox({ c1, c2, onSnap, mute, onToggleMute, gapOpen, onToggleGap }: 
           <Ico name="arrows" />간격
         </button>
       </div>
+      {pairs && pairs.length > 1 && (
+        <div className="guide-pairs">
+          <button type="button" className={`btn_custom guide-pair-tab ${pairOpen ? 'open' : ''}`} aria-expanded={pairOpen} onClick={() => setPairOpen(o => !o)}>
+            <Ico name="people" size={14} />페어 <span className="gp-cur">{pairs.find(p => p.id === curPair)?.name}</span><span className="gp-caret">{pairOpen ? '▲' : '▼'}</span>
+          </button>
+          {pairOpen && (
+            <div className="guide-pair-list">
+              {pairs.map(p => (
+                <button key={p.id} type="button" className={p.id === curPair ? 'on' : ''}
+                  onClick={() => { setPairOpen(false); if (p.id !== curPair) onPickPair?.(p.id); }}>{p.name}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div className="guide-details" style={{ display: more ? 'block' : 'none' }}>
         <ul className="guide-list">
           <li><b>드래그&드롭</b>으로 옷 입히기</li>

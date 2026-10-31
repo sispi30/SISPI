@@ -230,3 +230,12 @@ body.closet-dragging,body.closet-dragging *{cursor:grabbing!important}
 .closet .guide-actions{flex-wrap:nowrap;gap:5px}
 .closet .guide-actions .btn_custom{padding:0 10px;white-space:nowrap;flex:1 1 auto;min-width:0}
 .closet .guide-actions .btn_custom.big{padding:0 12px;flex:1.2 1 auto}
+.closet .guide-pairs{margin-bottom:8px}
+.closet .guide-pair-tab{width:100%;justify-content:flex-start;gap:5px}
+.closet .guide-pair-tab .gp-cur{opacity:.85;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}
+.closet .guide-pair-tab .gp-caret{font-size:10px;margin-left:auto}
+.closet .guide-pair-tab.open{background:var(--pc);color:var(--tc)}
+.closet .guide-pair-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;max-height:200px;overflow-y:auto}
+.closet .guide-pair-list button{text-align:left;padding:6px 12px;border-radius:10px;border:1.5px solid #ddd;background:#fff;color:#555;font-size:13px;cursor:pointer;transition:all .2s}
+.closet .guide-pair-list button:hover{border-color:var(--pc);color:var(--pc)}
+.closet .guide-pair-list button.on{background:var(--pc);border-color:var(--pc);color:var(--tc);font-weight:bold}
