@@ -424,6 +424,27 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
   const stageW = c1.width + c2.width + gap;
   const natural = Math.max(stageW, c1.width + c2.width + 20);
   const rootRef = useRef<HTMLDivElement>(null);
+  // 강조색 = 홈페이지 포인트 컬러(--accent). 그 위의 글씨는 밝기에 따라 검정/흰색
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const upd = () => {
+      try {
+        const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        if (!acc) { root.style.removeProperty('--tc'); return; }
+        const c = document.createElement('canvas'); c.width = c.height = 1;
+        const x = c.getContext('2d'); if (!x) return;
+        x.fillStyle = '#7b9bcc'; x.fillStyle = acc; x.fillRect(0, 0, 1, 1);
+        const [r, g, b] = x.getImageData(0, 0, 1, 1).data;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        root.style.setProperty('--tc', lum > 0.62 ? '#222' : '#fff');
+      } catch { /* 무시 */ }
+    };
+    upd();
+    const mo = new MutationObserver(upd);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class', 'data-theme'] });
+    return () => mo.disconnect();
+  }, []);
   const innerRef = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState({ s: 1, h: 0 });
   // 슬라이드를 끄는 동안은 배치를 고정한다 — 끌 때마다 폭이 바뀌면 옆의 옷장이 위아래로 튀어서 못 끌었다.
