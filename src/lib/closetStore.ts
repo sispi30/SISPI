@@ -79,8 +79,10 @@ export function cleanSets(raw: unknown): ClosetSet[] {
     : null;
   return raw.filter(s => s && typeof (s as ClosetSet).id === 'string' && typeof (s as ClosetSet).name === 'string')
     .map(s => {
-      const o = (s as ClosetSet).outfits;
-      return { id: (s as ClosetSet).id, name: (s as ClosetSet).name, outfits: [entries(o?.[0]), entries(o?.[1])] as ClosetSet['outfits'] };
+      // 저장본은 {o1,o2} — Firestore 가 배열 속 배열을 못 받아서. 예전 형식(outfits 배열)도 읽는다
+      const r = s as ClosetSet & { o1?: unknown; o2?: unknown };
+      const o = r.outfits;
+      return { id: r.id, name: r.name, outfits: [entries(r.o1 ?? o?.[0]), entries(r.o2 ?? o?.[1])] as ClosetSet['outfits'] };
     });
 }
 
@@ -221,7 +223,15 @@ export function useCloset(): [ClosetData, (next: ClosetData) => void, boolean] {
   }, []);
   const save = useCallback((next: ClosetData) => {
     setData(next);
-    try { setSetting(CLOSET_KEY, next); } catch { /* 무시 */ }
+    // 세트의 outfits 는 배열 속 배열이라 Firestore 가 거부한다 → 저장할 때만 {o1,o2} 로 풀어 쓴다
+    const flat = {
+      ...next,
+      pairs: next.pairs.map(p => ({
+        ...p,
+        sets: p.sets?.map(({ id, name, outfits }) => ({ id, name, o1: outfits[0], o2: outfits[1] })),
+      })),
+    };
+    try { setSetting(CLOSET_KEY, flat); } catch { /* 무시 */ }
   }, []);
   return [data, save, loaded];
 }

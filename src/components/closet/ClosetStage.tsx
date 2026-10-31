@@ -359,11 +359,10 @@ export function ClosetStage({ pair, items, isAdmin, onEdit, saved, onSave, onSha
   const loadImg = (src: string) => new Promise<HTMLImageElement | null>(resolveImg => {
     const cross = /^https?:\/\//.test(src) && !src.startsWith(window.location.origin);
     const im = new Image();
-    if (cross) im.crossOrigin = 'anonymous';
     im.onload = () => resolveImg(im);
     im.onerror = () => resolveImg(null);
-    // 같은 주소를 CORS 없이 받아 둔 캐시와 섞이지 않게 구분
-    im.src = cross ? src + (src.includes('?') ? '&' : '?') + '_cors=1' : src;
+    // 다른 출처 그림은 우리 서버를 거쳐 받는다 (저장소에 CORS 설정이 없어도 캔버스에 그릴 수 있게)
+    im.src = cross ? `/api/closet-img?u=${encodeURIComponent(src)}` : src;
   });
 
   const drawChar = async (cid: Cid, canvas: HTMLCanvasElement, skipped: string[]) => {
