@@ -3571,10 +3571,6 @@ body:not(.main-fixed):not(.edit-on) #appMain{margin-bottom:var(--tf-bottom-gap,0
 body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{padding-top:calc(58px - var(--tf-top-shift,0px))}
 
 /* 최신글 위젯 — "01 Recent entries" 머리말 + 제목 · 게시판 · 날짜 줄 */
-.recent-w h4{margin-bottom:6px}
-.recent-w .recent-ttl{font-size:calc(14px*var(--fs,1));font-weight:700;letter-spacing:.01em;color:var(--wg-fg);display:flex;align-items:baseline;gap:8px}
-.recent-w .recent-ttl i{font-style:italic;font-weight:600;font-size:calc(11px*var(--fs,1));color:var(--accent)}
-.recent-w .recent-sub{font-size:calc(11px*var(--fs,1));color:var(--wg-title);letter-spacing:.04em;font-weight:400}
 .recent-list{list-style:none;margin:0;padding:0}
 .recent-list li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:calc(13px*var(--fs,1));cursor:var(--cur-pointer,pointer)}
 .recent-list li:last-child{border-bottom:none}

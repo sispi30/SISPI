@@ -262,7 +262,7 @@ export function RecentWidget({ conf }: { conf: WidgetConf }) {
 
   return (
     <div className="panel widget recent-w">
-      <h4><span className="recent-ttl"><i>01</i>Recent entries</span><span className="recent-sub">최신글</span></h4>
+      <h4>RECENT ENTRIES <span className="more" style={{ cursor: 'default' }}>최신글</span></h4>
       <ul className="recent-list">
         {shown.map(p => (
           <li key={p.key} onClick={() => { if (!editOn) router.push(p.href); }}>
