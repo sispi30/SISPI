@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { WidgetConf, useMainStore, WIDGET_META, decoSlides } from '@/lib/mainStore';
 import { useAuth } from '@/lib/auth';
 import { boardEntries, useMenuSettings, buildMenu, canViewHref } from '@/lib/menuStore';
-import { sectionHref, MAIN_SEC, useSections, sectionMenuEntries } from '@/lib/sectionStore';
+import { sectionHref, MAIN_SEC, useSections, sectionMenuEntries, SECTION_META } from '@/lib/sectionStore';
+import type { ThreadWork } from '@/lib/threadStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
 import { useBoards, boardHref } from '@/lib/boardStore';
 import { Modal } from '@/components/ui/Modal';
@@ -206,25 +207,55 @@ export function RecentWidget({ conf }: { conf: WidgetConf }) {
   const [menuSet] = useMenuSettings();
   const { boards } = useBoards();
   const [posts] = useLocalList<Post>('ohome.board.v1', []);
+  const [roads] = useLocalList<RoadItem>('ohome.road.v1', ROAD_SEED);
+  const [backups] = useLocalList<BackupPost>('ohome.backup.v1', BACKUP_SEED);
+  const [works] = useLocalList<ThreadWork>('ohome.threads.v1', []);
+  const { list: secList } = useSections();
   const [open, setOpen] = useState(false);
   useEditEvent(conf.id, () => setOpen(true));
 
   const count = Math.max(2, Math.min(6, (conf.settings.count as number) ?? 5));
+  // 고르는 값: '__all' 전체 · '__gallery' · '__road' · '__thread' · 그 밖에는 게시판 id
   const pick = (conf.settings.board as string) || '__all';
   const viewer = { loggedIn: !!user, isAdmin, id: user?.id };
   const usable = boards.filter(b => b.skin !== 'banner' && canViewHref(menuSet, boardHref(b.id), viewer));
   const usableIds = new Set(usable.map(b => b.id));
   const nameOf = (id?: string) => boards.find(b => b.id === (id || 'main'))?.name ?? '';
-  const shown = posts
-    .filter(p => !p.secret)
-    .filter(p => usableIds.has(p.boardId || 'main'))
-    .filter(p => pick === '__all' || (p.boardId || 'main') === pick)
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, count);
+  const secName = (kind: 'gallery' | 'roadview' | 'threads', id?: string) =>
+    secList(kind).find(x => x.id === (id || MAIN_SEC))?.name ?? SECTION_META[kind].defName;
+  const okSec = (kind: 'gallery' | 'roadview' | 'threads', id?: string) =>
+    canViewHref(menuSet, SECTION_META[kind].href, viewer) && canViewHref(menuSet, sectionHref(kind, id ?? MAIN_SEC), viewer);
+  const visOk = (v: string) => v === 'public' || (v === 'member' && !!user);   // 비공개는 관리자여도 안 나온다
+
+  type Row = { key: string; title: string; where: string; date: string; href: string; src: string };
+  const rows: Row[] = [];
+  if (pick === '__all' || !pick.startsWith('__')) {
+    posts.filter(p => !p.secret && usableIds.has(p.boardId || 'main') && (pick === '__all' || (p.boardId || 'main') === pick))
+      .forEach(p => rows.push({ key: `p-${p.id}`, title: p.title, where: nameOf(p.boardId), date: p.date, href: `/board/${p.id}`, src: 'board' }));
+  }
+  if (pick === '__all' || pick === '__gallery') {
+    backups.filter(p => visOk(p.visibility) && !p.fold && okSec('gallery', p.secId))
+      .forEach(p => rows.push({ key: `g-${p.id}`, title: p.title, where: secName('gallery', p.secId), date: p.date, href: `/gallery/${p.id}`, src: 'gallery' }));
+  }
+  if (pick === '__all' || pick === '__road') {
+    roads.filter(it => !it.fold && okSec('roadview', it.secId))
+      .forEach(it => rows.push({ key: `r-${it.id}`, title: it.title || `No.${String(it.no ?? 0).padStart(3, '0')}`, where: secName('roadview', it.secId), date: it.date, href: sectionHref('roadview', it.secId ?? MAIN_SEC), src: 'road' }));
+  }
+  if (pick === '__all' || pick === '__thread') {
+    works.filter(w => visOk(w.visibility) && okSec('threads', w.secId))
+      .forEach(w => rows.push({
+        key: `t-${w.id}`, title: w.title, where: secName('threads', w.secId),
+        date: w.posts.reduce((m, x) => (x.date > m ? x.date : m), w.created), href: sectionHref('threads', w.secId ?? MAIN_SEC), src: 'thread',
+      }));
+  }
+  const shown = rows.sort((a, b) => b.date.localeCompare(a.date)).slice(0, count);
   const md = (iso: string) => iso.slice(5, 10);
 
   const boardOpts = [
-    { value: '__all', label: '공개 게시판 전체' },
+    { value: '__all', label: '공개된 곳 전체' },
+    { value: '__gallery', label: '갤러리' },
+    { value: '__road', label: '로드비' },
+    { value: '__thread', label: '감상타래(리뷰)' },
     ...boards.filter(b => b.skin !== 'banner').map(b => ({ value: b.id, label: b.name })),
   ];
   const set = (p: Record<string, unknown>) => updateWidget(conf.id, { settings: { ...conf.settings, ...p } }, { persist: true });
@@ -234,9 +265,9 @@ export function RecentWidget({ conf }: { conf: WidgetConf }) {
       <h4><span className="recent-ttl"><i>01</i>Recent entries</span><span className="recent-sub">최신글</span></h4>
       <ul className="recent-list">
         {shown.map(p => (
-          <li key={p.id} onClick={() => { if (!editOn) router.push(`/board/${p.id}`); }}>
+          <li key={p.key} onClick={() => { if (!editOn) router.push(p.href); }}>
             <span className="rt">{p.title}</span>
-            <span className="rb">{nameOf(p.boardId)}</span>
+            <span className="rb">{p.where}</span>
             <span className="rd">{md(p.date)}</span>
           </li>
         ))}
@@ -244,7 +275,7 @@ export function RecentWidget({ conf }: { conf: WidgetConf }) {
       </ul>
 
       <Modal open={open} onClose={() => setOpen(false)} small title="최신글 위젯"
-        desc="비밀글은 어떤 설정에서도 보이지 않습니다"
+        desc="비밀글·비공개 항목은 어떤 설정에서도 보이지 않습니다"
         actions={<button className="btn btn-dark" onClick={() => setOpen(false)}>확인</button>}>
         <div style={{ display: 'grid', gap: 12 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
