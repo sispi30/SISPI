@@ -15,6 +15,7 @@ import { useMainStore } from '@/lib/mainStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { refreshPage } from '@/lib/pageRefresh';
 import { useToast } from '@/components/ui/Toast';
+import { NeighborNotificationPanel } from '@/components/shell/NeighborNotificationPanel';
 import { KToggle } from '@/components/ui/Kit';
 import { useTransformMenuSettings } from '@/lib/transformMenuStore';
 import { TransformMenu } from '@/components/shell/TransformMenu';
@@ -44,6 +45,7 @@ export function TopBar() {
   const toast = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [nbUnread, setNbUnread] = useState(0);   // 이웃 새 글 미확인 수 — 종 배지에 합산
   const [menuSet, , menuLoaded] = useMenuSettings(); // 메뉴 관리 (5.2) — 노출·순서·이름
   const { boards, loaded: boardsLoaded } = useBoards(); // 다중 게시판 (5.2) — 게시판 그룹에 동적 반영
   const { map: secMap } = useSections();
@@ -276,7 +278,7 @@ export function TopBar() {
         <div className="user-wrap" ref={userRef}>
           <div className="user-chip" onClick={() => setMenuOpen(o => !o)}>
             {/* 알림 종 (4.13) — 클릭 시 알림 드롭다운 (프로필 메뉴와 별개) */}
-            <span className="badge-dot" data-n={String(Math.min(9, unread.length))}
+            <span className="badge-dot" data-n={String(Math.min(9, unread.length + nbUnread))}
               onClick={e => { e.stopPropagation(); setMenuOpen(false); setNotifOpen(o => !o); }}>
               <BellIcon />
             </span>
@@ -287,45 +289,16 @@ export function TopBar() {
             </div>
             {user.nickname} <span style={{ fontSize: 9, color: '#8d939d' }}>▾</span>
           </div>
-          {/* 알림 드롭다운 — 목록 + 모두 읽음 + 항목별 on/off (4.13) */}
-          <div className={`user-menu notif-menu ${notifOpen ? 'open' : ''}`}>
-            <div className="nh">
-              <b>알림</b>
-              {unread.length > 0 && (
-                <button className="all" onClick={() => markAllRead(user.id)}>모두 읽음</button>
-              )}
-              {/* 읽은 알림은 하루 뒤 저절로 사라지지만, 바로 치우고 싶을 때 (v2.0 사용자 요청) */}
-              {myNotifs.some(n => n.read) && (
-                <button className="all" onClick={() => clearReadNotifs(user.id)}>읽은 알림 정리</button>
-              )}
-            </div>
-            {myNotifs.length === 0 && <p className="empty">알림이 없습니다</p>}
-            {myNotifs.slice(0, 12).map(n => (
-              <button key={n.id} className={`nt ${n.read ? 'rd' : ''}`}
-                onClick={() => { markRead(n.id); setNotifOpen(false); nav(n.href); }}>
-                <b>{n.title}</b>
-                {n.body && <span>{n.body}</span>}
-                <small>{fmtNd(n.date)}</small>
-              </button>
-            ))}
-            {mySet && (
-              <div className="nset">
-                {(Object.keys(NOTIF_TYPE_LABEL) as NotifType[])
-                  .filter(k => k !== 'guest' || isAdmin) // 방명록 알림은 관리자 항목
-                  .map(k => (
-                    <label key={k} className="row">
-                      <span>{NOTIF_TYPE_LABEL[k]}</span>
-                      <KToggle checked={mySet[k]} onChange={v => setNotifSetting(user.id, k, v)} />
-                    </label>
-                  ))}
-                {/* 전달 자가진단 (v2.0) — 서버 저장→읽기를 실제로 해 보고 결과를 알려 준다 */}
-                <button className="all" style={{ marginTop: 2 }}
-                  onClick={async () => { toast(await selfTestNotif(user.id)); void syncNotifs(user.id, true); }}>
-                  알림 전달 확인
-                </button>
-              </div>
-            )}
-          </div>
+          {/* 알림 센터 — 내 홈 알림 + 이웃 새 글 (알림 센터 추가 기능) */}
+          <NeighborNotificationPanel
+            open={notifOpen}
+            userId={user.id}
+            notifications={myNotifs}
+            isAdmin={isAdmin}
+            onClose={() => setNotifOpen(false)}
+            onNeighborUnread={setNbUnread}
+            onSelfTest={async () => { toast(await selfTestNotif(user.id)); void syncNotifs(user.id, true); }}
+          />
           <div className={`user-menu ${menuOpen ? 'open' : ''}`}>
             <button onClick={() => { setMenuOpen(false); nav('/mypage'); }}>정보수정</button>
             {isAdmin && (

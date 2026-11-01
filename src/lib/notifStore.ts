@@ -267,5 +267,8 @@ export function clearReadNotifs(userId: string) {
 }
 
 export function removeNotif(id: string) {
-  write(readNotifs().filter(n => n.id !== id));
+  const list = readNotifs();
+  const gone = list.find(n => n.id === id);
+  write(list.filter(n => n.id !== id));
+  if (gone) mirrorToServer([gone], []);   // 서버에서도 지운다 — 안 지우면 다음 접속에 되살아난다
 }
