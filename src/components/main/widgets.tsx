@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { boardEntries, useMenuSettings, buildMenu, canViewHref } from '@/lib/menuStore';
 import { sectionHref, MAIN_SEC, useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
-import { useBoards } from '@/lib/boardStore';
+import { useBoards, boardHref } from '@/lib/boardStore';
 import { Modal } from '@/components/ui/Modal';
 import { KInput, KTextarea, KSelect, KStep, KCheck } from '@/components/ui/Kit';
 import { ColorField } from '@/components/ui/ColorField';
@@ -17,7 +17,7 @@ import {
 import { useFonts } from '@/lib/fontStore';
 import { BannerEditor, BannerSlide, DEMO_SLIDES, DdayEditor, DecoEditor, TodoEditor, TodoSetItem } from '@/components/main/widgetEditors';
 import { CroppedBlobImg, CropValue } from '@/components/ui/CropEditor';
-import { useLocalList } from '@/lib/postStore';
+import { useLocalList, type Post } from '@/lib/postStore';
 import { RoadItem, ROAD_SEED, BackupPost, BACKUP_SEED } from '@/lib/galleryStore';
 import { DiaryPost, DIARY_SEED, Mood, MOOD_SEED, moodTint } from '@/lib/diaryStore';
 import { useSched, eventColor } from '@/lib/schedStore';
@@ -192,6 +192,71 @@ export function DiaryWidget() {
         );
       })}
       {latest.length === 0 && <p className="hint">공개된 일기가 없습니다</p>}
+    </div>
+  );
+}
+
+/* ---------- RECENT ENTRIES (최신글 — 공개 게시판 전체 또는 게시판 하나, 2~6개) ----------
+   비밀글은 절대 나오지 않는다 (관리자 포함). 메뉴에서 이 방문자에게 감춘 게시판의 글도 나오지 않는다.
+   배너 게시판은 글이 아니라 배너 이미지라 뺀다. 가운데에는 어느 게시판의 글인지 적는다. */
+export function RecentWidget({ conf }: { conf: WidgetConf }) {
+  const router = useRouter();
+  const { user, isAdmin } = useAuth();
+  const { editOn, updateWidget } = useMainStore();
+  const [menuSet] = useMenuSettings();
+  const { boards } = useBoards();
+  const [posts] = useLocalList<Post>('ohome.board.v1', []);
+  const [open, setOpen] = useState(false);
+  useEditEvent(conf.id, () => setOpen(true));
+
+  const count = Math.max(2, Math.min(6, (conf.settings.count as number) ?? 5));
+  const pick = (conf.settings.board as string) || '__all';
+  const viewer = { loggedIn: !!user, isAdmin, id: user?.id };
+  const usable = boards.filter(b => b.skin !== 'banner' && canViewHref(menuSet, boardHref(b.id), viewer));
+  const usableIds = new Set(usable.map(b => b.id));
+  const nameOf = (id?: string) => boards.find(b => b.id === (id || 'main'))?.name ?? '';
+  const shown = posts
+    .filter(p => !p.secret)
+    .filter(p => usableIds.has(p.boardId || 'main'))
+    .filter(p => pick === '__all' || (p.boardId || 'main') === pick)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, count);
+  const md = (iso: string) => iso.slice(5, 10);
+
+  const boardOpts = [
+    { value: '__all', label: '공개 게시판 전체' },
+    ...boards.filter(b => b.skin !== 'banner').map(b => ({ value: b.id, label: b.name })),
+  ];
+  const set = (p: Record<string, unknown>) => updateWidget(conf.id, { settings: { ...conf.settings, ...p } }, { persist: true });
+
+  return (
+    <div className="panel widget recent-w">
+      <h4><span className="recent-ttl"><i>01</i>Recent entries</span><span className="recent-sub">최신글</span></h4>
+      <ul className="recent-list">
+        {shown.map(p => (
+          <li key={p.id} onClick={() => { if (!editOn) router.push(`/board/${p.id}`); }}>
+            <span className="rt">{p.title}</span>
+            <span className="rb">{nameOf(p.boardId)}</span>
+            <span className="rd">{md(p.date)}</span>
+          </li>
+        ))}
+        {shown.length === 0 && <li className="recent-empty">새 글이 없습니다</li>}
+      </ul>
+
+      <Modal open={open} onClose={() => setOpen(false)} small title="최신글 위젯"
+        desc="비밀글은 어떤 설정에서도 보이지 않습니다"
+        actions={<button className="btn btn-dark" onClick={() => setOpen(false)}>확인</button>}>
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="cp-lb" style={{ minWidth: 58 }}>게시판</span>
+            <KSelect options={boardOpts} value={pick} onChange={v => set({ board: v })} minWidth={170} />
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span className="cp-lb" style={{ minWidth: 58 }}>몇 개</span>
+            <KStep value={count} min={2} max={6} suffix="개" onChange={v => set({ count: v })} />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -771,6 +836,7 @@ export function renderWidget(conf: WidgetConf) {
     case 'memo': return <MemoWidget conf={conf} />;
     case 'diary': return <DiaryWidget />;
     case 'latest': return <LatestWidget />;
+    case 'recent': return <RecentWidget conf={conf} />;
     case 'dday': return <DdayWidget conf={conf} />;
     case 'todo': return <TodoWidget conf={conf} />;
     case 'upcoming': return <UpcomingWidget />;

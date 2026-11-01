@@ -9,7 +9,7 @@ import { getRawSetting, setSetting } from './settingStore';
 
 export type WidgetType =
   | 'banner' | 'member'                 // 고정 요소 (삭제 불가)
-  | 'menu' | 'memo' | 'diary' | 'latest'
+  | 'menu' | 'memo' | 'diary' | 'latest' | 'recent'
   | 'dday' | 'todo' | 'upcoming' | 'freetext' | 'deco' | 'memoboard'
   | 'apply'   // 'image'는 deco(장식 이미지+링크)로 일원화 (v1.9) · apply = 커미션 신청자 (v2.0)
   | 'orbit';  // 별자리 궤도 장식 — 혼천의처럼 고리가 입체 회전 (크기·색 · 가운데 별은 마우스를 따라 제자리 회전)
@@ -49,6 +49,7 @@ export const WIDGET_META: Record<WidgetType, { title: string; desc: string }> = 
   memo: { title: 'MEMO', desc: '관리자 메모 (클릭 시 관리 모달)' },
   diary: { title: 'DIARY', desc: '최근 일기 (무드 아이콘 · 비공개 미노출)' },
   latest: { title: 'LATEST', desc: '최신 그림 3장' },
+  recent: { title: 'RECENT ENTRIES', desc: '최신글 — 공개 게시판 전체 또는 게시판 하나의 새 글 2~6개 (비밀글 미노출)' },
   dday: { title: 'D-DAY', desc: '디데이 목록' },
   todo: { title: 'TO-DO', desc: '관리자 투두 (방문자는 열람만)' },
   upcoming: { title: 'UPCOMING', desc: '다가오는 일정' },

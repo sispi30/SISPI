@@ -3569,3 +3569,18 @@ html.bg-fx body::after{opacity:1}
 body:not(.main-fixed):not(.edit-on) #appMain{margin-bottom:var(--tf-bottom-gap,0px)}
 /* 하단이 끊겨 있을 땐 본문 전체를 위로 올린다 — 스테이지(전체 화면 고정) 화면은 위의 전용 규칙이 이겨 그대로 */
 body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{padding-top:calc(58px - var(--tf-top-shift,0px))}
+
+/* 최신글 위젯 — "01 Recent entries" 머리말 + 제목 · 게시판 · 날짜 줄 */
+.recent-w h4{margin-bottom:6px}
+.recent-w .recent-ttl{font-size:calc(14px*var(--fs,1));font-weight:700;letter-spacing:.01em;color:var(--wg-fg);display:flex;align-items:baseline;gap:8px}
+.recent-w .recent-ttl i{font-style:italic;font-weight:600;font-size:calc(11px*var(--fs,1));color:var(--accent)}
+.recent-w .recent-sub{font-size:calc(11px*var(--fs,1));color:var(--wg-title);letter-spacing:.04em;font-weight:400}
+.recent-list{list-style:none;margin:0;padding:0}
+.recent-list li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:calc(13px*var(--fs,1));cursor:var(--cur-pointer,pointer)}
+.recent-list li:last-child{border-bottom:none}
+.recent-list .rt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent-list .rb{flex-shrink:0;max-width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(10.5px*var(--fs,1));color:var(--accent);border:1px solid currentColor;border-radius:999px;padding:1px 8px;opacity:.85}
+.recent-list .rd{flex-shrink:0;font-size:calc(12px*var(--fs,1));color:var(--wg-title);font-variant-numeric:tabular-nums}
+.recent-list li:hover .rt{text-decoration:underline}
+.recent-list li.recent-empty{cursor:default;color:var(--faint);justify-content:center}
+.recent-list li.recent-empty:hover .rt{text-decoration:none}
