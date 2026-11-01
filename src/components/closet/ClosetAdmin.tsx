@@ -47,6 +47,7 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
   const [pi, setPi] = useState(pairId);              // 지금 고치는 페어
   const [sec, setSec] = useState<Sec>('items');
   const [upTab, setUpTab] = useState('top');
+  const [viewTab, setViewTab] = useState('__all');   // 등록한 옷 모아보기 분류
   const [upPair, setUpPair] = useState(SHARED);      // 올리는 옷의 대상 (공용 / 특정 페어)
   const [urls, setUrls] = useState('');
   const resolve = useUrlMap([...d.items.map(i => i.src), ...d.pairs.flatMap(p => p.chars.flatMap(c => c.bodies))]);
@@ -160,6 +161,11 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
   const FACE_NAMES = ['기본', '말하는', '웃는', '방치·부끄', '드문 반응'];
   const sorted = [...d.items].sort((a, b) =>
     CLOSET_TABS.findIndex(t => t.key === a.tab) - CLOSET_TABS.findIndex(t => t.key === b.tab));
+  const shown = viewTab === '__all' ? sorted : sorted.filter(i => i.tab === viewTab);
+  const viewOpts = [
+    { value: '__all', label: <span className="cl-opt">전체 ({sorted.length})</span> },
+    ...CLOSET_TABS.map(t => ({ value: t.key, label: <span className="cl-opt"><Ico name={t.icon} size={13} />{t.label} ({sorted.filter(i => i.tab === t.key).length})</span> })),
+  ];
   const curItems = itemsForPair(d.items, cur.id);
   const perPair = sec === 'chars' || sec === 'dialogue' || sec === 'design';
 
@@ -219,8 +225,12 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
               z-index 는 클수록 앞입니다 (캐릭터 몸 10 · 하의 15 · 상의/원피스 20 · 신발 22 · 외투 35 · 악세 40).
             </p>
           </div>
+          <div className="row">
+            <KLabel>분류 보기</KLabel>
+            <KSelect options={viewOpts} value={viewTab} onChange={setViewTab} minWidth={150} />
+          </div>
           <div className="grid-items">
-            {sorted.map(it => (
+            {shown.map(it => (
               <div className="it" key={it.id}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={resolve(it.src)} alt="" />
@@ -234,7 +244,7 @@ export function ClosetAdmin({ open, data, pairId, onSave, onClose }: {
                 <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 10.5 }} onClick={() => removeItem(it.id)}>삭제</button>
               </div>
             ))}
-            {sorted.length === 0 && <p className="hint">아직 옷이 없습니다.</p>}
+            {shown.length === 0 && <p className="hint">{sorted.length === 0 ? '아직 옷이 없습니다.' : '이 분류에는 옷이 없습니다.'}</p>}
           </div>
         </>)}
 
