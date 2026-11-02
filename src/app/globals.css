@@ -3705,8 +3705,9 @@ body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{pa
 .wc-admin-page .wc-btn-back{cursor:pointer}
 
 /* 웹박수 — PC에서는 위쪽 여백을 줄이고 화면 높이에 맞춰 그림을 줄여 스크롤이 생기지 않게 */
-.page.wc-page{padding-top:0;padding-bottom:12px}
-.wc-page .wc-container{padding:4px 0 0;gap:12px}
+.page.wc-page{padding-top:20px;padding-bottom:12px}   /* 상단바 뒤로 들어가지 않게 약간은 둔다 — 설정 버튼이 눌리지 않던 원인 */
+.wc-page .wc-container{padding:0;gap:12px}
+.wc-page .wc-settings-link{position:relative;z-index:5;cursor:var(--cur-pointer,pointer);background:none;font-family:inherit}
 .wc-page .wc-image,.wc-page .wc-image img{max-height:min(400px,32vh)}
 .wc-page .wc-title h1{margin-bottom:0}
 @media(max-width:520px){.page.wc-page{padding-bottom:40px}}
