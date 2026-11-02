@@ -30,6 +30,7 @@ const AREA: Record<string, { kind?: SectionKind; href?: string; board?: boolean 
   diary: { kind: 'diary' },
   threads: { kind: 'threads' },
   guestbook: { href: '/guest' },
+  webclap: { href: '/webclap' },
   memos: { href: '/memo' },
   rp_rooms: { href: '/rp' },
   characters: { kind: 'chars' },

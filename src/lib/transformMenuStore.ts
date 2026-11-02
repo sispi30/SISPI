@@ -213,7 +213,7 @@ export function saveTfPosition(x: number, y: number): void {
 /** line(아카이브 라인) 방식의 영문 라벨 자동 추정 — 주소·이름으로 흔한 것만. 못 맞추면 빈 글자(설정에서 직접 입력) */
 const EN_BY_PATH: Record<string, string> = {
   '/': 'MAIN', '/chars': 'CHARACTER', '/rels': 'RELATIONS', '/rp': 'ROLEPLAY', '/board': 'BOARD', '/gallery': 'GALLERY',
-  '/loadb': 'ROADVIEW', '/myroom': 'MYROOM', '/closet': 'CLOSET', '/tchars': 'CHARACTER', '/trpg': 'LOG', '/dotori': 'DOTORI',
+  '/loadb': 'ROADVIEW', '/myroom': 'MYROOM', '/closet': 'CLOSET', '/webclap': 'WEBCLAP', '/tchars': 'CHARACTER', '/trpg': 'LOG', '/dotori': 'DOTORI',
   '/playlog': 'PLAYLOG', '/comm': 'COMMISSION', '/comm-apply': 'APPLICANTS', '/cal': 'SCHEDULE', '/diary': 'DIARY',
   '/threads': 'THREADS', '/memo': 'MEMO', '/guest': 'GUESTBOOK', '/intro': 'INTRO', '/settings': 'SETTINGS',
 };

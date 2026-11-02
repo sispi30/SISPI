@@ -93,6 +93,7 @@ export interface Backend {
 export const COLLECTION_OF: Record<string, string> = {
   'ohome.board.v1': 'posts',
   'ohome.guest.v1': 'guestbook',
+  'ohome.webclap.v1': 'webclap',   // 웹박수 — 박수·메시지·답글 (방문자도 남길 수 있다)
   'ohome.chars.v1': 'characters',
   'ohome.rels.v1': 'relations',
   'ohome.backup.v1': 'gallery',

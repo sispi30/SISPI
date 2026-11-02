@@ -35,7 +35,7 @@ service cloud.firestore {
         'posts', 'guestbook', 'characters', 'relations', 'gallery', 'roadview',
         'trpg_logs', 'trpg_log_bodies', 'trpg_chars', 'dotori', 'playlog', 'rp_rooms', 'threads',
         'diary', 'memos', 'commissions', 'applicants', 'moods', 'comments', 'qa_answers', 'rp_messages',
-        'notifications', 'push_subs',
+        'notifications', 'push_subs', 'webclap',
         'myroom_rooms', 'myroom_categories', 'myroom_catalog'
       ];
     }
@@ -79,7 +79,7 @@ service cloud.firestore {
       allow create: if isContent(coll) && (
         coll == 'notifications'
         || (signedIn() && (isAdmin() || request.resource.data.get('authorId', null) == request.auth.uid))
-        || (coll in ['guestbook', 'comments'] && request.resource.data.get('authorId', null) in [null, ''])
+        || (coll in ['guestbook', 'comments', 'webclap'] && request.resource.data.get('authorId', null) in [null, ''])
       );
 
       // 수정·삭제: 작성자 본인 · 편집 권한을 받은 회원 · 관리자

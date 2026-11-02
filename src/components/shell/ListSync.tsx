@@ -23,6 +23,7 @@ const LABEL: Record<string, string> = {
   trpg_logs: 'TRPG 로그',
   trpg_log_bodies: 'TRPG 로그 본문',
   applicants: '커미션 신청',
+  webclap: '웹박수',
 };
 
 export function ListSync() {

@@ -102,7 +102,8 @@ declare content_tables text[] := array[
   'comments',     -- 댓글 (v2.0 — 글 안이 아니라 자기 행으로. 글을 수정하지 않고 댓글을 달 수 있게)
   'qa_answers',   -- 자관 문답 답변 (v2.0 — 같은 이유로 자관 안이 아니라 자기 행으로)
   'rp_messages',  -- 역극 발화 (v2.0 — 같은 이유로 방 안이 아니라 자기 행으로)
-  'notifications' -- 알림 (v2.0 — 기기 보관이던 것을 서버로: 받은 사람 계정으로 어느 기기에서나)
+  'notifications', -- 알림 (v2.0 — 기기 보관이던 것을 서버로: 받은 사람 계정으로 어느 기기에서나)
+  'webclap'       -- 웹박수 (박수·메시지·답글 — 비로그인 방문자도 남길 수 있다)
 ];
 begin
   foreach t in array content_tables loop
@@ -167,6 +168,10 @@ create policy "insert" on public.comments for insert with check (author_id is nu
 
 -- 알림도 비로그인 방문자가 만들 수 있다 (v2.0) — 손님 댓글·방명록이 관리자에게 알림을 남겨야 하므로.
 -- 행의 주인(author_id)은 받는 사람이라, 읽기·수정·삭제는 받는 사람과 관리자만 (공통 정책 그대로).
+-- 웹박수도 비로그인 방문자가 남길 수 있다. 방문자가 남긴 박수·메시지는 나만보기로 저장되어 관리자만 읽는다.
+drop policy if exists "insert" on public.webclap;
+create policy "insert" on public.webclap for insert with check (author_id is null or author_id = auth.uid());
+
 drop policy if exists "insert" on public.notifications;
 create policy "insert" on public.notifications for insert with check (true);
 

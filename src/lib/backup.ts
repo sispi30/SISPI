@@ -23,7 +23,7 @@ const SITE_KEYS = [
   'ohome.cursor.v1', 'ohome.bgm.v1', 'ohome.bgm.fold', 'ohome.boardset.v1', 'ohome.boards.v1',
   'ohome.commset.v1', 'ohome.memoset.v1', 'ohome.threadset.v1', 'ohome.trpgset.v1',
   'ohome.moods.v1', 'ohome.relqsets.v1', 'ohome.notifset.v1',
-  'ohome.closet.v1',
+  'ohome.closet.v1', 'ohome.webclap.cfg.v1',
 ];
 
 export interface ResetGroup { key: string; label: string; desc?: string; keys: string[] }
@@ -34,6 +34,7 @@ export const RESET_CONTENT: ResetGroup[] = [
   { key: 'guest', label: '방명록', keys: ['ohome.guest.v1'] },
   { key: 'chars', label: '캐릭터', keys: ['ohome.chars.v1'] },
   { key: 'rels', label: '자관', keys: ['ohome.rels.v1'] },
+  { key: 'webclap', label: '웹박수', keys: ['ohome.webclap.v1'] },
   { key: 'backup', label: '갤러리(그림 백업)', keys: ['ohome.backup.v1'] },
   { key: 'road', label: '로드뷰', keys: ['ohome.road.v1', 'ohome.roadnext.v1'] },
   // 본문은 목록과 분리 저장이라(v2.0) 같이 지워야 로그만 지워지고 본문이 유령처럼 남지 않는다
