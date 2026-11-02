@@ -195,7 +195,7 @@ export default function WebclapPage() {
   const answered = parents.filter(p => p.type === 'message' && p.visibility === 'public' && !p.secret && repliesOf(p.id).length > 0);
 
   return (
-    <section className="page">
+    <section className="page wc-page">
       <div className="wc-container">
         {isAdmin && <button type="button" className="wc-settings-link" onClick={openAdmin}>⚙️ 설정</button>}
 
