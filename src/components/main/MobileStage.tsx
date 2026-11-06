@@ -4,7 +4,7 @@
 // 메뉴 항목 = 메인에 둔 「팝업 버튼」 위젯들(번호 순). 하나도 없으면 사이트 메뉴(상위 항목)를 쓴다.
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMainStore, WidgetConf } from '@/lib/mainStore';
+import { WidgetConf } from '@/lib/mainStore';
 import { useMenuSettings, buildMenu, boardEntries } from '@/lib/menuStore';
 import { useBoards } from '@/lib/boardStore';
 import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
@@ -12,7 +12,6 @@ import { useCustomLinks, linkEntries } from '@/lib/linkStore';
 import { useAuth } from '@/lib/auth';
 import { useSiteSettings } from '@/lib/siteStore';
 import { useFonts } from '@/lib/fontStore';
-import { createPortal } from 'react-dom';
 import { INTRO_RINGS, INTRO_CONS, INTRO_SPARKS, introSparkle } from '@/lib/introSky';
 import { PopBtnCard, PopStar, playPianoNote } from '@/components/main/widgets';
 
@@ -20,26 +19,8 @@ interface Item { key: string; num: string; suffix: string; label: string; sub: s
 
 const STAR_D = 'M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z';
 
-/** 일반 뷰 ↔ 소형 뷰 전환 연출 — 인트로에서 메인으로 넘어갈 때와 같다: 겹겹의 원이 커지며, 가운데에서 원 모양으로 열려 새 화면이 드러난다 */
-export function ViewSwitchCover() {
-  const [on, setOn] = useState(true);
-  useEffect(() => { const t = setTimeout(() => setOn(false), 1900); return () => clearTimeout(t); }, []);
-  if (!on || typeof document === 'undefined') return null;
-  return createPortal(
-    <div className="ms-cover" aria-hidden="true">
-      <svg className="ms-cv-sky" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
-        {INTRO_RINGS.map(c => <circle key={c.r} cx="640" cy="360" r={c.r} className={c.cls} />)}
-        {INTRO_CONS.map((d, i) => <polyline key={i} points={d} />)}
-      </svg>
-      <div className="ms-cv-star"><svg viewBox="-100 -100 200 200"><path fillRule="evenodd" transform="rotate(-32)" d={STAR_D} /></svg></div>
-    </div>,
-    document.body,
-  );
-}
-
 export function MobileStage() {
   const router = useRouter();
-  const { state } = useMainStore();
   const { familyOf } = useFonts();
   const [site] = useSiteSettings();
   const [menuSet] = useMenuSettings();
@@ -49,23 +30,15 @@ export function MobileStage() {
   const { user, isAdmin } = useAuth();
   const [open, setOpen] = useState<{ conf: WidgetConf; origin: { x: number; y: number } } | null>(null);
 
+  // 메뉴 = 홈페이지에 등록된 메뉴(메뉴 관리 · 공개범위 반영) — 상위 항목 그대로. 묶음은 누르면 하위 메뉴 팝업, 단일 항목은 바로 이동.
   const items: Item[] = useMemo(() => {
-    const pops = state.widgets.filter(w => w.type === 'popbtn' && w.enabled && !w.mOff)
-      .sort((a, b) => (parseInt(String(a.settings.num ?? 0)) || 0) - (parseInt(String(b.settings.num ?? 0)) || 0));
-    if (pops.length) {
-      return pops.map(w => {
-        const s = w.settings as Record<string, string | undefined>;
-        return { key: w.id, num: String(s.num ?? '1').padStart(2, '0'), suffix: s.numSuffix ?? 'logged', label: s.label ?? '', sub: s.sub ?? '',
-          color: s.starColor ?? '#4a63d8', conf: w, href: w.settings.mode === 'link' ? String(s.target ?? '') : undefined, fontId: s.labelFontId ?? s.fontId };
-      });
-    }
     const menu = buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)], { loggedIn: !!user, isAdmin, id: user?.id });
     return menu.map((m, i) => ({
-      key: m.label + i, num: String(i + 1).padStart(2, '0'), suffix: 'menu', label: m.label, sub: '', color: '#4a63d8',
-      href: m.href,
+      key: m.label + i, num: String(i + 1).padStart(2, '0'), suffix: '', label: m.label,
+      sub: m.children ? `${m.children.length} ITEMS` : '', color: '#4a63d8', href: m.href,
       conf: m.children ? ({ id: 'ms' + i, type: 'popbtn', col: 1, enabled: true, tx: 0, ty: 0, settings: { mode: 'menu', label: m.label, heading: m.label, num: String(i + 1), hrefs: m.children.map(c => c.href), width: 520 } } as WidgetConf) : null,
     }));
-  }, [state.widgets, menuSet, boards, secMap, links, user, isAdmin]);
+  }, [menuSet, boards, secMap, links, user, isAdmin]);
 
   const [active, setActive] = useState(0);
   const today = new Date();

@@ -3858,12 +3858,17 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 @keyframes msVis{from{opacity:0;transform:scale(.94)}}
 @keyframes msPanel{from{opacity:0;transform:translateY(14px)}}
 @keyframes msRow{from{opacity:0;transform:translateX(12px)}}
-/* 일반 ↔ 소형 전환 — 인트로 → 메인과 같은 원형 열림: 덮개의 원들이 커지고, 가운데에서 둥글게 열려 새 화면이 드러난다 */
-.ms-cover{position:fixed;inset:0;z-index:9400;pointer-events:none;background:radial-gradient(ellipse 60% 70% at 50% 40%,color-mix(in srgb,var(--accent,#4a63d8) 22%,#fff),#fff 75%);
-  animation:isOpen .9s cubic-bezier(.65,0,.35,1) .45s forwards;
-  -webkit-mask-image:radial-gradient(circle farthest-corner at 50% 50%,transparent calc(var(--r) - 4%),#000 var(--r));mask-image:radial-gradient(circle farthest-corner at 50% 50%,transparent calc(var(--r) - 4%),#000 var(--r))}
-.ms-cv-sky{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--accent,#4a63d8);stroke-width:1;stroke-opacity:.4;transform-origin:50% 50%;animation:isZoom 1.4s cubic-bezier(.65,0,.35,1) .1s forwards}
-.ms-cv-sky circle{vector-effect:non-scaling-stroke}.ms-cv-sky circle.gd,.ms-cv-sky circle.dash{stroke-dasharray:3 6}.ms-cv-sky circle.dot{stroke-dasharray:1 5}.ms-cv-sky circle.tick{stroke-dasharray:1 4}
-.ms-cv-star{position:absolute;left:50%;top:50%;width:min(30vw,170px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 38% 30%,color-mix(in srgb,var(--accent,#4a63d8) 70%,#fff),var(--accent,#4a63d8) 70%);animation:isZoomC 1.4s cubic-bezier(.65,0,.35,1) .1s forwards}
-.ms-cv-star svg{width:78%;fill:#fff}
-@media(prefers-reduced-motion:reduce){.ms-vis,.ms-panel,.ms-list li,.ms-core,.ms-sky{animation:none}.ms-cover{display:none}}
+@media(prefers-reduced-motion:reduce){.ms-vis,.ms-panel,.ms-list li,.ms-core,.ms-sky{animation:none}}
+
+/* 창 폭에 따라 이어서 재배치(영상처럼): 넓으면 세로 제목 + 한 줄 목록, 좁아지면 가로 제목이 위로 · 원 · 목록이 2열 */
+@media(max-width:479px){
+  .ms-stage{grid-template-rows:36% 1fr}
+  .ms-vis{display:flex;flex-direction:column}
+  .ms-vtitle{position:static;writing-mode:horizontal-tb;transform:none;opacity:1;font-size:clamp(40px,15vw,68px);padding:8px 12px 0;line-height:.95;flex:none;mix-blend-mode:normal}
+  .ms-core{top:68%;width:min(34%,110px)}
+  .ms-list{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:dense;align-content:start}
+  .ms-list li.on{grid-column:1/-1}
+  .ms-list li:not(.on) button{grid-template-columns:auto 1fr;padding:9px 8px}
+  .ms-list li:not(.on) b{font-size:17px}
+  .ms-list li:not(.on) span{display:none}
+}

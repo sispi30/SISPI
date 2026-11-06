@@ -9,7 +9,7 @@ import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { KRadio } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
 import { useStageFit } from '@/lib/stageFit';
-import { MobileStage, ViewSwitchCover } from '@/components/main/MobileStage';
+import { MobileStage } from '@/components/main/MobileStage';
 
 const ADDABLE: WidgetType[] = ['banner', 'memo', 'dday', 'todo', 'upcoming', 'freetext', 'deco', 'diary', 'latest', 'recent', 'popbtn', 'apply', 'orbit'];   // banner: 여러 개 추가 (v2.0 사용자 요청)
 /** 내용 설정 모달이 있는 위젯 — 우클릭 「설정」 노출 대상 (v1.9) */
@@ -34,13 +34,6 @@ export default function MainPage() {
     f(); mq.addEventListener('change', f);
     return () => mq.removeEventListener('change', f);
   }, []);
-  // 일반 ↔ 소형 전환 때만(첫 로드 제외) 인트로→메인과 같은 원형 열림 연출
-  const prevSmall = React.useRef<boolean | null>(null);
-  const [coverKey, setCoverKey] = useState(0);
-  useEffect(() => {
-    if (prevSmall.current !== null && prevSmall.current !== small) setCoverKey(k => k + 1);
-    prevSmall.current = small;
-  }, [small]);
 
   // 위젯 추가 — 상단바의 [＋ 위젯] 버튼(그리드 토글 왼쪽)이 이벤트로 연다 (v1.9 사용자 확정)
   useEffect(() => {
@@ -133,10 +126,9 @@ export default function MainPage() {
   }, [absMode, enabled.length]); // eslint-disable-line react-hooks/exhaustive-deps
   // 메인은 화면 고정 — 캔버스 높이는 CSS(.main-grid.abs)가 뷰포트에 맞춰 고정한다.
   // 위젯이 상하좌우로 넘쳐도 캔버스가 늘어나지 않고(#appMain overflow:hidden) 스크롤바도 생기지 않는다.
-  if (small && !editOn) return <><MobileStage />{coverKey > 0 && <ViewSwitchCover key={coverKey} />}</>;
+  if (small && !editOn) return <MobileStage />;
   return (
     <section className="page page-main-wrap" onClick={() => setCtx(null)}>
-      {coverKey > 0 && <ViewSwitchCover key={coverKey} />}
       <div ref={gridRef} className={`main-grid ${absMode ? 'abs' : ''} ${gridOn ? 'gridlines' : ''}`}
         style={{ marginTop: 12 }}>
         {absMode ? (
