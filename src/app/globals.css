@@ -3781,3 +3781,6 @@ html.in-embed #appMain *{--bg-page-height:auto}
 body:has(.pb-overlay) [class*="mfx"]{display:none!important}
 html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-actions{display:none!important}
 @media(prefers-reduced-motion:reduce){.pb-head,.pb-body,.pb-foot{animation:none}}
+
+/* 페이지 화면 팝업 — 내용이 자리 잡을 때까지 상자를 숨겼다가(크기 변화·스크롤바 깜빡임 방지) 한 번에 커지며 연다 */
+.pb-card.pb-wait{visibility:hidden;animation:none}

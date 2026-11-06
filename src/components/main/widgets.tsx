@@ -868,6 +868,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
 interface PopBtnSettings {
   num?: string; showNum?: boolean; label?: string;
   fontId?: string; size?: number; bold?: boolean;
+  labelFontId?: string; labelSize?: number;   // 라벨만 따로 폰트·크기
   numBg?: string; numFg?: string; labelColor?: string;
   sub?: string; numSuffix?: string; starColor?: string; showStar?: boolean;   // 부제 · 번호 옆 글자 · 별 색/표시
   tag?: string; heading?: string;
@@ -896,7 +897,9 @@ function PopBtnCard({ conf, onClose, origin }: { conf: WidgetConf; onClose: () =
   const router = useRouter();
   const s = conf.settings as PopBtnSettings;
   const [frameH, setFrameH] = useState<number | null>(null);
-  const [ready, setReady] = useState(false);   // 페이지 내용이 자리 잡을 때까지 숨겨 로딩이 안 보이게
+  const [ready, setReady] = useState(false);
+  const [shown, setShown] = useState(s.mode !== 'page');   // 페이지 화면은 내용이 자리 잡은 뒤에 상자를 연다
+  useEffect(() => { if (s.mode === 'page') { const t = setTimeout(() => setShown(true), 2500); return () => clearTimeout(t); } }, [s.mode]);   // 페이지 내용이 자리 잡을 때까지 숨겨 로딩이 안 보이게
   const [menuSet, , menuLoaded] = useMenuSettings();
   const { boards, loaded: boardsLoaded } = useBoards();
   const { user, isAdmin } = useAuth();
@@ -923,7 +926,7 @@ function PopBtnCard({ conf, onClose, origin }: { conf: WidgetConf; onClose: () =
   const hasFont = !!s.fontId && s.fontId !== 'default';
   return createPortal(
     <div className="pb-overlay" style={{ '--pb-blur': `${s.blur ?? 12}px` } as React.CSSProperties} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="pb-card" role="dialog" aria-modal="true"
+      <div className={`pb-card${shown ? '' : ' pb-wait'}`} role="dialog" aria-modal="true"
         style={{ maxWidth: `min(${s.width ?? 560}px, 92vw)`, '--dx': `${origin ? origin.x - window.innerWidth / 2 : 0}px`, '--dy': `${origin ? origin.y - window.innerHeight / 2 : 0}px`,
           '--pb-font': hasFont ? familyOf(s.fontId) : undefined } as React.CSSProperties}>
         <div className="pb-head">
@@ -937,14 +940,15 @@ function PopBtnCard({ conf, onClose, origin }: { conf: WidgetConf; onClose: () =
         <div className="pb-body">
         {s.mode === 'page' ? (
           s.target
-            ? <iframe className="pb-frame" title={s.heading || s.label || '페이지'} style={{ height: frameH ?? `${s.height ?? 70}vh`, opacity: ready ? 1 : 0 }}
+            ? <iframe className="pb-frame" scrolling="no" title={s.heading || s.label || '페이지'} style={{ height: frameH ?? `${s.height ?? 70}vh`, opacity: ready ? 1 : 0 }}
                 src={`${s.target}${s.target.includes('?') ? '&' : '?'}embed=1`}
                 onLoad={e => {   // 같은 사이트 화면이라 내용 높이를 읽어 팝업 안에 자연스럽게 이어 붙인다
                   const f = e.currentTarget;
                   try {
                     const d = f.contentDocument; if (!d) return;
                     const fit = () => { const m = d.getElementById('appMain'); const h = m ? m.getBoundingClientRect().height : d.body.getBoundingClientRect().height; if (h > 0) { setFrameH(Math.ceil(h) + 4); setReady(true); } };
-                    fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
+                    const reveal = () => { fit(); setShown(true); };
+                    fit(); setTimeout(fit, 250); setTimeout(reveal, 600); setTimeout(fit, 1500);
                     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(d.getElementById('appMain') ?? d.body);
                   } catch { /* 접근 불가면 설정한 높이 유지 */ }
                 }} />
@@ -994,7 +998,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
 
   return (
     <div className="pb-wrap">
-      <button type="button" className={`pb-btn${s.fontId && s.fontId !== 'default' ? ' pb-cf' : ''}`} onClick={e => {
+      <button type="button" className={`pb-btn${(s.labelFontId ?? s.fontId) && (s.labelFontId ?? s.fontId) !== 'default' ? ' pb-cf' : ''}`} onClick={e => {
         if (editOn) return;
         if (s.mode === 'link') {   // 팝업 없이 바로 이동
           if (!s.target) return;
@@ -1011,7 +1015,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
           {s.showNum !== false && (
             <span className="pb-num" style={{ color: s.numFg }}>{String(s.num ?? '1').padStart(2, '0')}{(s.numSuffix ?? 'logged') ? ` · ${s.numSuffix ?? 'logged'}` : ''}</span>
           )}
-          <span className="pb-label">{s.label ?? 'ABOUT ME'}</span>
+          <span className="pb-label" style={{ fontFamily: (s.labelFontId ?? s.fontId) && (s.labelFontId ?? s.fontId) !== 'default' ? familyOf(s.labelFontId ?? s.fontId) : undefined, fontSize: s.labelSize ? `${s.labelSize}px` : undefined }}>{s.label ?? 'ABOUT ME'}</span>
           {s.sub && <span className="pb-subl">{s.sub}</span>}
         </span>
       </button>
@@ -1038,9 +1042,12 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
             <KInput style={{ width: 130 }} placeholder="공지" value={draft.sub ?? ''} onChange={e => setDraft(d => ({ ...d, sub: e.target.value }))} />
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <KSelect minWidth={170} value={draft.fontId ?? 'default'} onChange={v => setDraft(d => ({ ...d, fontId: v }))}
+            <span className="cp-lb">라벨 폰트</span>
+            <KSelect minWidth={170} value={draft.labelFontId ?? draft.fontId ?? 'default'} onChange={v => setDraft(d => ({ ...d, labelFontId: v, fontId: v }))}
               options={fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: familyOf(f.id) }}>{f.name}</span> }))} />
-            <span className="cp-lb">크기</span>
+            <span className="cp-lb">라벨 크기</span>
+            <KStep value={draft.labelSize ?? Math.round((draft.size ?? 15) * 1.15)} min={8} max={80} suffix="px" onChange={v => setDraft(d => ({ ...d, labelSize: v }))} />
+            <span className="cp-lb">전체 크기</span>
             <KStep value={draft.size ?? 15} min={10} max={48} suffix="px" onChange={v => setDraft(d => ({ ...d, size: v }))} />
             <KCheck label="굵게" checked={draft.bold !== false} onChange={v => setDraft(d => ({ ...d, bold: v }))} />
           </div>
