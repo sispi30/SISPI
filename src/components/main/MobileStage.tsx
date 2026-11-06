@@ -41,7 +41,9 @@ export function MobileStage() {
     }));
   }, [menuSet, boards, secMap, links, user, isAdmin]);
 
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState<number | null>(null);   // 펼친 메뉴 — 평소엔 모두 접혀 있다
+  // 메인 소형 뷰에서는 상단바를 숨기고 아래 내용을 위로 당긴다
+  useEffect(() => { document.body.classList.add('ms-on'); return () => document.body.classList.remove('ms-on'); }, []);
   const today = new Date();
   const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
   const go = (it: Item, e: React.MouseEvent<HTMLButtonElement>) => {
@@ -97,15 +99,16 @@ export function MobileStage() {
       <ul className="ms-list">
         {items.map((it, i) => (
           <li key={it.key} className={i === active ? 'on' : ''} style={{ animationDelay: `${0.5 + i * 0.07}s` }}>
-            <button type="button" onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)} onClick={e => { setActive(i); go(it, e); }}>
+            <button type="button" aria-expanded={it.children ? i === active : undefined}
+              onClick={() => { if (it.children) setActive(a => (a === i ? null : i)); else if (it.href) { setActive(i); nav(it.href); } }}>
               <em>{it.num}</em>
               <b style={it.fontId && it.fontId !== 'default' ? { fontFamily: familyOf(it.fontId) } : undefined}>{it.label}</b>
-              {i === active && <small>▼ PRESS</small>}
+              {it.children && <small>{i === active ? '▲' : '▼'}</small>}
             </button>
             {it.children && (
-              <div className="ms-subs">
-                {it.children.map(c => <button type="button" key={c.href} onClick={() => { setActive(i); nav(c.href); }}>{c.label}</button>)}
-              </div>
+              <div className="ms-fold"><div className="ms-subs">
+                {it.children.map(c => <button type="button" key={c.href} tabIndex={i === active ? 0 : -1} onClick={() => nav(c.href)}>{c.label}</button>)}
+              </div></div>
             )}
           </li>
         ))}

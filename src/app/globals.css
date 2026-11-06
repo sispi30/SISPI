@@ -3863,3 +3863,13 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 @keyframes msPanel{from{opacity:0;transform:translateY(14px)}}
 @keyframes msRow{from{opacity:0;transform:translateX(12px)}}
 @media(prefers-reduced-motion:reduce){.ms-card,.ms-list li,.ms-core,.ms-sky,.ms-sky .spin{animation:none}}
+
+/* 메인 소형 뷰 — 상단바를 숨기고 내용을 위로 당긴다 */
+body.ms-on .topbar,body.ms-on .tf-fixed{display:none!important}
+body.ms-on #appMain{margin-top:0!important;padding-top:0!important}
+body.ms-on .ms-stage{height:100dvh}
+/* 하위 메뉴 접기/펼치기 — 평소엔 접힘 */
+.ms-fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.ms-fold>.ms-subs{overflow:hidden;min-height:0;padding-top:0;padding-bottom:0;opacity:0;transition:opacity .25s ease}
+.ms-list li.on .ms-fold{grid-template-rows:1fr}
+.ms-list li.on .ms-fold>.ms-subs{opacity:1;padding-top:6px;padding-bottom:4px}
