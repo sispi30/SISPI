@@ -3726,30 +3726,30 @@ body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{pa
 .pb-subl{font-size:.6em;color:var(--faint);letter-spacing:.04em}
 @keyframes pbTw{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.88)}}
 .pb-overlay{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;
-  background:rgba(6,7,9,.55);-webkit-backdrop-filter:blur(var(--pb-blur,12px));backdrop-filter:blur(var(--pb-blur,12px));animation:pbFade .22s ease both}
-.pb-card{position:relative;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(14,16,19,.94);color:#d9dce0;border:1px solid rgba(255,255,255,.1);border-radius:0;
-  box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pbPop .26s cubic-bezier(.2,.8,.2,1) both}
-.pb-card::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-right:2px solid rgba(255,255,255,.55);border-bottom:2px solid rgba(255,255,255,.55);pointer-events:none}
-.pb-head{position:relative;flex:none;padding:16px 22px 12px;border-bottom:1px solid rgba(255,255,255,.09)}
-.pb-tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;color:rgba(255,255,255,.4);text-transform:uppercase}
+  background:rgba(244,244,244,.5);-webkit-backdrop-filter:blur(var(--pb-blur,12px));backdrop-filter:blur(var(--pb-blur,12px));animation:pbFade .22s ease both}
+.pb-card{position:relative;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;background:#fff;color:#2a2c30;border:1px solid rgba(0,0,0,.12);border-radius:0;
+  box-shadow:0 24px 70px rgba(0,0,0,.16);animation:pbPop .26s cubic-bezier(.2,.8,.2,1) both}
+.pb-card::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-right:2px solid rgba(0,0,0,.6);border-bottom:2px solid rgba(0,0,0,.6);pointer-events:none}
+.pb-head{position:relative;flex:none;padding:16px 22px 12px;border-bottom:1px solid rgba(0,0,0,.09)}
+.pb-tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;color:rgba(0,0,0,.42);text-transform:uppercase}
 .pb-title{display:flex;align-items:baseline;gap:8px;margin-top:6px;padding-right:44px}
-.pb-heading{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:30px;font-weight:400;color:#f4f5f6;line-height:1.1}
-.pb-sub{font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.04em}
-.pb-x{position:absolute;top:18px;right:20px;width:28px;height:28px;border:1px solid rgba(255,255,255,.22);background:none;font-size:17px;line-height:1;color:rgba(255,255,255,.75);cursor:var(--cur-pointer,pointer);transition:background .15s,color .15s}
-.pb-x:hover{background:#fff;color:#111}
-.pb-body{flex:1;min-height:0;overflow-y:auto;padding:18px 22px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
-.pb-foot{flex:none;display:flex;justify-content:space-between;padding:9px 22px;border-top:1px solid rgba(255,255,255,.09);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;letter-spacing:.16em;color:rgba(255,255,255,.35)}
+.pb-heading{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:30px;font-weight:400;color:#17181a;line-height:1.1}
+.pb-sub{font-size:11px;color:rgba(0,0,0,.45);letter-spacing:.04em}
+.pb-x{position:absolute;top:18px;right:20px;width:28px;height:28px;border:1px solid rgba(0,0,0,.25);background:none;font-size:17px;line-height:1;color:rgba(0,0,0,.7);cursor:var(--cur-pointer,pointer);transition:background .15s,color .15s}
+.pb-x:hover{background:#111;color:#fff}
+.pb-body{flex:1;min-height:0;overflow-y:auto;padding:18px 22px;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.25) transparent}
+.pb-foot{flex:none;display:flex;justify-content:space-between;padding:9px 22px;border-top:1px solid rgba(0,0,0,.09);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;letter-spacing:.16em;color:rgba(0,0,0,.38)}
 .pb-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 28px}
-.pb-grp-t{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:rgba(255,255,255,.45);margin-bottom:7px}
+.pb-grp-t{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:rgba(0,0,0,.5);margin-bottom:7px}
 .pb-chips{display:flex;flex-wrap:wrap;gap:6px}
-.pb-chip{background:none;border:1px solid rgba(255,255,255,.2);border-radius:0;padding:4px 11px;font-size:12px;color:#d9dce0;cursor:var(--cur-pointer,pointer);font-family:inherit;transition:background .15s,color .15s}
-.pb-chip:hover{background:#fff;color:#111}
-.pb-empty{color:rgba(255,255,255,.45);font-size:13px}
-.pb-text{font-size:13px;line-height:1.85;color:#d9dce0}
-.pb-text a{color:#fff;text-decoration:underline}
+.pb-chip{background:none;border:1px solid rgba(0,0,0,.22);border-radius:0;padding:4px 11px;font-size:12px;color:#2a2c30;cursor:var(--cur-pointer,pointer);font-family:inherit;transition:background .15s,color .15s}
+.pb-chip:hover{background:#111;color:#fff}
+.pb-empty{color:rgba(0,0,0,.45);font-size:13px}
+.pb-text{font-size:13px;line-height:1.85;color:#2a2c30}
+.pb-text a{color:#111;text-decoration:underline}
 .pb-text ul{list-style:none;padding-left:0}
 .pb-text li{position:relative;padding-left:16px;margin-bottom:8px}
-.pb-text li::before{content:"";position:absolute;left:2px;top:.75em;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)}
+.pb-text li::before{content:"";position:absolute;left:2px;top:.75em;width:4px;height:4px;border-radius:50%;background:rgba(0,0,0,.6)}
 @keyframes pbFade{from{opacity:0}to{opacity:1}}
 @keyframes pbPop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.pb-overlay,.pb-card,.pb-star{animation:none}}
@@ -3761,3 +3761,6 @@ html.in-embed .topbar,html.in-embed .tf-fixed,html.in-embed .bgm2,html.in-embed 
 html.in-embed #appMain{margin:0!important;padding-top:0!important;margin-bottom:0!important}
 html.in-embed body{background:transparent!important}
 html.in-embed .page{padding-top:8px}
+
+/* 팝업 안 페이지: 배경 투명 · 높이는 내용에 맞춤 */
+html.in-embed,html.in-embed body{background:transparent!important}

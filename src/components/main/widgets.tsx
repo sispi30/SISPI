@@ -891,6 +891,7 @@ function PopStar({ color }: { color: string }) {
 function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }) {
   const router = useRouter();
   const s = conf.settings as PopBtnSettings;
+  const [frameH, setFrameH] = useState<number | null>(null);
   const [menuSet, , menuLoaded] = useMenuSettings();
   const { boards, loaded: boardsLoaded } = useBoards();
   const { user, isAdmin } = useAuth();
@@ -928,8 +929,17 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
         <div className="pb-body">
         {s.mode === 'page' ? (
           s.target
-            ? <iframe className="pb-frame" title={s.heading || s.label || '페이지'} style={{ height: `${s.height ?? 70}vh` }}
-                src={`${s.target}${s.target.includes('?') ? '&' : '?'}embed=1`} />
+            ? <iframe className="pb-frame" title={s.heading || s.label || '페이지'} style={{ height: frameH ?? `${s.height ?? 70}vh` }}
+                src={`${s.target}${s.target.includes('?') ? '&' : '?'}embed=1`}
+                onLoad={e => {   // 같은 사이트 화면이라 내용 높이를 읽어 팝업 안에 자연스럽게 이어 붙인다
+                  const f = e.currentTarget;
+                  try {
+                    const d = f.contentDocument; if (!d) return;
+                    const fit = () => { const h = d.documentElement.scrollHeight; if (h > 0) setFrameH(h + 4); };
+                    fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
+                    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(d.body);
+                  } catch { /* 접근 불가면 설정한 높이 유지 */ }
+                }} />
             : <div className="pb-empty">열 페이지를 설정에서 골라 주세요</div>
         ) : (s.mode ?? 'menu') === 'menu' ? (
           <div className="pb-menu">
