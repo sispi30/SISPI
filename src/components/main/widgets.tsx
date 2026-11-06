@@ -868,6 +868,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
 interface PopBtnSettings {
   num?: string; showNum?: boolean; label?: string;
   fontId?: string; size?: number; bold?: boolean;
+  sound?: boolean; soundVol?: number;   // 클릭 소리(피아노 계이름) 사용 · 음량 %
   align?: 'left' | 'center' | 'right';   // 별+글자 정렬
   numFontId?: string; numSize?: number;   // 번호(옆 글자)만 따로 폰트·크기
   labelFontId?: string; labelSize?: number;   // 라벨만 따로 폰트·크기
@@ -878,6 +879,34 @@ interface PopBtnSettings {
   target?: string;     // page(팝업 안에 화면 그대로) · link(바로 이동) 에서 열 메뉴 주소
   height?: number;     // page 팝업 높이(vh)
   width?: number; blur?: number;
+}
+
+/* 번호 → 피아노 계이름(샵 없음): 1=4옥타브 도(C4) · 2=레 · 3=미 · 4=파 · 5=솔 · 6=라 · 7=시 · 8=5옥타브 도 … 번호가 커질수록 높아진다 */
+const WHITE_SEMI = [0, 2, 4, 5, 7, 9, 11];
+let pbCtx: AudioContext | null = null;
+function playPianoNote(num: unknown, vol = 60) {
+  try {
+    const n = Math.max(1, Math.min(49, Math.floor(Number(String(num ?? '').replace(/[^0-9]/g, '')) || 1)));
+    const k = n - 1;
+    const semis = Math.floor(k / 7) * 12 + WHITE_SEMI[k % 7];
+    const f = 261.6256 * Math.pow(2, semis / 12);
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    pbCtx = pbCtx ?? new AC();
+    const ctx = pbCtx; if (ctx.state === 'suspended') void ctx.resume();
+    const now = ctx.currentTime, out = ctx.createGain();
+    const peak = 0.35 * Math.max(0, Math.min(100, vol)) / 100;
+    out.gain.setValueAtTime(0.0001, now);
+    out.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), now + 0.012);   // 건반을 치는 순간
+    out.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);                       // 울림이 서서히 사라짐
+    out.connect(ctx.destination);
+    [[1, 1], [2, .42], [3, .2], [4, .1]].forEach(([m, a], i) => {   // 배음을 섞어 피아노 비슷한 소리
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = i === 0 ? 'triangle' : 'sine'; o.frequency.value = f * m;
+      g.gain.setValueAtTime(a, now); g.gain.exponentialRampToValueAtTime(0.001, now + 1.6 / (m * 0.8));
+      o.connect(g); g.connect(out); o.start(now); o.stop(now + 1.7);
+    });
+  } catch { /* 소리를 못 내는 환경이면 조용히 넘어간다 */ }
 }
 
 function PopStar({ color }: { color: string }) {
@@ -1010,6 +1039,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
     <div className={`pb-wrap pb-al-${s.align ?? 'left'}`}>
       <button type="button" className={`pb-btn${(s.labelFontId ?? s.fontId) && (s.labelFontId ?? s.fontId) !== 'default' ? ' pb-cf' : ''}`} onClick={e => {
         if (editOn) return;
+        if (s.sound) playPianoNote(s.num, s.soundVol ?? 60);
         if (s.mode === 'link') {   // 팝업 없이 바로 이동
           if (!s.target) return;
           if (/^https?:\/\//.test(s.target)) window.open(s.target, '_blank'); else router.push(s.target);
@@ -1070,6 +1100,15 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
                 </button>
               ))}
             </div>
+            <KCheck label="클릭 소리(피아노)" checked={!!draft.sound} onChange={v => setDraft(d => ({ ...d, sound: v }))} />
+            {draft.sound && (<>
+              <span className="cp-lb">음량</span>
+              <KStep value={draft.soundVol ?? 60} min={5} max={100} step={5} suffix="%" onChange={v => setDraft(d => ({ ...d, soundVol: v }))} />
+              <button type="button" className="btn btn-ghost" onClick={() => playPianoNote(draft.num, draft.soundVol ?? 60)}>▶ 미리듣기</button>
+            </>)}
+          </div>
+          <p className="hint" style={{ margin: '-4px 0 0' }}>번호 1 = 4옥타브 도(C4) → 2 레 · 3 미 · 4 파 · 5 솔 · 6 라 · 7 시 · 8 = 5옥타브 도 … 샵(검은 건반)은 쓰지 않고, 번호가 커질수록 높은 음이 납니다.</p>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <KCheck label="별 표시" checked={draft.showStar !== false} onChange={v => setDraft(d => ({ ...d, showStar: v }))} />
             <span className="cp-lb">별 색</span>
             <ColorField value={draft.starColor ?? '#4a63d8'} onChange={hex => setDraft(d => ({ ...d, starColor: hex }))} />
