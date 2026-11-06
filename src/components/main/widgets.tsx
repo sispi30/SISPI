@@ -1,6 +1,6 @@
 'use client';
 // 메인 위젯 렌더러 (4.0) — DIARY/LATEST/UPCOMING 등은 해당 기능(2·3차) 전까지 데모 데이터
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { WidgetConf, useMainStore, WIDGET_META, decoSlides } from '@/lib/mainStore';
@@ -883,20 +883,28 @@ function PopStar({ color }: { color: string }) {
   return (
     <span className="pb-star" style={{ '--pb-star': color } as React.CSSProperties} aria-hidden>
       <i className="pb-star-halo" />
-      <svg viewBox="-14 -14 28 28" width="1em" height="1em">
-        <path d="M0-13.5 Q.55-.55 13.5 0 Q.55.55 0 13.5 Q-.55.55-13.5 0 Q-.55-.55 0-13.5Z" fill="currentColor" />
-        <path d="M0-6.5 Q.7-.7 6.5 0 Q.7.7 0 6.5 Q-.7.7-6.5 0 Q-.7-.7 0-6.5Z" fill="currentColor" opacity=".55" transform="rotate(45)" />
+      <svg viewBox="-20 -20 40 40" width="1em" height="1em" className="pb-star-rays">
+        <g fill="currentColor">
+          <path d="M-1.5-19 Q0 0 1.5 19 Q0 0 -1.5-19Z" transform="rotate(8)" strokeWidth=".7" stroke="currentColor" />
+          <path d="M-19-1 Q0 0 19 1 Q0 0 -19-1Z" transform="rotate(-6)" strokeWidth=".7" stroke="currentColor" />
+          <path d="M-1.2-11 Q0 0 1.2 11 Q0 0 -1.2-11Z" transform="rotate(48)" strokeWidth=".6" stroke="currentColor" opacity=".75" />
+          <path d="M-1.2-9 Q0 0 1.2 9 Q0 0 -1.2-9Z" transform="rotate(-42)" strokeWidth=".6" stroke="currentColor" opacity=".6" />
+        </g>
+        <circle r="2.6" fill="var(--pb-star)" opacity=".5" />
         <circle r="1.7" fill="#fff" />
       </svg>
     </span>
   );
 }
 
-function PopBtnCard({ conf, onClose, origin }: { conf: WidgetConf; onClose: () => void; origin: { x: number; y: number } | null }) {
+function PopBtnCard({ conf, onClose: onCloseDone, origin }: { conf: WidgetConf; onClose: () => void; origin: { x: number; y: number } | null }) {
   const { familyOf } = useFonts();
   const router = useRouter();
   const s = conf.settings as PopBtnSettings;
   const [frameH, setFrameH] = useState<number | null>(null);
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  const onClose = useCallback(() => { if (closingRef.current) return; closingRef.current = true; setClosing(true); setTimeout(onCloseDone, 360); }, [onCloseDone]);
   const [ready, setReady] = useState(false);
   const [shown, setShown] = useState(s.mode !== 'page');   // 페이지 화면은 내용이 자리 잡은 뒤에 상자를 연다
   useEffect(() => { if (s.mode === 'page') { const t = setTimeout(() => setShown(true), 2500); return () => clearTimeout(t); } }, [s.mode]);   // 페이지 내용이 자리 잡을 때까지 숨겨 로딩이 안 보이게
@@ -920,13 +928,13 @@ function PopBtnCard({ conf, onClose, origin }: { conf: WidgetConf; onClose: () =
     .map(m => ({ title: m.children ? m.label : '', items: m.children ?? (m.href ? [{ label: m.label, href: m.href }] : []) }))
     .map(g => ({ ...g, items: g.items.filter(i => picked.size === 0 || picked.has(i.href)) }))
     .filter(g => g.items.length > 0);
-  const go = (href: string) => { onClose(); if (/^https?:\/\//.test(href)) window.open(href, '_blank'); else router.push(href); };
+  const go = (href: string) => { onCloseDone(); if (/^https?:\/\//.test(href)) window.open(href, '_blank'); else router.push(href); };
 
   const num = s.num ?? '1';
   const hasFont = !!s.fontId && s.fontId !== 'default';
   return createPortal(
-    <div className="pb-overlay" style={{ '--pb-blur': `${s.blur ?? 12}px` } as React.CSSProperties} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={`pb-card${shown ? '' : ' pb-wait'}`} role="dialog" aria-modal="true"
+    <div className={`pb-overlay${closing ? ' pb-out' : ''}`} style={{ '--pb-blur': `${s.blur ?? 12}px` } as React.CSSProperties} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={`pb-card${shown ? '' : ' pb-wait'}${closing ? ' pb-out' : ''}`} role="dialog" aria-modal="true"
         style={{ maxWidth: `min(${s.width ?? 560}px, 92vw)`, '--dx': `${origin ? origin.x - window.innerWidth / 2 : 0}px`, '--dy': `${origin ? origin.y - window.innerHeight / 2 : 0}px`,
           '--pb-font': hasFont ? familyOf(s.fontId) : undefined } as React.CSSProperties}>
         <div className="pb-head">

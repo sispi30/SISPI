@@ -3790,3 +3790,17 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 .pb-star-ring{display:none!important}
 .pb-btn:hover .pb-star{transform:none;opacity:1}
 .pb-btn:hover{transform:none;opacity:1}
+
+/* 별 — GIF처럼: 하얗게 빛나는 중심 + 가늘고 길이가 다른 빛줄기, 천천히 돈다(흐려지지 않음) */
+.pb-star{font-size:2.6em;filter:drop-shadow(0 0 2px var(--pb-star,#4a63d8)) drop-shadow(0 0 7px var(--pb-star,#4a63d8))}
+.pb-star-halo{inset:-.1em;opacity:.35}
+.pb-star-rays{animation:pbSpin 14s linear infinite}
+@keyframes pbSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.pb-star-rays{animation:none}}
+/* 닫기 — 상자가 눌렀던 별 자리로 작아지며 사라지고 배경이 걷힌다 */
+.pb-card.pb-out{animation:pbShrink .36s cubic-bezier(.5,0,.75,.2) forwards}
+.pb-overlay.pb-out{animation:pbFadeOut .36s ease forwards;pointer-events:none}
+.pb-out .pb-head,.pb-out .pb-body,.pb-out .pb-foot{animation:pbBodyOut .14s ease forwards}
+@keyframes pbShrink{from{opacity:1;transform:none}70%{opacity:1}to{opacity:0;transform:translate(var(--dx,0),var(--dy,0)) scale(.06)}}
+@keyframes pbFadeOut{from{opacity:1}to{opacity:0}}
+@keyframes pbBodyOut{to{opacity:0}}
