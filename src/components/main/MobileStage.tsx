@@ -2,7 +2,7 @@
 // 작은 화면(모바일) 전용 메인 뷰 — 인트로 화면처럼 동그란 원(스테이지)이 배경을 가리고,
 // 메뉴가 별자리처럼 떠 있다: 별 + 「01 · logged / 이름 / 부제」, 별끼리 가는 선으로 이어진다. 별을 누르면 팝업(또는 이동).
 // 메뉴 항목 = 메인에 둔 「팝업 버튼」 위젯들(번호 순). 하나도 없으면 사이트 메뉴(상위 항목)를 쓴다.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { WidgetConf } from '@/lib/mainStore';
 import { useMenuSettings, buildMenu, boardEntries } from '@/lib/menuStore';
@@ -41,6 +41,30 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
     }));
   }, [menuSet, boards, secMap, links, user, isAdmin]);
 
+  // 별은 저절로 돌지 않고, 마우스(손가락)가 움직이는 방향을 따라 부드럽게 돈다 — 인트로 화면과 같다
+  const starRef = useRef<SVGGElement>(null);
+  useEffect(() => {
+    const aim = { target: 0, cur: 0, last: 0, init: false };
+    const mv = (e: PointerEvent) => {
+      const a = Math.atan2(e.clientY - innerHeight / 2, e.clientX - innerWidth / 2) * 180 / Math.PI;
+      if (!aim.init) { aim.init = true; aim.last = a; aim.target = aim.cur = a; return; }
+      let d = a - aim.last;
+      while (d > 180) d -= 360;
+      while (d < -180) d += 360;
+      aim.last = a; aim.target += d;
+    };
+    window.addEventListener('pointermove', mv);
+    let id = 0;
+    const loop = () => {
+      if (Math.abs(aim.target - aim.cur) > 0.02) {
+        aim.cur += (aim.target - aim.cur) * 0.06;
+        if (starRef.current) starRef.current.style.transform = `rotate(${aim.cur}deg)`;
+      }
+      id = requestAnimationFrame(loop);
+    };
+    id = requestAnimationFrame(loop);
+    return () => { window.removeEventListener('pointermove', mv); cancelAnimationFrame(id); };
+  }, []);
   const [active, setActive] = useState<number | null>(null);   // 펼친 메뉴 — 평소엔 모두 접혀 있다
   // 메인 소형 뷰에서는 상단바를 숨기고 아래 내용을 위로 당긴다
   useEffect(() => { document.body.classList.add('ms-on'); return () => document.body.classList.remove('ms-on'); }, []);
@@ -96,7 +120,7 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
         </svg>
         <div className="ms-halo" />
         {img && <div className="ms-art" style={{ backgroundImage: `url("${img}")` }} />}
-        <div className="ms-core"><svg viewBox="-100 -100 200 200"><path fillRule="evenodd" transform="rotate(-32)" d={STAR_D} /></svg></div>
+        <div className="ms-core"><svg viewBox="-100 -100 200 200"><g ref={starRef}><path fillRule="evenodd" transform="rotate(-32)" d={STAR_D} /></g></svg></div>
       </div>
 
       </div>

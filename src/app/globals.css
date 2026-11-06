@@ -3911,3 +3911,5 @@ body.ms-on .ms-stage{height:100dvh}
 .ms-sky .rays line,.ms-sky .cons polyline,.ms-sky .orbs ellipse{stroke-width:1.5}
 .ms-sky .pl.ln{stroke-width:1.7}
 .ms-core,.ms-halo,.ms-art{backface-visibility:hidden}
+
+.ms-core g{transform-box:view-box;transform-origin:0 0}
