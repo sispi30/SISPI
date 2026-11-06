@@ -868,6 +868,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
 interface PopBtnSettings {
   num?: string; showNum?: boolean; label?: string;
   fontId?: string; size?: number; bold?: boolean;
+  numFontId?: string; numSize?: number;   // 번호(옆 글자)만 따로 폰트·크기
   labelFontId?: string; labelSize?: number;   // 라벨만 따로 폰트·크기
   numBg?: string; numFg?: string; labelColor?: string;
   sub?: string; numSuffix?: string; starColor?: string; showStar?: boolean;   // 부제 · 번호 옆 글자 · 별 색/표시
@@ -887,7 +888,6 @@ function PopStar({ color }: { color: string }) {
         <path d="M0-6.5 Q.7-.7 6.5 0 Q.7.7 0 6.5 Q-.7.7-6.5 0 Q-.7-.7 0-6.5Z" fill="currentColor" opacity=".55" transform="rotate(45)" />
         <circle r="1.7" fill="#fff" />
       </svg>
-      <i className="pb-star-ring" />
     </span>
   );
 }
@@ -1013,7 +1013,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
         {s.showStar !== false && <PopStar color={s.starColor ?? '#4a63d8'} />}
         <span className="pb-txt">
           {s.showNum !== false && (
-            <span className="pb-num" style={{ color: s.numFg }}>{String(s.num ?? '1').padStart(2, '0')}{(s.numSuffix ?? 'logged') ? ` · ${s.numSuffix ?? 'logged'}` : ''}</span>
+            <span className="pb-num" style={{ color: s.numFg, fontFamily: s.numFontId && s.numFontId !== 'default' ? familyOf(s.numFontId) : undefined, fontSize: s.numSize ? `${s.numSize}px` : undefined }}>{String(s.num ?? '1').padStart(2, '0')}{(s.numSuffix ?? 'logged') ? ` · ${s.numSuffix ?? 'logged'}` : ''}</span>
           )}
           <span className="pb-label" style={{ fontFamily: (s.labelFontId ?? s.fontId) && (s.labelFontId ?? s.fontId) !== 'default' ? familyOf(s.labelFontId ?? s.fontId) : undefined, fontSize: s.labelSize ? `${s.labelSize}px` : undefined }}>{s.label ?? 'ABOUT ME'}</span>
           {s.sub && <span className="pb-subl">{s.sub}</span>}
@@ -1055,6 +1055,11 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
             <KCheck label="별 표시" checked={draft.showStar !== false} onChange={v => setDraft(d => ({ ...d, showStar: v }))} />
             <span className="cp-lb">별 색</span>
             <ColorField value={draft.starColor ?? '#4a63d8'} onChange={hex => setDraft(d => ({ ...d, starColor: hex }))} />
+            <span className="cp-lb">번호 폰트</span>
+            <KSelect minWidth={170} value={draft.numFontId ?? 'default'} onChange={v => setDraft(d => ({ ...d, numFontId: v }))}
+              options={fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: familyOf(f.id) }}>{f.name}</span> }))} />
+            <span className="cp-lb">번호 크기</span>
+            <KStep value={draft.numSize ?? Math.round((draft.size ?? 15) * 0.62)} min={6} max={40} suffix="px" onChange={v => setDraft(d => ({ ...d, numSize: v }))} />
             <span className="cp-lb">번호 글씨</span>
             <ColorField value={draft.numFg ?? '#9a9a9a'} onChange={hex => setDraft(d => ({ ...d, numFg: hex }))} />
             <span className="cp-lb">라벨 색</span>

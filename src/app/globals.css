@@ -3784,3 +3784,9 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 
 /* 페이지 화면 팝업 — 내용이 자리 잡을 때까지 상자를 숨겼다가(크기 변화·스크롤바 깜빡임 방지) 한 번에 커지며 연다 */
 .pb-card.pb-wait{visibility:hidden;animation:none}
+
+/* 별 — 깜빡임·호버 링 없음, 마우스를 올려도 그대로 */
+.pb-star{animation:none!important}
+.pb-star-ring{display:none!important}
+.pb-btn:hover .pb-star{transform:none;opacity:1}
+.pb-btn:hover{transform:none;opacity:1}
