@@ -868,6 +868,7 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
 interface PopBtnSettings {
   num?: string; showNum?: boolean; label?: string;
   fontId?: string; size?: number; bold?: boolean;
+  align?: 'left' | 'center' | 'right';   // 별+글자 정렬
   numFontId?: string; numSize?: number;   // 번호(옆 글자)만 따로 폰트·크기
   labelFontId?: string; labelSize?: number;   // 라벨만 따로 폰트·크기
   numBg?: string; numFg?: string; labelColor?: string;
@@ -885,10 +886,10 @@ function PopStar({ color }: { color: string }) {
       <i className="pb-star-halo" />
       <svg viewBox="-20 -20 40 40" width="1em" height="1em" className="pb-star-rays">
         <g fill="currentColor">
-          <path d="M-1.5-19 Q0 0 1.5 19 Q0 0 -1.5-19Z" transform="rotate(8)" strokeWidth=".7" stroke="currentColor" />
-          <path d="M-19-1 Q0 0 19 1 Q0 0 -19-1Z" transform="rotate(-6)" strokeWidth=".7" stroke="currentColor" />
-          <path d="M-1.2-11 Q0 0 1.2 11 Q0 0 -1.2-11Z" transform="rotate(48)" strokeWidth=".6" stroke="currentColor" opacity=".75" />
-          <path d="M-1.2-9 Q0 0 1.2 9 Q0 0 -1.2-9Z" transform="rotate(-42)" strokeWidth=".6" stroke="currentColor" opacity=".6" />
+          <path d="M0-19.5 Q1.5 0 0 19.5 Q-1.5 0 0-19.5Z" transform="rotate(8)" />
+          <path d="M-19.5 0 Q0 1.4 19.5 0 Q0-1.4 -19.5 0Z" transform="rotate(-6)" />
+          <path d="M0-11.5 Q1.1 0 0 11.5 Q-1.1 0 0-11.5Z" transform="rotate(48)" opacity=".75" />
+          <path d="M0-9.5 Q1.1 0 0 9.5 Q-1.1 0 0-9.5Z" transform="rotate(-42)" opacity=".6" />
         </g>
         <circle r="2.6" fill="var(--pb-star)" opacity=".5" />
         <circle r="1.7" fill="#fff" />
@@ -1006,7 +1007,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
   const dh = new Set(draft.hrefs ?? []);
 
   return (
-    <div className="pb-wrap">
+    <div className={`pb-wrap pb-al-${s.align ?? 'left'}`}>
       <button type="button" className={`pb-btn${(s.labelFontId ?? s.fontId) && (s.labelFontId ?? s.fontId) !== 'default' ? ' pb-cf' : ''}`} onClick={e => {
         if (editOn) return;
         if (s.mode === 'link') {   // 팝업 없이 바로 이동
@@ -1061,6 +1062,14 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
             <KCheck label="굵게" checked={draft.bold !== false} onChange={v => setDraft(d => ({ ...d, bold: v }))} />
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="cp-lb">정렬</span>
+            <div className="mini-seg">
+              {(['left', 'center', 'right'] as const).map(a => (
+                <button key={a} className={(draft.align ?? 'left') === a ? 'on' : ''} onClick={() => setDraft(d => ({ ...d, align: a }))}>
+                  {a === 'left' ? '좌측' : a === 'center' ? '가운데' : '우측'}
+                </button>
+              ))}
+            </div>
             <KCheck label="별 표시" checked={draft.showStar !== false} onChange={v => setDraft(d => ({ ...d, showStar: v }))} />
             <span className="cp-lb">별 색</span>
             <ColorField value={draft.starColor ?? '#4a63d8'} onChange={hex => setDraft(d => ({ ...d, starColor: hex }))} />

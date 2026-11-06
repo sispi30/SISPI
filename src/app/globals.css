@@ -3805,3 +3805,14 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 @keyframes pbShrink{from{opacity:1;transform:none}70%{opacity:1}to{opacity:0;transform:translate(var(--dx,0),var(--dy,0)) scale(.06)}}
 @keyframes pbFadeOut{from{opacity:1}to{opacity:0}}
 @keyframes pbBodyOut{to{opacity:0}}
+
+/* 별+글자 정렬 — 좌측: 별 왼쪽·글자 왼쪽 정렬 / 가운데: 별이 위, 글자 가운데 / 우측: 글자 오른쪽 정렬, 별이 오른쪽 */
+.pb-wrap{display:flex;width:100%}
+.pb-wrap.pb-al-left{justify-content:flex-start}
+.pb-wrap.pb-al-center{justify-content:center}
+.pb-wrap.pb-al-right{justify-content:flex-end}
+.pb-al-left .pb-txt{align-items:flex-start;text-align:left}
+.pb-al-center .pb-btn{flex-direction:column;gap:.35em}
+.pb-al-center .pb-txt{align-items:center;text-align:center}
+.pb-al-right .pb-btn{flex-direction:row-reverse}
+.pb-al-right .pb-txt{align-items:flex-end;text-align:right}
