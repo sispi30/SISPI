@@ -3824,27 +3824,46 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 .pb-text li::before{background:var(--accent,#111)}
 .pb-text a{color:var(--accent,#111)}
 
-/* ---------- 작은 화면 전용 메인 — 원형 스테이지 + 별자리 메뉴 (MobileStage) ---------- */
-.ms-stage{position:relative;height:calc(100dvh - 64px);min-height:520px;overflow:hidden;isolation:isolate}
-.ms-rings{position:absolute;inset:0;width:100%;height:100%;z-index:0}
-.ms-rings circle{fill:none;stroke:var(--accent,#4a63d8);stroke-opacity:.28;stroke-width:1;vector-effect:non-scaling-stroke}
-.ms-rings circle.th{stroke-opacity:.18}.ms-rings circle.gd,.ms-rings circle.dash{stroke-dasharray:3 6}.ms-rings circle.dot{stroke-dasharray:1 5;stroke-opacity:.4}.ms-rings circle.tick{stroke-dasharray:1 4;stroke-opacity:.3}
-/* 동그란 원이 배경 화면을 가린다 */
-.ms-orb{position:absolute;z-index:0;left:50%;top:50%;width:min(112vw,640px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
-  background:radial-gradient(circle at 50% 42%,var(--panel-solid,#fff) 0%,color-mix(in srgb,var(--accent,#4a63d8) 14%,var(--panel-solid,#fff)) 62%,color-mix(in srgb,var(--accent,#4a63d8) 28%,var(--panel-solid,#fff)) 100%);
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--accent,#4a63d8) 35%,transparent),0 0 70px color-mix(in srgb,var(--accent,#4a63d8) 28%,transparent)}
-.ms-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
-.ms-lines line{stroke:var(--accent,#4a63d8);stroke-opacity:.32;stroke-width:1}
-.ms-head{position:absolute;z-index:2;top:14px;left:0;right:0;text-align:center;display:flex;flex-direction:column;gap:2px;pointer-events:none}
-.ms-head b{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;font-size:20px;letter-spacing:.04em;color:var(--ink)}
-.ms-head span{font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.2em;color:var(--faint)}
-.ms-item{position:absolute;z-index:3;transform:translate(-14px,-14px);display:flex;align-items:center;gap:8px;background:none;border:0;padding:4px;cursor:var(--cur-pointer,pointer);color:var(--ink);font-family:inherit;text-align:left;animation:msIn .6s ease both}
-.ms-item .pb-star{font-size:28px}
-.ms-txt{display:flex;flex-direction:column;gap:1px;white-space:nowrap}
-.ms-num{font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.12em;color:var(--faint)}
-.ms-lb{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17px;line-height:1.15}
-.ms-sub{font-size:10.5px;color:var(--faint)}
-.ms-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--faint);font-size:13px}
-@keyframes msIn{from{opacity:0;transform:translate(-14px,-6px) scale(.9)}to{opacity:1}}
-.ms-item:hover .pb-star-ring,.ms-item:active .pb-star-ring{opacity:.55;transform:scale(1)}
-@media(prefers-reduced-motion:reduce){.ms-item{animation:none}}
+/* ---------- 작은 화면 전용 메인 (MobileStage) — 왼쪽(위): 인트로와 같은 원·별 / 오른쪽(아래): 큰 번호 목록 ---------- */
+.ms-stage{position:relative;height:calc(100dvh - 64px);min-height:480px;display:grid;grid-template-columns:1fr;grid-template-rows:38% 1fr;gap:0;overflow:hidden;isolation:isolate;padding:6px 10px 10px;gap:6px}
+@media(min-width:480px){.ms-stage{grid-template-columns:1fr 1.05fr;grid-template-rows:1fr;gap:10px}}
+.ms-vis{position:relative;overflow:hidden;border-radius:18px;background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--accent,#4a63d8) 16%,#fff),color-mix(in srgb,var(--accent,#4a63d8) 6%,#fff) 70%);animation:msVis 1s cubic-bezier(.65,0,.35,1) .2s both}
+.ms-sky{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--accent,#4a63d8);stroke-width:1;animation:isSky 1.6s ease both}
+.ms-sky circle{stroke-opacity:.34;vector-effect:non-scaling-stroke}.ms-sky circle.th{stroke-opacity:.2}.ms-sky circle.gd,.ms-sky circle.dash{stroke-dasharray:3 6}.ms-sky circle.dot{stroke-dasharray:1 5}.ms-sky circle.tick{stroke-dasharray:1 4}
+.ms-sky .cons polyline{stroke-opacity:.3;vector-effect:non-scaling-stroke}
+.ms-sky .cs,.ms-sky .sp{fill:var(--accent,#4a63d8);stroke:none}
+.ms-sky .orbs ellipse{stroke-opacity:.5;vector-effect:non-scaling-stroke}
+.ms-core{position:absolute;left:50%;top:50%;width:min(46%,150px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 38% 30%,color-mix(in srgb,var(--accent,#4a63d8) 70%,#fff),var(--accent,#4a63d8) 70%);box-shadow:0 0 0 7px color-mix(in srgb,var(--accent,#4a63d8) 18%,transparent),0 0 40px color-mix(in srgb,var(--accent,#4a63d8) 45%,transparent);animation:isStar 1.2s ease .3s both}
+.ms-core svg{width:78%;fill:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,.7))}
+.ms-vtitle{position:absolute;left:6px;top:8px;bottom:8px;writing-mode:vertical-rl;transform:rotate(180deg);font-size:clamp(54px,17vw,96px);font-weight:900;letter-spacing:-.02em;line-height:.9;color:var(--ink);opacity:.9;white-space:nowrap;overflow:hidden;text-transform:uppercase;pointer-events:none;mix-blend-mode:multiply}
+@media(max-width:479px){.ms-vtitle{writing-mode:horizontal-tb;transform:none;left:10px;right:10px;top:auto;bottom:4px;font-size:clamp(38px,15vw,64px);opacity:.14;text-align:center}}
+.ms-cn{position:absolute;width:12px;height:12px;border:0 solid var(--accent,#4a63d8);opacity:.7}.ms-cn.tl{left:8px;top:8px;border-width:1.5px 0 0 1.5px}.ms-cn.br{right:8px;bottom:8px;border-width:0 1.5px 1.5px 0}
+.ms-panel{position:relative;display:flex;flex-direction:column;min-height:0;background:var(--panel-solid,#fff);border-radius:18px;padding:12px 12px 10px;box-shadow:0 8px 30px rgba(0,0,0,.08);animation:msPanel .6s ease .6s both}
+.ms-bar{display:flex;justify-content:space-between;gap:8px;font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.12em;color:var(--faint);padding-bottom:8px;border-bottom:1px solid var(--line);text-transform:uppercase}
+.ms-bar i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent,#4a63d8);margin-right:6px}
+.ms-list{list-style:none;flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;margin:0;padding:0}
+.ms-list li{border-bottom:1px solid var(--line);animation:msRow .5s ease both}
+.ms-list li button{width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:none;border:0;border-radius:12px;padding:12px 10px;text-align:left;cursor:var(--cur-pointer,pointer);font-family:inherit;color:var(--ink);transition:background .2s,color .2s}
+.ms-list li em{font-style:normal;font-size:11px;font-weight:700;opacity:.8}
+.ms-list li b{font-size:clamp(22px,7vw,32px);font-weight:900;letter-spacing:-.02em;line-height:1.05;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-list li span{display:flex;flex-direction:column;align-items:flex-end;font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);text-align:right;max-width:70px}
+.ms-list li small{font-size:8.5px;font-weight:800;letter-spacing:.06em;color:#fff}
+.ms-list li.on{border-bottom-color:transparent}
+.ms-list li.on button{background:var(--accent,#4a63d8);color:#fff}
+.ms-list li.on span{color:rgba(255,255,255,.85)}
+.ms-empty{padding:20px;color:var(--faint);font-size:13px;text-align:center}
+.ms-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-top:8px;border-top:1px solid var(--line);margin-top:4px}
+.ms-stat small{display:block;font-family:ui-monospace,Menlo,monospace;font-size:8.5px;letter-spacing:.12em;color:var(--faint)}.ms-stat b{font-size:17px;font-weight:800}
+@keyframes msVis{from{opacity:0;transform:scale(.94)}}
+@keyframes msPanel{from{opacity:0;transform:translateY(14px)}}
+@keyframes msRow{from{opacity:0;transform:translateX(12px)}}
+/* 일반 ↔ 소형 전환 — 인트로 → 메인과 같은 원형 열림: 덮개의 원들이 커지고, 가운데에서 둥글게 열려 새 화면이 드러난다 */
+.ms-cover{position:fixed;inset:0;z-index:9400;pointer-events:none;background:radial-gradient(ellipse 60% 70% at 50% 40%,color-mix(in srgb,var(--accent,#4a63d8) 22%,#fff),#fff 75%);
+  animation:isOpen .9s cubic-bezier(.65,0,.35,1) .45s forwards;
+  -webkit-mask-image:radial-gradient(circle farthest-corner at 50% 50%,transparent calc(var(--r) - 4%),#000 var(--r));mask-image:radial-gradient(circle farthest-corner at 50% 50%,transparent calc(var(--r) - 4%),#000 var(--r))}
+.ms-cv-sky{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--accent,#4a63d8);stroke-width:1;stroke-opacity:.4;transform-origin:50% 50%;animation:isZoom 1.4s cubic-bezier(.65,0,.35,1) .1s forwards}
+.ms-cv-sky circle{vector-effect:non-scaling-stroke}.ms-cv-sky circle.gd,.ms-cv-sky circle.dash{stroke-dasharray:3 6}.ms-cv-sky circle.dot{stroke-dasharray:1 5}.ms-cv-sky circle.tick{stroke-dasharray:1 4}
+.ms-cv-star{position:absolute;left:50%;top:50%;width:min(30vw,170px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 38% 30%,color-mix(in srgb,var(--accent,#4a63d8) 70%,#fff),var(--accent,#4a63d8) 70%);animation:isZoomC 1.4s cubic-bezier(.65,0,.35,1) .1s forwards}
+.ms-cv-star svg{width:78%;fill:#fff}
+@media(prefers-reduced-motion:reduce){.ms-vis,.ms-panel,.ms-list li,.ms-core,.ms-sky{animation:none}.ms-cover{display:none}}
