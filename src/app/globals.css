@@ -3931,3 +3931,19 @@ body.ms-on .ms-stage{height:100dvh}
 .ms-rows li span{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ms-rows li i{font-style:normal;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--is-fg) 14%,transparent);white-space:nowrap;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
 .ms-stage.small .ms-rows li:nth-child(n+3){display:none}
+
+/* ---------- 호버 효과 (영상과 같이) — 메뉴 행은 하얀 알약으로 떠오르고, 카드의 행은 번호가 ✓로 바뀌며 오른쪽 칩이 포인트 색으로 찬다 ---------- */
+.ms-list li>button{transition:background .22s ease,color .22s ease,box-shadow .22s ease,transform .22s ease}
+.ms-list li:not(.on)>button:hover{background:rgba(255,255,255,.82);color:var(--is-fg);box-shadow:0 6px 18px color-mix(in srgb,var(--is-ac) 18%,transparent)}
+.ms-list li:not(.on)>button:hover em{color:var(--is-ac)}
+.ms-card{transition:background .25s ease,box-shadow .25s ease}
+.ms-card:hover{background:rgba(255,255,255,.55);box-shadow:0 10px 30px color-mix(in srgb,var(--is-ac) 16%,transparent)}
+.ms-rows li button{transition:background .2s ease,border-color .2s ease,box-shadow .2s ease}
+.ms-rows li em,.ms-rows li i{transition:background .2s ease,color .2s ease,font-size .15s ease}
+.ms-rows li em:not(.mood){background:var(--is-fg);position:relative}
+.ms-rows li button:hover{background:#fff;border-color:color-mix(in srgb,var(--is-ac) 45%,transparent);box-shadow:0 5px 16px color-mix(in srgb,var(--is-ac) 18%,transparent)}
+.ms-rows li button:hover em:not(.mood){background:var(--is-ac);font-size:0}
+.ms-rows li button:hover em:not(.mood)::before{content:"✓";font-size:12px;font-weight:900;color:#fff}
+.ms-rows li button:hover i{background:var(--is-ac);color:#fff}
+.ms-tabs button{transition:background .2s ease,color .2s ease,border-color .2s ease}
+.ms-tabs button:hover:not(.on){background:color-mix(in srgb,var(--is-ac) 14%,transparent);border-color:var(--is-ac)}
