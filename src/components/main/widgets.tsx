@@ -881,31 +881,47 @@ interface PopBtnSettings {
   width?: number; blur?: number;
 }
 
-/* 번호 → 피아노 계이름(샵 없음): 1=4옥타브 도(C4) · 2=레 · 3=미 · 4=파 · 5=솔 · 6=라 · 7=시 · 8=5옥타브 도 … 번호가 커질수록 높아진다 */
+/* 번호 → 피아노 계이름(샵 없음): 1=6옥타브 도(C6) · 2=레 · 3=미 · 4=파 · 5=솔 · 6=라 · 7=시 · 8=7옥타브 도 … 번호가 커질수록 높아진다(최대 21번) */
 const WHITE_SEMI = [0, 2, 4, 5, 7, 9, 11];
 let pbCtx: AudioContext | null = null;
 function playPianoNote(num: unknown, vol = 60) {
   try {
-    const n = Math.max(1, Math.min(49, Math.floor(Number(String(num ?? '').replace(/[^0-9]/g, '')) || 1)));
+    const n = Math.max(1, Math.min(21, Math.floor(Number(String(num ?? '').replace(/[^0-9]/g, '')) || 1)));
     const k = n - 1;
     const semis = Math.floor(k / 7) * 12 + WHITE_SEMI[k % 7];
-    const f = 261.6256 * Math.pow(2, semis / 12);
+    const f = 1046.502 * Math.pow(2, semis / 12);   // C6 = 1046.5Hz (기준 도보다 두 옥타브 위)
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AC) return;
     pbCtx = pbCtx ?? new AC();
     const ctx = pbCtx; if (ctx.state === 'suspended') void ctx.resume();
-    const now = ctx.currentTime, out = ctx.createGain();
-    const peak = 0.35 * Math.max(0, Math.min(100, vol)) / 100;
+    const now = ctx.currentTime;
+    const peak = 0.3 * Math.max(0, Math.min(100, vol)) / 100;
+    const decay = Math.max(0.9, Math.min(2.6, 2.4 * Math.pow(1046 / f, 0.35)));   // 높은 음일수록 짧게 울린다
+    const out = ctx.createGain(), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = Math.min(9000, f * 7); lp.Q.value = 0.4;
     out.gain.setValueAtTime(0.0001, now);
-    out.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), now + 0.012);   // 건반을 치는 순간
-    out.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);                       // 울림이 서서히 사라짐
-    out.connect(ctx.destination);
-    [[1, 1], [2, .42], [3, .2], [4, .1]].forEach(([m, a], i) => {   // 배음을 섞어 피아노 비슷한 소리
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = i === 0 ? 'triangle' : 'sine'; o.frequency.value = f * m;
-      g.gain.setValueAtTime(a, now); g.gain.exponentialRampToValueAtTime(0.001, now + 1.6 / (m * 0.8));
-      o.connect(g); g.connect(out); o.start(now); o.stop(now + 1.7);
+    out.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), now + 0.004);   // 해머가 현을 치는 순간
+    out.gain.exponentialRampToValueAtTime(0.0001, now + decay + 0.2);
+    out.connect(lp); lp.connect(ctx.destination);
+    // 현의 배음 — 높은 배음일수록 빨리 사라지고, 아주 약간 늘어난 음정(비조화성)이 맑은 피아노 질감을 낸다. 사인파만 써서 전자음 느낌을 뺐다.
+    const amps = [1, .55, .32, .18, .1, .06];
+    amps.forEach((a, i) => {
+      const m = i + 1, fr = f * m * Math.sqrt(1 + 0.0003 * m * m);
+      if (fr > 14000) return;
+      [-0.35, 0.35].forEach(dt => {   // 두 줄이 아주 조금 어긋나 울리는 효과
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = fr; o.detune.value = dt * (i === 0 ? 1 : 2);
+        g.gain.setValueAtTime(a * 0.5, now);
+        g.gain.exponentialRampToValueAtTime(0.0005, now + decay / (0.6 + m * 0.45));
+        o.connect(g); g.connect(out); o.start(now); o.stop(now + decay + 0.3);
+      });
     });
+    // 해머 소리 — 아주 짧고 작은 잡음
+    const len = Math.floor(ctx.sampleRate * 0.03), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const ns = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    bp.type = 'bandpass'; bp.frequency.value = Math.min(6000, f * 3); bp.Q.value = 0.8; ng.gain.value = 0.12;
+    ns.buffer = buf; ns.connect(bp); bp.connect(ng); ng.connect(out); ns.start(now);
   } catch { /* 소리를 못 내는 환경이면 조용히 넘어간다 */ }
 }
 
@@ -1107,7 +1123,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
               <button type="button" className="btn btn-ghost" onClick={() => playPianoNote(draft.num, draft.soundVol ?? 60)}>▶ 미리듣기</button>
             </>)}
           </div>
-          <p className="hint" style={{ margin: '-4px 0 0' }}>번호 1 = 4옥타브 도(C4) → 2 레 · 3 미 · 4 파 · 5 솔 · 6 라 · 7 시 · 8 = 5옥타브 도 … 샵(검은 건반)은 쓰지 않고, 번호가 커질수록 높은 음이 납니다.</p>
+          <p className="hint" style={{ margin: '-4px 0 0' }}>번호 1 = 6옥타브 도(C6) → 2 레 · 3 미 · 4 파 · 5 솔 · 6 라 · 7 시 · 8 = 7옥타브 도 … 샵(검은 건반)은 쓰지 않고, 번호가 커질수록 높은 음이 납니다(21번까지).</p>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <KCheck label="별 표시" checked={draft.showStar !== false} onChange={v => setDraft(d => ({ ...d, showStar: v }))} />
             <span className="cp-lb">별 색</span>
