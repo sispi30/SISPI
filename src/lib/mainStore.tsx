@@ -9,7 +9,7 @@ import { getRawSetting, setSetting } from './settingStore';
 
 export type WidgetType =
   | 'banner' | 'member'                 // 고정 요소 (삭제 불가)
-  | 'menu' | 'memo' | 'diary' | 'latest' | 'recent'
+  | 'menu' | 'memo' | 'diary' | 'latest' | 'recent' | 'popbtn'
   | 'dday' | 'todo' | 'upcoming' | 'freetext' | 'deco' | 'memoboard'
   | 'apply'   // 'image'는 deco(장식 이미지+링크)로 일원화 (v1.9) · apply = 커미션 신청자 (v2.0)
   | 'orbit';  // 별자리 궤도 장식 — 혼천의처럼 고리가 입체 회전 (크기·색 · 가운데 별은 마우스를 따라 제자리 회전)
@@ -49,6 +49,7 @@ export const WIDGET_META: Record<WidgetType, { title: string; desc: string }> = 
   memo: { title: 'MEMO', desc: '관리자 메모 (클릭 시 관리 모달)' },
   diary: { title: 'DIARY', desc: '최근 일기 (무드 아이콘 · 비공개 미노출)' },
   latest: { title: 'LATEST', desc: '최신 그림 3장' },
+  popbtn: { title: '팝업 버튼', desc: '번호+라벨 버튼 — 누르면 화면이 흐려지며 메뉴·글 팝업' },
   recent: { title: 'RECENT ENTRIES', desc: '최신글 — 공개 게시판 전체 또는 게시판 하나의 새 글 2~6개 (비밀글 미노출)' },
   dday: { title: 'D-DAY', desc: '디데이 목록' },
   todo: { title: 'TO-DO', desc: '관리자 투두 (방문자는 열람만)' },
@@ -61,7 +62,7 @@ export const WIDGET_META: Record<WidgetType, { title: string; desc: string }> = 
 };
 
 /** 같은 종류를 여러 개 추가할 수 있는 위젯 (v1.9 사용자 확정 — 나머지는 하나만) */
-export const MULTI_TYPES: WidgetType[] = ['freetext', 'deco', 'banner'];   // banner: v2.0 사용자 요청 — 슬라이드 배너 여러 개
+export const MULTI_TYPES: WidgetType[] = ['freetext', 'deco', 'banner', 'popbtn'];   // banner: v2.0 사용자 요청 — 슬라이드 배너 여러 개
 
 /** 위젯 표시 이름 — 중복 추가 가능한 위젯이 2개 이상이면 번호를 붙여 구분 (v1.9) */
 export function widgetLabel(widgets: WidgetConf[], w: WidgetConf): string {
@@ -236,7 +237,7 @@ export function MainStoreProvider({ children }: { children: React.ReactNode }) {
         ax: colX[col], ay: maxY,
         // 별자리 궤도는 정사각형 장식 — 처음부터 크기를 정해 둔다 (크기가 없으면 칸이 0으로 접힌다)
         ...(type === 'orbit' ? { w: 320, h: 320 } : {}),
-        settings: type === 'freetext' ? { text: '자유 텍스트' } : {},
+        settings: type === 'freetext' ? { text: '자유 텍스트' } : type === 'popbtn' ? { num: '1', label: 'ABOUT ME', mode: 'menu' } : {},
       };
       return { ...s, widgets: [...s.widgets, w], mobileOrder: [...s.mobileOrder, id] };
     });

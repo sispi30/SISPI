@@ -2,6 +2,7 @@
 // 메인 위젯 렌더러 (4.0) — DIARY/LATEST/UPCOMING 등은 해당 기능(2·3차) 전까지 데모 데이터
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import { WidgetConf, useMainStore, WIDGET_META, decoSlides } from '@/lib/mainStore';
 import { useAuth } from '@/lib/auth';
 import { boardEntries, useMenuSettings, buildMenu, canViewHref } from '@/lib/menuStore';
@@ -12,6 +13,8 @@ import { useBoards, boardHref } from '@/lib/boardStore';
 import { Modal } from '@/components/ui/Modal';
 import { KInput, KTextarea, KSelect, KStep, KCheck } from '@/components/ui/Kit';
 import { ColorField } from '@/components/ui/ColorField';
+import { RichEditor } from '@/components/ui/RichEditor';
+import { HtmlBody } from '@/components/ui/HtmlBody';
 import {
   OrbitSky, OrbitSkySettings, ORBIT_DEFAULT_SIZE, ORBIT_DEFAULT_TILT, ORBIT_DEFAULT_STAR, ORBIT_DEFAULT_COUNT, ORBIT_MAX_COUNT, ORBIT_DEFAULT_WIDTH,
 } from '@/components/main/OrbitSky';
@@ -859,6 +862,175 @@ export function OrbitWidget({ conf }: { conf: WidgetConf }) {
   );
 }
 
+/* ---------- 팝업 버튼 — 「① ABOUT ME」 처럼 번호+라벨 버튼, 누르면 메인 화면이 흐려지고 가운데에 팝업이 뜬다 ----------
+   팝업 내용은 둘 중 하나: 메뉴 목록(사이트 메뉴를 그룹별로 · 보여 줄 항목 고르기) / 직접 쓴 글(서식 있는 글).
+   배경 클릭·× 버튼·Esc 로 닫는다. 편집모드에서는 눌러도 열리지 않고(드래그 우선), 우클릭 → 설정으로 고친다. */
+interface PopBtnSettings {
+  num?: string; showNum?: boolean; label?: string;
+  fontId?: string; size?: number; bold?: boolean;
+  numBg?: string; numFg?: string; labelColor?: string;
+  tag?: string; heading?: string;
+  mode?: 'menu' | 'text'; hrefs?: string[]; html?: string;
+  width?: number; blur?: number;
+}
+
+function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }) {
+  const router = useRouter();
+  const s = conf.settings as PopBtnSettings;
+  const [menuSet, , menuLoaded] = useMenuSettings();
+  const { boards, loaded: boardsLoaded } = useBoards();
+  const { user, isAdmin } = useAuth();
+  const { map: secMap } = useSections();
+  const { links } = useCustomLinks();
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', k);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', k); document.body.style.overflow = prev; };
+  }, [onClose]);
+
+  const picked = new Set(s.hrefs ?? []);
+  const groups = (menuLoaded && boardsLoaded
+    ? buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)], { loggedIn: !!user, isAdmin, id: user?.id })
+    : [])
+    .map(m => ({ title: m.children ? m.label : '', items: m.children ?? (m.href ? [{ label: m.label, href: m.href }] : []) }))
+    .map(g => ({ ...g, items: g.items.filter(i => picked.size === 0 || picked.has(i.href)) }))
+    .filter(g => g.items.length > 0);
+  const go = (href: string) => { onClose(); if (/^https?:\/\//.test(href)) window.open(href, '_blank'); else router.push(href); };
+
+  const num = s.num ?? '1';
+  return createPortal(
+    <div className="pb-overlay" style={{ '--pb-blur': `${s.blur ?? 12}px` } as React.CSSProperties} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="pb-card" role="dialog" aria-modal="true" style={{ maxWidth: `min(${s.width ?? 560}px, 92vw)` }}>
+        <button type="button" className="pb-x" aria-label="닫기" onClick={onClose}>×</button>
+        <div className="pb-tag">{s.tag || `about No.${num}`}</div>
+        <div className="pb-heading">{s.heading ?? s.label ?? ''}</div>
+        {(s.mode ?? 'menu') === 'menu' ? (
+          <div className="pb-menu">
+            {groups.map((g, gi) => (
+              <div className="pb-grp" key={gi}>
+                {g.title && <div className="pb-grp-t">{g.title}</div>}
+                <div className="pb-chips">
+                  {g.items.map(i => <button type="button" className="pb-chip" key={i.href} onClick={() => go(i.href)}>{i.label}</button>)}
+                </div>
+              </div>
+            ))}
+            {groups.length === 0 && <div className="pb-empty">보여 줄 메뉴가 없습니다</div>}
+          </div>
+        ) : (
+          <HtmlBody className="pb-text post-body" html={s.html ?? ''} />
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
+  const { editOn, updateWidget } = useMainStore();
+  const { fonts, familyOf } = useFonts();
+  const [menuSet] = useMenuSettings();
+  const { boards } = useBoards();
+  const { map: secMap } = useSections();
+  const { links } = useCustomLinks();
+  const [open, setOpen] = useState(false);       // 팝업
+  const [edit, setEdit] = useState(false);       // 설정 모달
+  const s = conf.settings as PopBtnSettings;
+  const [draft, setDraft] = useState<PopBtnSettings>(s);
+  useEditEvent(conf.id, () => { setDraft({ ...s }); setEdit(true); });
+
+  const size = s.size ?? 15;
+  const all = buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)])
+    .flatMap(m => (m.children ? m.children.map(c => ({ ...c, group: m.label })) : m.href ? [{ label: m.label, href: m.href, group: '' }] : []));
+  const dh = new Set(draft.hrefs ?? []);
+
+  return (
+    <div className="pb-wrap">
+      <button type="button" className="pb-btn" onClick={() => { if (!editOn) setOpen(true); }}
+        style={{ fontFamily: familyOf(s.fontId) ?? 'var(--sans)', fontSize: size, color: s.labelColor ?? 'var(--ink)', fontWeight: s.bold === false ? 400 : 700 }}>
+        {s.showNum !== false && (
+          <span className="pb-num" style={{ background: s.numBg ?? '#111', color: s.numFg ?? '#fff' }}>{s.num ?? '1'}</span>
+        )}
+        <span className="pb-label">{s.label ?? 'ABOUT ME'}</span>
+      </button>
+      {open && !editOn && <PopBtnCard conf={conf} onClose={() => setOpen(false)} />}
+
+      <Modal open={edit} onClose={() => setEdit(false)} title="팝업 버튼"
+        desc="번호·라벨이 붙은 버튼 — 누르면 메인 화면이 흐려지고 가운데에 팝업이 뜹니다"
+        actions={<>
+          <button className="btn btn-ghost" onClick={() => setEdit(false)}>CANCEL</button>
+          <button className="btn btn-dark" onClick={() => {
+            updateWidget(conf.id, { settings: { ...conf.settings, ...draft } }, { persist: true }); setEdit(false);
+          }}>SAVE</button>
+        </>}>
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="cp-lb">번호</span>
+            <KInput style={{ width: 70 }} value={draft.num ?? '1'} maxLength={3} onChange={e => setDraft(d => ({ ...d, num: e.target.value }))} />
+            <KCheck label="번호 표시" checked={draft.showNum !== false} onChange={v => setDraft(d => ({ ...d, showNum: v }))} />
+            <span className="cp-lb">라벨</span>
+            <KInput style={{ width: 180 }} value={draft.label ?? 'ABOUT ME'} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <KSelect minWidth={170} value={draft.fontId ?? 'default'} onChange={v => setDraft(d => ({ ...d, fontId: v }))}
+              options={fonts.map(f => ({ value: f.id, label: <span style={{ fontFamily: familyOf(f.id) }}>{f.name}</span> }))} />
+            <span className="cp-lb">크기</span>
+            <KStep value={draft.size ?? 15} min={10} max={48} suffix="px" onChange={v => setDraft(d => ({ ...d, size: v }))} />
+            <KCheck label="굵게" checked={draft.bold !== false} onChange={v => setDraft(d => ({ ...d, bold: v }))} />
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="cp-lb">번호 배경</span>
+            <ColorField value={draft.numBg ?? '#111111'} onChange={hex => setDraft(d => ({ ...d, numBg: hex }))} />
+            <span className="cp-lb">번호 글씨</span>
+            <ColorField value={draft.numFg ?? '#ffffff'} onChange={hex => setDraft(d => ({ ...d, numFg: hex }))} />
+            <span className="cp-lb">라벨 색</span>
+            <ColorField value={draft.labelColor ?? '#111111'} onChange={hex => setDraft(d => ({ ...d, labelColor: hex }))} />
+          </div>
+          <hr style={{ border: 0, borderTop: '1px solid var(--line)', width: '100%' }} />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="cp-lb">팝업 표식</span>
+            <KInput style={{ width: 150 }} placeholder={`about No.${draft.num ?? '1'}`} value={draft.tag ?? ''} onChange={e => setDraft(d => ({ ...d, tag: e.target.value }))} />
+            <span className="cp-lb">제목</span>
+            <KInput style={{ width: 170 }} placeholder={draft.label ?? ''} value={draft.heading ?? ''} onChange={e => setDraft(d => ({ ...d, heading: e.target.value }))} />
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="cp-lb">내용</span>
+            <div className="mini-seg">
+              {(['menu', 'text'] as const).map(m => (
+                <button key={m} className={(draft.mode ?? 'menu') === m ? 'on' : ''} onClick={() => setDraft(d => ({ ...d, mode: m }))}>
+                  {m === 'menu' ? '메뉴 목록' : '직접 쓴 글'}
+                </button>
+              ))}
+            </div>
+            <span className="cp-lb">너비</span>
+            <KStep value={draft.width ?? 560} min={320} max={1000} step={20} suffix="px" onChange={v => setDraft(d => ({ ...d, width: v }))} />
+            <span className="cp-lb">흐림</span>
+            <KStep value={draft.blur ?? 12} min={0} max={30} suffix="px" onChange={v => setDraft(d => ({ ...d, blur: v }))} />
+          </div>
+          {(draft.mode ?? 'menu') === 'menu' ? (
+            <div>
+              <p className="hint" style={{ margin: '0 0 6px' }}>팝업에 보일 메뉴 — 아무것도 고르지 않으면 방문자가 볼 수 있는 메뉴 전체가 나옵니다.</p>
+              <div style={{ display: 'grid', gap: 4, maxHeight: 220, overflowY: 'auto', padding: '2px 0' }}>
+                {all.map(i => (
+                  <KCheck key={i.href} label={`${i.group ? `${i.group} › ` : ''}${i.label}`} checked={dh.has(i.href)}
+                    onChange={v => setDraft(d => {
+                      const n = new Set(d.hrefs ?? []);
+                      if (v) n.add(i.href); else n.delete(i.href);
+                      return { ...d, hrefs: [...n] };
+                    })} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <RichEditor value={draft.html ?? ''} onChange={html => setDraft(d => ({ ...d, html }))} placeholder="팝업에 보일 글을 쓰세요" />
+          )}
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
 /* ---------- 타입 → 렌더러 ---------- */
 export function renderWidget(conf: WidgetConf) {
   switch (conf.type) {
@@ -876,6 +1048,7 @@ export function renderWidget(conf: WidgetConf) {
     case 'memoboard': return <MemoBoardWidget />;
     case 'apply': return <ApplyWidget conf={conf} />;
     case 'orbit': return <OrbitWidget conf={conf} />;
+    case 'popbtn': return <PopupBtnWidget conf={conf} />;
     default: return <div className="panel widget"><h4>{WIDGET_META[conf.type]?.title ?? conf.type}</h4></div>;
   }
 }
