@@ -12,7 +12,7 @@ import { useCustomLinks, linkEntries } from '@/lib/linkStore';
 import { useAuth } from '@/lib/auth';
 import { useSiteSettings } from '@/lib/siteStore';
 import { useFonts } from '@/lib/fontStore';
-import { INTRO_RINGS, INTRO_CONS, INTRO_SPARKS, introSparkle } from '@/lib/introSky';
+import { INTRO_RINGS, INTRO_CONS, INTRO_SPARKS, INTRO_PLANETS, introSparkle } from '@/lib/introSky';
 import { PopBtnCard, PopStar, playPianoNote } from '@/components/main/widgets';
 
 interface Item { key: string; num: string; suffix: string; label: string; sub: string; color: string; conf: WidgetConf | null; href?: string; fontId?: string }
@@ -52,12 +52,19 @@ export function MobileStage() {
     setOpen({ conf: it.conf, origin: { x: r.left + 24, y: r.top + r.height / 2 } });
   };
 
+  const title = (site.title || '').toUpperCase();
+  const titleSize = `min(${(94 / (Math.max(title.length, 3) * 0.7)).toFixed(1)}vw, 132px)`;   // 제목이 폭에 꽉 차게
   return (
     <section className="ms-stage" aria-label="메뉴">
-      {/* 왼쪽(위) — 인트로 화면과 같은 디자인: 겹겹의 원 · 별자리 · 반짝이 · 가운데 파란 원과 네 갈래 별 */}
+      <div className="ms-top"><span><i />{site.subtitle}</span><span>{dateStr}</span></div>
+      <h1 className="ms-title" style={{ fontSize: titleSize }}>{title}</h1>
+      <div className="ms-subline">SECTOR 07 · MENU {String(items.length).padStart(2, '0')}</div>
+
+      {/* 가운데 — 인트로 화면과 같은 구성: 겹겹의 원 · 별자리 · 궤도 · 반짝이 · 파란 원과 네 갈래 별. 바탕은 비워 홈페이지 배경이 비친다 */}
       <div className="ms-vis" aria-hidden="true">
-        <svg className="ms-sky" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <svg className="ms-sky" viewBox="300 20 680 680" preserveAspectRatio="xMidYMid slice">
           <g className="rings">{INTRO_RINGS.map(c => <circle key={c.r} cx="640" cy="360" r={c.r} className={c.cls} />)}</g>
+          <g className="rays">{Array.from({ length: 12 }, (_, i) => <line key={i} x1="640" y1="228" x2="640" y2="28" transform={`rotate(${i * 30 + 7} 640 360)`} />)}</g>
           <g className="cons">
             {INTRO_CONS.map((d, i) => <polyline key={i} points={d} />)}
             {INTRO_CONS.flatMap((d, i) => d.split(' ').map((pt, j) => { const [x, y] = pt.split(',').map(Number); return <path key={`c${i}-${j}`} className="cs" d={introSparkle(x, y, 3 + ((i + j) % 3))} />; }))}
@@ -66,29 +73,36 @@ export function MobileStage() {
             <ellipse cx="640" cy="360" rx="700" ry="150" transform="rotate(-17 640 360)" />
             <ellipse cx="640" cy="360" rx="720" ry="210" transform="rotate(14 640 360)" />
           </g>
+          <g className="planets">
+            {INTRO_PLANETS.map((p, i) => (
+              <g key={i} transform={`rotate(${p.a} 640 360)`}><g className={`spin${p.rev ? ' r' : ''}`} style={{ animationDuration: `${p.t}s` }}>
+                <circle cx="640" cy={360 - p.r} r={p.s} className={`pl${p.ring || p.half ? ' ln' : ''}`} />
+              </g></g>
+            ))}
+          </g>
           <g className="sparks">{INTRO_SPARKS.map(([x, y, r], i) => <path key={i} className="sp" d={introSparkle(x, y, r * 2)} />)}</g>
         </svg>
         <div className="ms-core"><svg viewBox="-100 -100 200 200"><path fillRule="evenodd" transform="rotate(-32)" d={STAR_D} /></svg></div>
-        <div className="ms-vtitle">{site.title}</div>
-        <i className="ms-cn tl" /><i className="ms-cn br" />
       </div>
 
-      {/* 오른쪽(아래) — 큰 번호 목록 메뉴 */}
-      <div className="ms-panel">
-        <div className="ms-bar"><span><i />{site.subtitle}</span><span>{dateStr}</span></div>
-        <ul className="ms-list">
-          {items.map((it, i) => (
-            <li key={it.key} className={i === active ? 'on' : ''} style={{ animationDelay: `${0.7 + i * 0.07}s` }}>
-              <button type="button" onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)} onClick={e => { setActive(i); go(it, e); }}>
-                <em>{it.num}</em>
-                <b style={it.fontId && it.fontId !== 'default' ? { fontFamily: familyOf(it.fontId) } : undefined}>{it.label}</b>
-                <span>{i === active && <small>▼ PRESS</small>}{it.sub}</span>
-              </button>
-            </li>
-          ))}
-          {items.length === 0 && <li className="ms-empty">표시할 메뉴가 없습니다</li>}
-        </ul>
-        <div className="ms-stat"><div><small>MENU</small><b>{String(items.length).padStart(2, '0')}</b></div><div><small>SECTOR</small><b>07</b></div><div><small>STATUS</small><b>LIVE</b></div></div>
+      <ul className="ms-list">
+        {items.map((it, i) => (
+          <li key={it.key} className={i === active ? 'on' : ''} style={{ animationDelay: `${0.5 + i * 0.07}s` }}>
+            <button type="button" onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)} onClick={e => { setActive(i); go(it, e); }}>
+              <em>{it.num}</em>
+              <b style={it.fontId && it.fontId !== 'default' ? { fontFamily: familyOf(it.fontId) } : undefined}>{it.label}</b>
+              <span>{i === active && <small>▼ PRESS</small>}{it.sub}</span>
+            </button>
+          </li>
+        ))}
+        {items.length === 0 && <li className="ms-empty">표시할 메뉴가 없습니다</li>}
+      </ul>
+
+      <div className="ms-card">
+        <span className="ms-tag">ARCHIVE RECORD</span>
+        <b>{dateStr.replace(/\./g, '/')} {site.title}</b>
+        <small>{site.subtitle}</small>
+        <div className="ms-cf"><span>SECTOR 07</span><span>● LIVE</span></div>
       </div>
       {open && <PopBtnCard conf={open.conf} origin={open.origin} onClose={() => setOpen(null)} />}
     </section>
