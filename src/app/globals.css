@@ -3894,3 +3894,11 @@ body.ms-on .ms-stage{height:100dvh}
 .ms-stat small{display:block;font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.12em;opacity:.65}
 .ms-stat b{font-size:22px;font-weight:800}
 .ms-stage.mid .ms-card{margin-top:auto}
+
+/* 점선(모눈) 무늬 — 소형·중형 뷰 바탕 */
+.ms-stage::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(circle,color-mix(in srgb,var(--is-fg) 55%,transparent) 1px,transparent 1.3px);background-size:22px 22px;opacity:.35}
+/* 소형 뷰 — 화면 전체는 스크롤되지 않고, 메뉴 목록만 스크롤된다 */
+.ms-stage.small{overflow:hidden}
+.ms-stage.small .ms-vis{flex:0 1 auto;min-height:130px}
+.ms-stage.small .ms-list{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none}
+.ms-stage.small .ms-list::-webkit-scrollbar{display:none}

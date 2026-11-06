@@ -27,9 +27,9 @@ export default function MainPage() {
   const [addCol, setAddCol] = useState<'1' | '2' | '3'>('3');
   const [delAsk, setDelAsk] = useState<WidgetConf | null>(null);   // 우클릭 삭제 경고 (v1.9)
   // 작은 화면(모바일) 전용 뷰 — 인트로 같은 원형 스테이지 + 별자리 메뉴 (편집모드에서는 쓰지 않음)
-  const [view, setView] = useState<'small' | 'mid' | null>(null);   // small ≤620px · mid 621~1100px
+  const [view, setView] = useState<'small' | 'mid' | null>(null);   // small ≤620px · mid 621~1280px
   useEffect(() => {
-    const f = () => setView(window.innerWidth <= 620 ? 'small' : window.innerWidth <= 1100 ? 'mid' : null);
+    const f = () => setView(window.innerWidth <= 620 ? 'small' : window.innerWidth <= 1280 ? 'mid' : null);
     f(); window.addEventListener('resize', f);
     return () => window.removeEventListener('resize', f);
   }, []);
