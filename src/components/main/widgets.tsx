@@ -869,11 +869,23 @@ interface PopBtnSettings {
   num?: string; showNum?: boolean; label?: string;
   fontId?: string; size?: number; bold?: boolean;
   numBg?: string; numFg?: string; labelColor?: string;
+  sub?: string; numSuffix?: string; starColor?: string; showStar?: boolean;   // 부제 · 번호 옆 글자 · 별 색/표시
   tag?: string; heading?: string;
   mode?: 'menu' | 'text' | 'page' | 'link'; hrefs?: string[]; html?: string;
   target?: string;     // page(팝업 안에 화면 그대로) · link(바로 이동) 에서 열 메뉴 주소
   height?: number;     // page 팝업 높이(vh)
   width?: number; blur?: number;
+}
+
+function PopStar({ color }: { color: string }) {
+  return (
+    <span className="pb-star" style={{ '--pb-star': color } as React.CSSProperties} aria-hidden>
+      <svg viewBox="-12 -12 24 24" width="1em" height="1em">
+        <path d="M0-11 C.7-3 3-.7 11 0 C3 .7 .7 3 0 11 C-.7 3 -3 .7 -11 0 C-3-.7 -.7-3 0-11Z" fill="currentColor" />
+      </svg>
+      <i className="pb-star-ring" />
+    </span>
+  );
 }
 
 function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }) {
@@ -905,9 +917,15 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
   return createPortal(
     <div className="pb-overlay" style={{ '--pb-blur': `${s.blur ?? 12}px` } as React.CSSProperties} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pb-card" role="dialog" aria-modal="true" style={{ maxWidth: `min(${s.width ?? 560}px, 92vw)` }}>
-        <button type="button" className="pb-x" aria-label="닫기" onClick={onClose}>×</button>
-        <div className="pb-tag">{s.tag || `about No.${num}`}</div>
-        <div className="pb-heading">{s.heading ?? s.label ?? ''}</div>
+        <div className="pb-head">
+          <div className="pb-tag">{s.tag || `FILE ${String(num).padStart(2, '0')} · ${(s.label ?? 'about').toLowerCase().replace(/\s+/g, '-')}.log`}</div>
+          <div className="pb-title">
+            <span className="pb-heading">{s.heading ?? s.label ?? ''}</span>
+            {s.sub && <span className="pb-sub">{s.sub}</span>}
+          </div>
+          <button type="button" className="pb-x" aria-label="닫기" onClick={onClose}>×</button>
+        </div>
+        <div className="pb-body">
         {s.mode === 'page' ? (
           s.target
             ? <iframe className="pb-frame" title={s.heading || s.label || '페이지'} style={{ height: `${s.height ?? 70}vh` }}
@@ -928,6 +946,8 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
         ) : (
           <HtmlBody className="pb-text post-body" html={s.html ?? ''} />
         )}
+        </div>
+        <div className="pb-foot"><span>SCROLL ↓</span><span>ESC TO CLOSE</span></div>
       </div>
     </div>,
     document.body,
@@ -965,10 +985,14 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
         setOpen(true);
       }}
         style={{ fontFamily: familyOf(s.fontId) ?? 'var(--sans)', fontSize: size, color: s.labelColor ?? 'var(--ink)', fontWeight: s.bold === false ? 400 : 700 }}>
-        {s.showNum !== false && (
-          <span className="pb-num" style={{ background: s.numBg ?? '#111', color: s.numFg ?? '#fff' }}>{s.num ?? '1'}</span>
-        )}
-        <span className="pb-label">{s.label ?? 'ABOUT ME'}</span>
+        {s.showStar !== false && <PopStar color={s.starColor ?? '#ffffff'} />}
+        <span className="pb-txt">
+          {s.showNum !== false && (
+            <span className="pb-num" style={{ color: s.numFg }}>{String(s.num ?? '1').padStart(2, '0')}{(s.numSuffix ?? 'logged') ? ` · ${s.numSuffix ?? 'logged'}` : ''}</span>
+          )}
+          <span className="pb-label">{s.label ?? 'ABOUT ME'}</span>
+          {s.sub && <span className="pb-subl">{s.sub}</span>}
+        </span>
       </button>
       {open && !editOn && <PopBtnCard conf={conf} onClose={() => setOpen(false)} />}
 
@@ -985,8 +1009,12 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
             <span className="cp-lb">번호</span>
             <KInput style={{ width: 70 }} value={draft.num ?? '1'} maxLength={3} onChange={e => setDraft(d => ({ ...d, num: e.target.value }))} />
             <KCheck label="번호 표시" checked={draft.showNum !== false} onChange={v => setDraft(d => ({ ...d, showNum: v }))} />
+            <span className="cp-lb">번호 옆 글자</span>
+            <KInput style={{ width: 90 }} placeholder="logged" value={draft.numSuffix ?? 'logged'} onChange={e => setDraft(d => ({ ...d, numSuffix: e.target.value }))} />
             <span className="cp-lb">라벨</span>
-            <KInput style={{ width: 180 }} value={draft.label ?? 'ABOUT ME'} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
+            <KInput style={{ width: 160 }} value={draft.label ?? 'ABOUT ME'} onChange={e => setDraft(d => ({ ...d, label: e.target.value }))} />
+            <span className="cp-lb">부제</span>
+            <KInput style={{ width: 130 }} placeholder="공지" value={draft.sub ?? ''} onChange={e => setDraft(d => ({ ...d, sub: e.target.value }))} />
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <KSelect minWidth={170} value={draft.fontId ?? 'default'} onChange={v => setDraft(d => ({ ...d, fontId: v }))}
@@ -996,10 +1024,11 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
             <KCheck label="굵게" checked={draft.bold !== false} onChange={v => setDraft(d => ({ ...d, bold: v }))} />
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className="cp-lb">번호 배경</span>
-            <ColorField value={draft.numBg ?? '#111111'} onChange={hex => setDraft(d => ({ ...d, numBg: hex }))} />
+            <KCheck label="별 표시" checked={draft.showStar !== false} onChange={v => setDraft(d => ({ ...d, showStar: v }))} />
+            <span className="cp-lb">별 색</span>
+            <ColorField value={draft.starColor ?? '#ffffff'} onChange={hex => setDraft(d => ({ ...d, starColor: hex }))} />
             <span className="cp-lb">번호 글씨</span>
-            <ColorField value={draft.numFg ?? '#ffffff'} onChange={hex => setDraft(d => ({ ...d, numFg: hex }))} />
+            <ColorField value={draft.numFg ?? '#9a9a9a'} onChange={hex => setDraft(d => ({ ...d, numFg: hex }))} />
             <span className="cp-lb">라벨 색</span>
             <ColorField value={draft.labelColor ?? '#111111'} onChange={hex => setDraft(d => ({ ...d, labelColor: hex }))} />
           </div>

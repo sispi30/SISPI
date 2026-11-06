@@ -3714,32 +3714,48 @@ body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{pa
 
 /* 팝업 버튼 위젯 — 「① ABOUT ME」 버튼 + 화면을 흐리고 가운데에 뜨는 팝업 */
 .pb-wrap{display:inline-block}
-.pb-btn{display:inline-flex;align-items:center;gap:.55em;background:none;border:0;padding:2px 0;cursor:var(--cur-pointer,pointer);font-family:inherit;line-height:1.2;white-space:nowrap;transition:transform .15s}
-.pb-btn:hover{transform:translateY(-1px)}
-.pb-num{display:inline-flex;align-items:center;justify-content:center;width:1.45em;height:1.45em;border-radius:50%;font-size:.78em;font-weight:700;flex:none}
-.pb-label{letter-spacing:.02em}
+.pb-btn{display:inline-flex;align-items:center;gap:.7em;background:none;border:0;padding:4px 2px;cursor:var(--cur-pointer,pointer);font-family:inherit;line-height:1.2;white-space:nowrap;text-align:left}
+.pb-star{position:relative;display:inline-flex;align-items:center;justify-content:center;font-size:2.1em;flex:none;color:var(--pb-star,#fff);filter:drop-shadow(0 0 4px var(--pb-star,#fff)) drop-shadow(0 0 10px var(--pb-star,#fff));animation:pbTw 3.4s ease-in-out infinite}
+.pb-star svg{display:block}
+.pb-star-ring{position:absolute;inset:-.12em;border-radius:50%;border:1px solid var(--pb-star,#fff);opacity:0;transform:scale(.5);transition:opacity .25s,transform .25s;pointer-events:none}
+.pb-btn:hover .pb-star-ring{opacity:.7;transform:scale(1)}
+.pb-btn:hover .pb-star{animation-play-state:paused;transform:scale(1.15)}
+.pb-txt{display:flex;flex-direction:column;gap:.12em}
+.pb-num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.62em;letter-spacing:.12em;color:var(--faint);font-weight:400}
+.pb-label{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:1.15em;letter-spacing:.01em}
+.pb-subl{font-size:.6em;color:var(--faint);letter-spacing:.04em}
+@keyframes pbTw{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.88)}}
 .pb-overlay{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;
-  background:rgba(240,240,240,.38);-webkit-backdrop-filter:blur(var(--pb-blur,12px));backdrop-filter:blur(var(--pb-blur,12px));animation:pbFade .22s ease both}
-.pb-card{position:relative;width:100%;max-height:82vh;overflow-y:auto;background:var(--panel-solid,#fff);color:var(--ink);border-radius:14px;padding:22px 26px 26px;
-  box-shadow:0 18px 60px rgba(0,0,0,.18);animation:pbPop .26s cubic-bezier(.2,.8,.2,1) both;scrollbar-width:thin}
-.pb-x{position:absolute;top:10px;right:12px;width:28px;height:28px;border:0;background:none;font-size:22px;line-height:1;color:var(--faint);cursor:var(--cur-pointer,pointer)}
-.pb-x:hover{color:var(--ink)}
-.pb-tag{display:inline-block;background:#111;color:#fff;font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 6px;border-radius:2px}
-.pb-heading{font-size:30px;font-weight:300;color:var(--faint);margin:6px 0 16px;letter-spacing:-.01em;line-height:1.15}
-.pb-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 28px}
-.pb-grp-t{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--ink);margin-bottom:6px}
-.pb-chips{display:flex;flex-wrap:wrap;gap:5px}
-.pb-chip{background:rgba(128,128,128,.12);border:0;border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink);cursor:var(--cur-pointer,pointer);font-family:inherit;transition:background .15s,color .15s}
-.pb-chip:hover{background:var(--ink);color:var(--panel-solid,#fff)}
-.pb-empty{color:var(--faint);font-size:13px}
-.pb-text{font-size:13px;line-height:1.8}
+  background:rgba(6,7,9,.55);-webkit-backdrop-filter:blur(var(--pb-blur,12px));backdrop-filter:blur(var(--pb-blur,12px));animation:pbFade .22s ease both}
+.pb-card{position:relative;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(14,16,19,.94);color:#d9dce0;border:1px solid rgba(255,255,255,.1);border-radius:0;
+  box-shadow:0 24px 80px rgba(0,0,0,.6);animation:pbPop .26s cubic-bezier(.2,.8,.2,1) both}
+.pb-card::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-right:2px solid rgba(255,255,255,.55);border-bottom:2px solid rgba(255,255,255,.55);pointer-events:none}
+.pb-head{position:relative;flex:none;padding:16px 22px 12px;border-bottom:1px solid rgba(255,255,255,.09)}
+.pb-tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;color:rgba(255,255,255,.4);text-transform:uppercase}
+.pb-title{display:flex;align-items:baseline;gap:8px;margin-top:6px;padding-right:44px}
+.pb-heading{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:30px;font-weight:400;color:#f4f5f6;line-height:1.1}
+.pb-sub{font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.04em}
+.pb-x{position:absolute;top:18px;right:20px;width:28px;height:28px;border:1px solid rgba(255,255,255,.22);background:none;font-size:17px;line-height:1;color:rgba(255,255,255,.75);cursor:var(--cur-pointer,pointer);transition:background .15s,color .15s}
+.pb-x:hover{background:#fff;color:#111}
+.pb-body{flex:1;min-height:0;overflow-y:auto;padding:18px 22px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
+.pb-foot{flex:none;display:flex;justify-content:space-between;padding:9px 22px;border-top:1px solid rgba(255,255,255,.09);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;letter-spacing:.16em;color:rgba(255,255,255,.35)}
+.pb-menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px 28px}
+.pb-grp-t{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.14em;color:rgba(255,255,255,.45);margin-bottom:7px}
+.pb-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pb-chip{background:none;border:1px solid rgba(255,255,255,.2);border-radius:0;padding:4px 11px;font-size:12px;color:#d9dce0;cursor:var(--cur-pointer,pointer);font-family:inherit;transition:background .15s,color .15s}
+.pb-chip:hover{background:#fff;color:#111}
+.pb-empty{color:rgba(255,255,255,.45);font-size:13px}
+.pb-text{font-size:13px;line-height:1.85;color:#d9dce0}
+.pb-text a{color:#fff;text-decoration:underline}
+.pb-text ul{list-style:none;padding-left:0}
+.pb-text li{position:relative;padding-left:16px;margin-bottom:8px}
+.pb-text li::before{content:"";position:absolute;left:2px;top:.75em;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.7)}
 @keyframes pbFade{from{opacity:0}to{opacity:1}}
 @keyframes pbPop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){.pb-overlay,.pb-card{animation:none}}
+@media(prefers-reduced-motion:reduce){.pb-overlay,.pb-card,.pb-star{animation:none}}
 
 /* 팝업 안 페이지 화면 */
-.pb-frame{display:block;width:100%;border:0;border-radius:8px;background:transparent}
-.pb-card:has(.pb-frame){padding-bottom:16px}
+.pb-frame{display:block;width:100%;border:0;background:transparent}
 /* 팝업 안에 끼워 넣은 화면(?embed=1)에서는 상단바·메뉴·음악 등 셸을 숨기고 본문만 보인다 */
 html.in-embed .topbar,html.in-embed .tf-fixed,html.in-embed .bgm2,html.in-embed .intro-splash,html.in-embed .mfx,html.in-embed .comet-layer{display:none!important}
 html.in-embed #appMain{margin:0!important;padding-top:0!important;margin-bottom:0!important}
