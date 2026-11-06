@@ -880,18 +880,23 @@ interface PopBtnSettings {
 function PopStar({ color }: { color: string }) {
   return (
     <span className="pb-star" style={{ '--pb-star': color } as React.CSSProperties} aria-hidden>
-      <svg viewBox="-12 -12 24 24" width="1em" height="1em">
-        <path d="M0-11 C.7-3 3-.7 11 0 C3 .7 .7 3 0 11 C-.7 3 -3 .7 -11 0 C-3-.7 -.7-3 0-11Z" fill="currentColor" />
+      <i className="pb-star-halo" />
+      <svg viewBox="-14 -14 28 28" width="1em" height="1em">
+        <path d="M0-13.5 Q.55-.55 13.5 0 Q.55.55 0 13.5 Q-.55.55-13.5 0 Q-.55-.55 0-13.5Z" fill="currentColor" />
+        <path d="M0-6.5 Q.7-.7 6.5 0 Q.7.7 0 6.5 Q-.7.7-6.5 0 Q-.7-.7 0-6.5Z" fill="currentColor" opacity=".55" transform="rotate(45)" />
+        <circle r="1.7" fill="#fff" />
       </svg>
       <i className="pb-star-ring" />
     </span>
   );
 }
 
-function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }) {
+function PopBtnCard({ conf, onClose, origin }: { conf: WidgetConf; onClose: () => void; origin: { x: number; y: number } | null }) {
+  const { familyOf } = useFonts();
   const router = useRouter();
   const s = conf.settings as PopBtnSettings;
   const [frameH, setFrameH] = useState<number | null>(null);
+  const [ready, setReady] = useState(false);   // 페이지 내용이 자리 잡을 때까지 숨겨 로딩이 안 보이게
   const [menuSet, , menuLoaded] = useMenuSettings();
   const { boards, loaded: boardsLoaded } = useBoards();
   const { user, isAdmin } = useAuth();
@@ -915,13 +920,16 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
   const go = (href: string) => { onClose(); if (/^https?:\/\//.test(href)) window.open(href, '_blank'); else router.push(href); };
 
   const num = s.num ?? '1';
+  const hasFont = !!s.fontId && s.fontId !== 'default';
   return createPortal(
     <div className="pb-overlay" style={{ '--pb-blur': `${s.blur ?? 12}px` } as React.CSSProperties} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="pb-card" role="dialog" aria-modal="true" style={{ maxWidth: `min(${s.width ?? 560}px, 92vw)` }}>
+      <div className="pb-card" role="dialog" aria-modal="true"
+        style={{ maxWidth: `min(${s.width ?? 560}px, 92vw)`, '--dx': `${origin ? origin.x - window.innerWidth / 2 : 0}px`, '--dy': `${origin ? origin.y - window.innerHeight / 2 : 0}px`,
+          '--pb-font': hasFont ? familyOf(s.fontId) : undefined } as React.CSSProperties}>
         <div className="pb-head">
           <div className="pb-tag">{s.tag || `FILE ${String(num).padStart(2, '0')} · ${(s.label ?? 'about').toLowerCase().replace(/\s+/g, '-')}.log`}</div>
           <div className="pb-title">
-            <span className="pb-heading">{s.heading ?? s.label ?? ''}</span>
+            <span className={`pb-heading${hasFont ? ' pb-cf' : ''}`}>{s.heading ?? s.label ?? ''}</span>
             {s.sub && <span className="pb-sub">{s.sub}</span>}
           </div>
           <button type="button" className="pb-x" aria-label="닫기" onClick={onClose}>×</button>
@@ -929,13 +937,13 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
         <div className="pb-body">
         {s.mode === 'page' ? (
           s.target
-            ? <iframe className="pb-frame" title={s.heading || s.label || '페이지'} style={{ height: frameH ?? `${s.height ?? 70}vh` }}
+            ? <iframe className="pb-frame" title={s.heading || s.label || '페이지'} style={{ height: frameH ?? `${s.height ?? 70}vh`, opacity: ready ? 1 : 0 }}
                 src={`${s.target}${s.target.includes('?') ? '&' : '?'}embed=1`}
                 onLoad={e => {   // 같은 사이트 화면이라 내용 높이를 읽어 팝업 안에 자연스럽게 이어 붙인다
                   const f = e.currentTarget;
                   try {
                     const d = f.contentDocument; if (!d) return;
-                    const fit = () => { const m = d.getElementById('appMain'); const h = m ? m.getBoundingClientRect().height : d.body.getBoundingClientRect().height; if (h > 0) setFrameH(Math.ceil(h) + 4); };
+                    const fit = () => { const m = d.getElementById('appMain'); const h = m ? m.getBoundingClientRect().height : d.body.getBoundingClientRect().height; if (h > 0) { setFrameH(Math.ceil(h) + 4); setReady(true); } };
                     fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
                     if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(d.getElementById('appMain') ?? d.body);
                   } catch { /* 접근 불가면 설정한 높이 유지 */ }
@@ -973,6 +981,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
   const { map: secMap } = useSections();
   const { links } = useCustomLinks();
   const [open, setOpen] = useState(false);       // 팝업
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
   const [edit, setEdit] = useState(false);       // 설정 모달
   const s = conf.settings as PopBtnSettings;
   const [draft, setDraft] = useState<PopBtnSettings>(s);
@@ -985,17 +994,19 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
 
   return (
     <div className="pb-wrap">
-      <button type="button" className="pb-btn" onClick={() => {
+      <button type="button" className={`pb-btn${s.fontId && s.fontId !== 'default' ? ' pb-cf' : ''}`} onClick={e => {
         if (editOn) return;
         if (s.mode === 'link') {   // 팝업 없이 바로 이동
           if (!s.target) return;
           if (/^https?:\/\//.test(s.target)) window.open(s.target, '_blank'); else router.push(s.target);
           return;
         }
+        const r = (e.currentTarget.querySelector('.pb-star') ?? e.currentTarget).getBoundingClientRect();
+        setOrigin({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
         setOpen(true);
       }}
         style={{ fontFamily: familyOf(s.fontId) ?? 'var(--sans)', fontSize: size, color: s.labelColor ?? 'var(--ink)', fontWeight: s.bold === false ? 400 : 700 }}>
-        {s.showStar !== false && <PopStar color={s.starColor ?? '#ffffff'} />}
+        {s.showStar !== false && <PopStar color={s.starColor ?? '#4a63d8'} />}
         <span className="pb-txt">
           {s.showNum !== false && (
             <span className="pb-num" style={{ color: s.numFg }}>{String(s.num ?? '1').padStart(2, '0')}{(s.numSuffix ?? 'logged') ? ` · ${s.numSuffix ?? 'logged'}` : ''}</span>
@@ -1004,7 +1015,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
           {s.sub && <span className="pb-subl">{s.sub}</span>}
         </span>
       </button>
-      {open && !editOn && <PopBtnCard conf={conf} onClose={() => setOpen(false)} />}
+      {open && !editOn && <PopBtnCard conf={conf} origin={origin} onClose={() => setOpen(false)} />}
 
       <Modal open={edit} onClose={() => setEdit(false)} title="팝업 버튼"
         desc="번호·라벨이 붙은 버튼 — 누르면 메인 화면이 흐려지고 가운데에 팝업이 뜹니다"
@@ -1036,7 +1047,7 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <KCheck label="별 표시" checked={draft.showStar !== false} onChange={v => setDraft(d => ({ ...d, showStar: v }))} />
             <span className="cp-lb">별 색</span>
-            <ColorField value={draft.starColor ?? '#ffffff'} onChange={hex => setDraft(d => ({ ...d, starColor: hex }))} />
+            <ColorField value={draft.starColor ?? '#4a63d8'} onChange={hex => setDraft(d => ({ ...d, starColor: hex }))} />
             <span className="cp-lb">번호 글씨</span>
             <ColorField value={draft.numFg ?? '#9a9a9a'} onChange={hex => setDraft(d => ({ ...d, numFg: hex }))} />
             <span className="cp-lb">라벨 색</span>

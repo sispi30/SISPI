@@ -3715,7 +3715,8 @@ body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{pa
 /* 팝업 버튼 위젯 — 「① ABOUT ME」 버튼 + 화면을 흐리고 가운데에 뜨는 팝업 */
 .pb-wrap{display:inline-block}
 .pb-btn{display:inline-flex;align-items:center;gap:.7em;background:none;border:0;padding:4px 2px;cursor:var(--cur-pointer,pointer);font-family:inherit;line-height:1.2;white-space:nowrap;text-align:left}
-.pb-star{position:relative;display:inline-flex;align-items:center;justify-content:center;font-size:2.1em;flex:none;color:var(--pb-star,#fff);filter:drop-shadow(0 0 4px var(--pb-star,#fff)) drop-shadow(0 0 10px var(--pb-star,#fff));animation:pbTw 3.4s ease-in-out infinite}
+.pb-star{position:relative;display:inline-flex;align-items:center;justify-content:center;font-size:2.4em;flex:none;color:var(--pb-star,#4a63d8);filter:drop-shadow(0 0 3px var(--pb-star,#4a63d8)) drop-shadow(0 0 9px var(--pb-star,#4a63d8));animation:pbTw 3.4s ease-in-out infinite}
+.pb-star-halo{position:absolute;inset:-.25em;border-radius:50%;background:radial-gradient(circle,var(--pb-star,#4a63d8) 0%,transparent 62%);opacity:.28;pointer-events:none}
 .pb-star svg{display:block}
 .pb-star-ring{position:absolute;inset:-.12em;border-radius:50%;border:1px solid var(--pb-star,#fff);opacity:0;transform:scale(.5);transition:opacity .25s,transform .25s;pointer-events:none}
 .pb-btn:hover .pb-star-ring{opacity:.7;transform:scale(1)}
@@ -3728,7 +3729,7 @@ body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{pa
 .pb-overlay{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;
   background:rgba(244,244,244,.5);-webkit-backdrop-filter:blur(var(--pb-blur,12px));backdrop-filter:blur(var(--pb-blur,12px));animation:pbFade .22s ease both}
 .pb-card{position:relative;width:100%;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;background:#fff;color:#2a2c30;border:1px solid rgba(0,0,0,.12);border-radius:0;
-  box-shadow:0 24px 70px rgba(0,0,0,.16);animation:pbPop .26s cubic-bezier(.2,.8,.2,1) both}
+  box-shadow:0 24px 70px rgba(0,0,0,.16);animation:pbGrow .5s cubic-bezier(.2,.8,.2,1) both}
 .pb-card::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-right:2px solid rgba(0,0,0,.6);border-bottom:2px solid rgba(0,0,0,.6);pointer-events:none}
 .pb-head{position:relative;flex:none;padding:16px 22px 12px;border-bottom:1px solid rgba(0,0,0,.09)}
 .pb-tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;color:rgba(0,0,0,.42);text-transform:uppercase}
@@ -3751,8 +3752,10 @@ body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{pa
 .pb-text li{position:relative;padding-left:16px;margin-bottom:8px}
 .pb-text li::before{content:"";position:absolute;left:2px;top:.75em;width:4px;height:4px;border-radius:50%;background:rgba(0,0,0,.6)}
 @keyframes pbFade{from{opacity:0}to{opacity:1}}
+@keyframes pbGrow{from{opacity:0;transform:translate(var(--dx,0),var(--dy,0)) scale(.06)}35%{opacity:1}to{opacity:1;transform:none}}
+@keyframes pbBodyIn{from{opacity:0}to{opacity:1}}
 @keyframes pbPop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){.pb-overlay,.pb-card,.pb-star{animation:none}}
+@media(prefers-reduced-motion:reduce){.pb-overlay,.pb-card,.pb-star,.pb-head,.pb-body,.pb-foot{animation:none}}
 
 /* 팝업 안 페이지 화면 */
 .pb-frame{display:block;width:100%;border:0;background:transparent}
@@ -3767,3 +3770,14 @@ html.in-embed,html.in-embed body{background:none!important;background-color:tran
 html.in-embed body::before,html.in-embed body::after,html.in-embed .rel-backdrop,html.in-embed .rs-bg{display:none!important;content:none!important}
 html.in-embed #appMain{flex:none!important;height:auto!important;min-height:0!important;overflow:visible!important;scrollbar-gutter:auto!important}
 html.in-embed #appMain *{--bg-page-height:auto}
+
+/* 팝업 — 고른 폰트 반영(고르지 않으면 세리프 이탤릭) · 열릴 때 내용은 상자가 커진 뒤에 나타난다 */
+.pb-btn.pb-cf .pb-label,.pb-heading.pb-cf{font-family:inherit;font-style:normal}
+.pb-heading.pb-cf{font-family:var(--pb-font)}
+.pb-btn.pb-cf .pb-label{font-family:inherit}
+.pb-head,.pb-body,.pb-foot{animation:pbBodyIn .3s .32s ease both}
+.pb-frame{transition:opacity .25s}
+/* 팝업이 열려 있는 동안 마우스 효과(별 조각 등)는 숨긴다 */
+body:has(.pb-overlay) [class*="mfx"]{display:none!important}
+html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-actions{display:none!important}
+@media(prefers-reduced-motion:reduce){.pb-head,.pb-body,.pb-foot{animation:none}}
