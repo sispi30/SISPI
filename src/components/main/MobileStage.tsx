@@ -14,7 +14,7 @@ import { useSiteSettings } from '@/lib/siteStore';
 import { useBlobUrl } from '@/lib/blobStore';
 import { useFonts } from '@/lib/fontStore';
 import { INTRO_RINGS, INTRO_CONS, INTRO_SPARKS, INTRO_PLANETS, introSparkle } from '@/lib/introSky';
-import { PopBtnCard, PopStar, playPianoNote } from '@/components/main/widgets';
+import { PopBtnCard, PopStar, playPianoNote, useRecentRows, useDiaryRows } from '@/components/main/widgets';
 
 interface Item { children?: { label: string; href: string }[]; key: string; num: string; suffix: string; label: string; sub: string; color: string; conf: WidgetConf | null; href?: string; fontId?: string }
 
@@ -65,6 +65,9 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
     id = requestAnimationFrame(loop);
     return () => { window.removeEventListener('pointermove', mv); cancelAnimationFrame(id); };
   }, []);
+  const recent = useRecentRows(4);
+  const diary = useDiaryRows(4);
+  const [tab, setTab] = useState<'recent' | 'diary'>('recent');
   const [active, setActive] = useState<number | null>(null);   // 펼친 메뉴 — 평소엔 모두 접혀 있다
   // 메인 소형 뷰에서는 상단바를 숨기고 아래 내용을 위로 당긴다
   useEffect(() => { document.body.classList.add('ms-on'); return () => document.body.classList.remove('ms-on'); }, []);
@@ -97,12 +100,8 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
       {/* 가운데 — 인트로 화면과 같은 구성: 겹겹의 원 · 별자리 · 궤도 · 반짝이 · 파란 원과 네 갈래 별. 바탕은 비워 홈페이지 배경이 비친다 */}
       <div className="ms-vis" aria-hidden="true">
         <svg className="ms-sky" viewBox="300 20 680 680" preserveAspectRatio="xMidYMid slice">
-          <g className="rings">{INTRO_RINGS.map(c => <circle key={c.r} cx="640" cy="360" r={c.r} className={c.cls} />)}</g>
+          <g className="rings">{INTRO_RINGS.filter(c => c.cls !== 'dash').map(c => <circle key={c.r} cx="640" cy="360" r={c.r} className={c.cls} />)}</g>
           <g className="rays">{Array.from({ length: 12 }, (_, i) => <line key={i} x1="640" y1="228" x2="640" y2="28" transform={`rotate(${i * 30 + 7} 640 360)`} />)}</g>
-          <g className="cons">
-            {INTRO_CONS.map((d, i) => <polyline key={i} points={d} />)}
-            {INTRO_CONS.flatMap((d, i) => d.split(' ').map((pt, j) => { const [x, y] = pt.split(',').map(Number); return <path key={`c${i}-${j}`} className="cs" d={introSparkle(x, y, 3 + ((i + j) % 3))} />; }))}
-          </g>
           <g className="orbs">
             <ellipse cx="640" cy="360" rx="700" ry="150" transform="rotate(-17 640 360)" />
             <ellipse cx="640" cy="360" rx="720" ry="210" transform="rotate(14 640 360)" />
@@ -110,6 +109,11 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
           <g className="sparks">{INTRO_SPARKS.map(([x, y, r], i) => <path key={i} className="sp" d={introSparkle(x, y, r * 2)} />)}</g>
         </svg>
         <svg className="ms-sky pls" viewBox="300 20 680 680" preserveAspectRatio="xMidYMid slice">
+          <g className="dashring">{INTRO_RINGS.filter(c => c.cls === 'dash').map(c => <circle key={c.r} cx="640" cy="360" r={c.r} className="dash" />)}</g>
+          <g className="cons">
+            {INTRO_CONS.map((d, i) => <polyline key={i} points={d} />)}
+            {INTRO_CONS.flatMap((d, i) => d.split(' ').map((pt, j) => { const [x, y] = pt.split(',').map(Number); return <path key={`c${i}-${j}`} className="cs" d={introSparkle(x, y, 3 + ((i + j) % 3))} />; }))}
+          </g>
           <g className="planets">
             {INTRO_PLANETS.map((p, i) => (
               <g key={i} transform={`rotate(${p.a} 640 360)`}><g className={`spin${p.rev ? ' r' : ''}`} style={{ animationDuration: `${p.t}s` }}>
@@ -146,11 +150,24 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
       </ul>
 
       <div className="ms-stat"><div><small>MENU</small><b>{String(items.length).padStart(2, '0')}</b></div><div><small>SECTOR</small><b>07</b></div><div><small>STATUS</small><b>LIVE</b></div></div>
-      <div className="ms-card">
-        <span className="ms-tag">ARCHIVE RECORD</span>
-        <b>{dateStr.replace(/\./g, '/')} {site.title}</b>
-        <small>{site.subtitle}</small>
-        <div className="ms-cf"><span>SECTOR 07</span><span>● LIVE</span></div>
+      <div className="ms-card ms-rec">
+        <div className="ms-tabs">
+          <button type="button" className={tab === 'recent' ? 'on' : ''} onClick={() => setTab('recent')}>RECENT ENTRIES</button>
+          {diary.length > 0 && <button type="button" className={tab === 'diary' ? 'on' : ''} onClick={() => setTab('diary')}>MOOD DIARY</button>}
+        </div>
+        <ol className="ms-rows">
+          {tab === 'recent' || diary.length === 0
+            ? recent.map((r, i) => (
+              <li key={r.key}><button type="button" onClick={() => router.push(r.href)}>
+                <em>{String(i + 1).padStart(2, '0')}</em><span>{r.title}</span><i>{r.where} · {r.date.slice(5, 10).replace('-', '.')}</i>
+              </button></li>))
+            : diary.map(r => (
+              <li key={r.key}><button type="button" onClick={() => router.push(r.href)}>
+                <em className="mood" style={{ background: `color-mix(in srgb, ${r.color} 22%, transparent)`, color: r.color }}>{r.icon}</em><span>{r.title}</span><i>{r.mood ? `${r.mood} · ` : ''}{r.date.slice(5, 10).replace('-', '.')}</i>
+              </button></li>))}
+          {(tab === 'recent' || diary.length === 0) && recent.length === 0 && <li className="ms-empty">새 글이 없습니다</li>}
+        </ol>
+        <div className="ms-cf"><span>{dateStr.replace(/\./g, '/')} · {site.title}</span><span>● LIVE</span></div>
       </div>
       </div>
       {open && <PopBtnCard conf={open.conf} origin={open.origin} onClose={() => setOpen(null)} />}

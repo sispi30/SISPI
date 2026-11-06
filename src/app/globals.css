@@ -3913,3 +3913,21 @@ body.ms-on .ms-stage{height:100dvh}
 .ms-core,.ms-halo,.ms-art{backface-visibility:hidden}
 
 .ms-core g{transform-box:view-box;transform-origin:0 0}
+
+/* 인트로처럼 별자리(240초)와 점선 원(120초)이 천천히 돈다 — 도는 것들은 별도 레이어(.pls)에 둬서 깜빡이지 않게 한다 */
+.ms-sky .cons{transform-origin:640px 360px;animation:isSpin 240s linear infinite}
+.ms-sky .cons polyline{stroke-opacity:.7}
+.ms-sky .dashring circle{transform-origin:640px 360px;animation:isSpin 120s linear infinite}
+@media(prefers-reduced-motion:reduce){.ms-sky .cons,.ms-sky .dashring circle{animation:none}}
+/* 최신글 · 무드 일기 카드 */
+.ms-rec{gap:8px}
+.ms-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.ms-tabs button{background:none;border:1px solid color-mix(in srgb,var(--is-fg) 40%,transparent);color:inherit;border-radius:999px;padding:3px 11px;font-size:9.5px;font-weight:800;letter-spacing:.06em;font-family:inherit;cursor:var(--cur-pointer,pointer)}
+.ms-tabs button.on{background:var(--is-ac);border-color:var(--is-ac);color:#fff}
+.ms-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ms-rows li button{width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;background:color-mix(in srgb,var(--is-fg) 8%,transparent);border:1px solid color-mix(in srgb,var(--is-fg) 18%,transparent);border-radius:12px;padding:8px 10px;color:inherit;font-family:inherit;text-align:left;cursor:var(--cur-pointer,pointer)}
+.ms-rows li em{font-style:normal;min-width:24px;height:22px;border-radius:7px;display:grid;place-items:center;background:var(--is-ac);color:#fff;font-size:10px;font-weight:800}
+.ms-rows li em.mood{font-size:13px}
+.ms-rows li span{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-rows li i{font-style:normal;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--is-fg) 14%,transparent);white-space:nowrap;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
+.ms-stage.small .ms-rows li:nth-child(n+3){display:none}

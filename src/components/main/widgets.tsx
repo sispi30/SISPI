@@ -200,6 +200,51 @@ export function DiaryWidget() {
   );
 }
 
+/* ---------- 소형·중형 뷰 카드용 — 메인 위젯(최신글·DIARY)과 같은 규칙으로 보여 줄 글을 고른다 (비밀글·비공개·감춘 메뉴는 안 나옴) ---------- */
+export function useRecentRows(count: number) {
+  const { user, isAdmin } = useAuth();
+  const [menuSet] = useMenuSettings();
+  const { boards } = useBoards();
+  const [posts] = useLocalList<Post>('ohome.board.v1', []);
+  const [roads] = useLocalList<RoadItem>('ohome.road.v1', ROAD_SEED);
+  const [backups] = useLocalList<BackupPost>('ohome.backup.v1', BACKUP_SEED);
+  const [works] = useLocalList<ThreadWork>('ohome.threads.v1', []);
+  const { list: secList } = useSections();
+  const viewer = { loggedIn: !!user, isAdmin, id: user?.id };
+  const usableIds = new Set(boards.filter(b => b.skin !== 'banner' && canViewHref(menuSet, boardHref(b.id), viewer)).map(b => b.id));
+  const nameOf = (id?: string) => boards.find(b => b.id === (id || 'main'))?.name ?? '';
+  const secName = (kind: 'gallery' | 'roadview' | 'threads', id?: string) => secList(kind).find(x => x.id === (id || MAIN_SEC))?.name ?? SECTION_META[kind].defName;
+  const okSec = (kind: 'gallery' | 'roadview' | 'threads', id?: string) =>
+    canViewHref(menuSet, SECTION_META[kind].href, viewer) && canViewHref(menuSet, sectionHref(kind, id ?? MAIN_SEC), viewer);
+  const visOk = (v: string) => v === 'public' || (v === 'member' && !!user);
+  type Row = { key: string; title: string; where: string; date: string; href: string };
+  const rows: Row[] = [];
+  posts.filter(p => !p.secret && usableIds.has(p.boardId || 'main'))
+    .forEach(p => rows.push({ key: `p-${p.id}`, title: p.title, where: nameOf(p.boardId), date: p.date, href: `/board/${p.id}` }));
+  backups.filter(p => visOk(p.visibility) && !p.fold && okSec('gallery', p.secId))
+    .forEach(p => rows.push({ key: `g-${p.id}`, title: p.title, where: secName('gallery', p.secId), date: p.date, href: `/gallery/${p.id}` }));
+  roads.filter(it => !it.fold && okSec('roadview', it.secId))
+    .forEach(it => rows.push({ key: `r-${it.id}`, title: it.title || `No.${String(it.no ?? 0).padStart(3, '0')}`, where: secName('roadview', it.secId), date: it.date, href: sectionHref('roadview', it.secId ?? MAIN_SEC) }));
+  works.filter(w => visOk(w.visibility) && okSec('threads', w.secId))
+    .forEach(w => rows.push({ key: `t-${w.id}`, title: w.title, where: secName('threads', w.secId), date: w.posts.reduce((m, x) => (x.date > m ? x.date : m), w.created), href: sectionHref('threads', w.secId ?? MAIN_SEC) }));
+  return rows.sort((a, b) => b.date.localeCompare(a.date)).slice(0, count);
+}
+
+export function useDiaryRows(count: number) {
+  const { user, isAdmin } = useAuth();
+  const [posts] = useLocalList<DiaryPost>('ohome.diary.v1', DIARY_SEED);
+  const [moods] = useLocalList<Mood>('ohome.moods.v1', MOOD_SEED);
+  const [menuSet] = useMenuSettings();
+  const viewer = { loggedIn: !!user, isAdmin, id: user?.id };
+  if (!canViewHref(menuSet, '/diary', viewer)) return [];
+  return posts
+    .filter(p => canViewHref(menuSet, sectionHref('diary', p.secId ?? MAIN_SEC), viewer))
+    .filter(p => p.visibility === 'public' || (p.visibility === 'member' && !!user))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, count)
+    .map(p => { const m = moods.find(x => x.id === p.moodId); return { key: p.id, title: p.title, date: p.date, href: `/diary#${p.id}`, mood: m?.name ?? '', icon: m?.icon ?? '·', color: m?.color ?? '#888' }; });
+}
+
 /* ---------- RECENT ENTRIES (최신글 — 공개 게시판 전체 또는 게시판 하나, 2~6개) ----------
    비밀글은 절대 나오지 않는다 (관리자 포함). 메뉴에서 이 방문자에게 감춘 게시판의 글도 나오지 않는다.
    배너 게시판은 글이 아니라 배너 이미지라 뺀다. 가운데에는 어느 게시판의 글인지 적는다. */
