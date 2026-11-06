@@ -83,6 +83,9 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
             <ellipse cx="640" cy="360" rx="700" ry="150" transform="rotate(-17 640 360)" />
             <ellipse cx="640" cy="360" rx="720" ry="210" transform="rotate(14 640 360)" />
           </g>
+          <g className="sparks">{INTRO_SPARKS.map(([x, y, r], i) => <path key={i} className="sp" d={introSparkle(x, y, r * 2)} />)}</g>
+        </svg>
+        <svg className="ms-sky pls" viewBox="300 20 680 680" preserveAspectRatio="xMidYMid slice">
           <g className="planets">
             {INTRO_PLANETS.map((p, i) => (
               <g key={i} transform={`rotate(${p.a} 640 360)`}><g className={`spin${p.rev ? ' r' : ''}`} style={{ animationDuration: `${p.t}s` }}>
@@ -90,7 +93,6 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
               </g></g>
             ))}
           </g>
-          <g className="sparks">{INTRO_SPARKS.map(([x, y, r], i) => <path key={i} className="sp" d={introSparkle(x, y, r * 2)} />)}</g>
         </svg>
         <div className="ms-halo" />
         {img && <div className="ms-art" style={{ backgroundImage: `url("${img}")` }} />}

@@ -3902,3 +3902,12 @@ body.ms-on .ms-stage{height:100dvh}
 .ms-stage.small .ms-vis{flex:0 1 auto;min-height:130px}
 .ms-stage.small .ms-list{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:none}
 .ms-stage.small .ms-list::-webkit-scrollbar{display:none}
+
+/* 깜빡임 방지 — 가는 선의 non-scaling-stroke(회전·확대 중 흰 줄이 번쩍이던 원인)를 쓰지 않고, 도는 행성은 별도 레이어로 분리해 GPU가 따로 그리게 한다 */
+.ms-sky,.ms-sky *{vector-effect:none!important}
+.ms-sky{will-change:transform;backface-visibility:hidden;transform:translateZ(0)}
+.ms-sky.pls{animation:none;opacity:1}
+.ms-sky circle{stroke-width:1.7}.ms-sky circle.tick{stroke-width:11}.ms-sky circle.dot{stroke-width:3}
+.ms-sky .rays line,.ms-sky .cons polyline,.ms-sky .orbs ellipse{stroke-width:1.5}
+.ms-sky .pl.ln{stroke-width:1.7}
+.ms-core,.ms-halo,.ms-art{backface-visibility:hidden}
