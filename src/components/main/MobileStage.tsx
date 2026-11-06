@@ -11,11 +11,12 @@ import { useSections, sectionMenuEntries } from '@/lib/sectionStore';
 import { useCustomLinks, linkEntries } from '@/lib/linkStore';
 import { useAuth } from '@/lib/auth';
 import { useSiteSettings } from '@/lib/siteStore';
+import { useBlobUrl } from '@/lib/blobStore';
 import { useFonts } from '@/lib/fontStore';
 import { INTRO_RINGS, INTRO_CONS, INTRO_SPARKS, INTRO_PLANETS, introSparkle } from '@/lib/introSky';
 import { PopBtnCard, PopStar, playPianoNote } from '@/components/main/widgets';
 
-interface Item { key: string; num: string; suffix: string; label: string; sub: string; color: string; conf: WidgetConf | null; href?: string; fontId?: string }
+interface Item { children?: { label: string; href: string }[]; key: string; num: string; suffix: string; label: string; sub: string; color: string; conf: WidgetConf | null; href?: string; fontId?: string }
 
 const STAR_D = 'M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z';
 
@@ -35,7 +36,7 @@ export function MobileStage() {
     const menu = buildMenu(menuSet, [...boardEntries(boards), ...sectionMenuEntries(secMap), ...linkEntries(links)], { loggedIn: !!user, isAdmin, id: user?.id });
     return menu.map((m, i) => ({
       key: m.label + i, num: String(i + 1).padStart(2, '0'), suffix: '', label: m.label,
-      sub: m.children ? `${m.children.length} ITEMS` : '', color: '#4a63d8', href: m.href,
+      sub: '', color: '#4a63d8', href: m.href, children: m.children?.map(c => ({ label: c.label, href: c.href })),
       conf: m.children ? ({ id: 'ms' + i, type: 'popbtn', col: 1, enabled: true, tx: 0, ty: 0, settings: { mode: 'menu', label: m.label, heading: m.label, num: String(i + 1), hrefs: m.children.map(c => c.href), width: 520 } } as WidgetConf) : null,
     }));
   }, [menuSet, boards, secMap, links, user, isAdmin]);
@@ -52,13 +53,19 @@ export function MobileStage() {
     setOpen({ conf: it.conf, origin: { x: r.left + 24, y: r.top + r.height / 2 } });
   };
 
-  const title = (site.title || '').toUpperCase();
-  const titleSize = `min(${(94 / (Math.max(title.length, 3) * 0.7)).toFixed(1)}vw, 132px)`;   // 제목이 폭에 꽉 차게
+  // 인트로 화면에서 설정한 배경색·그림·색을 그대로 쓴다 (IntroSplash와 같은 변수)
+  const img = useBlobUrl(site.introImage);
+  const bg1 = site.introBg ?? '#050716';
+  const vars = {
+    ['--is-bgc' as string]: site.introBg2 ? `linear-gradient(180deg,${bg1},${site.introBg2})` : bg1,
+    ...(site.introDot ? { ['--is-ac' as string]: site.introDot } : {}),
+    ...(site.introFg ? { ['--is-fg' as string]: site.introFg } : {}),
+    ['--is-op' as string]: (site.introImageOp ?? 100) / 100,
+  } as React.CSSProperties;
+  const nav = (href: string) => { if (/^https?:\/\//.test(href)) window.open(href, '_blank'); else router.push(href); };
   return (
-    <section className="ms-stage" aria-label="메뉴">
+    <section className="ms-stage" aria-label="메뉴" style={vars}>
       <div className="ms-top"><span><i />{site.subtitle}</span><span>{dateStr}</span></div>
-      <h1 className="ms-title" style={{ fontSize: titleSize }}>{title}</h1>
-      <div className="ms-subline">SECTOR 07 · MENU {String(items.length).padStart(2, '0')}</div>
 
       {/* 가운데 — 인트로 화면과 같은 구성: 겹겹의 원 · 별자리 · 궤도 · 반짝이 · 파란 원과 네 갈래 별. 바탕은 비워 홈페이지 배경이 비친다 */}
       <div className="ms-vis" aria-hidden="true">
@@ -82,6 +89,8 @@ export function MobileStage() {
           </g>
           <g className="sparks">{INTRO_SPARKS.map(([x, y, r], i) => <path key={i} className="sp" d={introSparkle(x, y, r * 2)} />)}</g>
         </svg>
+        <div className="ms-halo" />
+        {img && <div className="ms-art" style={{ backgroundImage: `url("${img}")` }} />}
         <div className="ms-core"><svg viewBox="-100 -100 200 200"><path fillRule="evenodd" transform="rotate(-32)" d={STAR_D} /></svg></div>
       </div>
 
@@ -91,8 +100,13 @@ export function MobileStage() {
             <button type="button" onMouseEnter={() => setActive(i)} onFocus={() => setActive(i)} onClick={e => { setActive(i); go(it, e); }}>
               <em>{it.num}</em>
               <b style={it.fontId && it.fontId !== 'default' ? { fontFamily: familyOf(it.fontId) } : undefined}>{it.label}</b>
-              <span>{i === active && <small>▼ PRESS</small>}{it.sub}</span>
+              {i === active && <small>▼ PRESS</small>}
             </button>
+            {it.children && (
+              <div className="ms-subs">
+                {it.children.map(c => <button type="button" key={c.href} onClick={() => { setActive(i); nav(c.href); }}>{c.label}</button>)}
+              </div>
+            )}
           </li>
         ))}
         {items.length === 0 && <li className="ms-empty">표시할 메뉴가 없습니다</li>}
