@@ -9,6 +9,7 @@ import { Modal, ConfirmModal } from '@/components/ui/Modal';
 import { KRadio } from '@/components/ui/Kit';
 import { useToast } from '@/components/ui/Toast';
 import { useStageFit } from '@/lib/stageFit';
+import { MobileStage } from '@/components/main/MobileStage';
 
 const ADDABLE: WidgetType[] = ['banner', 'memo', 'dday', 'todo', 'upcoming', 'freetext', 'deco', 'diary', 'latest', 'recent', 'popbtn', 'apply', 'orbit'];   // banner: 여러 개 추가 (v2.0 사용자 요청)
 /** 내용 설정 모달이 있는 위젯 — 우클릭 「설정」 노출 대상 (v1.9) */
@@ -25,6 +26,14 @@ export default function MainPage() {
   const [addType, setAddType] = useState<WidgetType>('freetext');
   const [addCol, setAddCol] = useState<'1' | '2' | '3'>('3');
   const [delAsk, setDelAsk] = useState<WidgetConf | null>(null);   // 우클릭 삭제 경고 (v1.9)
+  // 작은 화면(모바일) 전용 뷰 — 인트로 같은 원형 스테이지 + 별자리 메뉴 (편집모드에서는 쓰지 않음)
+  const [small, setSmall] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width:620px)');
+    const f = () => setSmall(mq.matches);
+    f(); mq.addEventListener('change', f);
+    return () => mq.removeEventListener('change', f);
+  }, []);
 
   // 위젯 추가 — 상단바의 [＋ 위젯] 버튼(그리드 토글 왼쪽)이 이벤트로 연다 (v1.9 사용자 확정)
   useEffect(() => {
@@ -117,6 +126,7 @@ export default function MainPage() {
   }, [absMode, enabled.length]); // eslint-disable-line react-hooks/exhaustive-deps
   // 메인은 화면 고정 — 캔버스 높이는 CSS(.main-grid.abs)가 뷰포트에 맞춰 고정한다.
   // 위젯이 상하좌우로 넘쳐도 캔버스가 늘어나지 않고(#appMain overflow:hidden) 스크롤바도 생기지 않는다.
+  if (small && !editOn) return <MobileStage />;
   return (
     <section className="page page-main-wrap" onClick={() => setCtx(null)}>
       <div ref={gridRef} className={`main-grid ${absMode ? 'abs' : ''} ${gridOn ? 'gridlines' : ''}`}

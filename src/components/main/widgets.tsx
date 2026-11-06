@@ -884,7 +884,7 @@ interface PopBtnSettings {
 /* 번호 → 피아노 계이름(샵 없음): 1=6옥타브 도(C6) · 2=레 · 3=미 · 4=파 · 5=솔 · 6=라 · 7=시 · 8=7옥타브 도 … 번호가 커질수록 높아진다(최대 21번) */
 const WHITE_SEMI = [0, 2, 4, 5, 7, 9, 11];
 let pbCtx: AudioContext | null = null;
-function playPianoNote(num: unknown, vol = 60) {
+export function playPianoNote(num: unknown, vol = 60) {
   try {
     const n = Math.max(1, Math.min(21, Math.floor(Number(String(num ?? '').replace(/[^0-9]/g, '')) || 1)));
     const k = n - 1;
@@ -922,7 +922,7 @@ function playPianoNote(num: unknown, vol = 60) {
   } catch { /* 소리를 못 내는 환경이면 조용히 넘어간다 */ }
 }
 
-function PopStar({ color }: { color: string }) {
+export function PopStar({ color }: { color: string }) {
   return (
     <span className="pb-star" style={{ '--pb-star': color } as React.CSSProperties} aria-hidden>
       <i className="pb-star-halo" />
@@ -941,7 +941,7 @@ function PopStar({ color }: { color: string }) {
   );
 }
 
-function PopBtnCard({ conf, onClose: onCloseDone, origin }: { conf: WidgetConf; onClose: () => void; origin: { x: number; y: number } | null }) {
+export function PopBtnCard({ conf, onClose: onCloseDone, origin }: { conf: WidgetConf; onClose: () => void; origin: { x: number; y: number } | null }) {
   const { familyOf } = useFonts();
   const router = useRouter();
   const s = conf.settings as PopBtnSettings;

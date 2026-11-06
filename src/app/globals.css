@@ -3823,3 +3823,28 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 .pb-card::after{border-right-color:var(--accent,#111);border-bottom-color:var(--accent,#111)}
 .pb-text li::before{background:var(--accent,#111)}
 .pb-text a{color:var(--accent,#111)}
+
+/* ---------- 작은 화면 전용 메인 — 원형 스테이지 + 별자리 메뉴 (MobileStage) ---------- */
+.ms-stage{position:relative;height:calc(100dvh - 64px);min-height:520px;overflow:hidden;isolation:isolate}
+.ms-rings{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.ms-rings circle{fill:none;stroke:var(--accent,#4a63d8);stroke-opacity:.28;stroke-width:1;vector-effect:non-scaling-stroke}
+.ms-rings circle.th{stroke-opacity:.18}.ms-rings circle.gd,.ms-rings circle.dash{stroke-dasharray:3 6}.ms-rings circle.dot{stroke-dasharray:1 5;stroke-opacity:.4}.ms-rings circle.tick{stroke-dasharray:1 4;stroke-opacity:.3}
+/* 동그란 원이 배경 화면을 가린다 */
+.ms-orb{position:absolute;z-index:0;left:50%;top:50%;width:min(112vw,640px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 50% 42%,var(--panel-solid,#fff) 0%,color-mix(in srgb,var(--accent,#4a63d8) 14%,var(--panel-solid,#fff)) 62%,color-mix(in srgb,var(--accent,#4a63d8) 28%,var(--panel-solid,#fff)) 100%);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--accent,#4a63d8) 35%,transparent),0 0 70px color-mix(in srgb,var(--accent,#4a63d8) 28%,transparent)}
+.ms-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.ms-lines line{stroke:var(--accent,#4a63d8);stroke-opacity:.32;stroke-width:1}
+.ms-head{position:absolute;z-index:2;top:14px;left:0;right:0;text-align:center;display:flex;flex-direction:column;gap:2px;pointer-events:none}
+.ms-head b{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;font-size:20px;letter-spacing:.04em;color:var(--ink)}
+.ms-head span{font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.2em;color:var(--faint)}
+.ms-item{position:absolute;z-index:3;transform:translate(-14px,-14px);display:flex;align-items:center;gap:8px;background:none;border:0;padding:4px;cursor:var(--cur-pointer,pointer);color:var(--ink);font-family:inherit;text-align:left;animation:msIn .6s ease both}
+.ms-item .pb-star{font-size:28px}
+.ms-txt{display:flex;flex-direction:column;gap:1px;white-space:nowrap}
+.ms-num{font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.12em;color:var(--faint)}
+.ms-lb{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17px;line-height:1.15}
+.ms-sub{font-size:10.5px;color:var(--faint)}
+.ms-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--faint);font-size:13px}
+@keyframes msIn{from{opacity:0;transform:translate(-14px,-6px) scale(.9)}to{opacity:1}}
+.ms-item:hover .pb-star-ring,.ms-item:active .pb-star-ring{opacity:.55;transform:scale(1)}
+@media(prefers-reduced-motion:reduce){.ms-item{animation:none}}
