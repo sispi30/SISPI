@@ -3873,3 +3873,24 @@ body.ms-on .ms-stage{height:100dvh}
 .ms-fold>.ms-subs{overflow:hidden;min-height:0;padding-top:0;padding-bottom:0;opacity:0;transition:opacity .25s ease}
 .ms-list li.on .ms-fold{grid-template-rows:1fr}
 .ms-list li.on .ms-fold>.ms-subs{opacity:1;padding-top:6px;padding-bottom:4px}
+
+/* ---------- 중형 뷰(621~1100px) — 왼쪽: 세로 큰 제목 + 인트로와 같은 원·별 / 오른쪽: 큰 번호 메뉴 · 수치 · 카드 ---------- */
+.ms-left,.ms-right{display:contents}
+.ms-top{order:-1}
+.ms-vtitle,.ms-stat{display:none}
+.ms-stage.mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.95fr);gap:16px;height:100dvh;padding:0 18px 18px;overflow:hidden}
+.ms-stage.mid .ms-left{display:grid;grid-template-columns:auto minmax(0,1fr);min-height:0;gap:6px}
+.ms-stage.mid .ms-vtitle{display:block;writing-mode:vertical-rl;transform:rotate(180deg);align-self:stretch;font-size:clamp(70px,13vw,150px);font-weight:900;letter-spacing:-.03em;line-height:.9;text-transform:uppercase;white-space:nowrap;overflow:hidden;padding-top:18px;color:var(--is-fg)}
+.ms-stage.mid .ms-vis{height:auto;min-height:0;margin:0;align-self:stretch;border-radius:20px}
+.ms-stage.mid .ms-halo,.ms-stage.mid .ms-art{width:min(30vw,300px)}
+.ms-stage.mid .ms-core{width:min(19vw,190px)}
+.ms-stage.mid .ms-right{display:flex;flex-direction:column;min-height:0;padding-top:4px}
+.ms-stage.mid .ms-list{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;margin-top:10px}
+.ms-stage.mid .ms-list li>button{padding:14px 14px}
+.ms-stage.mid .ms-list li b{font-size:clamp(28px,5vw,44px)}
+.ms-stage.mid .ms-list li em{font-size:12px}
+.ms-stage.mid .ms-subs button{font-size:13px}
+.ms-stage.mid .ms-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--is-fg) 25%,transparent)}
+.ms-stat small{display:block;font-family:ui-monospace,Menlo,monospace;font-size:9px;letter-spacing:.12em;opacity:.65}
+.ms-stat b{font-size:22px;font-weight:800}
+.ms-stage.mid .ms-card{margin-top:auto}

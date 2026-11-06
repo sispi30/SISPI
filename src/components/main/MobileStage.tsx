@@ -20,7 +20,7 @@ interface Item { children?: { label: string; href: string }[]; key: string; num:
 
 const STAR_D = 'M0 -96Q1.6 -1.6 96 0Q1.6 1.6 0 96Q-1.6 1.6 -96 0Q-1.6 -1.6 0 -96ZM0 -30Q-3 -3 -30 0Q-3 3 0 30Q3 3 30 0Q3 -3 0 -30Z';
 
-export function MobileStage() {
+export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
   const router = useRouter();
   const { familyOf } = useFonts();
   const [site] = useSiteSettings();
@@ -66,8 +66,9 @@ export function MobileStage() {
   } as React.CSSProperties;
   const nav = (href: string) => { if (/^https?:\/\//.test(href)) window.open(href, '_blank'); else router.push(href); };
   return (
-    <section className="ms-stage" aria-label="메뉴" style={vars}>
-      <div className="ms-top"><span><i />{site.subtitle}</span><span>{dateStr}</span></div>
+    <section className={`ms-stage ${mode}`} aria-label="메뉴" style={vars}>
+      <div className="ms-left">
+        <div className="ms-vtitle" aria-hidden="true">{(site.title || '').toUpperCase()}</div>
 
       {/* 가운데 — 인트로 화면과 같은 구성: 겹겹의 원 · 별자리 · 궤도 · 반짝이 · 파란 원과 네 갈래 별. 바탕은 비워 홈페이지 배경이 비친다 */}
       <div className="ms-vis" aria-hidden="true">
@@ -96,6 +97,9 @@ export function MobileStage() {
         <div className="ms-core"><svg viewBox="-100 -100 200 200"><path fillRule="evenodd" transform="rotate(-32)" d={STAR_D} /></svg></div>
       </div>
 
+      </div>
+      <div className="ms-right">
+      <div className="ms-top"><span><i />{site.subtitle}</span><span>{dateStr}</span></div>
       <ul className="ms-list">
         {items.map((it, i) => (
           <li key={it.key} className={i === active ? 'on' : ''} style={{ animationDelay: `${0.5 + i * 0.07}s` }}>
@@ -115,11 +119,13 @@ export function MobileStage() {
         {items.length === 0 && <li className="ms-empty">표시할 메뉴가 없습니다</li>}
       </ul>
 
+      <div className="ms-stat"><div><small>MENU</small><b>{String(items.length).padStart(2, '0')}</b></div><div><small>SECTOR</small><b>07</b></div><div><small>STATUS</small><b>LIVE</b></div></div>
       <div className="ms-card">
         <span className="ms-tag">ARCHIVE RECORD</span>
         <b>{dateStr.replace(/\./g, '/')} {site.title}</b>
         <small>{site.subtitle}</small>
         <div className="ms-cf"><span>SECTOR 07</span><span>● LIVE</span></div>
+      </div>
       </div>
       {open && <PopBtnCard conf={open.conf} origin={open.origin} onClose={() => setOpen(null)} />}
     </section>

@@ -27,12 +27,11 @@ export default function MainPage() {
   const [addCol, setAddCol] = useState<'1' | '2' | '3'>('3');
   const [delAsk, setDelAsk] = useState<WidgetConf | null>(null);   // 우클릭 삭제 경고 (v1.9)
   // 작은 화면(모바일) 전용 뷰 — 인트로 같은 원형 스테이지 + 별자리 메뉴 (편집모드에서는 쓰지 않음)
-  const [small, setSmall] = useState(false);
+  const [view, setView] = useState<'small' | 'mid' | null>(null);   // small ≤620px · mid 621~1100px
   useEffect(() => {
-    const mq = window.matchMedia('(max-width:620px)');
-    const f = () => setSmall(mq.matches);
-    f(); mq.addEventListener('change', f);
-    return () => mq.removeEventListener('change', f);
+    const f = () => setView(window.innerWidth <= 620 ? 'small' : window.innerWidth <= 1100 ? 'mid' : null);
+    f(); window.addEventListener('resize', f);
+    return () => window.removeEventListener('resize', f);
   }, []);
 
   // 위젯 추가 — 상단바의 [＋ 위젯] 버튼(그리드 토글 왼쪽)이 이벤트로 연다 (v1.9 사용자 확정)
@@ -126,7 +125,7 @@ export default function MainPage() {
   }, [absMode, enabled.length]); // eslint-disable-line react-hooks/exhaustive-deps
   // 메인은 화면 고정 — 캔버스 높이는 CSS(.main-grid.abs)가 뷰포트에 맞춰 고정한다.
   // 위젯이 상하좌우로 넘쳐도 캔버스가 늘어나지 않고(#appMain overflow:hidden) 스크롤바도 생기지 않는다.
-  if (small && !editOn) return <MobileStage />;
+  if (view && !editOn) return <MobileStage mode={view} />;
   return (
     <section className="page page-main-wrap" onClick={() => setCtx(null)}>
       <div ref={gridRef} className={`main-grid ${absMode ? 'abs' : ''} ${gridOn ? 'gridlines' : ''}`}
