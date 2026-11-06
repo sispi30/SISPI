@@ -3736,3 +3736,12 @@ body:not(.main-fixed):not(.edit-on):not(.rs-full):not(.rel-hero-top) #appMain{pa
 @keyframes pbFade{from{opacity:0}to{opacity:1}}
 @keyframes pbPop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.pb-overlay,.pb-card{animation:none}}
+
+/* 팝업 안 페이지 화면 */
+.pb-frame{display:block;width:100%;border:0;border-radius:8px;background:transparent}
+.pb-card:has(.pb-frame){padding-bottom:16px}
+/* 팝업 안에 끼워 넣은 화면(?embed=1)에서는 상단바·메뉴·음악 등 셸을 숨기고 본문만 보인다 */
+html.in-embed .topbar,html.in-embed .tf-fixed,html.in-embed .bgm2,html.in-embed .intro-splash,html.in-embed .mfx,html.in-embed .comet-layer{display:none!important}
+html.in-embed #appMain{margin:0!important;padding-top:0!important;margin-bottom:0!important}
+html.in-embed body{background:transparent!important}
+html.in-embed .page{padding-top:8px}

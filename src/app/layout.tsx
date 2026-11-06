@@ -66,6 +66,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* 다크리더 계열 확장의 강제 변색 잠금 (v2.0) — color-scheme을 무시하는 확장도 이 메타는 존중한다.
             테마 색은 전부 사이트 설정이 직접 관리하므로 외부 변색은 어떤 경로든 막는 게 맞다 */}
         <meta name="darkreader-lock" />
+        {/* 팝업 안에 페이지를 그대로 보여 줄 때(메인 팝업 버튼) — 안쪽 창에는 상단바·메뉴·음악 등 셸을 숨긴다 */}
+        <script dangerouslySetInnerHTML={{ __html: `try{if(window.self!==window.top&&/[?&]embed=1/.test(location.search))document.documentElement.classList.add('in-embed')}catch(e){}` }} />
         {/* 테마 FOUC 방지 — <body> 안에 있으면 body 배경이 :root의 다크 기본값으로 먼저 페인트될 여지가
             있다(사용자 발견 — "처음 접속할 때 기본 다크모드가 깜빡") — body 자체가 파싱되는 순간 CSS만으로도
             그려질 수 있기 때문. <head> 맨 앞으로 옮겨 렌더 차단 구간(첫 페인트 전) 안에서 먼저 실행되게 한다 (v2.0) */}

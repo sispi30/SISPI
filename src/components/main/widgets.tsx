@@ -870,7 +870,9 @@ interface PopBtnSettings {
   fontId?: string; size?: number; bold?: boolean;
   numBg?: string; numFg?: string; labelColor?: string;
   tag?: string; heading?: string;
-  mode?: 'menu' | 'text'; hrefs?: string[]; html?: string;
+  mode?: 'menu' | 'text' | 'page' | 'link'; hrefs?: string[]; html?: string;
+  target?: string;     // page(팝업 안에 화면 그대로) · link(바로 이동) 에서 열 메뉴 주소
+  height?: number;     // page 팝업 높이(vh)
   width?: number; blur?: number;
 }
 
@@ -906,7 +908,12 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
         <button type="button" className="pb-x" aria-label="닫기" onClick={onClose}>×</button>
         <div className="pb-tag">{s.tag || `about No.${num}`}</div>
         <div className="pb-heading">{s.heading ?? s.label ?? ''}</div>
-        {(s.mode ?? 'menu') === 'menu' ? (
+        {s.mode === 'page' ? (
+          s.target
+            ? <iframe className="pb-frame" title={s.heading || s.label || '페이지'} style={{ height: `${s.height ?? 70}vh` }}
+                src={`${s.target}${s.target.includes('?') ? '&' : '?'}embed=1`} />
+            : <div className="pb-empty">열 페이지를 설정에서 골라 주세요</div>
+        ) : (s.mode ?? 'menu') === 'menu' ? (
           <div className="pb-menu">
             {groups.map((g, gi) => (
               <div className="pb-grp" key={gi}>
@@ -928,6 +935,7 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
 }
 
 export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
+  const router = useRouter();
   const { editOn, updateWidget } = useMainStore();
   const { fonts, familyOf } = useFonts();
   const [menuSet] = useMenuSettings();
@@ -947,7 +955,15 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
 
   return (
     <div className="pb-wrap">
-      <button type="button" className="pb-btn" onClick={() => { if (!editOn) setOpen(true); }}
+      <button type="button" className="pb-btn" onClick={() => {
+        if (editOn) return;
+        if (s.mode === 'link') {   // 팝업 없이 바로 이동
+          if (!s.target) return;
+          if (/^https?:\/\//.test(s.target)) window.open(s.target, '_blank'); else router.push(s.target);
+          return;
+        }
+        setOpen(true);
+      }}
         style={{ fontFamily: familyOf(s.fontId) ?? 'var(--sans)', fontSize: size, color: s.labelColor ?? 'var(--ink)', fontWeight: s.bold === false ? 400 : 700 }}>
         {s.showNum !== false && (
           <span className="pb-num" style={{ background: s.numBg ?? '#111', color: s.numFg ?? '#fff' }}>{s.num ?? '1'}</span>
@@ -997,9 +1013,9 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="cp-lb">내용</span>
             <div className="mini-seg">
-              {(['menu', 'text'] as const).map(m => (
+              {(['menu', 'text', 'page', 'link'] as const).map(m => (
                 <button key={m} className={(draft.mode ?? 'menu') === m ? 'on' : ''} onClick={() => setDraft(d => ({ ...d, mode: m }))}>
-                  {m === 'menu' ? '메뉴 목록' : '직접 쓴 글'}
+                  {m === 'menu' ? '메뉴 목록' : m === 'text' ? '직접 쓴 글' : m === 'page' ? '페이지 화면' : '바로 이동'}
                 </button>
               ))}
             </div>
@@ -1008,7 +1024,24 @@ export function PopupBtnWidget({ conf }: { conf: WidgetConf }) {
             <span className="cp-lb">흐림</span>
             <KStep value={draft.blur ?? 12} min={0} max={30} suffix="px" onChange={v => setDraft(d => ({ ...d, blur: v }))} />
           </div>
-          {(draft.mode ?? 'menu') === 'menu' ? (
+          {(draft.mode === 'page' || draft.mode === 'link') ? (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className="cp-lb">{draft.mode === 'page' ? '팝업에 띄울 페이지' : '이동할 페이지'}</span>
+                <KSelect minWidth={200} placeholder="페이지 고르기" value={draft.target ?? ''} onChange={v => setDraft(d => ({ ...d, target: v }))}
+                  options={all.map(i => ({ value: i.href, label: `${i.group ? `${i.group} › ` : ''}${i.label}` }))} />
+                {draft.mode === 'page' && (<>
+                  <span className="cp-lb">높이</span>
+                  <KStep value={draft.height ?? 70} min={30} max={90} step={5} suffix="vh" onChange={v => setDraft(d => ({ ...d, height: v }))} />
+                </>)}
+              </div>
+              <p className="hint" style={{ margin: 0 }}>
+                {draft.mode === 'page'
+                  ? '선택한 페이지가 팝업 안에 그대로 열립니다(상단바·메뉴·음악은 숨김). 팝업 너비를 넉넉히(예: 900px) 잡아 주세요.'
+                  : '버튼을 누르면 팝업 없이 선택한 페이지로 바로 이동합니다.'}
+              </p>
+            </div>
+          ) : (draft.mode ?? 'menu') === 'menu' ? (
             <div>
               <p className="hint" style={{ margin: '0 0 6px' }}>팝업에 보일 메뉴 — 아무것도 고르지 않으면 방문자가 볼 수 있는 메뉴 전체가 나옵니다.</p>
               <div style={{ display: 'grid', gap: 4, maxHeight: 220, overflowY: 'auto', padding: '2px 0' }}>

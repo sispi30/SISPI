@@ -108,7 +108,13 @@ function MoodCard({ pl, onOpen }: { pl: BgmPlaylist; onOpen: () => void }) {
   );
 }
 
+/** 팝업 안에 끼워 넣은 화면(?embed=1)에서는 음악을 또 틀지 않는다 */
 export function BgmPlayer() {
+  const [embedded] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('in-embed'));
+  return embedded ? null : <BgmPlayerInner />;
+}
+
+function BgmPlayerInner() {
   const { state, source } = useBgm();
   const { playlists, settings } = state;
 
