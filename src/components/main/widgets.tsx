@@ -935,9 +935,9 @@ function PopBtnCard({ conf, onClose }: { conf: WidgetConf; onClose: () => void }
                   const f = e.currentTarget;
                   try {
                     const d = f.contentDocument; if (!d) return;
-                    const fit = () => { const h = d.documentElement.scrollHeight; if (h > 0) setFrameH(h + 4); };
+                    const fit = () => { const m = d.getElementById('appMain'); const h = m ? m.getBoundingClientRect().height : d.body.getBoundingClientRect().height; if (h > 0) setFrameH(Math.ceil(h) + 4); };
                     fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
-                    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(d.body);
+                    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe(d.getElementById('appMain') ?? d.body);
                   } catch { /* 접근 불가면 설정한 높이 유지 */ }
                 }} />
             : <div className="pb-empty">열 페이지를 설정에서 골라 주세요</div>

@@ -3762,5 +3762,8 @@ html.in-embed #appMain{margin:0!important;padding-top:0!important;margin-bottom:
 html.in-embed body{background:transparent!important}
 html.in-embed .page{padding-top:8px}
 
-/* 팝업 안 페이지: 배경 투명 · 높이는 내용에 맞춤 */
-html.in-embed,html.in-embed body{background:transparent!important}
+/* 팝업 안 페이지: 페이지에 설정한 배경은 쓰지 않고 내용만 — 높이는 내용에 맞춘다(100vh 고정을 풀어야 팝업이 끝없이 늘어나지 않는다) */
+html.in-embed,html.in-embed body{background:none!important;background-color:transparent!important;height:auto!important;min-height:0!important;overflow:visible!important;display:block!important}
+html.in-embed body::before,html.in-embed body::after,html.in-embed .rel-backdrop,html.in-embed .rs-bg{display:none!important;content:none!important}
+html.in-embed #appMain{flex:none!important;height:auto!important;min-height:0!important;overflow:visible!important;scrollbar-gutter:auto!important}
+html.in-embed #appMain *{--bg-page-height:auto}
