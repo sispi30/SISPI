@@ -68,6 +68,7 @@ export function TopBar() {
     return () => mq.removeEventListener('change', f);
   }, []);
   const tfOn = tfLoaded && tfCfg.enabled && !isMobile;
+  const tfHidden = tfOn && !!tfCfg.hideOnMain && pathname === '/';   // 메인 화면에서만 숨김
   // 서랍 메뉴 (모바일) — 메인의 「메뉴리스트」를 보이게 해 둔 경우 본문 목록 대신 오른쪽에서 밀려 나오는 서랍으로 연다.
   // 여는 버튼은 상단바 오른쪽(프로필 아래). 메뉴리스트를 모바일에서 끄면 서랍도 없다.
   const menuWgt = mainState.widgets.find(w => w.type === 'menu');
@@ -194,8 +195,8 @@ export function TopBar() {
       {/* 트랜스폼 메뉴 위젯이 켜져 있으면 기존 gnb 대신 그 자리에 렌더 (static) — fixed는 화면에 별도로 뜬다.
           fixed일 때는 이 자리에 아무것도 안 그려지므로, 우측 정렬용 flex:1 자리를 대신 채워준다
           (없으면 알림·프로필이 로고 옆으로 딸려온다). */}
-      {tfOn && <TransformMenu />}
-      {tfOn && tfCfg.positionType === 'fixed' && <div className="gnb" aria-hidden />}
+      {tfOn && !tfHidden && <TransformMenu />}
+      {tfOn && (tfHidden || tfCfg.positionType === 'fixed') && <div className="gnb" aria-hidden />}
       {!tfOn && (
       <nav className="gnb" ref={gnbRef}>
         {visMenu.map(item =>

@@ -15,6 +15,7 @@ export type TfIconMode = 'text' | 'icon-text' | 'icon' | 'line';
 
 export interface TransformMenuSettings {
   enabled: boolean;              // 켜면 기존 상단 메뉴 대신 이 위젯을 사용
+  hideOnMain?: boolean;          // 메인 화면(/)에서만 이 위젯을 숨김
 
   // 배치
   direction: TfDirection;

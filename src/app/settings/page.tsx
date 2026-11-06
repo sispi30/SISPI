@@ -3056,6 +3056,11 @@ function MenuDesignPane() {
         <KToggle checked={cfg.enabled} onChange={v => patch({ enabled: v })} />
       </div>
 
+      <div className="set-row">
+        <div className="l"><b>메인 화면에서 숨기기</b><small>메인 화면(첫 화면)에서만 메뉴 위젯을 감춥니다 — 다른 페이지에서는 그대로 보입니다</small></div>
+        <KToggle checked={!!cfg.hideOnMain} onChange={v => patch({ hideOnMain: v })} />
+      </div>
+
       {/* 아이콘 (커스텀 요청) — Font Awesome 클래스명(예: fa-home)을 입력하면 메뉴에 아이콘이 붙는다.
           위젯을 켜지 않아도 기존 상단 메뉴(gnb)에 바로 반영되며, 위젯을 켰을 때는 아래 「표시 방식」으로
           아이콘만 보이게 할 수도 있다 */}

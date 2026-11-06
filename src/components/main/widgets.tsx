@@ -893,6 +893,7 @@ function PopStar({ color }: { color: string }) {
         <circle r="2.6" fill="var(--pb-star)" opacity=".5" />
         <circle r="1.7" fill="#fff" />
       </svg>
+      <i className="pb-star-ring" />
     </span>
   );
 }

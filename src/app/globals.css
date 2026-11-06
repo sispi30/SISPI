@@ -3787,7 +3787,8 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 
 /* 별 — 깜빡임·호버 링 없음, 마우스를 올려도 그대로 */
 .pb-star{animation:none!important}
-.pb-star-ring{display:none!important}
+.pb-star-ring{display:block;position:absolute;inset:-.1em;border-radius:50%;border:1px solid var(--pb-star,#4a63d8);opacity:0;transform:scale(.6);transition:opacity .25s,transform .25s;pointer-events:none}
+.pb-btn:hover .pb-star-ring{opacity:.55;transform:scale(1)}
 .pb-btn:hover .pb-star{transform:none;opacity:1}
 .pb-btn:hover{transform:none;opacity:1}
 
