@@ -3816,3 +3816,10 @@ html.in-embed .page-head,html.in-embed [class*="mfx"],html.in-embed .head-action
 .pb-al-center .pb-txt{align-items:center;text-align:center}
 .pb-al-right .pb-btn{flex-direction:row-reverse}
 .pb-al-right .pb-txt{align-items:flex-end;text-align:right}
+
+/* 팝업 포인트 색 — 환경설정의 포인트 컬러(--accent)를 따른다 */
+.pb-x:hover{background:var(--accent,#111);border-color:var(--accent,#111);color:#fff}
+.pb-chip:hover{background:var(--accent,#111);border-color:var(--accent,#111);color:#fff}
+.pb-card::after{border-right-color:var(--accent,#111);border-bottom-color:var(--accent,#111)}
+.pb-text li::before{background:var(--accent,#111)}
+.pb-text a{color:var(--accent,#111)}
