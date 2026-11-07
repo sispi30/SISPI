@@ -3952,3 +3952,7 @@ body.ms-on .ms-stage{height:100dvh}
 body.ms-on .bgm2{top:calc(var(--ms-vb,100vh) - 66px);bottom:auto;left:auto;right:calc(100vw - var(--ms-vr,100vw) + 12px)}
 /* 최대화(패널이 열림)해도 같은 모서리를 기준으로 위로 펼쳐진다 — 화면 밖으로 넘치지 않게 아래쪽 여백을 제한 */
 body.ms-on .bgm2:has(.panel){top:auto;bottom:max(20px,min(calc(100dvh - var(--ms-vb,100dvh) + 10px),calc(100dvh - 470px)))}
+
+/* 선택된(포인트 색) 행도 호버 효과 — 다른 행과 같이 하얀 알약으로 바뀐다 */
+.ms-list li.on>button:hover{background:rgba(255,255,255,.82);color:var(--is-fg)}
+.ms-list li.on>button:hover em{color:var(--is-ac)}
