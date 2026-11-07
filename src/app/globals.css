@@ -3950,4 +3950,5 @@ body.ms-on .ms-stage{height:100dvh}
 
 /* 뮤직 플레이어 — 소형·중형 뷰에서는 가운데 원 영역의 오른쪽 아래 모서리에 둔다(--ms-vb·--ms-vr은 MobileStage가 잰다). 다른 페이지로 가면 원래 자리 */
 body.ms-on .bgm2{top:calc(var(--ms-vb,100vh) - 66px);bottom:auto;left:auto;right:calc(100vw - var(--ms-vr,100vw) + 12px)}
-body.ms-on .bgm2:has(.panel){top:auto;bottom:20px;right:20px}
+/* 최대화(패널이 열림)해도 같은 모서리를 기준으로 위로 펼쳐진다 — 화면 밖으로 넘치지 않게 아래쪽 여백을 제한 */
+body.ms-on .bgm2:has(.panel){top:auto;bottom:max(20px,min(calc(100dvh - var(--ms-vb,100dvh) + 10px),calc(100dvh - 470px)))}
