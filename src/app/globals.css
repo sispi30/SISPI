@@ -3871,8 +3871,8 @@ body.ms-on .ms-stage{height:100dvh}
 /* 하위 메뉴 접기/펼치기 — 평소엔 접힘 */
 .ms-fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
 .ms-fold>.ms-subs{overflow:hidden;min-height:0;padding-top:0;padding-bottom:0;opacity:0;transition:opacity .25s ease}
-.ms-list li.on .ms-fold{grid-template-rows:1fr}
-.ms-list li.on .ms-fold>.ms-subs{opacity:1;padding-top:6px;padding-bottom:4px}
+.ms-list li.open .ms-fold{grid-template-rows:1fr}
+.ms-list li.open .ms-fold>.ms-subs{opacity:1;padding-top:6px;padding-bottom:4px}
 
 /* ---------- 중형 뷰(621~1100px) — 왼쪽: 세로 큰 제목 + 인트로와 같은 원·별 / 오른쪽: 큰 번호 메뉴 · 수치 · 카드 ---------- */
 .ms-left,.ms-right{display:contents}
@@ -3934,7 +3934,7 @@ body.ms-on .ms-stage{height:100dvh}
 
 /* ---------- 호버 효과 (영상과 같이) — 메뉴 행은 하얀 알약으로 떠오르고, 카드의 행은 번호가 ✓로 바뀌며 오른쪽 칩이 포인트 색으로 찬다 ---------- */
 .ms-list li>button{transition:background .22s ease,color .22s ease,box-shadow .22s ease,transform .22s ease}
-.ms-list li:not(.on)>button:hover{background:rgba(255,255,255,.82);color:var(--is-fg);box-shadow:0 6px 18px color-mix(in srgb,var(--is-ac) 18%,transparent)}
+.ms-list li:not(.on)>button:hover{background:rgba(255,255,255,.82);color:var(--is-fg)}
 .ms-list li:not(.on)>button:hover em{color:var(--is-ac)}
 .ms-card{transition:background .25s ease,box-shadow .25s ease}
 .ms-card:hover{background:rgba(255,255,255,.55);box-shadow:0 10px 30px color-mix(in srgb,var(--is-ac) 16%,transparent)}
@@ -3947,3 +3947,7 @@ body.ms-on .ms-stage{height:100dvh}
 .ms-rows li button:hover i{background:var(--is-ac);color:#fff}
 .ms-tabs button{transition:background .2s ease,color .2s ease,border-color .2s ease}
 .ms-tabs button:hover:not(.on){background:color-mix(in srgb,var(--is-ac) 14%,transparent);border-color:var(--is-ac)}
+
+/* 뮤직 플레이어 — 소형·중형 뷰에서는 가운데 원 영역의 오른쪽 아래 모서리에 둔다(--ms-vb·--ms-vr은 MobileStage가 잰다). 다른 페이지로 가면 원래 자리 */
+body.ms-on .bgm2{top:calc(var(--ms-vb,100vh) - 66px);bottom:auto;left:auto;right:calc(100vw - var(--ms-vr,100vw) + 12px)}
+body.ms-on .bgm2:has(.panel){top:auto;bottom:20px;right:20px}

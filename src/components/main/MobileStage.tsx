@@ -69,8 +69,26 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
   const diary = useDiaryRows(4);
   const [tab, setTab] = useState<'recent' | 'diary'>('recent');
   const [active, setActive] = useState<number | null>(null);   // 펼친 메뉴 — 평소엔 모두 접혀 있다
+  const [sel, setSel] = useState(0);                             // 선택(포인트 색으로 채워진) 메뉴 — 처음엔 첫 번째
+  const visRef = useRef<HTMLDivElement>(null);
   // 메인 소형 뷰에서는 상단바를 숨기고 아래 내용을 위로 당긴다
   useEffect(() => { document.body.classList.add('ms-on'); return () => document.body.classList.remove('ms-on'); }, []);
+  // 뮤직 플레이어를 가운데 원 영역의 오른쪽 아래 모서리로 옮긴다 — 이 화면을 벗어나면 원래 자리로 돌아간다
+  useEffect(() => {
+    const root = document.documentElement;
+    const place = () => {
+      const r = visRef.current?.getBoundingClientRect();
+      if (!r) return;
+      root.style.setProperty('--ms-vb', `${r.bottom}px`);
+      root.style.setProperty('--ms-vr', `${r.right}px`);
+    };
+    place();
+    const ro = new ResizeObserver(place);
+    if (visRef.current) ro.observe(visRef.current);
+    window.addEventListener('resize', place);
+    const t1 = setTimeout(place, 300);
+    return () => { ro.disconnect(); window.removeEventListener('resize', place); clearTimeout(t1); root.style.removeProperty('--ms-vb'); root.style.removeProperty('--ms-vr'); };
+  }, [mode]);
   const today = new Date();
   const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
   const go = (it: Item, e: React.MouseEvent<HTMLButtonElement>) => {
@@ -98,7 +116,7 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
         <div className="ms-vtitle" aria-hidden="true">{(site.title || '').toUpperCase()}</div>
 
       {/* 가운데 — 인트로 화면과 같은 구성: 겹겹의 원 · 별자리 · 궤도 · 반짝이 · 파란 원과 네 갈래 별. 바탕은 비워 홈페이지 배경이 비친다 */}
-      <div className="ms-vis" aria-hidden="true">
+      <div className="ms-vis" aria-hidden="true" ref={visRef}>
         <svg className="ms-sky" viewBox="300 20 680 680" preserveAspectRatio="xMidYMid slice">
           <g className="rings">{INTRO_RINGS.filter(c => c.cls !== 'dash').map(c => <circle key={c.r} cx="640" cy="360" r={c.r} className={c.cls} />)}</g>
           <g className="rays">{Array.from({ length: 12 }, (_, i) => <line key={i} x1="640" y1="228" x2="640" y2="28" transform={`rotate(${i * 30 + 7} 640 360)`} />)}</g>
@@ -132,16 +150,16 @@ export function MobileStage({ mode = 'small' }: { mode?: 'small' | 'mid' }) {
       <div className="ms-top"><span><i />{site.subtitle}</span><span>{dateStr}</span></div>
       <ul className="ms-list">
         {items.map((it, i) => (
-          <li key={it.key} className={i === active ? 'on' : ''} style={{ animationDelay: `${0.5 + i * 0.07}s` }}>
+          <li key={it.key} className={`${i === sel ? 'on' : ''}${i === active ? ' open' : ''}`} style={{ animationDelay: `${0.5 + i * 0.07}s` }}>
             <button type="button" aria-expanded={it.children ? i === active : undefined}
-              onClick={() => { if (it.children) setActive(a => (a === i ? null : i)); else if (it.href) { setActive(i); nav(it.href); } }}>
+              onClick={() => { setSel(i); if (it.children) setActive(a => (a === i ? null : i)); else if (it.href) nav(it.href); }}>
               <em>{it.num}</em>
               <b style={it.fontId && it.fontId !== 'default' ? { fontFamily: familyOf(it.fontId) } : undefined}>{it.label}</b>
               {it.children && <small>{i === active ? '▲' : '▼'}</small>}
             </button>
             {it.children && (
               <div className="ms-fold"><div className="ms-subs">
-                {it.children.map(c => <button type="button" key={c.href} tabIndex={i === active ? 0 : -1} onClick={() => nav(c.href)}>{c.label}</button>)}
+                {it.children.map(c => <button type="button" key={c.href} tabIndex={i === active ? 0 : -1} onClick={() => { setSel(i); nav(c.href); }}>{c.label}</button>)}
               </div></div>
             )}
           </li>
